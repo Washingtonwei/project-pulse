@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/project-pulse
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create
+  mail:
+    host: localhost
+    port: 1025
+    username: admin@project-pulse.team
+front-end:
+  url: http://localhost:5173

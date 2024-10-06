@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: project-pulse
+  profiles:
+    active: dev # By default, the active profile is "dev". During production, it will be replaced to "prod" due to Azure's environment variables.
+#  web:
+#    resources:
+#      add-mappings: false
+server:
+  port: 80
+api:
+  endpoint:
+    base-url: /api/v1
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env,beans,configprops,heapdump,httpexchanges,loggers,mappings,custom-beans,prometheus
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+    env:
+      show-values: always
+    configprops:
+      show-values: always
+  info:
+    build:
+      enabled: true
+    env:
+      enabled: true
+    git:
+      enabled: true
+      mode: full
+    java:
+      enabled: true
+    os:
+      enabled: true
+  tracing:
+    sampling:
+      probability: 1 # Only for demo purpose, change it back to 0.1 in production.
+info:
+  app:
+    name: project-pulse
+    description: Project Pulse is a web application designed to track student contributions and peer evaluations in senior design or capstone projects, fostering better team collaboration and accountability.
+    version: @project.version@
+    author: Bingyang Wei
+    links:
+      youtube: https://youtube.com/@BingyangWei
+      github: https://github.com/Washingtonwei/project-pulse
