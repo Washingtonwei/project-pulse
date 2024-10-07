@@ -77,7 +77,14 @@ const registrationToken = ref<string>('')
 const registrationRole = ref<string>('')
 
 const rules = {
-  username: [{ required: true, message: 'Please input your username', trigger: 'blur' }],
+  username: [
+    { required: true, message: 'Please input your username', trigger: 'blur' },
+    {
+      pattern: /^\S{2,20}$/,
+      message: 'Username must be between 2 to 20 characters long.',
+      trigger: 'blur'
+    }
+  ],
   firstName: [{ required: true, message: 'Please input your first name', trigger: 'blur' }],
   lastName: [{ required: true, message: 'Please input your last name', trigger: 'blur' }],
   email: [{ required: true, message: 'Please input your email', trigger: 'blur' }],
