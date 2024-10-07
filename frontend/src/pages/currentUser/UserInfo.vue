@@ -70,8 +70,8 @@ const rules = {
   username: [
     { required: true, message: 'Username cannot be empty.', trigger: 'blur' },
     {
-      pattern: /^\S{2,10}$/,
-      message: 'Username must be between 2 to 10 characters long.',
+      pattern: /^\S{2,20}$/,
+      message: 'Username must be between 2 to 20 characters long.',
       trigger: 'blur'
     }
   ],
