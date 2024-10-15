@@ -14,24 +14,32 @@
     <!-- Activity Table -->
     <div v-for="(activities, studentName) in groupedActivities" :key="studentName">
       <h3>{{ studentName }}'s Weekly Activities:</h3>
-      <el-table :data="activities" style="width: 100%" stripe border v-loading="loading">
-        <el-table-column label="Category" width="150" prop="category">
+      <el-table
+        :data="activities"
+        style="width: 100%"
+        stripe
+        border
+        v-loading="loading"
+        scrollbar-always-on
+      >
+        <el-table-column label="Category" min-width="150" prop="category">
           <template #default="{ row }">
             <el-tag type="warning">{{ row.category }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="Activity" width="150" prop="activity"></el-table-column>
-        <el-table-column label="Description" prop="description"> </el-table-column>
-        <el-table-column label="Planned Hours" prop="plannedHours"> </el-table-column>
-        <el-table-column label="Actual Hours" prop="actualHours"> </el-table-column>
-        <el-table-column label="Status" prop="status">
+        <el-table-column label="Activity" min-width="150" prop="activity"></el-table-column>
+        <el-table-column label="Description" min-width="150" prop="description"> </el-table-column>
+        <el-table-column label="Planned Hours" min-width="150" prop="plannedHours">
+        </el-table-column>
+        <el-table-column label="Actual Hours" min-width="150" prop="actualHours"> </el-table-column>
+        <el-table-column label="Status" min-width="150" prop="status">
           <template #default="{ row }">
             <el-tag :type="row.status == 'COMPLETED' ? 'success' : 'danger'" size="small">
               {{ row.status }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="Operations" width="120">
+        <el-table-column label="Operations" min-width="120">
           <template #default="{ row }">
             <el-button
               icon="Comment"
@@ -51,7 +59,7 @@
     <el-drawer
       title="Comment an activity"
       direction="rtl"
-      size="25%"
+      size="35%"
       v-model="drawerVisible"
       destroy-on-close
     >

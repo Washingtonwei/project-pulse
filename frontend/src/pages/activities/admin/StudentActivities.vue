@@ -12,7 +12,7 @@
       @search="loadActivities"
       @reset="resetSearchCriteria"
     />
-    <el-tabs v-model="activeName" class="demo-tabs" @tab-click="loadActivities">
+    <el-tabs v-model="activeName" class="demo-tabs" @tab-click="loadActivities" scrollbar-always-on>
       <el-tab-pane label="Details" name="details">
         <!-- Activity Table -->
         <el-table
@@ -24,16 +24,19 @@
           height="600"
         >
           <el-table-column label="Week" prop="week"></el-table-column>
-          <el-table-column label="Category" width="150" prop="category">
+          <el-table-column label="Category" min-width="150" prop="category">
             <template #default="{ row }">
               <el-tag type="warning">{{ row.category }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="Activity" width="150" prop="activity"></el-table-column>
-          <el-table-column label="Description" prop="description"> </el-table-column>
-          <el-table-column label="Planned Hours" prop="plannedHours"> </el-table-column>
-          <el-table-column label="Actual Hours" prop="actualHours"> </el-table-column>
-          <el-table-column label="Status" prop="status">
+          <el-table-column label="Activity" min-width="150" prop="activity"></el-table-column>
+          <el-table-column label="Description" min-width="150" prop="description">
+          </el-table-column>
+          <el-table-column label="Planned Hours" min-width="150" prop="plannedHours">
+          </el-table-column>
+          <el-table-column label="Actual Hours" min-width="150" prop="actualHours">
+          </el-table-column>
+          <el-table-column label="Status" min-width="150" prop="status">
             <template #default="{ row }">
               <el-tag :type="row.status == 'COMPLETED' ? 'success' : 'danger'" size="small">
                 {{ row.status }}

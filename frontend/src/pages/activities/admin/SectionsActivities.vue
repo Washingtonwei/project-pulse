@@ -15,18 +15,33 @@
     <el-table :data="teams" style="width: 100%" stripe border v-loading="loading" height="600">
       <el-table-column type="expand">
         <template #default="{ row }">
-          <el-table :data="row.activitiesInAWeek" style="width: 100%" stripe border>
-            <el-table-column label="Student" width="150" prop="studentName"></el-table-column>
+          <el-table
+            :data="row.activitiesInAWeek"
+            style="width: 100%"
+            stripe
+            border
+            scrollbar-always-on
+          >
+            <el-table-column
+              label="Student"
+              width="150"
+              min-width="100"
+              prop="studentName"
+              fixed
+            ></el-table-column>
             <el-table-column label="Category" width="150" prop="category">
               <template #default="{ row }">
                 <el-tag type="warning">{{ row.category }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="Activity" width="150" prop="activity"></el-table-column>
-            <el-table-column label="Description" prop="description"> </el-table-column>
-            <el-table-column label="Planned Hours" prop="plannedHours"> </el-table-column>
-            <el-table-column label="Actual Hours" prop="actualHours"> </el-table-column>
-            <el-table-column label="Status" prop="status">
+            <el-table-column label="Activity" min-width="150" prop="activity"></el-table-column>
+            <el-table-column label="Description" min-width="150" prop="description">
+            </el-table-column>
+            <el-table-column label="Planned Hours" min-width="150" prop="plannedHours">
+            </el-table-column>
+            <el-table-column label="Actual Hours" min-width="150" prop="actualHours">
+            </el-table-column>
+            <el-table-column label="Status" min-width="150" prop="status">
               <template #default="{ row }">
                 <el-tag :type="row.status == 'COMPLETED' ? 'success' : 'danger'" size="small">
                   {{ row.status }}
