@@ -21,8 +21,15 @@
       </el-form-item>
     </el-form>
     <!-- Course Table -->
-    <el-table :data="courses" style="width: 100%" stripe border v-loading="loading">
-      <el-table-column label="Default Course" width="150px">
+    <el-table
+      :data="courses"
+      style="width: 100%"
+      stripe
+      border
+      v-loading="loading"
+      scrollbar-always-on
+    >
+      <el-table-column label="Default Course" min-width="100" align="center">
         <template #default="{ row }">
           <el-radio
             v-model="defaultCourseId"
@@ -31,9 +38,9 @@
           ></el-radio>
         </template>
       </el-table-column>
-      <el-table-column label="Id" prop="courseId"></el-table-column>
-      <el-table-column label="Name" prop="courseName"> </el-table-column>
-      <el-table-column label="Operations" width="150">
+      <el-table-column label="Id" prop="courseId" min-width="100"></el-table-column>
+      <el-table-column label="Name" prop="courseName" min-width="150"> </el-table-column>
+      <el-table-column label="Operations" min-width="150">
         <template #default="{ row }">
           <el-button
             icon="Edit"

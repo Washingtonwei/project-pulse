@@ -20,16 +20,17 @@
       border
       v-loading="loading"
       height="600"
+      scrollbar-always-on
     >
-      <el-table-column label="Student">
+      <el-table-column label="Student" min-width="100px" fixed>
         <template #default="{ row }"> {{ row.lastName }}, {{ row.firstName }} </template>
       </el-table-column>
-      <el-table-column label="Average Total Score" width="100px">
+      <el-table-column label="Average Total Score" min-width="100px" fixed>
         <template #default="{ row }">
           {{ row.averageTotalScore.toFixed(2) }}
         </template>
       </el-table-column>
-      <el-table-column v-for="criterion in criteria" :key="criterion.criterionId">
+      <el-table-column v-for="criterion in criteria" :key="criterion.criterionId" min-width="150px">
         <template #header>
           <el-tooltip effect="dark" :content="criterion.criterion" placement="top">
             <span>{{ criterion.description }}</span>
@@ -43,21 +44,21 @@
           }}
         </template>
       </el-table-column>
-      <el-table-column label="Public Comments" width="300px">
+      <el-table-column label="Public Comments" min-width="200px">
         <template #default="{ row }">
           <p v-for="(comment, index) in row.publicComments" :key="index">
             {{ comment }}
           </p>
         </template>
       </el-table-column>
-      <el-table-column label="Private Comments" width="300px">
+      <el-table-column label="Private Comments" min-width="200px">
         <template #default="{ row }">
           <p v-for="(comment, index) in row.privateComments" :key="index">
             {{ comment }}
           </p>
         </template>
       </el-table-column>
-      <el-table-column label="Details">
+      <el-table-column label="Details" fixed="right">
         <template #default="{ row }">
           <el-button
             icon="Aim"
@@ -91,9 +92,20 @@
     </div>
     <!-- Detailed Weekly Evaluations Dialog for a Student -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="80%">
-      <el-table :data="detailedWeeklyEvaluations" style="width: 100%" stripe border>
-        <el-table-column label="Evaluator" prop="evaluatorName"></el-table-column>
-        <el-table-column v-for="criterion in criteria" :key="criterion.criterionId">
+      <el-table
+        :data="detailedWeeklyEvaluations"
+        style="width: 100%"
+        stripe
+        border
+        scrollbar-always-on
+      >
+        <el-table-column
+          label="Evaluator"
+          prop="evaluatorName"
+          min-width="100"
+          fixed
+        ></el-table-column>
+        <el-table-column v-for="criterion in criteria" :key="criterion.criterionId" min-width="150">
           <template #header>
             <el-tooltip effect="dark" :content="criterion.criterion" placement="top">
               <span>{{ criterion.description }}</span>
@@ -107,12 +119,12 @@
             }}
           </template>
         </el-table-column>
-        <el-table-column label="Public Comment" width="200px">
+        <el-table-column label="Public Comment" min-width="200px">
           <template #default="{ row }">
             {{ row.publicComment }}
           </template>
         </el-table-column>
-        <el-table-column label="Private Comment" width="200px">
+        <el-table-column label="Private Comment" min-width="200px">
           <template #default="{ row }">
             {{ row.privateComment }}
           </template>

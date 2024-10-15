@@ -21,8 +21,15 @@
       </el-form-item>
     </el-form>
     <!-- Section Table -->
-    <el-table :data="sections" style="width: 100%" stripe border v-loading="loading">
-      <el-table-column label="Default Section" width="150px">
+    <el-table
+      :data="sections"
+      style="width: 100%"
+      stripe
+      border
+      v-loading="loading"
+      scrollbar-always-on
+    >
+      <el-table-column label="Default Section" min-width="100px" align="center">
         <template #default="{ row }">
           <el-radio
             v-model="defaultSectionId"
@@ -31,11 +38,11 @@
           ></el-radio>
         </template>
       </el-table-column>
-      <el-table-column label="Id" prop="sectionId"></el-table-column>
-      <el-table-column label="Name" prop="sectionName"> </el-table-column>
-      <el-table-column label="Start Date" prop="startDate"></el-table-column>
-      <el-table-column label="End Date" prop="endDate"></el-table-column>
-      <el-table-column label="Rubric">
+      <el-table-column label="Id" min-width="100" prop="sectionId"></el-table-column>
+      <el-table-column label="Name" min-width="150" prop="sectionName"> </el-table-column>
+      <el-table-column label="Start Date" min-width="150" prop="startDate"></el-table-column>
+      <el-table-column label="End Date" min-width="150" prop="endDate"></el-table-column>
+      <el-table-column label="Rubric" min-width="200">
         <template #default="{ row }">
           <el-select
             v-model="row.rubricId"
@@ -52,7 +59,7 @@
           </el-select>
         </template>
       </el-table-column>
-      <el-table-column label="Operations" width="150">
+      <el-table-column label="Operations" min-width="150">
         <template #default="{ row }">
           <el-button
             icon="Edit"

@@ -13,9 +13,15 @@
       border
       height="600"
       v-loading="loading"
+      scrollbar-always-on
     >
-      <el-table-column label="Student Name" prop="evaluateeName"></el-table-column>
-      <el-table-column v-for="criterion in criteria" :key="criterion.criterionId">
+      <el-table-column
+        label="Student Name"
+        prop="evaluateeName"
+        min-width="100"
+        fixed
+      ></el-table-column>
+      <el-table-column v-for="criterion in criteria" :key="criterion.criterionId" min-width="150">
         <template #header>
           <el-tooltip effect="dark" :content="criterion.criterion" placement="top">
             <span>{{ criterion.description }}</span>
@@ -36,7 +42,7 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column width="200px">
+      <el-table-column min-width="200px">
         <template #header>
           <el-tooltip
             effect="dark"
@@ -57,7 +63,7 @@
           />
         </template>
       </el-table-column>
-      <el-table-column width="200px">
+      <el-table-column min-width="200px">
         <template #header>
           <el-tooltip
             effect="dark"

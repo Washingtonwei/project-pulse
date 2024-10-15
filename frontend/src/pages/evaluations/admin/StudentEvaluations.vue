@@ -22,14 +22,19 @@
           border
           v-loading="loading"
           height="600"
+          scrollbar-always-on
         >
           <el-table-column label="Week" prop="week"></el-table-column>
-          <el-table-column label="Average Total Score" width="100px">
+          <el-table-column label="Average Total Score" min-width="100px">
             <template #default="{ row }">
               {{ row.averageTotalScore.toFixed(2) }}
             </template>
           </el-table-column>
-          <el-table-column v-for="criterion in criteria" :key="criterion.criterionId">
+          <el-table-column
+            v-for="criterion in criteria"
+            :key="criterion.criterionId"
+            min-width="150px"
+          >
             <template #header>
               <el-tooltip effect="dark" :content="criterion.criterion" placement="top">
                 <span>{{ criterion.description }}</span>
@@ -43,14 +48,14 @@
               }}
             </template>
           </el-table-column>
-          <el-table-column label="Public Comments" width="300px">
+          <el-table-column label="Public Comments" min-width="200px">
             <template #default="{ row }">
               <p v-for="(comment, index) in row.publicComments" :key="index">
                 {{ comment }}
               </p>
             </template>
           </el-table-column>
-          <el-table-column label="Private Comments" width="300px">
+          <el-table-column label="Private Comments" min-width="200px">
             <template #default="{ row }">
               <p v-for="(comment, index) in row.privateComments" :key="index">
                 {{ comment }}
