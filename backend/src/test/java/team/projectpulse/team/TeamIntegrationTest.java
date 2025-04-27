@@ -41,7 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("Integration tests for Team API endpoints")
 @Tag("integration")
 @ActiveProfiles(value = "dev")
-class TeamControllerTest {
+class TeamIntegrationTest {
 
     @Autowired
     MockMvc mockMvc;
@@ -63,7 +63,7 @@ class TeamControllerTest {
     @Container
     @ServiceConnection
     static MySQLContainer<?> mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"));
-    
+
 
     @BeforeEach
     void setUp() throws Exception {
