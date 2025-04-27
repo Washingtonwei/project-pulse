@@ -41,7 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("Integration tests for Rubric API endpoints")
 @Tag("integration")
 @ActiveProfiles(value = "dev")
-class RubricControllerTest {
+class RubricIntegrationTest {
 
     @Autowired
     MockMvc mockMvc;
@@ -63,7 +63,7 @@ class RubricControllerTest {
     @Container
     @ServiceConnection
     static MySQLContainer<?> mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"));
-    
+
 
     @BeforeEach
     void setUp() throws Exception {

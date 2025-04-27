@@ -48,15 +48,14 @@
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="Comments" width="120">
+            <el-table-column label="Peer Evaluations" width="120">
               <template #default="{ row }">
                 <el-button
-                  v-if="row.comments && row.comments.length > 0"
-                  icon="Comment"
+                  icon="Aim"
                   circle
                   plain
                   type="primary"
-                  @click="showComments(row)"
+                  @click="showPeerEvaluationComments(row)"
                 ></el-button>
               </template>
             </el-table-column>
@@ -89,11 +88,35 @@
         <el-empty description="No data is available." />
       </template>
     </el-table>
-    <el-dialog v-model="commentDialogVisible" title="Activity Comments" width="30%">
-      {{ currentActivity?.comments }}
+    <!-- Weekly Evaluations Dialog for a Student (Comments only) -->
+    <el-dialog v-model="peerEvalDialogVisible" :title="peerEvalDialogTitle" width="80%">
+      <el-table
+        :data="detailedWeeklyEvaluations"
+        style="width: 100%"
+        stripe
+        border
+        scrollbar-always-on
+      >
+        <el-table-column
+          label="Evaluator"
+          prop="evaluatorName"
+          min-width="100"
+          fixed
+        ></el-table-column>
+        <el-table-column label="Public Comment" min-width="200px">
+          <template #default="{ row }">
+            {{ row.publicComment }}
+          </template>
+        </el-table-column>
+        <el-table-column label="Private Comment" min-width="200px">
+          <template #default="{ row }">
+            {{ row.privateComment }}
+          </template>
+        </el-table-column>
+      </el-table>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="commentDialogVisible = false"> Close </el-button>
+          <el-button @click="peerEvalDialogVisible = false"> Cancel </el-button>
         </span>
       </template>
     </el-dialog>
@@ -120,6 +143,11 @@ import { searchTeams } from '@/apis/team'
 import { searchStudents } from '@/apis/student'
 import SearchWeek from '@/components/SearchWeek.vue'
 import { ElMessage } from 'element-plus'
+import type {
+  GetWeeklyPeerEvaluationsForStudentResponse,
+  PeerEvaluation
+} from '@/apis/evaluation/types'
+import { getWeeklyPeerEvaluationsForStudent } from '@/apis/evaluation'
 
 const teamSearchCriteria = ref<TeamSearchCriteria>({
   sectionId: NaN
@@ -242,11 +270,18 @@ async function resetSearchCriteria() {
   prepareSectionWeeklyActivities()
 }
 
-const commentDialogVisible = ref<boolean>(false)
-const currentActivity = ref<Activity>()
-function showComments(activity: Activity) {
-  currentActivity.value = activity
-  commentDialogVisible.value = true
+// Show detailed weekly evaluations for a student (comments only)
+// This function is called when the user clicks the "Peer Eval" button in the table
+const peerEvalDialogVisible = ref(false)
+const peerEvalDialogTitle = ref('')
+const detailedWeeklyEvaluations = ref<PeerEvaluation[]>([])
+
+async function showPeerEvaluationComments(activity: Activity) {
+  const result: GetWeeklyPeerEvaluationsForStudentResponse =
+    await getWeeklyPeerEvaluationsForStudent(activity.studentId!, activity.week)
+  detailedWeeklyEvaluations.value = result.data
+  peerEvalDialogTitle.value = `${activity.studentName}'s Peer Evaluations`
+  peerEvalDialogVisible.value = true
 }
 </script>
 

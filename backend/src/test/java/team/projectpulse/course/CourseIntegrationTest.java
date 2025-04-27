@@ -45,7 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("Integration tests for Course API endpoints")
 @Tag("integration")
 @ActiveProfiles(value = "dev")
-class CourseControllerTest {
+class CourseIntegrationTest {
 
     @Autowired
     MockMvc mockMvc;

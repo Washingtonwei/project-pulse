@@ -41,7 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("Integration tests for Criterion API endpoints")
 @Tag("integration")
 @ActiveProfiles(value = "dev")
-class CriterionControllerTest {
+class CriterionIntegrationTest {
 
     @Autowired
     MockMvc mockMvc;
@@ -60,7 +60,7 @@ class CriterionControllerTest {
     @Container
     @ServiceConnection
     static MySQLContainer<?> mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"));
-    
+
 
     @BeforeEach
     void setUp() throws Exception {
