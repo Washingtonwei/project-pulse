@@ -81,10 +81,10 @@ export interface AssignRubricToSectionResponse {
 }
 
 export type WeekInfo = {
-  weekNumber: string
-  monday: string
-  sunday: string
-  isActive: boolean
+  weekNumber: string // e.g., "2023-W31"
+  monday: string // e.g., "07-31-2023"
+  sunday: string // e.g., "08-06-2023"
+  isActive: boolean // true if the week is active, false otherwise
 }
 
 export interface SetUpActiveWeeksResponse {
