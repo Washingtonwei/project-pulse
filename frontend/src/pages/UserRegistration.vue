@@ -8,7 +8,10 @@
       class="registration-form"
     >
       <el-form-item label="Username" prop="username">
-        <el-input v-model="registration.username" placeholder="Enter your username"></el-input>
+        <el-input
+          v-model="registration.username"
+          placeholder="Enter your email as username"
+        ></el-input>
       </el-form-item>
       <el-form-item label="First Name" prop="firstName">
         <el-input v-model="registration.firstName" placeholder="Enter your first name"></el-input>
@@ -78,10 +81,10 @@ const registrationRole = ref<string>('')
 
 const rules = {
   username: [
-    { required: true, message: 'Please input your username', trigger: 'blur' },
+    { required: true, message: 'Please input your email as your username', trigger: 'blur' },
     {
-      pattern: /^\S{2,20}$/,
-      message: 'Username must be between 2 to 20 characters long.',
+      pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+      message: 'Enter your email as username.',
       trigger: 'blur'
     }
   ],

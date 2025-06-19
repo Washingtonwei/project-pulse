@@ -81,25 +81,25 @@ class SectionIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        ResultActions resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("bingyang", "123456"))); // httpBasic() is from spring-security-test.
+        ResultActions resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("b.wei@abc.edu", "123456"))); // httpBasic() is from spring-security-test.
         MvcResult mvcResult = resultActions.andDo(print()).andReturn();
         String contentAsString = mvcResult.getResponse().getContentAsString();
         JSONObject json = new JSONObject(contentAsString);
         this.adminBingyangToken = "Bearer " + json.getJSONObject("data").getString("token");
 
-        resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("bill", "123456"))); // httpBasic() is from spring-security-test.
+        resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("b.gates@abc.edu", "123456"))); // httpBasic() is from spring-security-test.
         mvcResult = resultActions.andDo(print()).andReturn();
         contentAsString = mvcResult.getResponse().getContentAsString();
         json = new JSONObject(contentAsString);
         this.instructorBillToken = "Bearer " + json.getJSONObject("data").getString("token");
 
-        resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("john", "123456"))); // httpBasic() is from spring-security-test.
+        resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("j.smith@abc.edu", "123456"))); // httpBasic() is from spring-security-test.
         mvcResult = resultActions.andDo(print()).andReturn();
         contentAsString = mvcResult.getResponse().getContentAsString();
         json = new JSONObject(contentAsString);
         this.studentJohnToken = "Bearer " + json.getJSONObject("data").getString("token");
 
-        resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("tim", "123456"))); // httpBasic() is from spring-security-test.
+        resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("t.cook@abc.edu", "123456"))); // httpBasic() is from spring-security-test.
         mvcResult = resultActions.andDo(print()).andReturn();
         contentAsString = mvcResult.getResponse().getContentAsString();
         json = new JSONObject(contentAsString);

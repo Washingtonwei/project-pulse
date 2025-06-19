@@ -93,9 +93,9 @@ public class DataInitializer implements CommandLineRunner {
         this.rubricRepository.save(rubric);
 
         // Create instructors
-        Instructor instructor1 = new Instructor("bingyang", "Bingyang", "Wei", "b.wei@abc.edu", "123456", true, "admin instructor");
-        Instructor instructor2 = new Instructor("bill", "Bill", "Gates", "b.gates@abc.edu", "123456", true, "instructor");
-        Instructor instructor3 = new Instructor("tim", "Tim", "Cook", "t.cook@abc.edu", "123456", true, "admin instructor");
+        Instructor instructor1 = new Instructor("b.wei@abc.edu", "Bingyang", "Wei", "b.wei@abc.edu", "123456", true, "admin instructor");
+        Instructor instructor2 = new Instructor("b.gates@abc.edu", "Bill", "Gates", "b.gates@abc.edu", "123456", true, "instructor");
+        Instructor instructor3 = new Instructor("t.cook@abc.edu", "Tim", "Cook", "t.cook@abc.edu", "123456", true, "admin instructor");
 
         instructor1.setPassword(this.passwordEncoder.encode(instructor1.getPassword()));
         course1.setCourseAdmin(instructor1); // Set the course admin for course1
@@ -166,29 +166,29 @@ public class DataInitializer implements CommandLineRunner {
         this.teamRepository.save(team4);
 
         // Create students
-        Student john = new Student("john", "John", "Smith", "j.smith@abc.edu", "123456", true, "student");
-        Student eric = new Student("eric", "Eric", "Hudson", "e.hudson@abc.edu", "123456", true, "student");
-        Student jerry = new Student("jerry", "Jerry", "Moon", "j.moon@abc.edu", "123456", true, "student");
+        Student john = new Student("j.smith@abc.edu", "John", "Smith", "j.smith@abc.edu", "123456", true, "student");
+        Student eric = new Student("e.hudson@abc.edu", "Eric", "Hudson", "e.hudson@abc.edu", "123456", true, "student");
+        Student jerry = new Student("j.moon@abc.edu", "Jerry", "Moon", "j.moon@abc.edu", "123456", true, "student");
 
-        Student woody = new Student("woody", "Woody", "Allen", "w.allen@abc.edu", "123456", true, "student");
-        Student amanda = new Student("amanda", "Amanda", "Wagner", "a.wagner@abc.edu", "123456", true, "student");
-        Student cora = new Student("cora", "Cora", "Manning", "c.manning@abc.edu", "123456", true, "student");
-        Student agustin = new Student("agustin", "Agustin", "Freeman", "a.freeman@abc.edu", "123456", true, "student");
+        Student woody = new Student("w.allen@abc.edu", "Woody", "Allen", "w.allen@abc.edu", "123456", true, "student");
+        Student amanda = new Student("a.wagner@abc.edu", "Amanda", "Wagner", "a.wagner@abc.edu", "123456", true, "student");
+        Student cora = new Student("c.manning@abc.edu", "Cora", "Manning", "c.manning@abc.edu", "123456", true, "student");
+        Student agustin = new Student("a.freeman@abc.edu", "Agustin", "Freeman", "a.freeman@abc.edu", "123456", true, "student");
 
-        Student mavis = new Student("mavis", "Mavis", "Huber", "m.huber@abc.edu", "123456", true, "student");
-        Student mary = new Student("mary", "Mary", "Vargas", "m.vargas@abc.edu", "123456", true, "student");
-        Student rosendo = new Student("rosendo", "Rosendo", "Maxwell", "r.maxwell@abc.edu", "123456", true, "student");
-        Student jan = new Student("jan", "Jan", "Mckinney", "j.mckinney@abc.edu", "123456", true, "student");
+        Student mavis = new Student("m.huber@abc.edu", "Mavis", "Huber", "m.huber@abc.edu", "123456", true, "student");
+        Student mary = new Student("m.vargas@abc.edu", "Mary", "Vargas", "m.vargas@abc.edu", "123456", true, "student");
+        Student rosendo = new Student("r.maxwell@abc.edu", "Rosendo", "Maxwell", "r.maxwell@abc.edu", "123456", true, "student");
+        Student jan = new Student("j.mckinney@abc.edu", "Jan", "Mckinney", "j.mckinney@abc.edu", "123456", true, "student");
 
         // Add some students who are not assigned to any team in section 2
-        Student tracy = new Student("tracy", "Tracy", "Nicholson", "t.nicholson@abc.edu", "123456", true, "student");
-        Student arline = new Student("arline", "Arline", "Booker", "a.booker@abc.edu", "123456", true, "student");
-        Student shad = new Student("shad", "Shad", "Huber", "s.huber@abc.edu", "123456", true, "student");
-        Student lynne = new Student("lynne", "Lynne", "Deleon", "l.deleon@abc.edu", "123456", true, "student");
+        Student tracy = new Student("t.nicholson@abc.edu", "Tracy", "Nicholson", "t.nicholson@abc.edu", "123456", true, "student");
+        Student arline = new Student("a.booker@abc.edu", "Arline", "Booker", "a.booker@abc.edu", "123456", true, "student");
+        Student shad = new Student("s.huber@abc.edu", "Shad", "Huber", "s.huber@abc.edu", "123456", true, "student");
+        Student lynne = new Student("l.deleon@abc.edu", "Lynne", "Deleon", "l.deleon@abc.edu", "123456", true, "student");
 
         // Add some students who are in section 3
-        Student jana = new Student("jana", "Jana", "Norton", "j.norton@abc.edu", "123456", true, "student");
-        Student lucius = new Student("lucius", "Lucius ", "Osborne", "l.osborne@abc.edu", "123456", true, "student");
+        Student jana = new Student("j.norton@abc.edu", "Jana", "Norton", "j.norton@abc.edu", "123456", true, "student");
+        Student lucius = new Student("l.osborne@abc.edu", "Lucius ", "Osborne", "l.osborne@abc.edu", "123456", true, "student");
 
         section2.addStudent(john);
         team1.addStudent(john);

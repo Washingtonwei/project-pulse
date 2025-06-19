@@ -27,7 +27,7 @@
         <span class="el-dropdown-box">
           <el-avatar :src="avatar" />
           <span style="font-size: large; font-weight: 900; margin-left: 5px">
-            {{ userInfoStore.userInfo?.username }}
+            {{ userInfoStore.userInfo?.firstName }}
           </span>
           <el-icon>
             <CaretBottom />

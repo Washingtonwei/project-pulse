@@ -74,7 +74,14 @@ const isLoading = ref(false)
 const loginForm = ref()
 
 const rules = {
-  username: [{ required: true, message: 'Username cannot be empty.', trigger: 'blur' }],
+  username: [
+    { required: true, message: 'Username cannot be empty.', trigger: 'blur' },
+    {
+      pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+      message: 'Username should be a valid email address.',
+      trigger: 'blur'
+    }
+  ],
   password: [{ required: true, message: 'Password cannot be empty.', trigger: 'blur' }]
 }
 
