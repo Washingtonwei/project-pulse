@@ -2,7 +2,21 @@
   <el-card class="page-container">
     <template #header>
       <div class="header">
-        <span>Submit Peer Evaluations for week: {{ previousWeekRange }}</span>
+        <span
+          >Submit Peer Evaluations for week:
+          <el-tag type="primary" style="font-size: 14px; font-weight: bold">{{
+            previousWeekRange
+          }}</el-tag></span
+        >
+      </div>
+      <div style="margin-top: 10px">
+        <span>
+          The default score for each criterion is 10. You can change it to a value between 0 and 10.
+        </span>
+        <!-- Remind the user that "You have NOT submitted the evaluation" -->
+        <el-tag v-if="isNewSubmission" type="danger" style="font-size: 14px; font-weight: bold"
+          >You have NOT submitted the evaluation. Click the "Submit" button.</el-tag
+        >
       </div>
     </template>
     <!-- Evaluation Table, adding height can fix the table header -->
@@ -135,7 +149,7 @@ const peerEvalutions = ref<PeerEvaluation[]>()
 
 const loading = ref<boolean>(false)
 
-let isNewSubmission = true
+let isNewSubmission = true // Flag to indicate if this is a new submission or an update
 
 const teamId = ref<number>(NaN) // Team ID of the student
 
@@ -184,7 +198,7 @@ async function prepareStartingPeerEvaluations() {
   // Get the evaluations for the current week
   const result: FetchPeerEvaluationsResponse = await getEvaluationsByEvaluatorIdAndWeek(
     (userInfoStore.userInfo as Student).id as number,
-    previousWeek.value // Hardcoded week for now
+    previousWeek.value
   )
 
   // If the student has already submitted evaluations for the current week, load them
@@ -192,6 +206,7 @@ async function prepareStartingPeerEvaluations() {
     peerEvalutions.value = result.data
     isNewSubmission = false
   } else {
+    // If not, create a new set of evaluations
     isNewSubmission = true
     peerEvalutions.value = students.value.map((student) => ({
       week: previousWeek.value,
@@ -201,7 +216,7 @@ async function prepareStartingPeerEvaluations() {
       ratings: criteria.value.map((criterion) => ({
         criterionId: criterion.criterionId as number,
         criterion: criterion.criterion,
-        actualScore: 0
+        actualScore: 10 // Default score, can be changed by the user
       })),
       publicComment: '',
       privateComment: ''
@@ -247,7 +262,7 @@ async function updatePeerEvaluations() {
   .header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 20px;
   }
 }
 </style>
