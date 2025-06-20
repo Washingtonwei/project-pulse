@@ -49,6 +49,7 @@ import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useUserInfoStore } from '@/stores/userInfo'
 import { updateStudent } from '@/apis/student'
+import { updateInstructor } from '@/apis/instructor'
 import type { Student } from '@/apis/student/types'
 import type { Instructor } from '@/apis/instructor/types'
 
@@ -86,8 +87,14 @@ const rules = {
 async function updateCurrentUser() {
   await userForm.value.validate()
 
-  // Call the API to update the user
-  await updateStudent(userInfo.value)
+  // Call the API to update the user, the user might be a student or an instructor
+  if (userInfo.value.roles!.includes('student')) {
+    await updateStudent(userInfo.value as Student)
+  } else if (userInfo.value.roles!.includes('instructor')) {
+    console.log('Updating instructor:', userInfo.value)
+    await updateInstructor(userInfo.value as Instructor)
+  }
+
   ElMessage.success('User updated successfully')
   // Update the user info in the store
   userInfoStore.setUserInfo(userInfo.value)

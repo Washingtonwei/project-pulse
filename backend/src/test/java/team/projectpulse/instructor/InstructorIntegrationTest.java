@@ -194,6 +194,34 @@ class InstructorIntegrationTest {
 
     @Test
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    void testAdminBingyangUpdatesOwnInfo() throws Exception {
+        Map<String, Object> instructorDto = new HashMap<>();
+        instructorDto.put("username", "b.wei@abc.edu");
+        instructorDto.put("firstName", "Bingyang (updated)");
+        instructorDto.put("lastName", "Wei");
+        instructorDto.put("email", "b.wei@abc.edu");
+        instructorDto.put("enabled", true); // Instructor can't change their own enabled status.
+        instructorDto.put("roles", "admin"); // Instructor can't change their own role.
+
+        String json = this.objectMapper.writeValueAsString(instructorDto);
+
+        // When and then
+        this.mockMvc.perform(put(this.baseUrl + "/instructors/2").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.message").value("Update instructor successfully"))
+                .andExpect(jsonPath("$.data.id").value(2))
+                .andExpect(jsonPath("$.data.username").value("b.wei@abc.edu"))
+                .andExpect(jsonPath("$.data.firstName").value("Bingyang (updated)")) // The first name should be updated.
+                .andExpect(jsonPath("$.data.lastName").value("Wei"))
+                .andExpect(jsonPath("$.data.email").value("b.wei@abc.edu"))
+                .andExpect(jsonPath("$.data.password").doesNotExist())
+                .andExpect(jsonPath("$.data.enabled").value(true))
+                .andExpect(jsonPath("$.data.roles").value("admin"));
+    }
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     void testInstructorBillUpdatesOwnInfo() throws Exception {
         Map<String, Object> instructorDto = new HashMap<>();
         instructorDto.put("username", "b.gates@abc.edu");
