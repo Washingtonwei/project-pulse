@@ -113,14 +113,14 @@
         ref="sectionForm"
         :model="sectionData"
         :rules="rules"
-        label-width="110px"
+        label-width="auto"
         style="padding-right: 30px"
-        label-position="left"
+        label-position="right"
       >
         <el-form-item label="Id:" v-if="dialogTitle == 'Edit a section'">
           <el-input v-model="sectionData.sectionId" disabled></el-input>
         </el-form-item>
-        <el-form-item label="Name:" prop="name">
+        <el-form-item label="Name:" prop="sectionName">
           <el-input v-model="sectionData.sectionName" minlength="1"></el-input>
         </el-form-item>
         <el-form-item label="Start Date:" prop="startDate">
@@ -140,6 +140,51 @@
             format="MM-DD-YYYY"
             value-format="MM-DD-YYYY"
           ></el-date-picker>
+        </el-form-item>
+        <el-form-item label="WAR Weekly Due Day:" prop="warWeeklyDueDay">
+          <el-select v-model="sectionData.warWeeklyDueDay" placeholder="Select a day">
+            <el-option label="Monday" value="MONDAY"></el-option>
+            <el-option label="Tuesday" value="TUESDAY"></el-option>
+            <el-option label="Wednesday" value="WEDNESDAY"></el-option>
+            <el-option label="Thursday" value="THURSDAY"></el-option>
+            <el-option label="Friday" value="FRIDAY"></el-option>
+            <el-option label="Saturday" value="SATURDAY"></el-option>
+            <el-option label="Sunday" value="SUNDAY"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="WAR Weekly Due Time:" prop="warDueTime">
+          <el-time-picker
+            v-model="sectionData.warDueTime"
+            placeholder="Select a time"
+            format="HH:mm"
+            value-format="HH:mm"
+          ></el-time-picker>
+        </el-form-item>
+        <el-form-item label="Peer Evaluation Due Day:" prop="peerEvaluationWeeklyDueDay">
+          <el-select v-model="sectionData.peerEvaluationWeeklyDueDay" placeholder="Select a day">
+            <el-option label="Monday" value="MONDAY"></el-option>
+            <el-option label="Tuesday" value="TUESDAY"></el-option>
+            <el-option label="Wednesday" value="WEDNESDAY"></el-option>
+            <el-option label="Thursday" value="THURSDAY"></el-option>
+            <el-option label="Friday" value="FRIDAY"></el-option>
+            <el-option label="Saturday" value="SATURDAY"></el-option>
+            <el-option label="Sunday" value="SUNDAY"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="Peer Evaluation Due Time:" prop="peerEvaluationDueTime">
+          <el-time-picker
+            v-model="sectionData.peerEvaluationDueTime"
+            placeholder="Select a time"
+            format="HH:mm"
+            value-format="HH:mm"
+          ></el-time-picker>
+        </el-form-item>
+        <el-form-item label="Active Section" prop="isActive">
+          <el-switch
+            v-model="sectionData.isActive"
+            active-text="Active"
+            inactive-text="Inactive"
+          ></el-switch>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -212,7 +257,7 @@ import {
   setUpActiveWeeks
 } from '@/apis/section'
 import type { FormInstance } from 'element-plus'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import type {
   SearchSectionByCriteriaResponse,
   Section,
@@ -300,7 +345,12 @@ const sectionData = ref<Section>({
   sectionId: NaN,
   sectionName: '',
   startDate: '',
-  endDate: ''
+  endDate: '',
+  warWeeklyDueDay: 'MONDAY', // Default to Monday
+  warDueTime: '',
+  peerEvaluationWeeklyDueDay: 'TUESDAY', // Default to Monday
+  peerEvaluationDueTime: '',
+  isActive: false
 })
 
 // Validation rules
@@ -313,6 +363,23 @@ const rules = {
   ],
   endDate: [
     { required: true, message: 'Please provide the end date of the section.', trigger: 'blur' }
+  ],
+  warWeeklyDueDay: [
+    { required: true, message: 'Please select the WAR weekly due day.', trigger: 'change' }
+  ],
+  warDueTime: [{ required: true, message: 'Please select the WAR due time.', trigger: 'change' }],
+  peerEvaluationWeeklyDueDay: [
+    {
+      required: true,
+      message: 'Please select the peer evaluation weekly due day.',
+      trigger: 'change'
+    }
+  ],
+  peerEvaluationDueTime: [
+    { required: true, message: 'Please select the peer evaluation due time.', trigger: 'change' }
+  ],
+  isActive: [
+    { required: true, message: 'Please select whether the section is active.', trigger: 'change' }
   ]
 }
 
@@ -321,7 +388,12 @@ function clearForm() {
     sectionId: NaN,
     sectionName: '',
     startDate: '',
-    endDate: ''
+    endDate: '',
+    warWeeklyDueDay: 'MONDAY', // Default to Monday
+    warDueTime: '',
+    peerEvaluationWeeklyDueDay: 'TUESDAY', // Default to Tuesday
+    peerEvaluationDueTime: '',
+    isActive: false
   }
 }
 
@@ -340,7 +412,12 @@ async function addSection() {
   const newSection: Section = {
     sectionName: sectionData.value.sectionName,
     startDate: sectionData.value.startDate,
-    endDate: sectionData.value.endDate
+    endDate: sectionData.value.endDate,
+    warWeeklyDueDay: sectionData.value.warWeeklyDueDay,
+    warDueTime: sectionData.value.warDueTime,
+    peerEvaluationWeeklyDueDay: sectionData.value.peerEvaluationWeeklyDueDay,
+    peerEvaluationDueTime: sectionData.value.peerEvaluationDueTime,
+    isActive: sectionData.value.isActive
   }
 
   await createSection(newSection)
@@ -364,6 +441,11 @@ function showEditDialog(existingSection: Section) {
   sectionData.value.sectionName = existingSection.sectionName
   sectionData.value.startDate = existingSection.startDate
   sectionData.value.endDate = existingSection.endDate
+  sectionData.value.warWeeklyDueDay = existingSection.warWeeklyDueDay
+  sectionData.value.warDueTime = existingSection.warDueTime
+  sectionData.value.peerEvaluationWeeklyDueDay = existingSection.peerEvaluationWeeklyDueDay
+  sectionData.value.peerEvaluationDueTime = existingSection.peerEvaluationDueTime
+  sectionData.value.isActive = existingSection.isActive
 }
 
 async function updateExistingSection() {
@@ -373,7 +455,12 @@ async function updateExistingSection() {
     sectionId: sectionData.value.sectionId as number,
     sectionName: sectionData.value.sectionName,
     startDate: sectionData.value.startDate,
-    endDate: sectionData.value.endDate
+    endDate: sectionData.value.endDate,
+    warWeeklyDueDay: sectionData.value.warWeeklyDueDay,
+    warDueTime: sectionData.value.warDueTime,
+    peerEvaluationWeeklyDueDay: sectionData.value.peerEvaluationWeeklyDueDay,
+    peerEvaluationDueTime: sectionData.value.peerEvaluationDueTime,
+    isActive: sectionData.value.isActive
   }
 
   // Call the API to update the section

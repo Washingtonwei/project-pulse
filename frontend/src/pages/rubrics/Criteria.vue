@@ -37,9 +37,9 @@
         ref="criterionForm"
         :model="criterionData"
         :rules="rules"
-        label-width="110px"
+        label-width="auto"
         style="padding-right: 30px"
-        label-position="left"
+        label-position="right"
       >
         <el-form-item label="Id:" v-if="dialogTitle == 'Edit a criterion'">
           <el-input v-model="criterionData.criterionId" disabled></el-input>

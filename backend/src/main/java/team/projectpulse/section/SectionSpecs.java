@@ -14,4 +14,9 @@ public class SectionSpecs {
                 criteriaBuilder.equal(root.get("course").get("courseId"), courseId);
     }
 
+    public static Specification<Section> hasActiveStatus(Boolean isActive) {
+        return (root, query, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("isActive"), isActive);
+    }
+
 }

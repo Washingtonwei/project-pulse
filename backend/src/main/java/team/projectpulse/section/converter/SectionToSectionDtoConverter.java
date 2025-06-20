@@ -20,7 +20,12 @@ public class SectionToSectionDtoConverter implements Converter<Section, SectionD
                 section.getRubric() == null ? null : section.getRubric().getRubricId(),
                 section.getRubric() == null ? null : section.getRubric().getRubricName(),
                 section.getActiveWeeks(),
-                section.getCourse().getCourseId()
+                section.getCourse().getCourseId(),
+                section.isActive(),
+                section.getWarWeeklyDueDay(),
+                section.getWarDueTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                section.getPeerEvaluationWeeklyDueDay(),
+                section.getPeerEvaluationDueTime().format(DateTimeFormatter.ofPattern("HH:mm"))
         );
     }
 

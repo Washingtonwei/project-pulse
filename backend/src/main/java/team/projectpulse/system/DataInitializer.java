@@ -24,7 +24,9 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @Component
@@ -118,14 +120,14 @@ public class DataInitializer implements CommandLineRunner {
         this.courseRepository.save(course3);
 
         // Create a section
-        Section section1 = new Section("2022-2023", LocalDate.of(2022, 8, 15), LocalDate.of(2023, 5, 1));
+        Section section1 = new Section("2022-2023", LocalDate.of(2022, 8, 15), LocalDate.of(2023, 5, 1), true, DayOfWeek.MONDAY, LocalTime.of(23, 59), DayOfWeek.TUESDAY, LocalTime.of(23, 59));
         section1.setActiveWeeks(List.of("2022-W31", "2022-W32", "2022-W33", "2022-W34", "2022-W35"));
         section1.setRubric(rubric);
         section1.addInstructor(instructor1);
         course1.addSection(section1);
         this.sectionRepository.save(section1);
 
-        Section section2 = new Section("2023-2024", LocalDate.of(2023, 7, 31), LocalDate.of(2024, 10, 6));
+        Section section2 = new Section("2023-2024", LocalDate.of(2023, 7, 31), LocalDate.of(2024, 10, 6), true, DayOfWeek.MONDAY, LocalTime.of(23, 59), DayOfWeek.TUESDAY, LocalTime.of(23, 59));
         section2.setActiveWeeks(List.of("2023-W31", "2023-W32", "2023-W33", "2023-W34", "2023-W35", "2023-W36", "2023-W37", "2023-W38", "2023-W39", "2023-W40"));
         section2.setRubric(rubric);
         section2.addInstructor(instructor1);
@@ -137,7 +139,7 @@ public class DataInitializer implements CommandLineRunner {
         this.instructorRepository.save(instructor1);
         this.instructorRepository.save(instructor2);
 
-        Section section3 = new Section("EE Capstone 2024", LocalDate.of(2023, 8, 14), LocalDate.of(2024, 4, 29));
+        Section section3 = new Section("EE Capstone 2024", LocalDate.of(2023, 8, 14), LocalDate.of(2024, 4, 29), true, DayOfWeek.MONDAY, LocalTime.of(23, 59), DayOfWeek.TUESDAY, LocalTime.of(23, 59));
         section3.addInstructor(instructor3);
         instructor3.setDefaultSection(section3); // Set the default section for instructor3
         course3.addSection(section3);

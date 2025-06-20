@@ -42,9 +42,9 @@
         ref="rubricForm"
         :model="rubricData"
         :rules="rules"
-        label-width="110px"
+        label-width="auto"
         style="padding-right: 30px"
-        label-position="left"
+        label-position="right"
       >
         <el-form-item label="Id:" v-if="dialogTitle == 'Edit a rubric'">
           <el-input v-model="rubricData.rubricId" disabled></el-input>

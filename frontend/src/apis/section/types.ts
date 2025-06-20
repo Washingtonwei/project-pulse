@@ -7,7 +7,21 @@ export interface Section {
   rubricName?: string
   activeWeeks?: string[]
   courseId?: number
+  isActive: boolean
+  warWeeklyDueDay: DayOfWeek
+  warDueTime: string // "HH:mm"
+  peerEvaluationWeeklyDueDay: DayOfWeek
+  peerEvaluationDueTime: string // "HH:mm"
 }
+
+export type DayOfWeek =
+  | 'MONDAY'
+  | 'TUESDAY'
+  | 'WEDNESDAY'
+  | 'THURSDAY'
+  | 'FRIDAY'
+  | 'SATURDAY'
+  | 'SUNDAY'
 
 export interface SectionSearchCriteria {
   sectionId?: number

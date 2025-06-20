@@ -7,7 +7,9 @@ import team.projectpulse.student.Student;
 import team.projectpulse.team.Team;
 import jakarta.persistence.*;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -38,13 +40,36 @@ public class Section {
     @ManyToOne
     private Course course;
 
+    private boolean isActive = true; // Indicates if the section is currently active
+
+    @Enumerated(EnumType.STRING)
+    private DayOfWeek warWeeklyDueDay; // e.g., "Monday"
+    private LocalTime warDueTime; // e.g., "23:59"
+
+    @Enumerated(EnumType.STRING)
+    private DayOfWeek peerEvaluationWeeklyDueDay; // e.g., "Tuesday"
+    private LocalTime peerEvaluationDueTime; // e.g., "23:59"
+
+
     public Section() {
     }
 
-    public Section(String sectionName, LocalDate startDate, LocalDate endDate) {
+    public Section(String sectionName,
+                   LocalDate startDate,
+                   LocalDate endDate,
+                   boolean isActive,
+                   DayOfWeek warWeeklyDueDay,
+                   LocalTime warDueTime,
+                   DayOfWeek peerEvaluationWeeklyDueDay,
+                   LocalTime peerEvaluationDueTime) {
         this.sectionName = sectionName;
         this.startDate = startDate;
         this.endDate = endDate;
+        this.isActive = isActive;
+        this.warWeeklyDueDay = warWeeklyDueDay;
+        this.warDueTime = warDueTime;
+        this.peerEvaluationWeeklyDueDay = peerEvaluationWeeklyDueDay;
+        this.peerEvaluationDueTime = peerEvaluationDueTime;
     }
 
     public Integer getSectionId() {
@@ -142,6 +167,46 @@ public class Section {
 
     public void setCourse(Course course) {
         this.course = course;
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
+    }
+
+    public DayOfWeek getWarWeeklyDueDay() {
+        return warWeeklyDueDay;
+    }
+
+    public void setWarWeeklyDueDay(DayOfWeek warWeeklyDueDay) {
+        this.warWeeklyDueDay = warWeeklyDueDay;
+    }
+
+    public LocalTime getWarDueTime() {
+        return warDueTime;
+    }
+
+    public void setWarDueTime(LocalTime warDueTime) {
+        this.warDueTime = warDueTime;
+    }
+
+    public DayOfWeek getPeerEvaluationWeeklyDueDay() {
+        return peerEvaluationWeeklyDueDay;
+    }
+
+    public void setPeerEvaluationWeeklyDueDay(DayOfWeek peerEvaluationWeeklyDueDay) {
+        this.peerEvaluationWeeklyDueDay = peerEvaluationWeeklyDueDay;
+    }
+
+    public LocalTime getPeerEvaluationDueTime() {
+        return peerEvaluationDueTime;
+    }
+
+    public void setPeerEvaluationDueTime(LocalTime peerEvaluationDueTime) {
+        this.peerEvaluationDueTime = peerEvaluationDueTime;
     }
 
 }

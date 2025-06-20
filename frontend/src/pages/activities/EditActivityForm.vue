@@ -1,6 +1,12 @@
 <template>
   <!-- Form for editing an activity -->
-  <el-form ref="activityForm" :model="activityBeingEdited" :rules="rules" label-width="100px">
+  <el-form
+    ref="activityForm"
+    :model="activityBeingEdited"
+    :rules="rules"
+    label-width="auto"
+    label-position="right"
+  >
     <el-form-item label="Category:" prop="category">
       <el-select v-model="activityBeingEdited.category" placeholder="Select a category" clearable>
         <el-option

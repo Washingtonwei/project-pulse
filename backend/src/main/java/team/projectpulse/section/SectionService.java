@@ -42,6 +42,14 @@ public class SectionService {
             spec = spec.and(SectionSpecs.containsSectionName(searchCriteria.get("sectionName")));
         }
 
+        if (StringUtils.hasLength(searchCriteria.get("isActive"))) {
+            String activeStr = searchCriteria.get("isActive").toLowerCase();
+            if ("true".equals(activeStr) || "false".equals(activeStr)) {
+                Boolean isActive = Boolean.valueOf(activeStr);
+                spec = spec.and(SectionSpecs.hasActiveStatus(isActive));
+            }
+        }
+
         spec = spec.and(SectionSpecs.belongsToCourse(courseId)); // Only show sections that belong to the default course of the instructor
 
         return this.sectionRepository.findAll(spec, pageable);
@@ -62,6 +70,11 @@ public class SectionService {
                     oldSection.setSectionName(update.getSectionName());
                     oldSection.setStartDate(update.getStartDate());
                     oldSection.setEndDate(update.getEndDate());
+                    oldSection.setActive(update.isActive());
+                    oldSection.setWarWeeklyDueDay(update.getWarWeeklyDueDay());
+                    oldSection.setWarDueTime(update.getWarDueTime());
+                    oldSection.setPeerEvaluationWeeklyDueDay(update.getPeerEvaluationWeeklyDueDay());
+                    oldSection.setPeerEvaluationDueTime(update.getPeerEvaluationDueTime());
                     return this.sectionRepository.save(oldSection);
                 })
                 .orElseThrow(() -> new ObjectNotFoundException("section", sectionId));
