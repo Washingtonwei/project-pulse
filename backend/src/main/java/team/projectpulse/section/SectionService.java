@@ -60,6 +60,16 @@ public class SectionService {
                 .orElseThrow(() -> new ObjectNotFoundException("section", sectionId));
     }
 
+    /**
+     * Find all active sections with students.
+     * This is eager loading.
+     *
+     * @return
+     */
+    public List<Section> findAllActiveSectionsWithStudents() {
+        return this.sectionRepository.findActiveSectionsWithStudents();
+    }
+
     public Section saveSection(Section newSection) {
         return this.sectionRepository.save(newSection);
     }
