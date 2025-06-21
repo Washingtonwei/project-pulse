@@ -94,7 +94,7 @@ public class InstructorService {
         Instructor oldInstructor = this.instructorRepository.findById(instructorId)
                 .orElseThrow(() -> new ObjectNotFoundException("instructor", instructorId));
 
-        // If the user is not an admin, then the user can only update her username, first rubricName, last rubricName, and email
+        // If the instructor is not an admin, then the instructor can only update her username, first name, last name, and email
         oldInstructor.setUsername(update.getUsername());
         oldInstructor.setFirstName(update.getFirstName());
         oldInstructor.setLastName(update.getLastName());
@@ -102,7 +102,7 @@ public class InstructorService {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        // If the user is an admin, then the user can update all the fields
+        // If the instructor is also an admin, then the instructor can update all the fields
         if (authentication.getAuthorities().stream().anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_admin"))) {
             oldInstructor.setEnabled(update.isEnabled());
             oldInstructor.setRoles(update.getRoles());

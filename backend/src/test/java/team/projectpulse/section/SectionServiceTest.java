@@ -17,7 +17,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -59,14 +61,14 @@ class SectionServiceTest {
         this.instructor1 = instructor1;
 
         // Create a section
-        Section section1 = new Section("2022-2023", LocalDate.of(2022, 8, 15), LocalDate.of(2023, 5, 1));
+        Section section1 = new Section("2022-2023", LocalDate.of(2022, 8, 15), LocalDate.of(2023, 5, 1), true, DayOfWeek.MONDAY, LocalTime.of(23, 59), DayOfWeek.TUESDAY, LocalTime.of(23, 59));
         section1.setSectionId(1);
         section1.setActiveWeeks(List.of("2022-W31", "2022-W32", "2022-W33", "2022-W34", "2022-W35"));
         section1.setRubric(rubric);
         section1.addInstructor(instructor1);
         section1.addInstructor(instructor2);
 
-        Section section2 = new Section("2023-2024", LocalDate.of(2023, 8, 14), LocalDate.of(2024, 4, 29));
+        Section section2 = new Section("2023-2024", LocalDate.of(2023, 8, 14), LocalDate.of(2024, 4, 29), true, DayOfWeek.MONDAY, LocalTime.of(23, 59), DayOfWeek.TUESDAY, LocalTime.of(23, 59));
         section2.setSectionId(2);
         section2.setActiveWeeks(List.of("2023-W31", "2023-W32", "2023-W33", "2023-W34", "2023-W35", "2023-W36", "2023-W37", "2023-W38", "2023-W39", "2023-W40"));
         section2.setRubric(rubric);
@@ -108,7 +110,7 @@ class SectionServiceTest {
     @Test
     void testSaveSection() {
         // Given
-        Section newSection = new Section("2024-2025", LocalDate.of(2024, 8, 15), LocalDate.of(2025, 5, 1));
+        Section newSection = new Section("2024-2025", LocalDate.of(2024, 8, 15), LocalDate.of(2025, 5, 1), true, DayOfWeek.MONDAY, LocalTime.of(23, 59), DayOfWeek.TUESDAY, LocalTime.of(23, 59));
         given(this.sectionRepository.save(newSection)).willReturn(newSection);
 
         // When
@@ -121,7 +123,7 @@ class SectionServiceTest {
     @Test
     void testUpdateSection() {
         // Given
-        Section update = new Section("2023-2024 (updated)", LocalDate.of(2023, 8, 15), LocalDate.of(2024, 5, 1));
+        Section update = new Section("2023-2024 (updated)", LocalDate.of(2023, 8, 15), LocalDate.of(2024, 5, 1), true, DayOfWeek.MONDAY, LocalTime.of(23, 59), DayOfWeek.TUESDAY, LocalTime.of(23, 59));
         given(this.sectionRepository.findById(1)).willReturn(Optional.of(this.sections.get(0)));
         given(this.sectionRepository.save(any(Section.class))).willReturn(this.sections.get(0));
 

@@ -65,19 +65,19 @@ class InstructorIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        ResultActions resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("bingyang", "123456"))); // httpBasic() is from spring-security-test.
+        ResultActions resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("b.wei@abc.edu", "123456"))); // httpBasic() is from spring-security-test.
         MvcResult mvcResult = resultActions.andDo(print()).andReturn();
         String contentAsString = mvcResult.getResponse().getContentAsString();
         JSONObject json = new JSONObject(contentAsString);
         this.adminBingyangToken = "Bearer " + json.getJSONObject("data").getString("token");
 
-        resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("bill", "123456"))); // httpBasic() is from spring-security-test.
+        resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("b.gates@abc.edu", "123456"))); // httpBasic() is from spring-security-test.
         mvcResult = resultActions.andDo(print()).andReturn();
         contentAsString = mvcResult.getResponse().getContentAsString();
         json = new JSONObject(contentAsString);
         this.instructorBillToken = "Bearer " + json.getJSONObject("data").getString("token");
 
-        resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("tim", "123456"))); // httpBasic() is from spring-security-test.
+        resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("t.cook@abc.edu", "123456"))); // httpBasic() is from spring-security-test.
         mvcResult = resultActions.andDo(print()).andReturn();
         contentAsString = mvcResult.getResponse().getContentAsString();
         json = new JSONObject(contentAsString);
@@ -111,7 +111,7 @@ class InstructorIntegrationTest {
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.message").value("Find instructor successfully"))
                 .andExpect(jsonPath("$.data.id").value(2))
-                .andExpect(jsonPath("$.data.username").value("bill"))
+                .andExpect(jsonPath("$.data.username").value("b.gates@abc.edu"))
                 .andExpect(jsonPath("$.data.firstName").value("Bill"))
                 .andExpect(jsonPath("$.data.lastName").value("Gates"))
                 .andExpect(jsonPath("$.data.email").value("b.gates@abc.edu"));
@@ -124,7 +124,7 @@ class InstructorIntegrationTest {
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.message").value("Find instructor successfully"))
                 .andExpect(jsonPath("$.data.id").value(2))
-                .andExpect(jsonPath("$.data.username").value("bill"))
+                .andExpect(jsonPath("$.data.username").value("b.gates@abc.edu"))
                 .andExpect(jsonPath("$.data.firstName").value("Bill"))
                 .andExpect(jsonPath("$.data.lastName").value("Gates"))
                 .andExpect(jsonPath("$.data.email").value("b.gates@abc.edu"));
@@ -143,7 +143,7 @@ class InstructorIntegrationTest {
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     void testAddInstructor() throws Exception {
         Map<String, String> instructorDto = new HashMap<>();
-        instructorDto.put("username", "elon");
+        instructorDto.put("username", "e.musk@abc.edu");
         instructorDto.put("firstName", "Elon");
         instructorDto.put("lastName", "Musk");
         instructorDto.put("email", "e.musk@abc.edu");
@@ -162,7 +162,7 @@ class InstructorIntegrationTest {
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.message").value("Add instructor successfully"))
                 .andExpect(jsonPath("$.data.id").exists())
-                .andExpect(jsonPath("$.data.username").value("elon"))
+                .andExpect(jsonPath("$.data.username").value("e.musk@abc.edu"))
                 .andExpect(jsonPath("$.data.firstName").value("Elon"))
                 .andExpect(jsonPath("$.data.lastName").value("Musk"))
                 .andExpect(jsonPath("$.data.email").value("e.musk@abc.edu"))
@@ -172,7 +172,7 @@ class InstructorIntegrationTest {
     @Test
     void testAddInstructorWithInvalidUserInvitation() throws Exception {
         Map<String, String> instructorDto = new HashMap<>();
-        instructorDto.put("username", "jensen");
+        instructorDto.put("username", "j.huang@abc.edu");
         instructorDto.put("firstName", "Jensen");
         instructorDto.put("lastName", "Huang");
         instructorDto.put("email", "j.huang@abc.edu");
@@ -194,9 +194,37 @@ class InstructorIntegrationTest {
 
     @Test
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    void testAdminBingyangUpdatesOwnInfo() throws Exception {
+        Map<String, Object> instructorDto = new HashMap<>();
+        instructorDto.put("username", "b.wei@abc.edu");
+        instructorDto.put("firstName", "Bingyang (updated)");
+        instructorDto.put("lastName", "Wei");
+        instructorDto.put("email", "b.wei@abc.edu");
+        instructorDto.put("enabled", true); // Instructor can't change their own enabled status.
+        instructorDto.put("roles", "admin"); // Instructor can't change their own role.
+
+        String json = this.objectMapper.writeValueAsString(instructorDto);
+
+        // When and then
+        this.mockMvc.perform(put(this.baseUrl + "/instructors/2").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.message").value("Update instructor successfully"))
+                .andExpect(jsonPath("$.data.id").value(2))
+                .andExpect(jsonPath("$.data.username").value("b.wei@abc.edu"))
+                .andExpect(jsonPath("$.data.firstName").value("Bingyang (updated)")) // The first name should be updated.
+                .andExpect(jsonPath("$.data.lastName").value("Wei"))
+                .andExpect(jsonPath("$.data.email").value("b.wei@abc.edu"))
+                .andExpect(jsonPath("$.data.password").doesNotExist())
+                .andExpect(jsonPath("$.data.enabled").value(true))
+                .andExpect(jsonPath("$.data.roles").value("admin"));
+    }
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     void testInstructorBillUpdatesOwnInfo() throws Exception {
         Map<String, Object> instructorDto = new HashMap<>();
-        instructorDto.put("username", "bill");
+        instructorDto.put("username", "b.gates@abc.edu");
         instructorDto.put("firstName", "Bill (updated)");
         instructorDto.put("lastName", "Gates");
         instructorDto.put("email", "b.gates@abc.edu");
@@ -211,7 +239,7 @@ class InstructorIntegrationTest {
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.message").value("Update instructor successfully"))
                 .andExpect(jsonPath("$.data.id").value(2))
-                .andExpect(jsonPath("$.data.username").value("bill"))
+                .andExpect(jsonPath("$.data.username").value("b.gates@abc.edu"))
                 .andExpect(jsonPath("$.data.firstName").value("Bill (updated)"))
                 .andExpect(jsonPath("$.data.lastName").value("Gates"))
                 .andExpect(jsonPath("$.data.email").value("b.gates@abc.edu"))
@@ -223,7 +251,7 @@ class InstructorIntegrationTest {
     @Test
     void testInstructorBillUpdatesAnotherInstructorsInfo() throws Exception {
         Map<String, String> instructorDto = new HashMap<>();
-        instructorDto.put("username", "bingyang");
+        instructorDto.put("username", "b.wei@abc.edu");
         instructorDto.put("firstName", "Bingyang (updated)");
         instructorDto.put("lastName", "Wei");
         instructorDto.put("email", "b.wei@abc.edu");

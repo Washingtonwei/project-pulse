@@ -87,17 +87,17 @@
         ref="courseForm"
         :model="courseData"
         :rules="rules"
-        label-width="110px"
+        label-width="auto"
         style="padding-right: 30px"
-        label-position="left"
+        label-position="right"
       >
         <el-form-item label="Id:" v-if="dialogTitle == 'Edit a course'">
           <el-input v-model="courseData.courseId" disabled></el-input>
         </el-form-item>
-        <el-form-item label="Name:" prop="name">
+        <el-form-item label="Name:" prop="courseName">
           <el-input v-model="courseData.courseName" minlength="1"></el-input>
         </el-form-item>
-        <el-form-item label="Description:" prop="description">
+        <el-form-item label="Description:" prop="courseDescription">
           <el-input v-model="courseData.courseDescription" minlength="1"></el-input>
         </el-form-item>
       </el-form>
@@ -133,7 +133,7 @@
 import { onMounted, ref } from 'vue'
 import { searchCourses, createCourse, updateCourse } from '@/apis/course'
 import type { FormInstance } from 'element-plus'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import type {
   SearchCourseByCriteriaResponse,
   Course,

@@ -95,8 +95,6 @@ onMounted(async () => {
     ElMessage.error('You have not been assigned a team yet.')
     return
   }
-
-  loadPeerEvaluationAverages()
 })
 
 // Load criteria information

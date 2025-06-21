@@ -19,7 +19,7 @@
     <SearchWeek
       v-model="searchCriteria.week"
       @search="loadActivities"
-      @reset="resetSearchCriteria"
+      @currentWeek="loadActivitiesForCurrentWeek"
     />
     <!-- Activity Table -->
     <el-table
@@ -159,7 +159,7 @@ async function loadActivities() {
   loading.value = false
 }
 
-function resetSearchCriteria() {
+function loadActivitiesForCurrentWeek() {
   searchCriteria.value = {
     studentId: userInfoStore.userInfo?.id as number,
     week: getCurrentWeekNumber()

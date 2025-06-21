@@ -11,6 +11,7 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 @Component
@@ -27,10 +28,13 @@ public class SectionDtoToSectionConverter implements Converter<SectionDto, Secti
 
     @Override
     public Section convert(SectionDto sectionDto) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy");
-        LocalDate startDate = LocalDate.parse(sectionDto.startDate(), formatter);
-        LocalDate endDate = LocalDate.parse(sectionDto.endDate(), formatter);
-        Section section = new Section(sectionDto.sectionName(), startDate, endDate);
+        LocalDate startDate = LocalDate.parse(sectionDto.startDate(), DateTimeFormatter.ofPattern("MM-dd-yyyy"));
+        LocalDate endDate = LocalDate.parse(sectionDto.endDate(), DateTimeFormatter.ofPattern("MM-dd-yyyy"));
+
+        LocalTime warDueTime = LocalTime.parse(sectionDto.warDueTime(), DateTimeFormatter.ofPattern("HH:mm"));
+        LocalTime peerEvaluationDueTime = LocalTime.parse(sectionDto.peerEvaluationDueTime(), DateTimeFormatter.ofPattern("HH:mm"));
+
+        Section section = new Section(sectionDto.sectionName(), startDate, endDate, sectionDto.isActive(), sectionDto.warWeeklyDueDay(), warDueTime, sectionDto.peerEvaluationWeeklyDueDay(), peerEvaluationDueTime);
         section.setSectionId(sectionDto.sectionId());
         if (sectionDto.sectionId() == null) {
             // When creating a new section, find and set the course; when updating a section, don't set the course

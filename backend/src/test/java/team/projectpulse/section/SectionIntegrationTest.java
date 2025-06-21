@@ -81,25 +81,25 @@ class SectionIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        ResultActions resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("bingyang", "123456"))); // httpBasic() is from spring-security-test.
+        ResultActions resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("b.wei@abc.edu", "123456"))); // httpBasic() is from spring-security-test.
         MvcResult mvcResult = resultActions.andDo(print()).andReturn();
         String contentAsString = mvcResult.getResponse().getContentAsString();
         JSONObject json = new JSONObject(contentAsString);
         this.adminBingyangToken = "Bearer " + json.getJSONObject("data").getString("token");
 
-        resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("bill", "123456"))); // httpBasic() is from spring-security-test.
+        resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("b.gates@abc.edu", "123456"))); // httpBasic() is from spring-security-test.
         mvcResult = resultActions.andDo(print()).andReturn();
         contentAsString = mvcResult.getResponse().getContentAsString();
         json = new JSONObject(contentAsString);
         this.instructorBillToken = "Bearer " + json.getJSONObject("data").getString("token");
 
-        resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("john", "123456"))); // httpBasic() is from spring-security-test.
+        resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("j.smith@abc.edu", "123456"))); // httpBasic() is from spring-security-test.
         mvcResult = resultActions.andDo(print()).andReturn();
         contentAsString = mvcResult.getResponse().getContentAsString();
         json = new JSONObject(contentAsString);
         this.studentJohnToken = "Bearer " + json.getJSONObject("data").getString("token");
 
-        resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("tim", "123456"))); // httpBasic() is from spring-security-test.
+        resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("t.cook@abc.edu", "123456"))); // httpBasic() is from spring-security-test.
         mvcResult = resultActions.andDo(print()).andReturn();
         contentAsString = mvcResult.getResponse().getContentAsString();
         json = new JSONObject(contentAsString);
@@ -111,6 +111,26 @@ class SectionIntegrationTest {
         // Given
         Map<String, String> searchCriteria = new HashMap<>();
         searchCriteria.put("sectionName", "2023");
+        String json = this.objectMapper.writeValueAsString(searchCriteria);
+
+        MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
+        requestParams.add("page", "0");
+        requestParams.add("size", "5");
+        requestParams.add("sort", "sectionName,asc");
+
+        // When and then
+        this.mockMvc.perform(post(this.baseUrl + "/sections/search").contentType(MediaType.APPLICATION_JSON).content(json).params(requestParams).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.message").value("Find sections successfully"))
+                .andExpect(jsonPath("$.data.content", Matchers.hasSize(2)));
+    }
+
+    @Test
+    void adminBingyangFindActiveSectionsByCriteria() throws Exception {
+        // Given
+        Map<String, String> searchCriteria = new HashMap<>();
+        searchCriteria.put("isActive", "true");
         String json = this.objectMapper.writeValueAsString(searchCriteria);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
@@ -231,6 +251,11 @@ class SectionIntegrationTest {
         sectionDto.put("startDate", "08-19-2024");
         sectionDto.put("endDate", "04-28-2025");
         sectionDto.put("courseId", 1);
+        sectionDto.put("isActive", true);
+        sectionDto.put("warWeeklyDueDay", "MONDAY");
+        sectionDto.put("warDueTime", "10:00");
+        sectionDto.put("peerEvaluationWeeklyDueDay", "TUESDAY");
+        sectionDto.put("peerEvaluationDueTime", "15:00");
 
         String json = this.objectMapper.writeValueAsString(sectionDto);
 
@@ -243,7 +268,12 @@ class SectionIntegrationTest {
                 .andExpect(jsonPath("$.data.sectionName").value("2024-2025"))
                 .andExpect(jsonPath("$.data.startDate").value("08-19-2024"))
                 .andExpect(jsonPath("$.data.endDate").value("04-28-2025"))
-                .andExpect(jsonPath("$.data.courseId").value("1"));
+                .andExpect(jsonPath("$.data.courseId").value("1"))
+                .andExpect(jsonPath("$.data.isActive").value(true))
+                .andExpect(jsonPath("$.data.warWeeklyDueDay").value("MONDAY"))
+                .andExpect(jsonPath("$.data.warDueTime").value("10:00"))
+                .andExpect(jsonPath("$.data.peerEvaluationWeeklyDueDay").value("TUESDAY"))
+                .andExpect(jsonPath("$.data.peerEvaluationDueTime").value("15:00"));
 
         Map<String, String> searchCriteria = new HashMap<>();
         json = this.objectMapper.writeValueAsString(searchCriteria);
@@ -263,6 +293,11 @@ class SectionIntegrationTest {
         sectionDto.put("startDate", "08-19-2024");
         sectionDto.put("endDate", "04-28-2025");
         sectionDto.put("courseId", 1);
+        sectionDto.put("isActive", true);
+        sectionDto.put("warWeeklyDueDay", "MONDAY");
+        sectionDto.put("warDueTime", "10:00");
+        sectionDto.put("peerEvaluationWeeklyDueDay", "TUESDAY");
+        sectionDto.put("peerEvaluationDueTime", "15:00");
 
         String json = this.objectMapper.writeValueAsString(sectionDto);
 
@@ -278,9 +313,14 @@ class SectionIntegrationTest {
     void adminBingyangUpdateSection() throws Exception {
         // Given
         Map<String, Object> sectionDto = new HashMap<>();
-        sectionDto.put("sectionName", "2023-2024 (updated)");
-        sectionDto.put("startDate", "08-16-2023");
-        sectionDto.put("endDate", "04-30-2024");
+        sectionDto.put("sectionName", "2023-2024 (updated)"); // Updated sectionName
+        sectionDto.put("startDate", "08-16-2023"); // Updated startDate
+        sectionDto.put("endDate", "04-30-2024"); // Updated endDate
+        sectionDto.put("isActive", false); // Updated isActive
+        sectionDto.put("warWeeklyDueDay", "MONDAY");
+        sectionDto.put("warDueTime", "10:00"); // Updated warDueTime
+        sectionDto.put("peerEvaluationWeeklyDueDay", "TUESDAY");
+        sectionDto.put("peerEvaluationDueTime", "15:00"); // Updated peerEvaluationDueTime
 
         String json = this.objectMapper.writeValueAsString(sectionDto);
 
@@ -293,7 +333,12 @@ class SectionIntegrationTest {
                 .andExpect(jsonPath("$.data.sectionName").value("2023-2024 (updated)"))
                 .andExpect(jsonPath("$.data.startDate").value("08-16-2023"))
                 .andExpect(jsonPath("$.data.endDate").value("04-30-2024"))
-                .andExpect(jsonPath("$.data.courseId").value(1));
+                .andExpect(jsonPath("$.data.courseId").value(1))
+                .andExpect(jsonPath("$.data.isActive").value(false))
+                .andExpect(jsonPath("$.data.warWeeklyDueDay").value("MONDAY"))
+                .andExpect(jsonPath("$.data.warDueTime").value("10:00"))
+                .andExpect(jsonPath("$.data.peerEvaluationWeeklyDueDay").value("TUESDAY"))
+                .andExpect(jsonPath("$.data.peerEvaluationDueTime").value("15:00"));
     }
 
     @Test

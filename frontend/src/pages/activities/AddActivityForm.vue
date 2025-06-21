@@ -1,6 +1,12 @@
 <template>
   <!-- Form for adding a new activity -->
-  <el-form ref="activityForm" :model="newActivity" :rules="rules" label-width="100px">
+  <el-form
+    ref="activityForm"
+    :model="newActivity"
+    :rules="rules"
+    label-width="auto"
+    label-position="right"
+  >
     <el-form-item label="Week:" prop="week">
       <el-input v-model="newActivity.week" disabled></el-input>
     </el-form-item>

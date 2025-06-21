@@ -111,9 +111,9 @@
             ref="teamForm"
             :model="teamData"
             :rules="rules"
-            label-width="110px"
+            label-width="auto"
             style="padding-right: 30px"
-            label-position="left"
+            label-position="right"
           >
             <el-form-item label="Id:" v-if="dialogTitle == 'Edit a team'">
               <el-input v-model="teamData.teamId" disabled></el-input>
