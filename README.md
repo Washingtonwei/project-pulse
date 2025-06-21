@@ -139,11 +139,11 @@ You can access the application by visiting http://localhost:5173 in your browser
 Here are some default credentials you can use to log in:
 
 As a student:
-- **Username:** john
+- **Username:** j.smith@abc.edu
 - **Password:** 123456
 
 As an instructor:
-- **Username:** bingyang
+- **Username:** b.wei@abc.edu
 - **Password:** 123456
 
 ## Contributing
