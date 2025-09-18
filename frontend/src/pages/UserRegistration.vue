@@ -11,6 +11,7 @@
         <el-input
           v-model="registration.username"
           placeholder="Enter your email as username"
+          disabled
         ></el-input>
       </el-form-item>
       <el-form-item label="First Name" prop="firstName">
@@ -131,6 +132,7 @@ onMounted(() => {
     router.push('/403')
   } else {
     registration.value.email = email
+    registration.value.username = email // Set username to email, disabled input field
     registrationToken.value = token
     registrationCourseId.value = parseInt(courseId)
     registrationSectionId.value = parseInt(sectionId)
