@@ -61,13 +61,15 @@ public class SectionService {
     }
 
     /**
-     * Find all active sections with students.
+     * Find sections with students that are eligible for weekly reminders in a given week.
+     * <p>
+     * Eligible sections are active sections that have the given week in their activeWeeks list.
      * This is eager loading.
      *
      * @return
      */
-    public List<Section> findAllActiveSectionsWithStudents() {
-        return this.sectionRepository.findActiveSectionsWithStudents();
+    public List<Section> findReminderEligibleSectionsForWeek(String weekKey) {
+        return this.sectionRepository.findReminderEligibleSectionsForWeek(weekKey);
     }
 
     public Section saveSection(Section newSection) {

@@ -8,6 +8,10 @@ import team.projectpulse.student.Student;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.WeekFields;
 import java.util.List;
 
 @Component
@@ -21,16 +25,26 @@ public class WeeklyReminderScheduler {
         this.emailService = emailService;
         this.sectionService = sectionService;
     }
-    
-    @Scheduled(cron = "0 0 8 * * *") // Every day at 8:00 AM
+
+    @Scheduled(cron = "0 0 8 * * *", zone = "America/Chicago") // Every day at 8 AM Central Time
     public void sendWeeklyReminders() {
-        LocalDate today = LocalDate.now();
+        ZoneId zone = ZoneId.of("America/Chicago");
+        LocalDate today = LocalDate.now(zone);
         DayOfWeek todayDay = today.getDayOfWeek();
 
-        List<Section> activeSections = this.sectionService.findAllActiveSectionsWithStudents();
-        activeSections.forEach(section -> {
-            boolean isWarDueToday = section.getWarWeeklyDueDay() == todayDay;
-            boolean isPeerEvaluationDueToday = section.getPeerEvaluationWeeklyDueDay() == todayDay;
+        // Get current ISO week key like "2025-W38"
+        int w = today.get(WeekFields.ISO.weekOfWeekBasedYear());
+        int y = today.get(WeekFields.ISO.weekBasedYear());
+        String currentWeek = String.format("%d-W%02d", y, w);
+
+        DateTimeFormatter timeFmt = DateTimeFormatter.ofPattern("h:mm a z").withZone(zone);
+
+        // DB returns only sections eligible for reminders this week; students preloaded via @EntityGraph
+        List<Section> reminderEligibleSections = this.sectionService.findReminderEligibleSectionsForWeek(currentWeek);
+
+        reminderEligibleSections.forEach(section -> {
+            boolean isWarDueToday = todayDay.equals(section.getWarWeeklyDueDay());
+            boolean isPeerEvaluationDueToday = todayDay.equals(section.getPeerEvaluationWeeklyDueDay());
 
             if (isWarDueToday || isPeerEvaluationDueToday) {
                 for (Student student : section.getStudents()) {
@@ -43,12 +57,15 @@ public class WeeklyReminderScheduler {
                             .append(section.getSectionName())
                             .append("</strong>:<br><ul>");
 
+                    String warTime = formatDue(section.getWarDueTime(), today, timeFmt);
+                    String peerTime = formatDue(section.getPeerEvaluationDueTime(), today, timeFmt);
+
                     if (isWarDueToday) {
-                        body.append("<li>WAR report by ").append(section.getWarDueTime()).append("</li>");
+                        body.append("<li>WAR report by ").append(warTime).append("</li>");
                     }
 
                     if (isPeerEvaluationDueToday) {
-                        body.append("<li>Peer evaluation by ").append(section.getPeerEvaluationDueTime()).append("</li>");
+                        body.append("<li>Peer evaluation by ").append(peerTime).append("</li>");
                     }
 
                     body.append("</ul>");
@@ -57,6 +74,10 @@ public class WeeklyReminderScheduler {
                 }
             }
         });
+    }
+
+    private static String formatDue(LocalTime t, LocalDate date, DateTimeFormatter fmt) {
+        return t == null ? null : fmt.format(t.atDate(date).atZone(fmt.getZone()));
     }
 
 }

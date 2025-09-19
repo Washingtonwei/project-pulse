@@ -25,7 +25,7 @@ public class Section {
     private LocalDate startDate;
     private LocalDate endDate;
     @ElementCollection
-    private List<String> activeWeeks = new ArrayList<>();
+    private List<String> activeWeeks = new ArrayList<>(); // e.g., ["2025-W01", "2025-W02"]
     @ManyToOne
     private Rubric rubric;
     @OneToMany(mappedBy = "section", cascade = CascadeType.ALL)
