@@ -45,7 +45,7 @@ public class InstructorService {
 
         Course course = instructor.getDefaultCourse();
 
-        Specification<Instructor> spec = Specification.where(null);
+        Specification<Instructor> spec = Specification.unrestricted(); // Start with an unrestricted specification, matching all objects.
 
         if (StringUtils.hasLength(searchCriteria.get("firstName"))) {
             spec = spec.and(InstructorSpecs.hasFirstName(searchCriteria.get("firstName")));

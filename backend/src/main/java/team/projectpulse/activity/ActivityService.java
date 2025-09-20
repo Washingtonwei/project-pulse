@@ -26,12 +26,12 @@ public class ActivityService {
     }
 
     public Page<Activity> findByCriteria(Map<String, String> searchCriteria, Pageable pageable) {
-        Specification<Activity> spec = Specification.where(null);
+        Specification<Activity> spec = Specification.unrestricted(); // Start with an unrestricted specification, matching all objects.
 
         if (StringUtils.hasLength(searchCriteria.get("week"))) {
             spec = spec.and(ActivitySpecs.hasWeek(searchCriteria.get("week")));
         }
-        
+
         if (StringUtils.hasLength(searchCriteria.get("startWeek")) && StringUtils.hasLength(searchCriteria.get("endWeek"))) {
             spec = spec.and(ActivitySpecs.hasWeekBetween(searchCriteria.get("startWeek"), searchCriteria.get("endWeek")));
         }

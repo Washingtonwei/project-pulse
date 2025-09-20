@@ -35,7 +35,7 @@ public class TeamService {
     public Page<Team> findByCriteria(Map<String, String> searchCriteria, Pageable pageable) {
         Integer sectionId = this.userUtils.getUserSectionId();
 
-        Specification<Team> spec = Specification.where(null);
+        Specification<Team> spec = Specification.unrestricted(); // Start with an unrestricted specification, matching all objects.
 
         if (StringUtils.hasLength(searchCriteria.get("teamName"))) {
             spec = spec.and(TeamSpecs.containsTeamName(searchCriteria.get("teamName")));

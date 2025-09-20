@@ -36,7 +36,7 @@ public class SectionService {
     public Page<Section> findByCriteria(Map<String, String> searchCriteria, Pageable pageable) {
         Integer courseId = this.userUtils.getUserCourseId();
 
-        Specification<Section> spec = Specification.where(null);
+        Specification<Section> spec = Specification.unrestricted(); // Start with an unrestricted specification, matching all objects.
 
         if (StringUtils.hasLength(searchCriteria.get("sectionName"))) {
             spec = spec.and(SectionSpecs.containsSectionName(searchCriteria.get("sectionName")));
