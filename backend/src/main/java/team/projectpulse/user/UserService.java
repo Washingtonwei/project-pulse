@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.Map;
 
-
 @Service
 @Transactional
 public class UserService implements UserDetailsService {
@@ -32,6 +31,10 @@ public class UserService implements UserDetailsService {
         return this.userRepository.findByUsername(username) // First, we need to find this user from database.
                 .map(peerEvaluationUser -> new MyUserPrincipal(peerEvaluationUser)) // If found, wrap the returned user instance in a MyUserPrincipal instance.
                 .orElseThrow(() -> new UsernameNotFoundException("username " + username + " is not found.")); // Otherwise, throw an exception.
+    }
+
+    public boolean checkEmailExists(String email) {
+        return this.userRepository.findByEmail(email).isPresent();
     }
 
     public void resetPassword(Map<String, String> resetPasswordInfo) {

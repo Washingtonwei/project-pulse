@@ -1,5 +1,6 @@
 package team.projectpulse.user;
 
+import org.springframework.security.core.userdetails.UserDetails;
 import team.projectpulse.system.Result;
 import team.projectpulse.system.StatusCode;
 import team.projectpulse.user.resetpassword.ResetPasswordService;
@@ -32,6 +33,13 @@ public class UserController {
     public Result resetPassword(@RequestBody Map<String, String> resetPasswordInfo) {
         this.userService.resetPassword(resetPasswordInfo);
         return new Result(true, StatusCode.SUCCESS, "Password reset successfully");
+    }
+
+    // Check if the email is already registered
+    @GetMapping("/exists/{email}")
+    public Result checkEmailExists(@PathVariable String email) {
+        boolean exists = this.userService.checkEmailExists(email);
+        return new Result(true, StatusCode.SUCCESS, "", exists);
     }
 
 }

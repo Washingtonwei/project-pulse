@@ -40,7 +40,7 @@ public class StudentService {
     public Page<Student> findByCriteria(Map<String, String> searchCriteria, Pageable pageable) {
         Integer sectionId = this.userUtils.getUserSectionId();
 
-        Specification<Student> spec = Specification.where(null);
+        Specification<Student> spec = Specification.unrestricted(); // Start with an unrestricted specification, matching all objects.
 
         if (StringUtils.hasLength(searchCriteria.get("firstName"))) {
             spec = spec.and(StudentSpecs.containsFirstName(searchCriteria.get("firstName")));

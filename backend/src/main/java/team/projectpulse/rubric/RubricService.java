@@ -29,7 +29,7 @@ public class RubricService {
     public Page<Rubric> findByCriteria(Map<String, String> searchCriteria, Pageable pageable) {
         Integer courseId = this.userUtils.getUserCourseId();
 
-        Specification<Rubric> spec = Specification.where(null);
+        Specification<Rubric> spec = Specification.unrestricted(); // Start with an unrestricted specification, matching all objects.
 
         if (StringUtils.hasLength(searchCriteria.get("rubricName"))) {
             spec = spec.and(RubricSpecs.containsRubricName(searchCriteria.get("rubricName")));

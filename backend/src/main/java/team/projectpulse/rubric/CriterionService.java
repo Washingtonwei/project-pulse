@@ -27,7 +27,7 @@ public class CriterionService {
     public Page<Criterion> findByCriteria(Map<String, String> searchCriteria, Pageable pageable) {
         Integer courseId = this.userUtils.getUserCourseId();
 
-        Specification<Criterion> spec = Specification.where(null);
+        Specification<Criterion> spec = Specification.unrestricted(); // Start with an unrestricted specification, matching all objects.
 
         if (StringUtils.hasLength(searchCriteria.get("criterion"))) {
             spec = spec.and(CriterionSpecs.containsCriterion(searchCriteria.get("criterion")));

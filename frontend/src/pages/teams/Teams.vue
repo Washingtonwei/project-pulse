@@ -233,7 +233,9 @@ const studentsWithoutTeam = computed(() =>
   students.value.filter(
     (student) =>
       !student.teamId &&
-      (student.firstName + ' ' + student.lastName).toLowerCase().includes(studentNameSearch.value)
+      (student.firstName + ' ' + student.lastName)
+        .toLowerCase()
+        .includes(studentNameSearch.value.toLowerCase())
   )
 )
 
