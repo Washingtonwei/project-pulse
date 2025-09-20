@@ -34,6 +34,10 @@ public class UserService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("username " + username + " is not found.")); // Otherwise, throw an exception.
     }
 
+    public boolean checkEmailExists(String email) {
+        return this.userRepository.findByEmail(email).isPresent();
+    }
+
     public void resetPassword(Map<String, String> resetPasswordInfo) {
         String email = resetPasswordInfo.get("email");
         String token = resetPasswordInfo.get("token");

@@ -1,5 +1,6 @@
 <template>
-  <div class="registration-form-container">
+  <div v-if="!ready" class="center-loader">Validating registration link…</div>
+  <div v-else class="registration-form-container">
     <el-form
       :model="registration"
       :rules="rules"
@@ -52,6 +53,8 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { createStudent } from '@/apis/student'
 import { createInstructor } from '@/apis/instructor'
+import { checkEmailExists } from '@/apis/user'
+import type { CheckEmailExistsResponse } from '@/apis/user/types'
 import { ElMessage, type FormInstance } from 'element-plus'
 
 interface FormState {
@@ -123,21 +126,38 @@ const rules = {
 }
 
 const router = useRouter()
+const ready = ref(false) // State to track if validation is complete
 
-onMounted(() => {
+onMounted(async () => {
   const { email, token, courseId, sectionId, role } = route.query as Record<string, string> // Destructure query parameters
+
   if (!email || !token || !role) {
     ElMessage.error('Invalid registration link')
     // redirect to 403
-    router.push('/403')
-  } else {
-    registration.value.email = email
-    registration.value.username = email // Set username to email, disabled input field
-    registrationToken.value = token
-    registrationCourseId.value = parseInt(courseId)
-    registrationSectionId.value = parseInt(sectionId)
-    registrationRole.value = role
+    router.replace('/403')
+    return
   }
+
+  // Check if this email is already registered
+  const response: CheckEmailExistsResponse = await checkEmailExists(email)
+
+  const isEmailRegistered = response.data
+
+  if (isEmailRegistered) {
+    ElMessage.error('This email is already registered. Please log in.')
+    router.replace('/login')
+    return
+  }
+
+  // Pre-fill the email and username fields, disable editing
+  registration.value.email = email
+  registration.value.username = email
+  registrationToken.value = token
+  registrationCourseId.value = parseInt(courseId)
+  registrationSectionId.value = parseInt(sectionId)
+  registrationRole.value = role
+
+  ready.value = true // show the form only after all checks pass
 })
 
 async function register() {
@@ -168,6 +188,13 @@ const reset = () => {
 </script>
 
 <style scoped>
+.center-loader {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+}
 .registration-form-container {
   display: flex;
   justify-content: center;
