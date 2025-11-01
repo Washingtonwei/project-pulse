@@ -162,7 +162,7 @@ import { getPreviousWeek } from '@/utils/week'
 import SearchWeek from '@/components/SearchWeek.vue'
 import { ElMessage } from 'element-plus'
 
-const week = ref<string>('2023-W31') // Hardcoded week for now
+const week = ref<string>(getPreviousWeek()) // Week for which to load peer evaluations, default to previous week
 const peerEvalutionAverages = ref<PeerEvaluationAverage[]>()
 const studentsMissingPeerEvaluations = ref<string[]>([])
 const defaultSectionId = ref<number>() // Section ID of the team
