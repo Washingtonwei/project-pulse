@@ -1,5 +1,8 @@
 package team.projectpulse.evaluation;
 
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import team.projectpulse.rubric.Rating;
 import team.projectpulse.student.Student;
 import jakarta.persistence.*;
@@ -9,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@EntityListeners(AuditingEntityListener.class)
 public class PeerEvaluation {
 
     @Id
@@ -25,7 +29,10 @@ public class PeerEvaluation {
     private Double totalScore;
     private String publicComment;
     private String privateComment;
+    @CreatedDate
+    @Column(updatable = false) // never changed after insert
     private LocalDateTime createdAt;
+    @LastModifiedDate
     private LocalDateTime updatedAt;
 
 
@@ -111,17 +118,6 @@ public class PeerEvaluation {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
-    }
-
-    @PrePersist // automatically set createdAt and updatedAt when persisting
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate // automatically set updatedAt when updating
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
     }
 
     public LocalDateTime getUpdatedAt() {

@@ -2,7 +2,7 @@ package team.projectpulse.evaluation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -49,7 +49,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles(value = "dev")
 public class EvaluationIntegrationTest {
 
-    @MockitoBean
+    /**
+     * @MockitoSpyBean creates a Mockito spy and registers it as the active Spring bean.
+     * Unlike a full MockitoBean, a spy keeps the real bean behavior but allows stubbing or verification of specific methods.
+     * With @MockitoSpyBean, Spring wraps the real Clock bean instead of replacing it with a mock. This means:
+     * - The real Clock works normally by default (no NPE in CommandLineRunner)
+     * - We then selectively stub specific methods only in the tests that need it
+     */
+    @MockitoSpyBean
     Clock clock;
 
     @Autowired
@@ -128,8 +135,8 @@ public class EvaluationIntegrationTest {
                 .andExpect(jsonPath("$.data.totalScore").value(41.0))
                 .andExpect(jsonPath("$.data.publicComment").value("Good job"))
                 .andExpect(jsonPath("$.data.privateComment").value("Keep it up"))
-                .andExpect(jsonPath("$.data.createdAt").exists())
-                .andExpect(jsonPath("$.data.updatedAt").exists());
+                .andExpect(jsonPath("$.data.createdAt").isNotEmpty())
+                .andExpect(jsonPath("$.data.updatedAt").isNotEmpty());
     }
 
     @Test
@@ -244,8 +251,8 @@ public class EvaluationIntegrationTest {
                 .andExpect(jsonPath("$.data[0].evaluatorId").value(4))
                 .andExpect(jsonPath("$.data[0].evaluateeId").value(5))
                 .andExpect(jsonPath("$.data[0].ratings", Matchers.hasSize(6)))
-                .andExpect(jsonPath("$.data[0].createdAt").exists())
-                .andExpect(jsonPath("$.data[0].updatedAt").exists());
+                .andExpect(jsonPath("$.data[0].createdAt").isNotEmpty())
+                .andExpect(jsonPath("$.data[0].updatedAt").isNotEmpty());
     }
 
     @Test
@@ -281,8 +288,8 @@ public class EvaluationIntegrationTest {
                 .andExpect(jsonPath("$.data.totalScore").value(41.0))
                 .andExpect(jsonPath("$.data.publicComment").value("Good job"))
                 .andExpect(jsonPath("$.data.privateComment").value("Keep it up"))
-                .andExpect(jsonPath("$.data.createdAt").exists())
-                .andExpect(jsonPath("$.data.updatedAt").exists());
+                .andExpect(jsonPath("$.data.createdAt").isNotEmpty())
+                .andExpect(jsonPath("$.data.updatedAt").isNotEmpty());
     }
 
     @Test

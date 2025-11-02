@@ -1,5 +1,8 @@
 package team.projectpulse.activity;
 
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import team.projectpulse.student.Student;
 import team.projectpulse.team.Team;
 import jakarta.persistence.*;
@@ -7,6 +10,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
+@EntityListeners(AuditingEntityListener.class)
 public class Activity {
 
     @Id
@@ -24,7 +28,10 @@ public class Activity {
     Double actualHours;
     ActivityStatus status;
     String comments; // comments on this activity from team members
+    @CreatedDate
+    @Column(updatable = false) // never changed after insert
     private LocalDateTime createdAt;
+    @LastModifiedDate
     private LocalDateTime updatedAt;
 
 
@@ -139,18 +146,8 @@ public class Activity {
         return createdAt;
     }
 
-    @PrePersist // automatically set createdAt and updatedAt when persisting
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
-
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
     }
 
 }
