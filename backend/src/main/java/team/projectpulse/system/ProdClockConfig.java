@@ -12,13 +12,14 @@ import java.time.ZoneId;
 @Profile("prod")
 public class ProdClockConfig {
 
-    @Value("${app.timezone:UTC}") // Default to UTC if not defined
-    private String timeZone;
-
+    @Bean
+    public ZoneId appZoneId(@Value("${app.timezone:UTC}") String tz) { // Default to UTC if not set
+        return ZoneId.of(tz);
+    }
 
     @Bean
-    public Clock clock() {
-        return Clock.system(ZoneId.of(this.timeZone));
+    public Clock clock(ZoneId appZoneId) {
+        return Clock.system(appZoneId);
     }
 
 }

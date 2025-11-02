@@ -13,3 +13,8 @@ spring:
     username: admin@project-pulse.team
 front-end:
   url: http://localhost:5173
+app:
+  timezone: America/Chicago
+  reminders:
+    enabled: false # Disable email reminders in the dev profile
+    cron: "0 0 8 * * *"  # 8am local time
