@@ -68,17 +68,17 @@ public class EmailService {
         }
     }
 
-    public void sendPasswordResetEmail(String email, String forgetPasswordToken) {
+    public void sendPasswordResetEmail(String toEmail, String forgetPasswordToken) {
         try {
             MimeMessage message = this.javaMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
 
             helper.setFrom(this.fromEmail);
-            helper.setTo(email);
+            helper.setTo(toEmail);
             helper.setSubject("Password Reset Request");
 
             // Password reset link
-            String resetLink = this.frontendUrl + "/reset-password?email=" + email + "&token=" + forgetPasswordToken;
+            String resetLink = this.frontendUrl + "/reset-password?email=" + toEmail + "&token=" + forgetPasswordToken;
 
             // HTML email content for password reset
             String htmlContent = "<html>" +
@@ -140,6 +140,42 @@ public class EmailService {
             this.javaMailSender.send(message);
         } catch (MessagingException e) {
             throw new RuntimeException("Failed to send reminder email", e);
+        }
+    }
+
+    public void sendPeerEvaluationConfirmationEmail(String toEmail, String studentName, String sectionName, String week) {
+        try {
+            MimeMessage message = this.javaMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+
+            helper.setFrom(this.fromEmail);
+            helper.setTo(toEmail);
+            helper.setSubject("Peer Evaluation Submission Confirmation");
+
+            String htmlContent = "<html>" +
+                    "<head>" +
+                    "<style>" +
+                    "body { font-family: Arial, sans-serif; color: #333; }" +
+                    ".container { width: 80%; margin: 0 auto; padding: 20px; background-color: #f9f9f9; border-radius: 10px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); }" +
+                    "h1 { color: #0056b3; }" +
+                    "p { font-size: 16px; line-height: 1.6; }" +
+                    "</style>" +
+                    "</head>" +
+                    "<body>" +
+                    "<div class='container'>" +
+                    "<h1>Peer Evaluation Submission Confirmation</h1>" +
+                    "<p>Hello " + studentName + ",</p>" +
+                    "<p>This email confirms that you successfully submitted your peer evaluation for section <strong>" + sectionName + "</strong>.</p>" +
+                    "<p>Week: <strong>" + week + "</strong><br/>" +
+                    "<p>You may keep this message as your record of submission.</p>" +
+                    "<p>Regards,<br/>Project Pulse Team</p>" +
+                    "</div>" +
+                    "</body>" +
+                    "</html>";
+            helper.setText(htmlContent, true);
+            this.javaMailSender.send(message);
+        } catch (MessagingException e) {
+            throw new RuntimeException("Failed to send peer evaluation confirmation email", e);
         }
     }
 

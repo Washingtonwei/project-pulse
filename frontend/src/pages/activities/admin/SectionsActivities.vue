@@ -59,6 +59,8 @@
                 ></el-button>
               </template>
             </el-table-column>
+            <!-- createdAt  -->
+            <el-table-column label="Created At" min-width="150" prop="createdAt"></el-table-column>
             <template #empty>
               <el-empty description="No data is available." />
             </template>

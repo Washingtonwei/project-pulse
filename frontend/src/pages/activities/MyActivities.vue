@@ -46,6 +46,7 @@
           </el-tag>
         </template>
       </el-table-column>
+      <el-table-column label="Created At" min-width="150" prop="createdAt"></el-table-column>
       <el-table-column label="Operations" min-width="120">
         <template #default="{ row }">
           <el-button

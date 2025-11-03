@@ -27,3 +27,6 @@ front-end:
   url: https://projectpulse.team
 app:
   timezone: America/Chicago
+  reminders:
+    enabled: true
+    cron: "0 0 8 * * *"  # 8am local time

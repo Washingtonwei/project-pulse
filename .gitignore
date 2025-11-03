@@ -53,3 +53,22 @@ frontend/*.sw?
 
 # TypeScript build info
 frontend/*.tsbuildinfo
+
+### Docker / Grafana ###
+# Ignore all Grafana runtime data and local state
+docker/grafana/*
+
+# Keep only reproducible configuration and provisioning files
+!docker/grafana/provisioning/**
+!docker/grafana/Dockerfile
+!docker/grafana/docker-compose.yml
+!docker/grafana/*.ini
+!docker/grafana/*.env.example
+
+### Docker / Prometheus ###
+# Ignore all Prometheus runtime data
+docker/prometheus/*
+
+# Keep only the main configuration file
+!docker/prometheus/prometheus.yml
+

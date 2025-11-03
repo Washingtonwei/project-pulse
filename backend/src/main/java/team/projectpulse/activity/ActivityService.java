@@ -9,7 +9,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 
 @Service
@@ -70,7 +69,6 @@ public class ActivityService {
                     oldActivity.setPlannedHours(update.getPlannedHours());
                     oldActivity.setActualHours(update.getActualHours());
                     oldActivity.setStatus(update.getStatus());
-                    oldActivity.setUpdatedAt(LocalDateTime.now());
                     return this.activityRepository.save(oldActivity);
                 })
                 .orElseThrow(() -> new ObjectNotFoundException("activity", activityId));
