@@ -47,3 +47,7 @@ export const getWeeklyPeerEvaluationsForStudent = (studentId: number, week: stri
   request.get<any, GetWeeklyPeerEvaluationsForStudentResponse>(
     `${API.EVALUATIONS_ENDPOINT}/students/${studentId}/week/${week}/details`
   )
+
+// API: /evaluations/weeks/{week}/receipt
+export const sendPeerEvaluationSubmissionConfirmationEmail = (week: string) =>
+  request.post<any, void>(`${API.EVALUATIONS_ENDPOINT}/weeks/${week}/receipt`)

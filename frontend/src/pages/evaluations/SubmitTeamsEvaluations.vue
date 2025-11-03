@@ -131,7 +131,8 @@ import type { FindSectionByIdResponse } from '@/apis/section/types'
 import {
   submitEvaluation,
   getEvaluationsByEvaluatorIdAndWeek,
-  updateEvaluation
+  updateEvaluation,
+  sendPeerEvaluationSubmissionConfirmationEmail
 } from '@/apis/evaluation'
 import { ElMessage } from 'element-plus'
 import type {
@@ -236,6 +237,10 @@ async function submitPeerEvaluations() {
     isNewSubmission = false // Change to update mode
     ElMessage.success('Peer evaluations submitted successfully')
     isLoading.value = false
+
+    // Send an submission confirmation email to the submitter
+    await sendPeerEvaluationSubmissionConfirmationEmail(previousWeekRange.value)
+    ElMessage.success('A confirmation email has been sent to you.')
   }
 }
 
