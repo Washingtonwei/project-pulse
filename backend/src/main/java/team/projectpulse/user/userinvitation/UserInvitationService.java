@@ -55,6 +55,12 @@ public class UserInvitationService {
         if (userInvitation.getRole().equals("student") && !userInvitation.getSectionId().equals(sectionId)) {
             throw new InvalidUserInvitationException("Incorrect section ID for student email: " + email);
         }
+
+        // If the user is an instructor and sectionId is provided, validate it
+        if (userInvitation.getRole().equals("instructor") && sectionId != null && userInvitation.getSectionId() != null 
+                && !userInvitation.getSectionId().equals(sectionId)) {
+            throw new InvalidUserInvitationException("Incorrect section ID for instructor email: " + email);
+        }
     }
 
     public void deleteUserInvitation(String email) {

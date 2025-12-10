@@ -31,15 +31,35 @@ public class EmailService {
 
             helper.setFrom(this.fromEmail);
             helper.setTo(userInvitation.getEmail());
-            helper.setSubject("Invitation to register");
-
+            
             String registrationLink;
+            String subject;
+            String welcomeMessage;
+            String ctaText;
 
             if (userInvitation.getRole().equals("student")) {
+                subject = "Invitation to join Project Pulse as a Student";
+                welcomeMessage = "You have been invited to join Project Pulse as a <strong>Student</strong>.";
+                ctaText = "Register Now";
                 registrationLink = this.frontendUrl + "/register?email=" + userInvitation.getEmail() + "&token=" + userInvitation.getToken() + "&courseId=" + userInvitation.getCourseId() + "&sectionId=" + userInvitation.getSectionId() + "&role=" + userInvitation.getRole();
+            } else if (userInvitation.getRole().equals("instructor")) {
+                subject = "You've been invited to co-manage a section on Project Pulse";
+                welcomeMessage = "You have been invited to join Project Pulse as an <strong>Instructor</strong>.";
+                ctaText = "Accept Invitation";
+                // Include sectionId for instructor invitations if provided
+                if (userInvitation.getSectionId() != null) {
+                    registrationLink = this.frontendUrl + "/register?email=" + userInvitation.getEmail() + "&token=" + userInvitation.getToken() + "&courseId=" + userInvitation.getCourseId() + "&sectionId=" + userInvitation.getSectionId() + "&role=" + userInvitation.getRole();
+                } else {
+                    registrationLink = this.frontendUrl + "/register?email=" + userInvitation.getEmail() + "&token=" + userInvitation.getToken() + "&courseId=" + userInvitation.getCourseId() + "&role=" + userInvitation.getRole();
+                }
             } else {
+                subject = "Invitation to register";
+                welcomeMessage = "You have been invited to register at our web application.";
+                ctaText = "Register Now";
                 registrationLink = this.frontendUrl + "/register?email=" + userInvitation.getEmail() + "&token=" + userInvitation.getToken() + "&courseId=" + userInvitation.getCourseId() + "&role=" + userInvitation.getRole();
             }
+
+            helper.setSubject(subject);
 
             String htmlContent = "<html>" +
                     "<head>" +
@@ -55,9 +75,9 @@ public class EmailService {
                     "<body>" +
                     "<div class='container'>" +
                     "<h1>Welcome!</h1>" +
-                    "<p>You have been invited to register at our web application.</p>" +
-                    "<p>Please click the link below to register:</p>" +
-                    "<a href='" + registrationLink + "'>Register Now</a>" +
+                    "<p>" + welcomeMessage + "</p>" +
+                    "<p>Please click the link below to accept and register:</p>" +
+                    "<a href='" + registrationLink + "'>" + ctaText + "</a>" +
                     "</div>" +
                     "</body>" +
                     "</html>";

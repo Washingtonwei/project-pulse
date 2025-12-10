@@ -97,4 +97,10 @@ public class SectionController {
         return new Result(true, StatusCode.SUCCESS, "Send email invitation successfully", null);
     }
 
+    @PostMapping("/{sectionId}/instructors/invite-or-add")
+    public Result inviteOrAddInstructors(@RequestParam Integer courseId, @PathVariable Integer sectionId, @RequestBody List<String> emails) {
+        Map<String, Object> result = this.sectionService.inviteOrAddInstructors(courseId, sectionId, emails);
+        return new Result(true, StatusCode.SUCCESS, "Instructors invited or added successfully", result);
+    }
+
 }

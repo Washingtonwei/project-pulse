@@ -69,9 +69,9 @@ public class InstructorService {
                 .orElseThrow(() -> new ObjectNotFoundException("instructor", instructorId));
     }
 
-    public Instructor saveInstructor(Instructor newInstructor, Integer courseId, String registrationToken, String role) {
+    public Instructor saveInstructor(Instructor newInstructor, Integer courseId, Integer sectionId, String registrationToken, String role) {
         // Validate user invitation
-        this.userInvitationService.validateUserInvitation(newInstructor.getEmail(), registrationToken, courseId, null, role);
+        this.userInvitationService.validateUserInvitation(newInstructor.getEmail(), registrationToken, courseId, sectionId, role);
 
         // Password rule: At least 6 characters, contains at least one letter and one number.
         if (!newInstructor.getPassword().matches("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{6,}$")) {
@@ -81,6 +81,14 @@ public class InstructorService {
         Course course = this.courseRepository.findById(courseId)
                 .orElseThrow(() -> new ObjectNotFoundException("course", courseId));
         course.addInstructor(newInstructor);
+        
+        // If sectionId is provided, also add instructor to that section
+        if (sectionId != null) {
+            Section section = this.sectionRepository.findById(sectionId)
+                    .orElseThrow(() -> new ObjectNotFoundException("section", sectionId));
+            section.addInstructor(newInstructor);
+        }
+        
         newInstructor.setEnabled(true);
         newInstructor.setRoles("instructor");
         newInstructor.setPassword(this.passwordEncoder.encode(newInstructor.getPassword()));
