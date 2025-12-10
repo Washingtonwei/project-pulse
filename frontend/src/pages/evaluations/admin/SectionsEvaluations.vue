@@ -174,7 +174,7 @@ const settingsStore = useSettingsStore()
 // Load data when the component is mounted
 onMounted(async () => {
   defaultSectionId.value = settingsStore.defaultSectionId
-  if (!defaultSectionId.value) {
+  if (Number.isNaN(defaultSectionId.value)) {
     ElMessage.error('Please select a section in the Sections page.')
     return
   }

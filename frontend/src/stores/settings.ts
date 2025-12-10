@@ -15,6 +15,8 @@ export const useSettingsStore = defineStore(
     const defaultCourseId = ref<number>(NaN)
     const setDefaultCourseId = (newDefaultCourseId: number) => {
       defaultCourseId.value = newDefaultCourseId
+      // 🔴 IMPORTANT: when course changes, clear the section
+      removeDefaultSectionId()
     }
     const removeDefaultCourseId = () => {
       defaultCourseId.value = NaN

@@ -174,7 +174,7 @@ onMounted(async () => {
   activitySearchCriteria.value.week = getCurrentWeekNumber()
 
   studentSearchCriteria.value.sectionId = settingsStore.defaultSectionId
-  if (!studentSearchCriteria.value.sectionId) {
+  if (Number.isNaN(studentSearchCriteria.value.sectionId)) {
     ElMessage.error('Please select a section in the Sections page.')
     return
   }

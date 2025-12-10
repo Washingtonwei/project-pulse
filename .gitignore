@@ -64,6 +64,7 @@ docker/grafana/*
 !docker/grafana/docker-compose.yml
 !docker/grafana/*.ini
 !docker/grafana/*.env.example
+!docker/grafana/grafana-config.env
 
 ### Docker / Prometheus ###
 # Ignore all Prometheus runtime data
