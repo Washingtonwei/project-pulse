@@ -13,7 +13,14 @@ export const useSettingsStore = defineStore(
     }
 
     const defaultCourseId = ref<number>(NaN)
-    const setDefaultCourseId = (newDefaultCourseId: number) => {
+
+    // Plain setter – use this for login/backend restore
+    const setDefaultCourseId = (courseId: number) => {
+      defaultCourseId.value = courseId
+    }
+
+    // UI-only setter – use this when user changes course in the app
+    const setDefaultCourseIdAndResetSection = (newDefaultCourseId: number) => {
       defaultCourseId.value = newDefaultCourseId
       // 🔴 IMPORTANT: when course changes, clear the section
       removeDefaultSectionId()
@@ -28,6 +35,7 @@ export const useSettingsStore = defineStore(
       removeDefaultSectionId,
       defaultCourseId,
       setDefaultCourseId,
+      setDefaultCourseIdAndResetSection,
       removeDefaultCourseId
     }
   },
