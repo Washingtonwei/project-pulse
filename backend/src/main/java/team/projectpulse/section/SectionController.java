@@ -85,6 +85,12 @@ public class SectionController {
         return new Result(true, StatusCode.SUCCESS, "Assign instructor successfully", null);
     }
 
+    @GetMapping("/{sectionId}/instructors")
+    public Result getInstructors(@PathVariable Integer sectionId) {
+        List<Map<String, Object>> instructors = this.sectionService.getInstructors(sectionId);
+        return new Result(true, StatusCode.SUCCESS, "Get instructors successfully", instructors);
+    }
+
     @DeleteMapping("/{sectionId}/instructors/{instructorId}")
     public Result removeInstructor(@PathVariable Integer sectionId, @PathVariable Integer instructorId) {
         this.sectionService.removeInstructor(sectionId, instructorId);

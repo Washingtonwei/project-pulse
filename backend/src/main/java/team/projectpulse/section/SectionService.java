@@ -138,6 +138,23 @@ public class SectionService {
                 .orElseThrow(() -> new ObjectNotFoundException("section", sectionId));
     }
 
+    public List<Map<String, Object>> getInstructors(Integer sectionId) {
+        Section section = this.sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new ObjectNotFoundException("section", sectionId));
+        
+        List<Map<String, Object>> instructorsList = new ArrayList<>();
+        for (Instructor instructor : section.getInstructors()) {
+            Map<String, Object> instructorData = new HashMap<>();
+            instructorData.put("id", instructor.getId());
+            instructorData.put("firstName", instructor.getFirstName());
+            instructorData.put("lastName", instructor.getLastName());
+            instructorData.put("email", instructor.getEmail());
+            instructorsList.add(instructorData);
+        }
+        
+        return instructorsList;
+    }
+
     public void removeInstructor(Integer sectionId, Integer instructorId) {
         Instructor instructor = this.instructorRepository.findById(instructorId)
                 .orElseThrow(() -> new ObjectNotFoundException("instructor", instructorId));

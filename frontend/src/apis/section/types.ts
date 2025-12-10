@@ -112,3 +112,14 @@ export interface SendEmailInvitationsToStudentsResponse {
   code: number
   message: string
 }
+
+export interface InviteOrAddInstructorsResponse {
+  flag: boolean
+  code: number
+  message: string
+  data: {
+    added: string[]
+    invited: string[]
+    alreadyExists: string[]
+  }
+}

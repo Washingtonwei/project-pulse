@@ -82,6 +82,14 @@
             type="primary"
             @click="showInviteStudentsDialog(row)"
           ></el-button>
+          <el-button
+            icon="User"
+            circle
+            plain
+            type="success"
+            @click="showInstructorsDialog(row)"
+            title="Manage Instructors"
+          ></el-button>
           <!-- <el-button
             icon="Delete"
             circle
@@ -244,6 +252,45 @@
         @close-dialog="closeInviteUsersDialog"
       ></InviteUsersForm>
     </el-dialog>
+    
+    <!-- Dialog for managing instructors -->
+    <el-dialog
+      title="Manage Instructors"
+      v-model="instructorsDialogVisible"
+      width="60%"
+      destroy-on-close
+    >
+      <el-table :data="sectionInstructors" style="width: 100%" v-loading="instructorsLoading">
+        <el-table-column label="ID" prop="id" width="80"></el-table-column>
+        <el-table-column label="Name" min-width="150">
+          <template #default="{ row }">
+            {{ row.firstName }} {{ row.lastName }}
+          </template>
+        </el-table-column>
+        <el-table-column label="Email" prop="email" min-width="200"></el-table-column>
+        <el-table-column label="Actions" width="120">
+          <template #default="{ row }">
+            <el-button
+              icon="Delete"
+              circle
+              plain
+              type="danger"
+              @click="removeInstructorFromSection(row.id)"
+              :disabled="sectionInstructors.length <= 1"
+              title="Remove Instructor"
+            ></el-button>
+          </template>
+        </el-table-column>
+        <template #empty>
+          <el-empty description="No instructors assigned to this section." />
+        </template>
+      </el-table>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="instructorsDialogVisible = false"> Close </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </el-card>
 </template>
 
@@ -254,10 +301,12 @@ import {
   createSection,
   updateSection,
   assignRubricToSection,
-  setUpActiveWeeks
+  setUpActiveWeeks,
+  getInstructors,
+  removeInstructorFromSection as removeInstructorAPI
 } from '@/apis/section'
 import type { FormInstance } from 'element-plus'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import type {
   SearchSectionByCriteriaResponse,
   Section,
@@ -565,6 +614,61 @@ function closeInviteUsersDialog() {
   inviteStudentDialogVisible.value = false
   inviteStudentSectionId.value = NaN
   inviteStudentCourseId.value = NaN
+  // Reload sections to update instructor list if needed
+  loadSections()
+}
+
+// Instructors Dialog
+const instructorsDialogVisible = ref(false)
+const sectionInstructors = ref<any[]>([])
+const instructorsLoading = ref(false)
+const currentSectionId = ref<number>(NaN)
+
+async function showInstructorsDialog(section: Section) {
+  instructorsDialogVisible.value = true
+  currentSectionId.value = section.sectionId as number
+  await loadInstructors(section.sectionId as number)
+}
+
+async function loadInstructors(sectionId: number) {
+  instructorsLoading.value = true
+  try {
+    const result = await getInstructors(sectionId)
+    sectionInstructors.value = result.data
+  } catch (error) {
+    ElMessage.error('Failed to load instructors')
+  } finally {
+    instructorsLoading.value = false
+  }
+}
+
+async function removeInstructorFromSection(instructorId: number) {
+  ElMessageBox.confirm(
+    'Are you sure you want to remove this instructor from the section?',
+    'Warning',
+    {
+      confirmButtonText: 'Yes',
+      cancelButtonText: 'Cancel',
+      type: 'warning'
+    }
+  )
+    .then(async () => {
+      try {
+        await removeInstructorAPI(currentSectionId.value, instructorId)
+        ElMessage.success('Instructor removed successfully')
+        // Reload instructors
+        await loadInstructors(currentSectionId.value)
+      } catch (error: any) {
+        if (error.response?.data?.message) {
+          ElMessage.error(error.response.data.message)
+        } else {
+          ElMessage.error('Failed to remove instructor')
+        }
+      }
+    })
+    .catch(() => {
+      // User cancelled
+    })
 }
 
 // async function deleteExistingSection(existingSection: Section) {
