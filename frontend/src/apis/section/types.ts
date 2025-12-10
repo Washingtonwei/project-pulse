@@ -123,3 +123,23 @@ export interface InviteOrAddInstructorsResponse {
     alreadyExists: string[]
   }
 }
+
+export interface InstructorInfo {
+  id: number
+  firstName: string
+  lastName: string
+  email: string
+}
+
+export interface GetInstructorsResponse {
+  flag: boolean
+  code: number
+  message: string
+  data: InstructorInfo[]
+}
+
+export interface RemoveInstructorResponse {
+  flag: boolean
+  code: number
+  message: string
+}

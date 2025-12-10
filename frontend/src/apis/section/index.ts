@@ -11,7 +11,9 @@ import type {
   AssignRubricToSectionResponse,
   SetUpActiveWeeksResponse,
   SendEmailInvitationsToStudentsResponse,
-  InviteOrAddInstructorsResponse
+  InviteOrAddInstructorsResponse,
+  GetInstructorsResponse,
+  RemoveInstructorResponse
 } from './types'
 
 enum API {
@@ -79,7 +81,7 @@ export const inviteOrAddInstructors = (
   )
 
 export const getInstructors = (sectionId: number) =>
-  request.get<any, any>(`${API.SECTIONS_ENDPOINT}/${sectionId}/instructors`)
+  request.get<any, GetInstructorsResponse>(`${API.SECTIONS_ENDPOINT}/${sectionId}/instructors`)
 
 export const removeInstructorFromSection = (sectionId: number, instructorId: number) =>
-  request.delete<any, any>(`${API.SECTIONS_ENDPOINT}/${sectionId}/instructors/${instructorId}`)
+  request.delete<any, RemoveInstructorResponse>(`${API.SECTIONS_ENDPOINT}/${sectionId}/instructors/${instructorId}`)
