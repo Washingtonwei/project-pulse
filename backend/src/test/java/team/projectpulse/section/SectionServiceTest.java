@@ -44,6 +44,12 @@ class SectionServiceTest {
     @Mock
     UserUtils userUtils;
 
+    @Mock
+    team.projectpulse.user.UserRepository userRepository;
+
+    @Mock
+    team.projectpulse.user.userinvitation.UserInvitationService userInvitationService;
+
     @InjectMocks
     SectionService sectionService;
 
@@ -240,4 +246,58 @@ class SectionServiceTest {
 //        assertThat(this.sections.get(1).isDefaultSection()).isTrue();
 //    }
 
+    @Test
+    void testGetInstructors() {
+        // Given
+        given(this.sectionRepository.findById(1)).willReturn(Optional.of(this.sections.get(0)));
+
+        // When
+        List<Map<String, Object>> result = this.sectionService.getInstructors(1);
+
+        // Then
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0)).containsKey("id");
+        assertThat(result.get(0)).containsKey("firstName");
+        assertThat(result.get(0)).containsKey("lastName");
+        assertThat(result.get(0)).containsKey("email");
+    }
+
+    @Test
+    void testRemoveInstructorSuccess() {
+        // Given
+        Instructor instructorToRemove = this.sections.get(0).getInstructors().iterator().next();
+        given(this.instructorRepository.findById(instructorToRemove.getId())).willReturn(Optional.of(instructorToRemove));
+        given(this.sectionRepository.findById(1)).willReturn(Optional.of(this.sections.get(0)));
+        given(this.sectionRepository.save(any(Section.class))).willReturn(this.sections.get(0));
+
+        // When
+        this.sectionService.removeInstructor(1, instructorToRemove.getId());
+
+        // Then
+        verify(this.sectionRepository, times(1)).save(any(Section.class));
+    }
+
+    @Test
+    void testRemoveInstructorFailsWhenLastInstructor() {
+        // Given - Create a section with only one instructor
+        Section sectionWithOneInstructor = new Section("Test Section", 
+            LocalDate.of(2023, 1, 1), 
+            LocalDate.of(2023, 12, 31), 
+            true, 
+            DayOfWeek.MONDAY, 
+            LocalTime.of(23, 59), 
+            DayOfWeek.TUESDAY, 
+            LocalTime.of(23, 59));
+        sectionWithOneInstructor.setSectionId(3);
+        sectionWithOneInstructor.addInstructor(this.instructor1);
+
+        given(this.instructorRepository.findById(this.instructor1.getId())).willReturn(Optional.of(this.instructor1));
+        given(this.sectionRepository.findById(3)).willReturn(Optional.of(sectionWithOneInstructor));
+
+        // When/Then
+        org.junit.jupiter.api.Assertions.assertThrows(
+            IllegalStateException.class,
+            () -> this.sectionService.removeInstructor(3, this.instructor1.getId())
+        );
+    }
 }

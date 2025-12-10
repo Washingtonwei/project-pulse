@@ -118,7 +118,7 @@ class InstructorServiceTest {
         given(this.courseRepository.findById(1)).willReturn(Optional.of(this.course));
 
         // When
-        Instructor result = this.instructorService.saveInstructor(instructor, 1, "token", "instructor");
+        Instructor result = this.instructorService.saveInstructor(instructor, 1, null, "token", "instructor");
 
         // Then
         assertThat(result.getFirstName()).isEqualTo("Elon");
