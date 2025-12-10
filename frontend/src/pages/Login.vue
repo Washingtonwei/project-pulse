@@ -120,16 +120,16 @@ async function login() {
     userInfoStore.setUserInfo(result.data.userInfo)
     // Save default section and course to Pinia store if the user is an instructor
     if (userInfoStore.userInfo?.roles?.includes('instructor')) {
-      settingsStore.setDefaultSectionId(
-        (userInfoStore.userInfo as Instructor).defaultSectionId ?? NaN
-      )
-      settingsStore.setDefaultCourseId(
-        (userInfoStore.userInfo as Instructor).defaultCourseId ?? NaN
-      )
+      const instructor = userInfoStore.userInfo as Instructor
+
+      settingsStore.setDefaultCourseId(instructor.defaultCourseId ?? NaN)
+      settingsStore.setDefaultSectionId(instructor.defaultSectionId ?? NaN)
     }
     // Save default section to Pinia store if the user is a student
     if (userInfoStore.userInfo?.roles?.includes('student')) {
-      settingsStore.setDefaultSectionId((userInfoStore.userInfo as Student).sectionId ?? NaN)
+      const student = userInfoStore.userInfo as Student
+
+      settingsStore.setDefaultSectionId(student.sectionId ?? NaN)
     }
 
     ElMessage.success('Login successfully!')

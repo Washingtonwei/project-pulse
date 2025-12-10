@@ -298,7 +298,8 @@ async function updateDefaultCourse(courseId: number) {
   // Call the API to set the default course
   await setDefaultCourse(courseId)
 
-  settingsStore.setDefaultCourseId(courseId)
+  // This is a user-initiated course switch, so reset the section
+  settingsStore.setDefaultCourseIdAndResetSection(courseId)
 
   ElMessage.success('Default course updated successfully')
 }
