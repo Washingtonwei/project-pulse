@@ -106,7 +106,7 @@ const totalElements = ref<number>(60) // total number of elements
 // Load data when the component is mounted
 onMounted(() => {
   searchCriteria.value.sectionId = settingsStore.defaultSectionId
-  if (!searchCriteria.value.sectionId) {
+  if (Number.isNaN(searchCriteria.value.sectionId)) {
     ElMessage.error('Please select a section in the Sections page.')
     return
   }

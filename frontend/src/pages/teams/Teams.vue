@@ -244,7 +244,7 @@ onMounted(async () => {
   teamSearchCriteria.value.sectionId = defaultSectionId.value
   studentSearchCriteria.value.sectionId = defaultSectionId.value
 
-  if (!teamSearchCriteria.value.sectionId) {
+  if (Number.isNaN(teamSearchCriteria.value.sectionId)) {
     ElMessage.error('Please select a section in the Sections page.')
     return
   }
