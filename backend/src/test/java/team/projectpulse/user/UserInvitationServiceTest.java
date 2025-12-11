@@ -134,7 +134,7 @@ class UserInvitationServiceTest {
         });
         assertThat(thrown)
                 .isInstanceOf(InvalidUserInvitationException.class)
-                .hasMessage("Incorrect section ID for student email: " + providedEmail);
+                .hasMessage("You are not invited to register for this course or section with email: " + providedEmail);
         verify(this.userInvitationRepository).findById(providedEmail);
     }
 

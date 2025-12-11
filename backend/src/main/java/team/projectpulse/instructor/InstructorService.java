@@ -69,21 +69,31 @@ public class InstructorService {
                 .orElseThrow(() -> new ObjectNotFoundException("instructor", instructorId));
     }
 
-    public Instructor saveInstructor(Instructor newInstructor, Integer courseId, String registrationToken, String role) {
+    public Instructor saveInstructor(Instructor newInstructor, Integer courseId, Integer sectionId, String registrationToken, String role) {
         // Validate user invitation
-        this.userInvitationService.validateUserInvitation(newInstructor.getEmail(), registrationToken, courseId, null, role);
+        this.userInvitationService.validateUserInvitation(newInstructor.getEmail(), registrationToken, courseId, sectionId, role);
 
         // Password rule: At least 6 characters, contains at least one letter and one number.
         if (!newInstructor.getPassword().matches("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{6,}$")) {
             throw new IllegalArgumentException("Password must contain at least one letter and one number, and at least 6 characters.");
         }
 
+        // Add the instructor to the course and section
         Course course = this.courseRepository.findById(courseId)
                 .orElseThrow(() -> new ObjectNotFoundException("course", courseId));
         course.addInstructor(newInstructor);
+        Section section = this.sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new ObjectNotFoundException("section", sectionId));
+        section.addInstructor(newInstructor);
+
+        // Set default course and section for the new instructor
+        newInstructor.setDefaultCourse(course);
+        newInstructor.setDefaultSection(section);
+
         newInstructor.setEnabled(true);
         newInstructor.setRoles("instructor");
         newInstructor.setPassword(this.passwordEncoder.encode(newInstructor.getPassword()));
+
         Instructor savedInstructor = this.instructorRepository.save(newInstructor);
         // Delete the user invitation after the instructor is saved.
         this.userInvitationService.deleteUserInvitation(newInstructor.getEmail());

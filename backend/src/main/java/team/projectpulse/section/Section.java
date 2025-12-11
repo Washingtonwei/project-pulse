@@ -159,6 +159,11 @@ public class Section {
 
         instructors.remove(instructor);
         instructor.getSections().remove(this);
+
+        // If this section is the default section for the instructor, unset it
+        if (instructor.getDefaultSection() != null && instructor.getDefaultSection().equals(this)) {
+            instructor.setDefaultSection(null);
+        }
     }
 
     public Course getCourse() {

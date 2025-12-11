@@ -119,14 +119,14 @@ async function login() {
     // Save userInfo to Pinia store
     userInfoStore.setUserInfo(result.data.userInfo)
     // Save default section and course to Pinia store if the user is an instructor
-    if (userInfoStore.userInfo?.roles?.includes('instructor')) {
+    if (userInfoStore.isInstructor) {
       const instructor = userInfoStore.userInfo as Instructor
 
       settingsStore.setDefaultCourseId(instructor.defaultCourseId ?? NaN)
       settingsStore.setDefaultSectionId(instructor.defaultSectionId ?? NaN)
     }
     // Save default section to Pinia store if the user is a student
-    if (userInfoStore.userInfo?.roles?.includes('student')) {
+    if (userInfoStore.isStudent) {
       const student = userInfoStore.userInfo as Student
 
       settingsStore.setDefaultSectionId(student.sectionId ?? NaN)

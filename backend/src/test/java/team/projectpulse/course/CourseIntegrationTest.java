@@ -267,22 +267,8 @@ class CourseIntegrationTest {
                 .andExpect(jsonPath("$.message").value("No permission."));
     }
 
-    //    @Test
+//    @Test
 //    void deleteCourse() {
 //    }
-
-    @Test
-    void testSendEmailInvitations() throws Exception {
-        // Given
-        List<String> emails = List.of("t.swift@abc.edu", "j.huang@abc.edu");
-
-        String json = this.objectMapper.writeValueAsString(emails);
-
-        // When and then
-        this.mockMvc.perform(post(this.baseUrl + "/courses/1/instructors/email-invitations").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
-                .andExpect(jsonPath("$.flag").value(true))
-                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
-                .andExpect(jsonPath("$.message").value("Send email invitation successfully"));
-    }
 
 }

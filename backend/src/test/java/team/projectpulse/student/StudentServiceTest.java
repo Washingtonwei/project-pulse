@@ -106,7 +106,7 @@ class StudentServiceTest {
         given(this.studentRepository.save(jan)).willReturn(jan);
 
         // When
-        Student result = this.studentService.saveStudent(1, 1, jan, "token", "student");
+        Student result = this.studentService.saveStudent(jan, 1, 1, "token", "student");
 
         // Then
         assertThat(result.getFirstName()).isEqualTo("Jan");

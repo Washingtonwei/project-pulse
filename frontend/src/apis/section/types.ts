@@ -1,3 +1,5 @@
+import type { Instructor } from '../instructor/types'
+
 export interface Section {
   sectionId?: number
   sectionName: string
@@ -107,7 +109,31 @@ export interface SetUpActiveWeeksResponse {
   message: string
 }
 
-export interface SendEmailInvitationsToStudentsResponse {
+export interface SendEmailInvitationsResponse {
+  flag: boolean
+  code: number
+  message: string
+}
+
+export interface InviteOrAddInstructorsResponse {
+  flag: boolean
+  code: number
+  message: string
+  data: {
+    added: string[]
+    invited: string[]
+    alreadyExists: string[]
+  }
+}
+
+export interface GetInstructorsResponse {
+  flag: boolean
+  code: number
+  message: string
+  data: Instructor[]
+}
+
+export interface RemoveInstructorResponse {
   flag: boolean
   code: number
   message: string

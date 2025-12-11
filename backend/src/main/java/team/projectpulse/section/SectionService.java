@@ -1,5 +1,6 @@
 package team.projectpulse.section;
 
+import team.projectpulse.course.Course;
 import team.projectpulse.instructor.Instructor;
 import team.projectpulse.instructor.InstructorRepository;
 import team.projectpulse.rubric.Rubric;
@@ -12,7 +13,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import team.projectpulse.user.PeerEvaluationUser;
+import team.projectpulse.user.UserRepository;
+import team.projectpulse.user.userinvitation.UserInvitationService;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,13 +30,17 @@ public class SectionService {
     private final RubricRepository rubricRepository;
     private final InstructorRepository instructorRepository;
     private final UserUtils userUtils;
+    private final UserRepository userRepository;
+    private final UserInvitationService userInvitationService;
 
 
-    public SectionService(SectionRepository sectionRepository, RubricRepository rubricRepository, InstructorRepository instructorRepository, UserUtils userUtils) {
+    public SectionService(SectionRepository sectionRepository, RubricRepository rubricRepository, InstructorRepository instructorRepository, UserUtils userUtils, UserRepository userRepository, UserInvitationService userInvitationService) {
         this.sectionRepository = sectionRepository;
         this.rubricRepository = rubricRepository;
         this.instructorRepository = instructorRepository;
         this.userUtils = userUtils;
+        this.userRepository = userRepository;
+        this.userInvitationService = userInvitationService;
     }
 
     public Page<Section> findByCriteria(Map<String, String> searchCriteria, Pageable pageable) {
@@ -129,6 +139,12 @@ public class SectionService {
                 .orElseThrow(() -> new ObjectNotFoundException("section", sectionId));
     }
 
+    public List<Instructor> getInstructors(Integer sectionId) {
+        Section section = this.sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new ObjectNotFoundException("section", sectionId));
+        return List.copyOf(section.getInstructors());
+    }
+
     public void removeInstructor(Integer sectionId, Integer instructorId) {
         Instructor instructor = this.instructorRepository.findById(instructorId)
                 .orElseThrow(() -> new ObjectNotFoundException("instructor", instructorId));
@@ -136,11 +152,62 @@ public class SectionService {
                 .map(oldSection -> {
                     // Check if the instructor is in the section
                     if (oldSection.getInstructors().contains(instructor)) {
+                        // Prevent removal if this is the last instructor
+                        if (oldSection.getInstructors().size() <= 1) {
+                            throw new IllegalStateException("Cannot remove the last instructor from the section");
+                        }
                         oldSection.removeInstructor(instructor);
                     }
                     return this.sectionRepository.save(oldSection);
                 })
                 .orElseThrow(() -> new ObjectNotFoundException("section", sectionId));
+    }
+
+    public Map<String, Object> inviteOrAddInstructors(Integer courseId, Integer sectionId, List<String> emails) {
+        Section section = this.sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new ObjectNotFoundException("section", sectionId));
+        Course course = section.getCourse();
+
+        List<String> addedEmails = new ArrayList<>(); // Emails of instructors added directly, no need to send invitation
+        List<String> invitedEmails = new ArrayList<>(); // Emails of instructors invited, need to send invitation email
+        List<String> alreadyExistsEmails = new ArrayList<>(); // Emails of instructors already in the section, no need to add or invite
+
+        for (String email : emails) {
+            // Check if user with this email already exists
+            PeerEvaluationUser existingUser = this.userRepository.findByEmail(email).orElse(null);
+
+            if (existingUser != null) {
+                // User exists - check if they're an instructor
+                if (existingUser instanceof Instructor) {
+                    Instructor instructor = (Instructor) existingUser;
+                    // Check if already assigned to this section
+                    if (section.getInstructors().contains(instructor)) {
+                        alreadyExistsEmails.add(email);
+                    } else {
+                        // Add instructor to section
+                        section.addInstructor(instructor);
+                        // Also ensure instructor is assigned to the course
+                        course.addInstructor(instructor);
+                        addedEmails.add(email);
+                    }
+                } else {
+                    // User exists but is not an instructor - cannot add
+                    throw new IllegalArgumentException("User with email " + email + " exists but is not an instructor");
+                }
+            } else {
+                // User doesn't exist - send invitation
+                this.userInvitationService.sendEmailInvitations(courseId, sectionId, List.of(email), "instructor");
+                invitedEmails.add(email);
+            }
+        }
+
+        this.sectionRepository.save(section);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("added", addedEmails);
+        result.put("invited", invitedEmails);
+        result.put("alreadyExists", alreadyExistsEmails);
+        return result;
     }
 
 }

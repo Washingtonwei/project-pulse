@@ -1,5 +1,8 @@
 package team.projectpulse.section;
 
+import team.projectpulse.instructor.Instructor;
+import team.projectpulse.instructor.converter.InstructorToInstructorDtoConverter;
+import team.projectpulse.instructor.dto.InstructorDto;
 import team.projectpulse.section.converter.SectionDtoToSectionConverter;
 import team.projectpulse.section.converter.SectionToSectionDtoConverter;
 import team.projectpulse.section.dto.SectionDto;
@@ -22,13 +25,15 @@ public class SectionController {
     private final SectionToSectionDtoConverter sectionToSectionDtoConverter;
     private final SectionDtoToSectionConverter sectionDtoToSectionConverter;
     private final UserInvitationService userInvitationService;
+    private final InstructorToInstructorDtoConverter instructorToInstructorDtoConverter;
 
 
-    public SectionController(SectionService sectionService, SectionToSectionDtoConverter sectionToSectionDtoConverter, SectionDtoToSectionConverter sectionDtoToSectionConverter, UserInvitationService userInvitationService) {
+    public SectionController(SectionService sectionService, SectionToSectionDtoConverter sectionToSectionDtoConverter, SectionDtoToSectionConverter sectionDtoToSectionConverter, UserInvitationService userInvitationService, InstructorToInstructorDtoConverter instructorToInstructorDtoConverter) {
         this.sectionService = sectionService;
         this.sectionToSectionDtoConverter = sectionToSectionDtoConverter;
         this.sectionDtoToSectionConverter = sectionDtoToSectionConverter;
         this.userInvitationService = userInvitationService;
+        this.instructorToInstructorDtoConverter = instructorToInstructorDtoConverter;
     }
 
     @PostMapping("/search")
@@ -85,6 +90,15 @@ public class SectionController {
         return new Result(true, StatusCode.SUCCESS, "Assign instructor successfully", null);
     }
 
+    @GetMapping("/{sectionId}/instructors")
+    public Result getInstructors(@PathVariable Integer sectionId) {
+        List<Instructor> instructors = this.sectionService.getInstructors(sectionId);
+        List<InstructorDto> instructorDtos = instructors.stream()
+                .map(this.instructorToInstructorDtoConverter::convert)
+                .toList();
+        return new Result(true, StatusCode.SUCCESS, "Get instructors successfully", instructorDtos);
+    }
+
     @DeleteMapping("/{sectionId}/instructors/{instructorId}")
     public Result removeInstructor(@PathVariable Integer sectionId, @PathVariable Integer instructorId) {
         this.sectionService.removeInstructor(sectionId, instructorId);
@@ -95,6 +109,12 @@ public class SectionController {
     public Result sendEmailInvitationsToStudents(@RequestParam Integer courseId, @PathVariable Integer sectionId, @RequestBody List<String> emails) {
         this.userInvitationService.sendEmailInvitations(courseId, sectionId, emails, "student");
         return new Result(true, StatusCode.SUCCESS, "Send email invitation successfully", null);
+    }
+
+    @PostMapping("/{sectionId}/instructors/invite-or-add")
+    public Result inviteOrAddInstructors(@RequestParam Integer courseId, @PathVariable Integer sectionId, @RequestBody List<String> emails) {
+        Map<String, Object> result = this.sectionService.inviteOrAddInstructors(courseId, sectionId, emails);
+        return new Result(true, StatusCode.SUCCESS, "Instructors invited or added successfully", result);
     }
 
 }

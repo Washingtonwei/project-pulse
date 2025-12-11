@@ -4,7 +4,7 @@
       <div class="header">
         <span>Section Management</span>
         <div class="extra">
-          <el-button type="primary" @click="showAddDialog()" icon="Plus">
+          <el-button type="primary" @click="showAddDialog()" icon="Plus" v-if="isAdmin">
             Add new section
           </el-button>
         </div>
@@ -49,6 +49,7 @@
             placeholder="Select a rubric"
             style="width: 100%"
             @change="assignRubricToSection(row.sectionId, row.rubricId)"
+            :disabled="!isAdmin"
           >
             <el-option
               v-for="rubric in rubrics"
@@ -67,6 +68,8 @@
             plain
             type="primary"
             @click="showEditDialog(row)"
+            title="Edit Section"
+            v-if="isAdmin"
           ></el-button>
           <el-button
             icon="Calendar"
@@ -74,13 +77,25 @@
             plain
             type="primary"
             @click="showActiveWeeksDialog(row)"
+            title="Select Active Weeks"
           ></el-button>
           <el-button
             icon="Promotion"
             circle
             plain
             type="primary"
-            @click="showInviteStudentsDialog(row)"
+            @click="showInviteUsersDialog(row)"
+            title="Invite Users"
+            v-if="isAdmin"
+          ></el-button>
+          <el-button
+            icon="User"
+            circle
+            plain
+            type="primary"
+            @click="showInstructorsDialog(row)"
+            title="Manage Instructors"
+            v-if="isAdmin"
           ></el-button>
           <!-- <el-button
             icon="Delete"
@@ -205,7 +220,7 @@
       <el-table :data="activeWeeks" style="width: 100%">
         <el-table-column label="Active" width="100">
           <template v-slot="scope">
-            <el-checkbox v-model="scope.row.isActive"></el-checkbox>
+            <el-checkbox v-model="scope.row.isActive" :disabled="!isAdmin"></el-checkbox>
           </template>
         </el-table-column>
         <el-table-column label="Week Number" prop="weekNumber" width="150">
@@ -227,22 +242,55 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="activeWeeksDialogVisible = false"> Cancel </el-button>
-          <el-button type="primary" @click="updateActiveWeeks()"> Confirm </el-button>
+          <el-button type="primary" @click="updateActiveWeeks()" :disabled="!isAdmin">
+            Confirm
+          </el-button>
         </span>
       </template>
     </el-dialog>
-    <!-- Dialog for inviting students to join a section -->
-    <el-dialog
-      title="Invite Users"
-      v-model="inviteStudentDialogVisible"
-      width="50%"
-      destroy-on-close
-    >
+    <!-- Dialog for inviting users to join a section -->
+    <el-dialog title="Invite Users" v-model="inviteUserDialogVisible" width="50%" destroy-on-close>
       <InviteUsersForm
-        :sectionId="inviteStudentSectionId"
-        :courseId="inviteStudentCourseId"
+        :sectionId="inviteUserSectionId"
+        :courseId="inviteUserCourseId"
         @close-dialog="closeInviteUsersDialog"
       ></InviteUsersForm>
+    </el-dialog>
+    <!-- Dialog for managing instructors -->
+    <el-dialog
+      title="Manage Instructors"
+      v-model="instructorsDialogVisible"
+      width="60%"
+      destroy-on-close
+    >
+      <el-table :data="sectionInstructors" style="width: 100%" v-loading="instructorsLoading">
+        <el-table-column label="ID" prop="id" width="80"></el-table-column>
+        <el-table-column label="Name" min-width="150">
+          <template #default="{ row }"> {{ row.firstName }} {{ row.lastName }} </template>
+        </el-table-column>
+        <el-table-column label="Email" prop="email" min-width="200"></el-table-column>
+        <el-table-column label="Actions" width="120">
+          <template #default="{ row }">
+            <el-button
+              icon="Delete"
+              circle
+              plain
+              type="danger"
+              @click="removeInstructor(row.id)"
+              :disabled="sectionInstructors.length <= 1"
+              title="Remove Instructor"
+            ></el-button>
+          </template>
+        </el-table-column>
+        <template #empty>
+          <el-empty description="No instructors assigned to this section." />
+        </template>
+      </el-table>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="instructorsDialogVisible = false"> Close </el-button>
+        </span>
+      </template>
     </el-dialog>
   </el-card>
 </template>
@@ -254,10 +302,12 @@ import {
   createSection,
   updateSection,
   assignRubricToSection,
-  setUpActiveWeeks
+  setUpActiveWeeks,
+  getInstructors,
+  removeInstructorFromSection
 } from '@/apis/section'
 import type { FormInstance } from 'element-plus'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import type {
   SearchSectionByCriteriaResponse,
   Section,
@@ -270,6 +320,12 @@ import moment from 'moment'
 import { useSettingsStore } from '@/stores/settings'
 import InviteUsersForm from './InviteUsersForm.vue'
 import { setDefaultSection } from '@/apis/instructor'
+import { useUserInfoStore } from '@/stores/userInfo'
+import { storeToRefs } from 'pinia'
+import type { Instructor } from '@/apis/instructor/types'
+
+const userInfoStore = useUserInfoStore()
+const { isAdmin } = storeToRefs(userInfoStore) // This preserves full reactivity.
 
 const searchCriteria = ref<SectionSearchCriteria>({
   sectionName: ''
@@ -293,7 +349,7 @@ const sectionForm = ref<FormInstance>()
 // Load data when the component is mounted
 onMounted(() => {
   loadRubrics()
-  loadSections()
+  loadSections() // Load sections belonging to the current selected course, this logic is in the back end
 })
 
 // Load rubrics
@@ -348,7 +404,7 @@ const sectionData = ref<Section>({
   endDate: '',
   warWeeklyDueDay: 'MONDAY', // Default to Monday
   warDueTime: '',
-  peerEvaluationWeeklyDueDay: 'TUESDAY', // Default to Monday
+  peerEvaluationWeeklyDueDay: 'TUESDAY', // Default to Tuesday
   peerEvaluationDueTime: '',
   isActive: false
 })
@@ -400,6 +456,11 @@ function clearForm() {
 const dialogTitle = ref<string>('')
 
 function showAddDialog() {
+  if (!isAdmin.value) {
+    ElMessage.error('You do not have permission to create a section.')
+    return
+  }
+
   clearForm()
   sectionForm.value?.clearValidate() // Clear the validation status of the form. The first time the dialog is opened, the form is not defined, so we need to check if it is defined before calling clearValidate()
   dialogTitle.value = 'Add a section'
@@ -407,6 +468,11 @@ function showAddDialog() {
 }
 
 async function addSection() {
+  if (!isAdmin.value) {
+    ElMessage.error('You do not have permission to create a section.')
+    return
+  }
+
   await sectionForm.value!.validate() // Validate the form
   buttonLoading.value = true
   const newSection: Section = {
@@ -432,6 +498,11 @@ async function addSection() {
 }
 
 function showEditDialog(existingSection: Section) {
+  if (!isAdmin.value) {
+    ElMessage.error('You do not have permission to update a section.')
+    return
+  }
+
   clearForm()
   sectionForm.value?.clearValidate()
   dialogVisible.value = true
@@ -449,6 +520,11 @@ function showEditDialog(existingSection: Section) {
 }
 
 async function updateExistingSection() {
+  if (!isAdmin.value) {
+    ElMessage.error('You do not have permission to update a section.')
+    return
+  }
+
   await sectionForm.value!.validate() // Validate the form
   buttonLoading.value = true
   const updatedSection: Section = {
@@ -523,6 +599,11 @@ function prepareActiveWeeks(section: Section): WeekInfo[] {
 }
 
 async function updateActiveWeeks() {
+  if (!isAdmin.value) {
+    ElMessage.error('You do not have permission to update active weeks.')
+    return
+  }
+
   const activeWeekNumbers = activeWeeks.value
     .filter((week) => week.isActive)
     .map((week) => week.weekNumber)
@@ -550,21 +631,81 @@ async function updateDefaultSection(sectionId: number) {
   ElMessage.success('Default section updated successfully')
 }
 
-const inviteStudentDialogVisible = ref(false)
+const inviteUserDialogVisible = ref(false)
 
-const inviteStudentSectionId = ref<number>(NaN) // The section ID for which students are being invited
-const inviteStudentCourseId = ref<number>(NaN) // The course ID for which students are being invited
+const inviteUserSectionId = ref<number>(NaN) // The section ID for which users are being invited
+const inviteUserCourseId = ref<number>(NaN) // The course ID for which users are being invited
 
-function showInviteStudentsDialog(section: Section) {
-  inviteStudentDialogVisible.value = true
-  inviteStudentSectionId.value = section.sectionId as number
-  inviteStudentCourseId.value = section.courseId as number
+function showInviteUsersDialog(section: Section) {
+  if (!isAdmin.value) {
+    ElMessage.error('You do not have permission to invite users to this section.')
+    return
+  }
+
+  inviteUserDialogVisible.value = true
+  inviteUserSectionId.value = section.sectionId as number
+  inviteUserCourseId.value = section.courseId as number
 }
 
 function closeInviteUsersDialog() {
-  inviteStudentDialogVisible.value = false
-  inviteStudentSectionId.value = NaN
-  inviteStudentCourseId.value = NaN
+  inviteUserDialogVisible.value = false
+  inviteUserSectionId.value = NaN
+  inviteUserCourseId.value = NaN
+
+  // Reload sections to update instructor list if needed
+  loadSections()
+}
+
+// Instructors Dialog
+const instructorsDialogVisible = ref(false)
+const sectionInstructors = ref<Instructor[]>([])
+const instructorsLoading = ref(false)
+const currentSectionId = ref<number>(NaN)
+async function showInstructorsDialog(section: Section) {
+  instructorsDialogVisible.value = true
+  currentSectionId.value = section.sectionId as number
+  await loadInstructors(section.sectionId as number)
+}
+
+async function loadInstructors(sectionId: number) {
+  instructorsLoading.value = true
+  try {
+    const result = await getInstructors(sectionId)
+    sectionInstructors.value = result.data
+  } catch (error) {
+    ElMessage.error('Failed to load instructors')
+  } finally {
+    instructorsLoading.value = false
+  }
+}
+
+async function removeInstructor(instructorId: number) {
+  ElMessageBox.confirm(
+    'Are you sure you want to remove this instructor from the section?',
+    'Warning',
+    {
+      confirmButtonText: 'Yes',
+      cancelButtonText: 'Cancel',
+      type: 'warning'
+    }
+  )
+    .then(async () => {
+      try {
+        await removeInstructorFromSection(currentSectionId.value, instructorId)
+        ElMessage.success('Instructor removed successfully')
+        // Reload instructors
+        await loadInstructors(currentSectionId.value)
+      } catch (error: any) {
+        if (error.response?.data?.message) {
+          ElMessage.error(error.response.data.message)
+        } else {
+          ElMessage.error('Failed to remove instructor')
+        }
+      }
+    })
+    .catch(() => {
+      // User cancelled
+    })
 }
 
 // async function deleteExistingSection(existingSection: Section) {

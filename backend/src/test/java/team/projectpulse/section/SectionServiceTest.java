@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -198,7 +199,7 @@ class SectionServiceTest {
     }
 
     @Test
-    void testRemoveInstructor() {
+    void testRemoveInstructorSuccess() {
         // Given
         given(this.instructorRepository.findById(1)).willReturn(Optional.of(this.instructor1));
         given(this.sectionRepository.findById(1)).willReturn(Optional.of(this.sections.get(0)));
@@ -210,6 +211,31 @@ class SectionServiceTest {
         // Then
         assertThat(this.sections.get(0).getInstructors().size()).isEqualTo(1);
         assertThat(this.instructor1.getSections().size()).isEqualTo(1);
+        verify(this.sectionRepository, times(1)).save(any(Section.class));
+    }
+
+    @Test
+    void testRemoveInstructorFailsWhenLastInstructor() {
+        // Given - Create a section with only one instructor
+        Section sectionWithOneInstructor = new Section("Test Section",
+                LocalDate.of(2023, 1, 1),
+                LocalDate.of(2023, 12, 31),
+                true,
+                DayOfWeek.MONDAY,
+                LocalTime.of(23, 59),
+                DayOfWeek.TUESDAY,
+                LocalTime.of(23, 59));
+        sectionWithOneInstructor.setSectionId(3);
+        sectionWithOneInstructor.addInstructor(this.instructor1);
+
+        given(this.instructorRepository.findById(this.instructor1.getId())).willReturn(Optional.of(this.instructor1));
+        given(this.sectionRepository.findById(3)).willReturn(Optional.of(sectionWithOneInstructor));
+
+        // When/Then
+        assertThrows(
+                IllegalStateException.class,
+                () -> this.sectionService.removeInstructor(3, this.instructor1.getId())
+        );
     }
 
 //    @Test
@@ -239,5 +265,17 @@ class SectionServiceTest {
 //        assertThat(this.sections.get(0).isDefaultSection()).isFalse();
 //        assertThat(this.sections.get(1).isDefaultSection()).isTrue();
 //    }
+
+    @Test
+    void testGetInstructors() {
+        // Given
+        given(this.sectionRepository.findById(1)).willReturn(Optional.of(this.sections.get(0)));
+
+        // When
+        List<Instructor> result = this.sectionService.getInstructors(1);
+
+        // Then
+        assertThat(result).hasSize(2);
+    }
 
 }

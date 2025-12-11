@@ -214,14 +214,15 @@ class SectionIntegrationTest {
     }
 
     @Test
-    void instructorBillFindSectionById1() throws Exception {
-        this.mockMvc.perform(get(this.baseUrl + "/sections/1").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.instructorBillToken))
+    void instructorBillFindSectionById3() throws Exception {
+        this.mockMvc.perform(get(this.baseUrl + "/sections/3").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.instructorBillToken))
                 .andExpect(jsonPath("$.flag").value(false))
                 .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
                 .andExpect(jsonPath("$.message").value("No permission."));
     }
 
     @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     void instructorBillFindSectionById2() throws Exception {
         this.mockMvc.perform(get(this.baseUrl + "/sections/2").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.instructorBillToken))
                 .andExpect(jsonPath("$.flag").value(true))
@@ -440,6 +441,21 @@ class SectionIntegrationTest {
                 .andExpect(jsonPath("$.flag").value(true))
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.message").value("Remove instructor successfully"));
+    }
+
+    @Test
+    void adminBingyangRemoveInstructorBill() throws Exception {
+        this.mockMvc.perform(delete(this.baseUrl + "/sections/2/instructors/2").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.message").value("Remove instructor successfully"));
+
+        // Verify that instructor Bill is no longer assigned to section 2
+        this.mockMvc.perform(get(this.baseUrl + "/sections/2/instructors").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.message").value("Get instructors successfully"))
+                .andExpect(jsonPath("$.data", Matchers.hasSize(1)));
     }
 
     @Test
