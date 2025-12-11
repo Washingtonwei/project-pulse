@@ -10,7 +10,9 @@ import type {
   UpdateTeamResponse,
   AssignStudentToTeamResponse,
   RemoveStudentFromTeamResponse,
-  AssignInstructorToTeamResponse
+  AssignInstructorToTeamResponse,
+  TransferTeamRequest,
+  TransferTeamResponse
 } from './types'
 
 enum API {
@@ -45,4 +47,10 @@ export const removeStudentFromTeam = (teamId: number, studentId: number) =>
 export const assignInstructorToTeam = (teamId: number, instructorId: number) =>
   request.put<any, AssignInstructorToTeamResponse>(
     `${API.TEAMS_ENDPOINT}/${teamId}/instructors/${instructorId}`
+  )
+
+export const transferTeam = (teamId: number, transferRequest: TransferTeamRequest) =>
+  request.patch<any, TransferTeamResponse>(
+    `${API.TEAMS_ENDPOINT}/${teamId}`,
+    transferRequest
   )

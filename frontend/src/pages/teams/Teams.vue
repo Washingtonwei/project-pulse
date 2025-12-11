@@ -64,7 +64,7 @@
           <el-table-column label="Name" prop="teamName"> </el-table-column>
           <el-table-column label="Description" prop="description"> </el-table-column>
           <el-table-column label="Website URL" prop="teamWebsiteUrl"> </el-table-column>
-          <el-table-column label="Operations" width="150">
+          <el-table-column label="Operations" width="200">
             <template #default="{ row }">
               <el-button
                 icon="Edit"
@@ -72,6 +72,14 @@
                 plain
                 type="primary"
                 @click="showEditDialog(row)"
+              ></el-button>
+              <el-button
+                icon="Sort"
+                circle
+                plain
+                type="warning"
+                @click="showTransferDialog(row)"
+                title="Transfer Team"
               ></el-button>
               <!-- <el-button
                 icon="User"
@@ -141,6 +149,66 @@
             </span>
           </template>
         </el-dialog>
+        <!-- Dialog for transferring team -->
+        <el-dialog v-model="transferDialogVisible" title="Transfer Team" width="40%">
+          <el-form
+            ref="transferForm"
+            :model="transferData"
+            label-width="auto"
+            style="padding-right: 30px"
+            label-position="right"
+          >
+            <el-alert
+              title="Transfer Summary"
+              type="info"
+              :closable="false"
+              style="margin-bottom: 20px"
+            >
+              <p><strong>Team:</strong> {{ transferData.teamName }}</p>
+              <p><strong>Current Section:</strong> {{ transferData.currentSectionName }}</p>
+              <p><strong>Members:</strong> {{ transferData.memberCount }} student(s)</p>
+            </el-alert>
+            <el-form-item label="Target Section:" prop="targetSectionId">
+              <el-select
+                v-model="transferData.targetSectionId"
+                placeholder="Select target section"
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="section in availableSections"
+                  :key="section.sectionId"
+                  :label="section.sectionName"
+                  :value="section.sectionId"
+                  :disabled="section.sectionId === transferData.currentSectionId"
+                />
+              </el-select>
+            </el-form-item>
+            <el-alert
+              v-if="transferData.targetSectionId"
+              title="Note"
+              type="warning"
+              :closable="false"
+            >
+              <p>
+                This operation will transfer the team and all its members to the selected section.
+                The team's instructor may be reassigned if necessary.
+              </p>
+            </el-alert>
+          </el-form>
+          <template #footer>
+            <span class="dialog-footer">
+              <el-button @click="transferDialogVisible = false"> Cancel </el-button>
+              <el-button
+                type="primary"
+                @click="confirmTransferTeam()"
+                :loading="buttonLoading"
+                :disabled="!transferData.targetSectionId"
+              >
+                Confirm Transfer
+              </el-button>
+            </span>
+          </template>
+        </el-dialog>
       </el-card>
     </el-col>
     <el-col :span="6">
@@ -188,7 +256,8 @@ import {
   createTeam,
   updateTeam,
   assignStudentToTeam,
-  removeStudentFromTeam
+  removeStudentFromTeam,
+  transferTeam
 } from '@/apis/team'
 import type { FormInstance } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -199,7 +268,9 @@ import type {
   Student,
   StudentSearchCriteria
 } from '@/apis/student/types'
+import type { Section } from '@/apis/section/types'
 import { searchStudents } from '@/apis/student'
+import { searchSections } from '@/apis/section'
 import draggable from 'vuedraggable'
 
 const teamSearchCriteria = ref<TeamSearchCriteria>({
@@ -227,6 +298,18 @@ const totalElements = ref<number>(10) // total number of elements
 const teamForm = ref<FormInstance>()
 
 const students = ref<Student[]>([]) // All students in the section
+
+// Transfer dialog state
+const transferDialogVisible = ref<boolean>(false)
+const transferData = ref({
+  teamId: NaN as number,
+  teamName: '',
+  currentSectionId: NaN as number,
+  currentSectionName: '',
+  targetSectionId: undefined as number | undefined,
+  memberCount: 0
+})
+const availableSections = ref<Section[]>([])
 
 // studentsWithoutTeam is a computed property that returns students who are not in any team and whose name (full name) matches the studentNameSearch input by the user
 const studentsWithoutTeam = computed(() =>
@@ -428,6 +511,86 @@ const onDragEnd = async (evt: any) => {
     if (oldTeamId) {
       await unassignStudent(oldTeamId, draggedStudentId)
     }
+  }
+}
+
+async function showTransferDialog(team: Team) {
+  transferDialogVisible.value = true
+  transferData.value = {
+    teamId: team.teamId as number,
+    teamName: team.teamName,
+    currentSectionId: team.sectionId,
+    currentSectionName: team.sectionName || '',
+    targetSectionId: undefined,
+    memberCount: team.students?.length || 0
+  }
+
+  // Load available sections (same course)
+  await loadAvailableSections()
+}
+
+async function loadAvailableSections() {
+  try {
+    // Search for all sections (we'll filter by course on the backend or client-side)
+    const result = await searchSections({ page: 0, size: 100 }, {})
+    
+    // Get the current team's section to find its course
+    const currentTeam = teams.value.find(t => t.teamId === transferData.value.teamId)
+    if (currentTeam) {
+      // Filter sections to only show those in the same course
+      // Note: We need to compare by courseId if available in the section data
+      // For now, we'll show all sections and let the backend validate
+      availableSections.value = result.data.content
+    }
+  } catch (error) {
+    ElMessage.error('Failed to load available sections')
+    console.error(error)
+  }
+}
+
+async function confirmTransferTeam() {
+  if (!transferData.value.targetSectionId) {
+    ElMessage.warning('Please select a target section')
+    return
+  }
+
+  buttonLoading.value = true
+  try {
+    const result = await transferTeam(transferData.value.teamId, {
+      sectionId: transferData.value.targetSectionId
+    })
+
+    if (result.flag) {
+      const transferResult = result.data
+      
+      // Build success message with details
+      let message = `Team "${transferResult.teamName}" transferred successfully!<br>`
+      message += `From: ${transferResult.oldSectionName}<br>`
+      message += `To: ${transferResult.newSectionName}<br>`
+      message += `Students moved: ${transferResult.studentsMoved}`
+      
+      // Show warnings if any
+      if (transferResult.warnings && transferResult.warnings.length > 0) {
+        message += '<br><br>Warnings:<br>' + transferResult.warnings.join('<br>')
+      }
+
+      ElMessageBox.alert(message, 'Transfer Complete', {
+        dangerouslyUseHTMLString: true,
+        type: 'success'
+      })
+
+      transferDialogVisible.value = false
+      
+      // Reload teams and students
+      await loadTeams()
+      await loadStudents()
+    }
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.message || 'Failed to transfer team'
+    ElMessage.error(errorMessage)
+    console.error(error)
+  } finally {
+    buttonLoading.value = false
   }
 }
 
