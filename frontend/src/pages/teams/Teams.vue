@@ -531,17 +531,11 @@ async function showTransferDialog(team: Team) {
 
 async function loadAvailableSections() {
   try {
-    // Search for all sections (we'll filter by course on the backend or client-side)
+    // Search for all sections (backend automatically filters by user's course via UserUtils)
     const result = await searchSections({ page: 0, size: 100 }, {})
     
-    // Get the current team's section to find its course
-    const currentTeam = teams.value.find(t => t.teamId === transferData.value.teamId)
-    if (currentTeam) {
-      // Filter sections to only show those in the same course
-      // Note: We need to compare by courseId if available in the section data
-      // For now, we'll show all sections and let the backend validate
-      availableSections.value = result.data.content
-    }
+    // Sections are already filtered to the current course by the backend
+    availableSections.value = result.data.content
   } catch (error) {
     ElMessage.error('Failed to load available sections')
     console.error(error)

@@ -150,6 +150,8 @@ public class TeamService {
         for (Student student : teamStudents) {
             student.setSection(newSection);
         }
+        // Save updated students
+        this.studentRepository.saveAll(teamStudents);
 
         // Handle instructor reassignment
         if (team.getInstructor() != null) {
@@ -179,7 +181,7 @@ public class TeamService {
                         newInstructor.getLastName());
         }
 
-        // Save the changes (cascade will handle the rest)
+        // Save the team with updated section
         this.teamRepository.save(team);
 
         return new TransferTeamResponse(
