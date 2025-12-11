@@ -2,10 +2,13 @@ package team.projectpulse.team;
 
 import team.projectpulse.instructor.Instructor;
 import team.projectpulse.instructor.InstructorRepository;
+import team.projectpulse.section.Section;
+import team.projectpulse.section.SectionRepository;
 import team.projectpulse.student.Student;
 import team.projectpulse.student.StudentRepository;
 import team.projectpulse.system.UserUtils;
 import team.projectpulse.system.exception.ObjectNotFoundException;
+import team.projectpulse.team.dto.TransferTeamResponse;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,6 +16,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -22,13 +27,15 @@ public class TeamService {
     private final TeamRepository teamRepository;
     private final StudentRepository studentRepository;
     private final InstructorRepository instructorRepository;
+    private final SectionRepository sectionRepository;
     private final UserUtils userUtils;
 
 
-    public TeamService(TeamRepository teamRepository, StudentRepository studentRepository, InstructorRepository instructorRepository, UserUtils userUtils) {
+    public TeamService(TeamRepository teamRepository, StudentRepository studentRepository, InstructorRepository instructorRepository, SectionRepository sectionRepository, UserUtils userUtils) {
         this.teamRepository = teamRepository;
         this.studentRepository = studentRepository;
         this.instructorRepository = instructorRepository;
+        this.sectionRepository = sectionRepository;
         this.userUtils = userUtils;
     }
 
@@ -117,6 +124,74 @@ public class TeamService {
             }
             team.addInstructor(instructor);
         }
+    }
+
+    public TransferTeamResponse transferTeam(Integer teamId, Integer newSectionId) {
+        // Find the team and new section
+        Team team = this.teamRepository.findById(teamId)
+                .orElseThrow(() -> new ObjectNotFoundException("team", teamId));
+
+        Section oldSection = team.getSection();
+        Section newSection = this.sectionRepository.findById(newSectionId)
+                .orElseThrow(() -> new ObjectNotFoundException("section", newSectionId));
+
+        // Validate that both sections belong to the same course
+        if (!oldSection.getCourse().getCourseId().equals(newSection.getCourse().getCourseId())) {
+            throw new IllegalArgumentException("Cannot transfer team to a section in a different course");
+        }
+
+        List<String> warnings = new ArrayList<>();
+        
+        // Update team's section
+        team.setSection(newSection);
+
+        // Get all students in the team and update their sections
+        List<Student> teamStudents = this.studentRepository.findByTeamTeamId(teamId);
+        for (Student student : teamStudents) {
+            student.setSection(newSection);
+        }
+
+        // Handle instructor reassignment
+        if (team.getInstructor() != null) {
+            Instructor currentInstructor = team.getInstructor();
+            
+            // Check if the current instructor is in the new section
+            if (!newSection.getInstructors().contains(currentInstructor)) {
+                // Remove the current instructor
+                team.removeInstructor(currentInstructor);
+                
+                // Assign an instructor from the new section if available
+                if (!newSection.getInstructors().isEmpty()) {
+                    Instructor newInstructor = newSection.getInstructors().iterator().next();
+                    team.addInstructor(newInstructor);
+                    warnings.add("Team instructor changed from " + currentInstructor.getFirstName() + " " + 
+                                currentInstructor.getLastName() + " to " + newInstructor.getFirstName() + " " + 
+                                newInstructor.getLastName());
+                } else {
+                    warnings.add("No instructor available in the target section. Team has no assigned instructor.");
+                }
+            }
+        } else if (!newSection.getInstructors().isEmpty()) {
+            // If there's no instructor but the new section has instructors, assign one
+            Instructor newInstructor = newSection.getInstructors().iterator().next();
+            team.addInstructor(newInstructor);
+            warnings.add("Team assigned to instructor: " + newInstructor.getFirstName() + " " + 
+                        newInstructor.getLastName());
+        }
+
+        // Save the changes (cascade will handle the rest)
+        this.teamRepository.save(team);
+
+        return new TransferTeamResponse(
+                team.getTeamId(),
+                team.getTeamName(),
+                oldSection.getSectionId(),
+                oldSection.getSectionName(),
+                newSection.getSectionId(),
+                newSection.getSectionName(),
+                teamStudents.size(),
+                warnings
+        );
     }
 
 }

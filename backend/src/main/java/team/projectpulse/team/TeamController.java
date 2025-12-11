@@ -5,6 +5,8 @@ import team.projectpulse.system.StatusCode;
 import team.projectpulse.team.converter.TeamDtoToTeamConverter;
 import team.projectpulse.team.converter.TeamToTeamDtoConverter;
 import team.projectpulse.team.dto.TeamDto;
+import team.projectpulse.team.dto.TransferTeamRequest;
+import team.projectpulse.team.dto.TransferTeamResponse;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -79,6 +81,12 @@ public class TeamController {
     public Result assignInstructorToTeam(@PathVariable Integer teamId, @PathVariable Integer instructorId) {
         this.teamService.assignInstructorToTeam(teamId, instructorId);
         return new Result(true, StatusCode.SUCCESS, "Assign instructor to team successfully", null);
+    }
+
+    @PatchMapping("/{teamId}")
+    public Result transferTeam(@PathVariable Integer teamId, @Valid @RequestBody TransferTeamRequest request) {
+        TransferTeamResponse response = this.teamService.transferTeam(teamId, request.sectionId());
+        return new Result(true, StatusCode.SUCCESS, "Transfer team successfully", response);
     }
 
 }
