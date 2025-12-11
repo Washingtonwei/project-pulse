@@ -1,11 +1,14 @@
 package team.projectpulse.team;
 
+import team.projectpulse.course.Course;
 import team.projectpulse.instructor.Instructor;
 import team.projectpulse.instructor.InstructorRepository;
 import team.projectpulse.section.Section;
+import team.projectpulse.section.SectionRepository;
 import team.projectpulse.student.Student;
 import team.projectpulse.student.StudentRepository;
 import team.projectpulse.system.UserUtils;
+import team.projectpulse.team.dto.TransferTeamResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,6 +42,8 @@ class TeamServiceTest {
     StudentRepository studentRepository;
     @Mock
     InstructorRepository instructorRepository;
+    @Mock
+    SectionRepository sectionRepository;
     @Mock
     UserUtils userUtils;
 
@@ -218,6 +223,85 @@ class TeamServiceTest {
         // Then
         assertThat(team1.getInstructor()).isEqualTo(bill);
         assertThat(bill.getTeams().size()).isEqualTo(1);
+    }
+
+    @Test
+    void testTransferTeamSuccess() {
+        // Given
+        Course course = new Course("Software Engineering", "Software Engineering course");
+        course.setCourseAdmin(this.instructors.get(0));
+        
+        Section oldSection = new Section("Section A", LocalDate.of(2024, 8, 15), LocalDate.of(2025, 5, 1), true, DayOfWeek.MONDAY, LocalTime.of(23, 59), DayOfWeek.TUESDAY, LocalTime.of(23, 59));
+        oldSection.setSectionName("Section A");
+        oldSection.setCourse(course);
+        oldSection.addInstructor(this.instructors.get(0));
+        
+        Section newSection = new Section("Section B", LocalDate.of(2024, 8, 15), LocalDate.of(2025, 5, 1), true, DayOfWeek.MONDAY, LocalTime.of(23, 59), DayOfWeek.TUESDAY, LocalTime.of(23, 59));
+        newSection.setSectionName("Section B");
+        newSection.setCourse(course);
+        newSection.addInstructor(this.instructors.get(1));
+        
+        Team team = new Team("Team Alpha", "Team Alpha description", "https://www.team-alpha.com");
+        team.setSection(oldSection);
+        team.addInstructor(this.instructors.get(0));
+        
+        Student student1 = new Student("alice", "Alice", "Johnson", "a.johnson@abc.edu", "123456", true, "student");
+        student1.setSection(oldSection);
+        team.addStudent(student1);
+        
+        Student student2 = new Student("bob", "Bob", "Smith", "b.smith@abc.edu", "123456", true, "student");
+        student2.setSection(oldSection);
+        team.addStudent(student2);
+        
+        List<Student> teamStudents = List.of(student1, student2);
+        
+        given(this.teamRepository.findById(1)).willReturn(Optional.of(team));
+        given(this.sectionRepository.findById(2)).willReturn(Optional.of(newSection));
+        given(this.studentRepository.findByTeamTeamId(1)).willReturn(teamStudents);
+        given(this.studentRepository.saveAll(teamStudents)).willReturn(teamStudents);
+        given(this.teamRepository.save(team)).willReturn(team);
+        
+        // When
+        TransferTeamResponse response = this.teamService.transferTeam(1, 2);
+        
+        // Then
+        assertThat(response.teamName()).isEqualTo("Team Alpha");
+        assertThat(response.newSectionName()).isEqualTo("Section B");
+        assertThat(response.studentsMoved()).isEqualTo(2);
+        assertThat(team.getSection()).isEqualTo(newSection);
+        assertThat(student1.getSection()).isEqualTo(newSection);
+        assertThat(student2.getSection()).isEqualTo(newSection);
+        verify(this.studentRepository).saveAll(teamStudents);
+        verify(this.teamRepository).save(team);
+    }
+
+    @Test
+    void testTransferTeamDifferentCourse() {
+        // Given
+        Course course1 = new Course("Software Engineering", "Software Engineering course");
+        course1.setCourseAdmin(this.instructors.get(0));
+        
+        Course course2 = new Course("Web Development", "Web Development course");
+        course2.setCourseAdmin(this.instructors.get(0));
+        
+        Section oldSection = new Section("Section A", LocalDate.of(2024, 8, 15), LocalDate.of(2025, 5, 1), true, DayOfWeek.MONDAY, LocalTime.of(23, 59), DayOfWeek.TUESDAY, LocalTime.of(23, 59));
+        oldSection.setSectionName("Section A");
+        oldSection.setCourse(course1);
+        
+        Section newSection = new Section("Section B", LocalDate.of(2024, 8, 15), LocalDate.of(2025, 5, 1), true, DayOfWeek.MONDAY, LocalTime.of(23, 59), DayOfWeek.TUESDAY, LocalTime.of(23, 59));
+        newSection.setSectionName("Section B");
+        newSection.setCourse(course2);
+        
+        Team team = new Team("Team Alpha", "Team Alpha description", "https://www.team-alpha.com");
+        team.setSection(oldSection);
+        
+        given(this.teamRepository.findById(1)).willReturn(Optional.of(team));
+        given(this.sectionRepository.findById(2)).willReturn(Optional.of(newSection));
+        
+        // When & Then
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            this.teamService.transferTeam(1, 2);
+        });
     }
 
 }
