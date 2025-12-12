@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import team.projectpulse.team.dto.TransferTeamResponse;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -85,6 +86,8 @@ public class TeamService {
         Student student = this.studentRepository.findById(studentId)
                 .orElseThrow(() -> new ObjectNotFoundException("student", studentId));
 
+        // AssignStudentToTeamAuthorizationManager would have already checked if the student and team are in the same section
+
         // Check if the student is already on the team
         if (!team.getStudents().contains(student)) {
             // Remove the student from the team if the student is already assigned to another team
@@ -143,20 +146,18 @@ public class TeamService {
         }
 
         // Transfer the team to the new section
-        oldSection.removeTeam(team);
-        newSection.addTeam(team);
+        this.transferTeam(team, oldSection, newSection);
 
         // Transfer all students in this team to the new section as well
-        List<Student> teamStudents = team.getStudents();
+        List<Student> teamStudents = new ArrayList<>(team.getStudents());
         for (Student student : teamStudents) {
-            oldSection.removeStudent(student);
-            newSection.addStudent(student);
+            this.transferStudent(student, oldSection, newSection);
         }
 
         // Assign this team a new instructor from the new section if the current instructor is not teaching the new section
         Instructor oldInstructor = team.getInstructor();
         if (!newSection.getInstructors().contains(oldInstructor)) {
-            team.removeInstructor(team.getInstructor());
+            team.removeInstructor(oldInstructor);
             team.addInstructor(newSection.getInstructors().iterator().next()); // Assign the first instructor of the new section
         }
 
@@ -171,6 +172,32 @@ public class TeamService {
                 oldInstructor != null ? oldInstructor.getFirstName() + " " + oldInstructor.getLastName() : "No Instructor",
                 team.getInstructor().getFirstName() + " " + team.getInstructor().getLastName()
         );
+    }
+
+    public void transferTeam(Team team, Section from, Section to) {
+        if (team.getSection() != from) {
+            throw new IllegalStateException("Team is not in the expected old section.");
+        }
+
+        // inverse side maintenance
+        from.getTeams().remove(team);
+        to.getTeams().add(team);
+
+        // owning side update (the real FK change)
+        team.setSection(to);
+    }
+
+    public void transferStudent(Student student, Section from, Section to) {
+        if (student.getSection() != from) {
+            throw new IllegalStateException("Student is not in the expected old section.");
+        }
+
+        // inverse side maintenance
+        from.getStudents().remove(student);
+        to.getStudents().add(student);
+
+        // owning side update (the real FK change)
+        student.setSection(to);
     }
 
 }

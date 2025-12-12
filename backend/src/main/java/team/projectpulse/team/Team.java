@@ -93,11 +93,13 @@ public class Team {
     }
 
     public void addInstructor(Instructor instructor) {
+        if (instructor == null) return;
         this.instructor = instructor;
         instructor.getTeams().add(this);
     }
 
     public void removeInstructor(Instructor instructor) {
+        if (instructor == null) return;
         this.instructor = null;
         instructor.getTeams().remove(this);
     }

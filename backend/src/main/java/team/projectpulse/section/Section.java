@@ -125,13 +125,9 @@ public class Section {
     }
 
     public void addTeam(Team team) {
-        this.teams.add(team);
+        if (team == null) return;
+        if (!this.teams.contains(team)) this.teams.add(team);
         team.setSection(this);
-    }
-
-    public void removeTeam(Team team) {
-        this.teams.remove(team);
-        team.setSection(null);
     }
 
     public List<Student> getStudents() {
@@ -143,13 +139,9 @@ public class Section {
     }
 
     public void addStudent(Student student) {
-        this.students.add(student);
+        if (student == null) return;
+        if (!this.students.contains(student)) this.students.add(student);
         student.setSection(this);
-    }
-
-    public void removeStudent(Student student) {
-        this.students.remove(student);
-        student.setSection(null);
     }
 
     public void addInstructor(Instructor instructor) {
