@@ -116,9 +116,10 @@ class InstructorServiceTest {
         given(this.instructorRepository.save(instructor)).willReturn(instructor);
         doNothing().when(this.userInvitationService).validateUserInvitation(anyString(), anyString(), any(), any(), anyString());
         given(this.courseRepository.findById(1)).willReturn(Optional.of(this.course));
+        given(this.sectionRepository.findById(1)).willReturn(Optional.of(this.section));
 
         // When
-        Instructor result = this.instructorService.saveInstructor(instructor, 1, "token", "instructor");
+        Instructor result = this.instructorService.saveInstructor(instructor, 1, 1, "token", "instructor");
 
         // Then
         assertThat(result.getFirstName()).isEqualTo("Elon");

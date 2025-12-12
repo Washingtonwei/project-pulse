@@ -97,3 +97,24 @@ export interface AssignInstructorToTeamResponse {
   code: number
   message: string
 }
+
+export interface TransferTeamRequest {
+  sectionId: number
+}
+
+export interface TransferTeamResponse {
+  flag: boolean
+  code: number
+  message: string
+  data: {
+    teamId: number
+    teamName: string
+    oldSectionId: number
+    oldSectionName: string
+    newSectionId: number
+    newSectionName: string
+    studentsMoved: number
+    oldInstructorName: string
+    newInstructorName: string
+  }
+}

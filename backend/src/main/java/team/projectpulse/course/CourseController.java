@@ -5,15 +5,12 @@ import team.projectpulse.course.converter.CourseToCourseDtoConverter;
 import team.projectpulse.course.dto.CourseDto;
 import team.projectpulse.system.Result;
 import team.projectpulse.system.StatusCode;
-import team.projectpulse.user.userinvitation.UserInvitationService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
-
 
 @RestController
 @RequestMapping("${api.endpoint.base-url}/courses")
@@ -22,14 +19,12 @@ public class CourseController {
     private final CourseService courseService;
     private final CourseDtoToCourseConverter courseDtoToCourseConverter;
     private final CourseToCourseDtoConverter courseToCourseDtoConverter;
-    private final UserInvitationService userInvitationService;
 
 
-    public CourseController(CourseService courseService, CourseDtoToCourseConverter courseDtoToCourseConverter, CourseToCourseDtoConverter courseToCourseDtoConverter, UserInvitationService userInvitationService) {
+    public CourseController(CourseService courseService, CourseDtoToCourseConverter courseDtoToCourseConverter, CourseToCourseDtoConverter courseToCourseDtoConverter) {
         this.courseService = courseService;
         this.courseDtoToCourseConverter = courseDtoToCourseConverter;
         this.courseToCourseDtoConverter = courseToCourseDtoConverter;
-        this.userInvitationService = userInvitationService;
     }
 
     /**
@@ -72,12 +67,6 @@ public class CourseController {
     public Result deleteCourse(@PathVariable Integer courseId) {
         this.courseService.deleteCourse(courseId);
         return new Result(true, StatusCode.SUCCESS, "Delete course successfully", null);
-    }
-
-    @PostMapping("/{courseId}/instructors/email-invitations")
-    public Result sendEmailInvitations(@PathVariable Integer courseId, @RequestBody List<String> emails) {
-        this.userInvitationService.sendEmailInvitations(courseId, null, emails, "instructor");
-        return new Result(true, StatusCode.SUCCESS, "Send email invitation successfully", null);
     }
 
 }

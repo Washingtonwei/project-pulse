@@ -170,12 +170,16 @@ async function register() {
       registrationToken: registrationToken.value,
       role: registrationRole.value
     })
-  } else {
+  } else if (registrationRole.value === 'instructor') {
     await createInstructor(registration.value, {
       courseId: registrationCourseId.value,
+      sectionId: registrationSectionId.value,
       registrationToken: registrationToken.value,
       role: registrationRole.value
     })
+  } else {
+    ElMessage.error('Invalid role specified in registration link')
+    return
   }
 
   ElMessage.success('Registration successful')
@@ -206,7 +210,7 @@ const reset = () => {
 }
 
 .registration-form {
-  max-width: 500px;
+  max-width: 600px;
   width: 100%;
   padding: 20px;
   border-radius: 10px;

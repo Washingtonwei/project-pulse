@@ -88,10 +88,9 @@ async function updateCurrentUser() {
   await userForm.value.validate()
 
   // Call the API to update the user, the user might be a student or an instructor
-  if (userInfo.value.roles!.includes('student')) {
+  if (userInfoStore.isStudent) {
     await updateStudent(userInfo.value as Student)
-  } else if (userInfo.value.roles!.includes('instructor')) {
-    console.log('Updating instructor:', userInfo.value)
+  } else if (userInfoStore.isInstructor) {
     await updateInstructor(userInfo.value as Instructor)
   }
 

@@ -46,14 +46,9 @@ public class UserInvitationService {
             throw new InvalidUserInvitationException("You are not allowed to register as " + role + " for email: " + email);
         }
 
-        // If the user is an instructor, check if the courseId matches
-        if (userInvitation.getRole().equals("instructor") && !userInvitation.getCourseId().equals(courseId)) {
-            throw new InvalidUserInvitationException("Incorrect course ID for instructor email: " + email);
-        }
-
-        // If the user is a student, check if the sectionId matches
-        if (userInvitation.getRole().equals("student") && !userInvitation.getSectionId().equals(sectionId)) {
-            throw new InvalidUserInvitationException("Incorrect section ID for student email: " + email);
+        // Ensure the user is trying to register for the correct course and section
+        if (!userInvitation.getCourseId().equals(courseId) || !userInvitation.getSectionId().equals(sectionId)) {
+            throw new InvalidUserInvitationException("You are not invited to register for this course or section with email: " + email);
         }
     }
 

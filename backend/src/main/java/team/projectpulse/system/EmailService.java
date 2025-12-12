@@ -31,15 +31,9 @@ public class EmailService {
 
             helper.setFrom(this.fromEmail);
             helper.setTo(userInvitation.getEmail());
-            helper.setSubject("Invitation to register");
+            helper.setSubject("Invitation to join Project Pulse");
 
-            String registrationLink;
-
-            if (userInvitation.getRole().equals("student")) {
-                registrationLink = this.frontendUrl + "/register?email=" + userInvitation.getEmail() + "&token=" + userInvitation.getToken() + "&courseId=" + userInvitation.getCourseId() + "&sectionId=" + userInvitation.getSectionId() + "&role=" + userInvitation.getRole();
-            } else {
-                registrationLink = this.frontendUrl + "/register?email=" + userInvitation.getEmail() + "&token=" + userInvitation.getToken() + "&courseId=" + userInvitation.getCourseId() + "&role=" + userInvitation.getRole();
-            }
+            String registrationLink = this.frontendUrl + "/register?email=" + userInvitation.getEmail() + "&token=" + userInvitation.getToken() + "&courseId=" + userInvitation.getCourseId() + "&sectionId=" + userInvitation.getSectionId() + "&role=" + userInvitation.getRole();
 
             String htmlContent = "<html>" +
                     "<head>" +
@@ -55,7 +49,7 @@ public class EmailService {
                     "<body>" +
                     "<div class='container'>" +
                     "<h1>Welcome!</h1>" +
-                    "<p>You have been invited to register at our web application.</p>" +
+                    "<p>You have been invited to join Project Pulse.</p>" +
                     "<p>Please click the link below to register:</p>" +
                     "<a href='" + registrationLink + "'>Register Now</a>" +
                     "</div>" +

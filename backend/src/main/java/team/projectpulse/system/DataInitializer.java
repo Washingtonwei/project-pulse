@@ -124,6 +124,7 @@ public class DataInitializer implements CommandLineRunner {
         section1.setActiveWeeks(List.of("2022-W31", "2022-W32", "2022-W33", "2022-W34", "2022-W35"));
         section1.setRubric(rubric);
         section1.addInstructor(instructor1);
+        section1.addInstructor(instructor2);
         course1.addSection(section1);
         this.sectionRepository.save(section1);
 
@@ -1027,7 +1028,7 @@ public class DataInitializer implements CommandLineRunner {
         this.activityRepository.save(new Activity(john, "2023-W40", team1, ActivityCategory.BUGFIX,
                 "Fix API Response Bug", "Resolve the issue with incorrect data in API responses", 5.0, 4.0, ActivityStatus.IN_PROGRESS));
 
-        UserInvitation userInvitationForElon = new UserInvitation("e.musk@abc.edu", 1, null, "registrationToken", "instructor");
+        UserInvitation userInvitationForElon = new UserInvitation("e.musk@abc.edu", 1, 2, "registrationToken", "instructor");
         UserInvitation userInvitationForLucas = new UserInvitation("l.santos@abc.edu", 1, 2, "registrationToken", "student");
         this.userInvitationRepository.save(userInvitationForElon);
         this.userInvitationRepository.save(userInvitationForLucas);

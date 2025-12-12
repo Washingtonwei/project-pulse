@@ -58,11 +58,11 @@ public class StudentController {
      */
     @PostMapping
     public Result addStudent(@RequestParam Integer courseId, @RequestParam Integer sectionId, @RequestParam String registrationToken, @RequestParam String role, @Valid @RequestBody Student newStudent) {
-        Student savedStudent = this.studentService.saveStudent(courseId, sectionId, newStudent, registrationToken, role);
+        Student savedStudent = this.studentService.saveStudent(newStudent, courseId, sectionId, registrationToken, role);
         StudentDto savedStudentDto = this.studentToStudentDtoConverter.convert(savedStudent);
         return new Result(true, StatusCode.SUCCESS, "Add student successfully", savedStudentDto);
     }
-    
+
     @PutMapping("/{studentId}")
     public Result updateStudent(@PathVariable Integer studentId, @Valid @RequestBody StudentDto studentDto) {
         Student update = this.studentDtoToStudentConverter.convert(studentDto);

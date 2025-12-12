@@ -153,6 +153,7 @@ class InstructorIntegrationTest {
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("courseId", "1");
+        requestParams.add("sectionId", "2");
         requestParams.add("registrationToken", "registrationToken");
         requestParams.add("role", "instructor");
 
@@ -182,6 +183,7 @@ class InstructorIntegrationTest {
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("courseId", "1");
+        requestParams.add("sectionId", "2");
         requestParams.add("registrationToken", "invalidRegistrationToken");
         requestParams.add("role", "instructor");
 
@@ -190,6 +192,54 @@ class InstructorIntegrationTest {
                 .andExpect(jsonPath("$.flag").value(false))
                 .andExpect(jsonPath("$.code").value(StatusCode.INVALID_ARGUMENT))
                 .andExpect(jsonPath("$.message").value("j.huang@abc.edu is not invited to register. Please contact the course admin."));
+    }
+
+    @Test
+    void testAddInstructorWithWrongSectionId() throws Exception {
+        Map<String, String> instructorDto = new HashMap<>();
+        instructorDto.put("username", "e.musk@abc.edu");
+        instructorDto.put("firstName", "Elon");
+        instructorDto.put("lastName", "Musk");
+        instructorDto.put("email", "e.musk@abc.edu");
+        instructorDto.put("password", "Abc123456");
+
+        String json = this.objectMapper.writeValueAsString(instructorDto);
+
+        MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
+        requestParams.add("courseId", "1");
+        requestParams.add("sectionId", "1"); // Elon is not invited to section 1.
+        requestParams.add("registrationToken", "registrationToken");
+        requestParams.add("role", "instructor");
+
+        // When and then
+        this.mockMvc.perform(post(this.baseUrl + "/instructors").contentType(MediaType.APPLICATION_JSON).content(json).params(requestParams).accept(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_ARGUMENT))
+                .andExpect(jsonPath("$.message").value("You are not invited to register for this course or section with email: e.musk@abc.edu"));
+    }
+
+    @Test
+    void testAddInstructorWithWrongRole() throws Exception {
+        Map<String, String> instructorDto = new HashMap<>();
+        instructorDto.put("username", "l.santos@abc.edu");
+        instructorDto.put("firstName", "Luke");
+        instructorDto.put("lastName", "Santos");
+        instructorDto.put("email", "l.santos@abc.edu");
+        instructorDto.put("password", "Abc123456");
+
+        String json = this.objectMapper.writeValueAsString(instructorDto);
+
+        MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
+        requestParams.add("courseId", "1");
+        requestParams.add("sectionId", "2");
+        requestParams.add("registrationToken", "registrationToken");
+        requestParams.add("role", "instructor"); // Luke is invited as a student, not an instructor.
+
+        // When and then
+        this.mockMvc.perform(post(this.baseUrl + "/instructors").contentType(MediaType.APPLICATION_JSON).content(json).params(requestParams).accept(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_ARGUMENT))
+                .andExpect(jsonPath("$.message").value("You are not allowed to register as instructor for email: l.santos@abc.edu"));
     }
 
     @Test
@@ -277,6 +327,22 @@ class InstructorIntegrationTest {
 
         // Verify that the default section is set.
         this.mockMvc.perform(get(this.baseUrl + "/instructors/1").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.message").value("Find instructor successfully"))
+                .andExpect(jsonPath("$.data.defaultSectionId").value(1));
+    }
+
+    @Test
+    void testInstructorBillSetDefaultSection() throws Exception {
+        // When and then
+        this.mockMvc.perform(put(this.baseUrl + "/instructors/sections/1/default").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.instructorBillToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.message").value("Set default section successfully"));
+
+        // Verify that the default section is set.
+        this.mockMvc.perform(get(this.baseUrl + "/instructors/2").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.instructorBillToken))
                 .andExpect(jsonPath("$.flag").value(true))
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.message").value("Find instructor successfully"))

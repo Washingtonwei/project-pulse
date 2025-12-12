@@ -332,4 +332,59 @@ class TeamIntegrationTest {
                 .andExpect(jsonPath("$.message").value("No permission."));
     }
 
+    @Test
+    void transferTeamToAnotherSectionSuccess() throws Exception {
+        // Given
+        Map<String, Object> transferTeamRequest = new HashMap<>();
+        transferTeamRequest.put("sectionId", "1");
+
+        String json = this.objectMapper.writeValueAsString(transferTeamRequest);
+
+        this.mockMvc.perform(patch(this.baseUrl + "/teams/1/section").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.message").value("Transfer team successfully"))
+                .andExpect(jsonPath("$.data.teamId").value(1))
+                .andExpect(jsonPath("$.data.teamName").value("Team1"))
+                .andExpect(jsonPath("$.data.oldSectionId").value(2))
+                .andExpect(jsonPath("$.data.newSectionId").value(1));
+
+        // Verify the team is now in the new section: section 1
+        this.mockMvc.perform(get(this.baseUrl + "/teams/1").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.message").value("Find team successfully"))
+                .andExpect(jsonPath("$.data.teamId").value(1))
+                .andExpect(jsonPath("$.data.sectionId").value(1));
+    }
+
+    @Test
+    void transferTeamToAnotherSectionNotInSameCourse() throws Exception {
+        // Given
+        Map<String, Object> transferTeamRequest = new HashMap<>();
+        transferTeamRequest.put("sectionId", "3"); // Section 3 belongs to a different course
+
+        String json = this.objectMapper.writeValueAsString(transferTeamRequest);
+
+        this.mockMvc.perform(patch(this.baseUrl + "/teams/1/section").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_ARGUMENT))
+                .andExpect(jsonPath("$.message").value("Cannot transfer team to a section in a different course"));
+    }
+
+    @Test
+    void transferTeamToAnotherSectionAsNonCourseAdmin() throws Exception {
+        // Given
+        Map<String, Object> transferTeamRequest = new HashMap<>();
+        transferTeamRequest.put("sectionId", "1"); // Section 3 belongs to a different course
+
+        String json = this.objectMapper.writeValueAsString(transferTeamRequest);
+
+        // Let Bill, who is not a course admin, try to transfer the team
+        this.mockMvc.perform(patch(this.baseUrl + "/teams/1/section").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.instructorBillToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
+                .andExpect(jsonPath("$.message").value("No permission."));
+    }
+
 }

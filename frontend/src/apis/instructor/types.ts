@@ -3,7 +3,7 @@ export interface Instructor {
   username: string
   password?: string
   enabled?: boolean
-  roles?: string
+  roles?: string // e.g. "admin instructor" or "instructor"
   firstName: string
   lastName: string
   email: string

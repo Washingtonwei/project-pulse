@@ -48,12 +48,12 @@ public class InstructorController {
      * @return
      */
     @PostMapping
-    public Result addInstructor(@RequestParam Integer courseId, @RequestParam String registrationToken, @RequestParam String role, @Valid @RequestBody Instructor newInstructor) {
-        Instructor savedInstructor = this.instructorService.saveInstructor(newInstructor, courseId, registrationToken, role);
+    public Result addInstructor(@RequestParam Integer courseId, @RequestParam Integer sectionId, @RequestParam String registrationToken, @RequestParam String role, @Valid @RequestBody Instructor newInstructor) {
+        Instructor savedInstructor = this.instructorService.saveInstructor(newInstructor, courseId, sectionId, registrationToken, role);
         InstructorDto savedInstructorDto = this.instructorToInstructorDtoConverter.convert(savedInstructor);
         return new Result(true, StatusCode.SUCCESS, "Add instructor successfully", savedInstructorDto);
     }
-    
+
     @PutMapping("/{instructorId}")
     public Result updateInstructor(@PathVariable Integer instructorId, @Valid @RequestBody InstructorDto instructorDto) {
         Instructor update = this.instructorDtoToInstructorConverter.convert(instructorDto);

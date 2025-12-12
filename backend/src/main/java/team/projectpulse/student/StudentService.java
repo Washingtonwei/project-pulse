@@ -80,7 +80,7 @@ public class StudentService {
         return this.studentRepository.findByTeamTeamId(teamId);
     }
 
-    public Student saveStudent(Integer courseId, Integer sectionId, Student newStudent, String registrationToken, String role) {
+    public Student saveStudent(Student newStudent, Integer courseId, Integer sectionId, String registrationToken, String role) {
         // Validate user invitation
         this.userInvitationService.validateUserInvitation(newStudent.getEmail(), registrationToken, courseId, sectionId, role);
 
@@ -89,15 +89,19 @@ public class StudentService {
             throw new IllegalArgumentException("Password must contain at least one letter and one number, and at least 6 characters.");
         }
 
+        // Add the student to the section
         Section section = this.sectionRepository.findById(sectionId)
                 .orElseThrow(() -> new ObjectNotFoundException("section", sectionId));
         section.addStudent(newStudent);
+
         newStudent.setEnabled(true);
         newStudent.setRoles("student");
         newStudent.setPassword(this.passwordEncoder.encode(newStudent.getPassword()));
-        Student save = this.studentRepository.save(newStudent);
+
+        Student savedStudent = this.studentRepository.save(newStudent);
+        // Delete the user invitation after the student is saved.
         this.userInvitationService.deleteUserInvitation(newStudent.getEmail());
-        return save;
+        return savedStudent;
     }
 
     public Student updateStudent(Integer studentId, Student update) {

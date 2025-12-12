@@ -4,7 +4,7 @@
       <div class="header">
         <span>Course Management</span>
         <div class="extra">
-          <el-button type="primary" @click="showAddDialog()" icon="Plus">
+          <el-button type="primary" @click="showAddDialog()" icon="Plus" v-if="isAdmin">
             Add new course
           </el-button>
         </div>
@@ -40,7 +40,7 @@
       </el-table-column>
       <el-table-column label="Id" prop="courseId" min-width="100"></el-table-column>
       <el-table-column label="Name" prop="courseName" min-width="150"> </el-table-column>
-      <el-table-column label="Operations" min-width="150">
+      <el-table-column label="Operations" min-width="150" v-if="isAdmin">
         <template #default="{ row }">
           <el-button
             icon="Edit"
@@ -48,13 +48,6 @@
             plain
             type="primary"
             @click="showEditDialog(row)"
-          ></el-button>
-          <el-button
-            icon="Promotion"
-            circle
-            plain
-            type="primary"
-            @click="showInviteInstructorsDialog(row)"
           ></el-button>
           <!-- <el-button
             icon="Delete"
@@ -114,18 +107,6 @@
         </span>
       </template>
     </el-dialog>
-    <!-- Dialog for inviting instructors to join a course -->
-    <el-dialog
-      title="Invite Users"
-      v-model="inviteInstructorDialogVisible"
-      width="50%"
-      destroy-on-close
-    >
-      <InviteUsersForm
-        :courseId="inviteInstructorCourseId"
-        @close-dialog="closeInviteUsersDialog"
-      ></InviteUsersForm>
-    </el-dialog>
   </el-card>
 </template>
 
@@ -140,8 +121,12 @@ import type {
   CourseSearchCriteria
 } from '@/apis/course/types'
 import { useSettingsStore } from '@/stores/settings'
-import InviteUsersForm from './InviteUsersForm.vue'
 import { setDefaultCourse } from '@/apis/instructor'
+import { useUserInfoStore } from '@/stores/userInfo'
+import { storeToRefs } from 'pinia'
+
+const userInfoStore = useUserInfoStore()
+const { isAdmin } = storeToRefs(userInfoStore) // This preserves full reactivity.
 
 const searchCriteria = ref<CourseSearchCriteria>({
   courseName: '',
@@ -167,18 +152,21 @@ onMounted(() => {
 // Load activities based on the search criteria
 async function loadCourses() {
   loading.value = true
-  // On the back end, the page number starts from 0, so subtract 1 here
-  const result: SearchCourseByCriteriaResponse = await searchCourses(
-    { page: pageNumber.value - 1, size: pageSize.value },
-    searchCriteria.value
-  )
-  courses.value = result.data.content
+  try {
+    // On the back end, the page number starts from 0, so subtract 1 here
+    const result: SearchCourseByCriteriaResponse = await searchCourses(
+      { page: pageNumber.value - 1, size: pageSize.value },
+      searchCriteria.value
+    )
+    courses.value = result.data.content
 
-  // Update pagination information
-  pageNumber.value = result.data.number + 1 // The page number starts from 0 on the back end, so add 1 here
-  pageSize.value = result.data.size
-  totalElements.value = result.data.totalElements
-  loading.value = false
+    // Update pagination information
+    pageNumber.value = result.data.number + 1 // The page number starts from 0 on the back end, so add 1 here
+    pageSize.value = result.data.size
+    totalElements.value = result.data.totalElements
+  } finally {
+    loading.value = false
+  }
 }
 
 function resetSearchCriteria() {
@@ -231,6 +219,11 @@ function clearForm() {
 const dialogTitle = ref<string>('')
 
 function showAddDialog() {
+  if (!isAdmin.value) {
+    ElMessage.error('You do not have permission to create a course.')
+    return
+  }
+
   clearForm()
   courseForm.value?.clearValidate() // Clear the validation status of the form. The first time the dialog is opened, the form is not defined, so we need to check if it is defined before calling clearValidate()
   dialogTitle.value = 'Add a course'
@@ -238,6 +231,11 @@ function showAddDialog() {
 }
 
 async function addCourse() {
+  if (!isAdmin.value) {
+    ElMessage.error('You do not have permission to create a course.')
+    return
+  }
+
   await courseForm.value!.validate() // Validate the form
 
   buttonLoading.value = true
@@ -258,6 +256,11 @@ async function addCourse() {
 }
 
 function showEditDialog(existingCourse: Course) {
+  if (!isAdmin.value) {
+    ElMessage.error('You do not have permission to update a course.')
+    return
+  }
+
   clearForm()
   courseForm.value?.clearValidate()
   dialogVisible.value = true
@@ -269,6 +272,11 @@ function showEditDialog(existingCourse: Course) {
 }
 
 async function updateExistingCourse() {
+  if (!isAdmin.value) {
+    ElMessage.error('You do not have permission to update a course.')
+    return
+  }
+
   await courseForm.value!.validate() // Validate the form
   buttonLoading.value = true
   const updatedCourse: Course = {
@@ -302,20 +310,6 @@ async function updateDefaultCourse(courseId: number) {
   settingsStore.setDefaultCourseIdAndResetSection(courseId)
 
   ElMessage.success('Default course updated successfully')
-}
-
-const inviteInstructorDialogVisible = ref(false)
-
-const inviteInstructorCourseId = ref<number>(NaN) // The course ID for which instructors are being invited
-
-function showInviteInstructorsDialog(course: Course) {
-  inviteInstructorDialogVisible.value = true
-  inviteInstructorCourseId.value = course.courseId as number
-}
-
-function closeInviteUsersDialog() {
-  inviteInstructorDialogVisible.value = false
-  inviteInstructorCourseId.value = NaN
 }
 
 // async function deleteExistingCourse(existingCourse: Course) {
