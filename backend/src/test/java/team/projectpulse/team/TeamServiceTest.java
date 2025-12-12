@@ -1,8 +1,10 @@
 package team.projectpulse.team;
 
+import team.projectpulse.course.Course;
 import team.projectpulse.instructor.Instructor;
 import team.projectpulse.instructor.InstructorRepository;
 import team.projectpulse.section.Section;
+import team.projectpulse.section.SectionRepository;
 import team.projectpulse.student.Student;
 import team.projectpulse.student.StudentRepository;
 import team.projectpulse.system.UserUtils;
@@ -26,6 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -40,44 +43,75 @@ class TeamServiceTest {
     @Mock
     InstructorRepository instructorRepository;
     @Mock
+    SectionRepository sectionRepository;
+    @Mock
     UserUtils userUtils;
 
     @InjectMocks
     TeamService teamService;
 
+    List<Course> courses;
     List<Team> teams;
     List<Student> students;
     List<Instructor> instructors;
+    List<Section> sections;
 
     @BeforeEach
     void setUp() {
+
+        Course course1 = new Course("COSC 40993 Senior Design", "Senior design project course for Computer Science, Computer Information Technology, and Data Science majors");
+        course1.setCourseId(1);
+        Course course2 = new Course("CITE 30363 Web Tech", "Course project for Web Technology");
+        course2.setCourseId(2);
+        this.courses = List.of(course1, course2);
+
         // Create instructors
         Instructor instructor1 = new Instructor("bingyang", "Bingyang", "Wei", "b.wei@tcu.edu", "123456", true, "admin instructor");
         Instructor instructor2 = new Instructor("bill", "Bill", "Gates", "b.gates@tcu.edu", "123456", true, "instructor");
-        this.instructors = List.of(instructor1, instructor2);
+        Instructor instructor3 = new Instructor("tim", "Tim", "Cook", "t.cook@tcu.edu", "123456", true, "instructor");
+        this.instructors = List.of(instructor1, instructor2, instructor3);
 
         // Create a section
         Section section1 = new Section("2022-2023", LocalDate.of(2022, 8, 15), LocalDate.of(2023, 5, 1), true, DayOfWeek.MONDAY, LocalTime.of(23, 59), DayOfWeek.TUESDAY, LocalTime.of(23, 59));
+        section1.setSectionId(1);
         section1.setActiveWeeks(List.of("2022-W31", "2022-W32", "2022-W33", "2022-W34", "2022-W35"));
         section1.addInstructor(instructor1);
         section1.addInstructor(instructor2);
 
         Section section2 = new Section("2023-2024", LocalDate.of(2023, 8, 14), LocalDate.of(2024, 4, 29), true, DayOfWeek.MONDAY, LocalTime.of(23, 59), DayOfWeek.TUESDAY, LocalTime.of(23, 59));
+        section2.setSectionId(2);
         section2.setActiveWeeks(List.of("2023-W31", "2023-W32", "2023-W33", "2023-W34", "2023-W35", "2023-W36", "2023-W37", "2023-W38", "2023-W39", "2023-W40"));
         section2.addInstructor(instructor1);
         section2.addInstructor(instructor2);
 
+        Section section3 = new Section("2025-2026", LocalDate.of(2025, 8, 14), LocalDate.of(2026, 4, 29), true, DayOfWeek.MONDAY, LocalTime.of(23, 59), DayOfWeek.TUESDAY, LocalTime.of(23, 59));
+        section3.setSectionId(3);
+        section3.setActiveWeeks(List.of("2025-W31", "2025-W32", "2025-W33", "2025-W34", "2025-W35", "2025-W36", "2025-W37", "2025-W38", "2025-W39", "2025-W40"));
+        section3.addInstructor(instructor3);
+
+        Section section4 = new Section("Section 4", LocalDate.of(2025, 8, 14), LocalDate.of(2026, 4, 29), true, DayOfWeek.MONDAY, LocalTime.of(23, 59), DayOfWeek.TUESDAY, LocalTime.of(23, 59));
+        section4.setSectionId(4);
+        section4.setActiveWeeks(List.of("2025-W31", "2025-W32", "2025-W33", "2025-W34", "2025-W35", "2025-W36", "2025-W37", "2025-W38", "2025-W39", "2025-W40"));
+        section4.addInstructor(instructor1);
+
+        course1.addSection(section1);
+        course1.addSection(section2);
+        course1.addSection(section3);
+        course2.addSection(section4);
+
+        this.sections = List.of(section1, section2, section3, section4);
+
         // Create a team
         Team team1 = new Team("Team1", "Team 1 description", "https://www.team1.com");
-        team1.setSection(section2);
+        section2.addTeam(team1);
         team1.addInstructor(instructor1);
 
         Team team2 = new Team("Team2", "Team 2 description", "https://www.team2.com");
-        team2.setSection(section2);
+        section2.addTeam(team2);
         team2.addInstructor(instructor1);
 
         Team team3 = new Team("Team3", "Team 3 description", "https://www.team3.com");
-        team3.setSection(section2);
+        section2.addTeam(team3);
         team3.addInstructor(instructor1);
 
         this.teams = List.of(team1, team2, team3);
@@ -218,6 +252,67 @@ class TeamServiceTest {
         // Then
         assertThat(team1.getInstructor()).isEqualTo(bill);
         assertThat(bill.getTeams().size()).isEqualTo(1);
+    }
+
+    @Test
+    void testTransferTeamToAnotherSectionSuccessWithSameInstructor() {
+        // Given
+        Section newSection = this.sections.get(0); // Section 1
+        Team team1 = this.teams.get(0); // Team 1 in Section 2 with instructor1 and two students
+        Instructor oldInstructor = team1.getInstructor();
+        given(this.teamRepository.findById(1)).willReturn(Optional.of(team1));
+        given(this.sectionRepository.findById(1)).willReturn(Optional.of(newSection));
+
+        // When
+        this.teamService.transferTeamToAnotherSection(1, 1); // Transfer team1 to section 1
+        // Then
+        assertThat(team1.getSection()).isEqualTo(newSection);
+        assertThat(team1.getInstructor()).isEqualTo(oldInstructor);
+        // Students in the team should also be transferred to the new section
+        for (Student student : team1.getStudents()) {
+            assertThat(student.getSection()).isEqualTo(newSection);
+        }
+    }
+
+    @Test
+    void testTransferTeamToAnotherSectionSuccessWithDifferentInstructor() {
+        // Given
+        Section newSection = this.sections.get(2); // Section 3
+        Team team1 = this.teams.get(0); // Team 1 in Section 2 with instructor1 and two students
+        Instructor oldInstructor = team1.getInstructor(); // Old instructor is Bingyang Wei
+        given(this.teamRepository.findById(1)).willReturn(Optional.of(team1));
+        given(this.sectionRepository.findById(3)).willReturn(Optional.of(newSection));
+
+        // When
+        this.teamService.transferTeamToAnotherSection(1, 3); // Transfer team1 to section 3
+        // Then
+        assertThat(team1.getSection()).isEqualTo(newSection);
+        assertThat(team1.getInstructor()).isNotEqualTo(oldInstructor);
+        assertThat(team1.getInstructor().getFirstName()).isEqualTo("Tim"); // New instructor is Tim Cook
+        // Students in the team should also be transferred to the new section
+        for (Student student : team1.getStudents()) {
+            assertThat(student.getSection()).isEqualTo(newSection);
+        }
+    }
+
+    @Test
+    void testTransferTeamToAnotherSectionInDifferentCourse() {
+        // Given
+        Section newSection = this.sections.get(3); // Section 4 in Course 2
+        Team team1 = this.teams.get(0); // Team 1 in Section 2 (Course 1) with instructor1 and two students
+        given(this.teamRepository.findById(1)).willReturn(Optional.of(team1));
+        given(this.sectionRepository.findById(4)).willReturn(Optional.of(newSection));
+
+        // When
+        Throwable throwable = catchThrowable(() ->
+                this.teamService.transferTeamToAnotherSection(1, 4) // Transfer team1 to section 3
+        );
+
+        // Then
+        assertThat(throwable)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Cannot transfer team to a section in a different course");
+
     }
 
 }

@@ -2,6 +2,8 @@ package team.projectpulse.team;
 
 import team.projectpulse.instructor.Instructor;
 import team.projectpulse.instructor.InstructorRepository;
+import team.projectpulse.section.Section;
+import team.projectpulse.section.SectionRepository;
 import team.projectpulse.student.Student;
 import team.projectpulse.student.StudentRepository;
 import team.projectpulse.system.UserUtils;
@@ -12,7 +14,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import team.projectpulse.team.dto.TransferTeamResponse;
 
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -23,13 +27,15 @@ public class TeamService {
     private final StudentRepository studentRepository;
     private final InstructorRepository instructorRepository;
     private final UserUtils userUtils;
+    private final SectionRepository sectionRepository;
 
 
-    public TeamService(TeamRepository teamRepository, StudentRepository studentRepository, InstructorRepository instructorRepository, UserUtils userUtils) {
+    public TeamService(TeamRepository teamRepository, StudentRepository studentRepository, InstructorRepository instructorRepository, UserUtils userUtils, SectionRepository sectionRepository) {
         this.teamRepository = teamRepository;
         this.studentRepository = studentRepository;
         this.instructorRepository = instructorRepository;
         this.userUtils = userUtils;
+        this.sectionRepository = sectionRepository;
     }
 
     public Page<Team> findByCriteria(Map<String, String> searchCriteria, Pageable pageable) {
@@ -117,6 +123,54 @@ public class TeamService {
             }
             team.addInstructor(instructor);
         }
+    }
+
+    public TransferTeamResponse transferTeamToAnotherSection(Integer teamId, Integer newSectionId) {
+        // Find the team
+        Team team = this.teamRepository.findById(teamId)
+                .orElseThrow(() -> new ObjectNotFoundException("team", teamId));
+
+        // Find the current section
+        Section oldSection = team.getSection();
+
+        // Find the new section
+        Section newSection = this.sectionRepository.findById(newSectionId)
+                .orElseThrow(() -> new ObjectNotFoundException("section", newSectionId));
+
+        // Validate that both sections belong to the same course
+        if (!oldSection.getCourse().getCourseId().equals(newSection.getCourse().getCourseId())) {
+            throw new IllegalArgumentException("Cannot transfer team to a section in a different course");
+        }
+
+        // Transfer the team to the new section
+        oldSection.removeTeam(team);
+        newSection.addTeam(team);
+
+        // Transfer all students in this team to the new section as well
+        List<Student> teamStudents = team.getStudents();
+        for (Student student : teamStudents) {
+            oldSection.removeStudent(student);
+            newSection.addStudent(student);
+        }
+
+        // Assign this team a new instructor from the new section if the current instructor is not teaching the new section
+        Instructor oldInstructor = team.getInstructor();
+        if (!newSection.getInstructors().contains(oldInstructor)) {
+            team.removeInstructor(team.getInstructor());
+            team.addInstructor(newSection.getInstructors().iterator().next()); // Assign the first instructor of the new section
+        }
+
+        return new TransferTeamResponse(
+                team.getTeamId(),
+                team.getTeamName(),
+                oldSection.getSectionId(),
+                oldSection.getSectionName(),
+                newSection.getSectionId(),
+                newSection.getSectionName(),
+                teamStudents.size(),
+                oldInstructor != null ? oldInstructor.getFirstName() + " " + oldInstructor.getLastName() : "No Instructor",
+                team.getInstructor().getFirstName() + " " + team.getInstructor().getLastName()
+        );
     }
 
 }

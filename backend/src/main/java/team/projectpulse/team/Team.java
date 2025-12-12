@@ -72,7 +72,6 @@ public class Team {
 
     public void setSection(Section section) {
         this.section = section;
-        section.getTeams().add(this);
     }
 
     public List<Student> getStudents() {

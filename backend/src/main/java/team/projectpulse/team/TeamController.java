@@ -9,6 +9,8 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
+import team.projectpulse.team.dto.TransferTeamRequest;
+import team.projectpulse.team.dto.TransferTeamResponse;
 
 import java.util.Map;
 
@@ -55,6 +57,12 @@ public class TeamController {
         Team updatedTeam = this.teamService.updateTeam(teamId, update);
         TeamDto updatedTeamDto = this.teamToTeamDtoConverter.convert(updatedTeam);
         return new Result(true, StatusCode.SUCCESS, "Update team successfully", updatedTeamDto);
+    }
+
+    @PatchMapping("/{teamId}/section")
+    public Result transferTeamToAnotherSection(@PathVariable Integer teamId, @Valid @RequestBody TransferTeamRequest request) {
+        TransferTeamResponse response = this.teamService.transferTeamToAnotherSection(teamId, request.sectionId());
+        return new Result(true, StatusCode.SUCCESS, "Transfer team successfully", response);
     }
 
     @DeleteMapping("/{teamId}")

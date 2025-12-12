@@ -129,6 +129,11 @@ public class Section {
         team.setSection(this);
     }
 
+    public void removeTeam(Team team) {
+        this.teams.remove(team);
+        team.setSection(null);
+    }
+
     public List<Student> getStudents() {
         return students;
     }
@@ -140,6 +145,11 @@ public class Section {
     public void addStudent(Student student) {
         this.students.add(student);
         student.setSection(this);
+    }
+
+    public void removeStudent(Student student) {
+        this.students.remove(student);
+        student.setSection(null);
     }
 
     public void addInstructor(Instructor instructor) {
