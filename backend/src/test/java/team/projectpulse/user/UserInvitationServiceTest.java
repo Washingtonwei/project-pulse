@@ -117,7 +117,7 @@ class UserInvitationServiceTest {
     }
 
     @Test
-    void testValidateUserInvitationIncorrectSectionId() {
+    void testValidateUserInvitationIncorrectCourseOrSectionId() {
         // Given
         String providedEmail = "v.gordon@abc.edu";
         String providedRegistrationToken = "token";
