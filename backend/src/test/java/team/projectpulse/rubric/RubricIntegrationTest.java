@@ -231,7 +231,7 @@ class RubricIntegrationTest {
     @Test
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     void assignCriterionToRubric() throws Exception {
-        this.mockMvc.perform(put(this.baseUrl + "/rubrics/1/criteria/8").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+        this.mockMvc.perform(put(this.baseUrl + "/rubrics/1/criteria/7").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
                 .andExpect(jsonPath("$.flag").value(true))
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.message").value("Add criterion to rubric successfully"));
@@ -247,7 +247,7 @@ class RubricIntegrationTest {
 
     @Test
     void assignCriterionToRubricNotInSameCourse() throws Exception {
-        this.mockMvc.perform(put(this.baseUrl + "/rubrics/1/criteria/7").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+        this.mockMvc.perform(put(this.baseUrl + "/rubrics/1/criteria/8").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
                 .andExpect(jsonPath("$.flag").value(false))
                 .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
                 .andExpect(jsonPath("$.message").value("No permission."));
@@ -272,7 +272,7 @@ class RubricIntegrationTest {
 
     @Test
     void removeCriterionFromRubricNotInSameCourse() throws Exception {
-        this.mockMvc.perform(delete(this.baseUrl + "/rubrics/1/criteria/7").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+        this.mockMvc.perform(delete(this.baseUrl + "/rubrics/1/criteria/8").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
                 .andExpect(jsonPath("$.flag").value(false))
                 .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
                 .andExpect(jsonPath("$.message").value("No permission."));
