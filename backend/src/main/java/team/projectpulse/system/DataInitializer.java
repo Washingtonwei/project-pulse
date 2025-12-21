@@ -12,11 +12,8 @@ import team.projectpulse.instructor.Instructor;
 import team.projectpulse.instructor.InstructorRepository;
 import team.projectpulse.rubric.*;
 import team.projectpulse.section.Section;
-import team.projectpulse.section.SectionRepository;
 import team.projectpulse.student.Student;
-import team.projectpulse.student.StudentRepository;
 import team.projectpulse.team.Team;
-import team.projectpulse.team.TeamRepository;
 import team.projectpulse.user.userinvitation.UserInvitation;
 import team.projectpulse.user.userinvitation.UserInvitationRepository;
 import org.springframework.boot.CommandLineRunner;
@@ -27,6 +24,7 @@ import org.springframework.stereotype.Component;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
