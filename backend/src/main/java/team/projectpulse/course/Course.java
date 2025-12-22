@@ -18,7 +18,7 @@ public class Course {
     private Integer courseId;
     private String courseName;
     private String courseDescription;
-    @OneToMany(mappedBy = "course")
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
     private List<Section> sections = new ArrayList<>();
     @ManyToOne
     private Instructor courseAdmin; // the instructor who is the admin of this course
@@ -27,9 +27,9 @@ public class Course {
             joinColumns = @JoinColumn(name = "course_id"),
             inverseJoinColumns = @JoinColumn(name = "instructor_id"))
     private Set<Instructor> instructors = new HashSet<>(); // the instructors who are teaching this course
-    @OneToMany(mappedBy = "course")
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
     private List<Criterion> criteria = new ArrayList<>();
-    @OneToMany(mappedBy = "course")
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
     private List<Rubric> rubrics = new ArrayList<>();
 
     public Course() {
