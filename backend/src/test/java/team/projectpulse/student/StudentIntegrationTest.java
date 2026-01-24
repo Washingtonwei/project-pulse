@@ -1,7 +1,8 @@
 package team.projectpulse.student;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.utility.DockerImageName;
@@ -14,7 +15,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -48,7 +48,7 @@ class StudentIntegrationTest {
     MockMvc mockMvc;
 
     @Autowired
-    ObjectMapper objectMapper;
+    JsonMapper jsonMapper;
 
     String adminToken;
 
@@ -106,7 +106,7 @@ class StudentIntegrationTest {
         // Given
         Map<String, String> searchCriteria = new HashMap<>();
         searchCriteria.put("teamName", "Team1");
-        String json = this.objectMapper.writeValueAsString(searchCriteria);
+        String json = this.jsonMapper.writeValueAsString(searchCriteria);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("page", "0");
@@ -175,7 +175,7 @@ class StudentIntegrationTest {
         studentDto.put("email", "l.santos@abc.edu");
         studentDto.put("password", "Abc123456");
 
-        String json = this.objectMapper.writeValueAsString(studentDto);
+        String json = this.jsonMapper.writeValueAsString(studentDto);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("courseId", "1");
@@ -205,7 +205,7 @@ class StudentIntegrationTest {
         studentDto.put("email", "m.grant@abc.edu");
         studentDto.put("password", "123456");
 
-        String json = this.objectMapper.writeValueAsString(studentDto);
+        String json = this.jsonMapper.writeValueAsString(studentDto);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("courseId", "1");
@@ -229,7 +229,7 @@ class StudentIntegrationTest {
         studentDto.put("email", "l.santos@abc.edu");
         studentDto.put("password", "123456");
 
-        String json = this.objectMapper.writeValueAsString(studentDto);
+        String json = this.jsonMapper.writeValueAsString(studentDto);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("courseId", "1");
@@ -255,7 +255,7 @@ class StudentIntegrationTest {
         studentDto.put("enabled", false); // Student cannot change their enabled status.
         studentDto.put("roles", "instructor"); // Student cannot change their role.
 
-        String json = this.objectMapper.writeValueAsString(studentDto);
+        String json = this.jsonMapper.writeValueAsString(studentDto);
 
         // When and then
         this.mockMvc.perform(put(this.baseUrl + "/students/4").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
@@ -280,7 +280,7 @@ class StudentIntegrationTest {
         studentDto.put("lastName", "Hudson");
         studentDto.put("email", "e.hudson@abc.edu");
 
-        String json = this.objectMapper.writeValueAsString(studentDto);
+        String json = this.jsonMapper.writeValueAsString(studentDto);
 
         // When and then
         this.mockMvc.perform(put(this.baseUrl + "/students/5").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))

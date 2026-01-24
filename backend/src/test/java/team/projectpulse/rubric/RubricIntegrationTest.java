@@ -1,6 +1,6 @@
 package team.projectpulse.rubric;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -47,7 +47,7 @@ class RubricIntegrationTest {
     MockMvc mockMvc;
 
     @Autowired
-    ObjectMapper objectMapper;
+    JsonMapper jsonMapper;
 
     String adminBingyangToken;
 
@@ -97,7 +97,7 @@ class RubricIntegrationTest {
         // Given
         Map<String, String> searchCriteria = new HashMap<>();
         searchCriteria.put("rubricName", "rubric");
-        String json = this.objectMapper.writeValueAsString(searchCriteria);
+        String json = this.jsonMapper.writeValueAsString(searchCriteria);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("page", "0");
@@ -117,7 +117,7 @@ class RubricIntegrationTest {
         // Given
         Map<String, String> searchCriteria = new HashMap<>();
         searchCriteria.put("rubricName", "rubric");
-        String json = this.objectMapper.writeValueAsString(searchCriteria);
+        String json = this.jsonMapper.writeValueAsString(searchCriteria);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("page", "0");
@@ -177,7 +177,7 @@ class RubricIntegrationTest {
         Map<String, String> rubricDto = new HashMap<>();
         rubricDto.put("rubricName", "Peer Eval Rubric v2");
 
-        String json = this.objectMapper.writeValueAsString(rubricDto);
+        String json = this.jsonMapper.writeValueAsString(rubricDto);
 
         // When and then
         this.mockMvc.perform(post(this.baseUrl + "/rubrics").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
@@ -196,7 +196,7 @@ class RubricIntegrationTest {
         Map<String, String> rubricDto = new HashMap<>();
         rubricDto.put("rubricName", "Peer Eval Rubric v1 (update)");
 
-        String json = this.objectMapper.writeValueAsString(rubricDto);
+        String json = this.jsonMapper.writeValueAsString(rubricDto);
 
         // When and then
         this.mockMvc.perform(put(this.baseUrl + "/rubrics/1").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
@@ -215,7 +215,7 @@ class RubricIntegrationTest {
         Map<String, String> rubricDto = new HashMap<>();
         rubricDto.put("rubricName", "Peer Eval Rubric v1 (update)");
 
-        String json = this.objectMapper.writeValueAsString(rubricDto);
+        String json = this.jsonMapper.writeValueAsString(rubricDto);
 
         // When and then
         this.mockMvc.perform(put(this.baseUrl + "/rubrics/1").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminTimToken))

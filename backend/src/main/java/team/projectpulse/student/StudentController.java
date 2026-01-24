@@ -1,8 +1,10 @@
 package team.projectpulse.student;
 
 import team.projectpulse.student.converter.StudentDtoToStudentConverter;
+import team.projectpulse.student.converter.StudentRegistrationToStudentConverter;
 import team.projectpulse.student.converter.StudentToStudentDtoConverter;
 import team.projectpulse.student.dto.StudentDto;
+import team.projectpulse.student.dto.StudentRegistrationRequest;
 import team.projectpulse.system.Result;
 import team.projectpulse.system.StatusCode;
 import jakarta.validation.Valid;
@@ -19,12 +21,14 @@ import java.util.stream.Collectors;
 public class StudentController {
 
     private final StudentService studentService;
+    private final StudentRegistrationToStudentConverter studentRegistrationToStudentConverter;
     private final StudentToStudentDtoConverter studentToStudentDtoConverter;
     private final StudentDtoToStudentConverter studentDtoToStudentConverter;
 
 
-    public StudentController(StudentService studentService, StudentToStudentDtoConverter studentToStudentDtoConverter, StudentDtoToStudentConverter studentDtoToStudentConverter) {
+    public StudentController(StudentService studentService, StudentRegistrationToStudentConverter studentRegistrationToStudentConverter, StudentToStudentDtoConverter studentToStudentDtoConverter, StudentDtoToStudentConverter studentDtoToStudentConverter) {
         this.studentService = studentService;
+        this.studentRegistrationToStudentConverter = studentRegistrationToStudentConverter;
         this.studentToStudentDtoConverter = studentToStudentDtoConverter;
         this.studentDtoToStudentConverter = studentDtoToStudentConverter;
     }
@@ -49,15 +53,10 @@ public class StudentController {
         List<StudentDto> studentDtos = students.stream().map(this.studentToStudentDtoConverter::convert).collect(Collectors.toList());
         return new Result(true, StatusCode.SUCCESS, "Find students by team id successfully", studentDtos);
     }
-
-    /**
-     * We are not using StudentDto to receive the request params, but Student, since we require password.
-     *
-     * @param newStudent
-     * @return
-     */
+    
     @PostMapping
-    public Result addStudent(@RequestParam Integer courseId, @RequestParam Integer sectionId, @RequestParam String registrationToken, @RequestParam String role, @Valid @RequestBody Student newStudent) {
+    public Result addStudent(@RequestParam Integer courseId, @RequestParam Integer sectionId, @RequestParam String registrationToken, @RequestParam String role, @Valid @RequestBody StudentRegistrationRequest registrationRequest) {
+        Student newStudent = this.studentRegistrationToStudentConverter.convert(registrationRequest);
         Student savedStudent = this.studentService.saveStudent(newStudent, courseId, sectionId, registrationToken, role);
         StudentDto savedStudentDto = this.studentToStudentDtoConverter.convert(savedStudent);
         return new Result(true, StatusCode.SUCCESS, "Add student successfully", savedStudentDto);

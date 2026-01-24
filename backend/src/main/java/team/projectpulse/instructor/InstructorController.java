@@ -1,8 +1,10 @@
 package team.projectpulse.instructor;
 
 import team.projectpulse.instructor.converter.InstructorDtoToInstructorConverter;
+import team.projectpulse.instructor.converter.InstructorRegistrationRequestToInstructorConverter;
 import team.projectpulse.instructor.converter.InstructorToInstructorDtoConverter;
 import team.projectpulse.instructor.dto.InstructorDto;
+import team.projectpulse.instructor.dto.InstructorRegistrationRequest;
 import team.projectpulse.system.Result;
 import team.projectpulse.system.StatusCode;
 import jakarta.validation.Valid;
@@ -17,12 +19,14 @@ import java.util.Map;
 public class InstructorController {
 
     private final InstructorService instructorService;
+    private final InstructorRegistrationRequestToInstructorConverter registrationRequestToInstructorConverter;
     private final InstructorToInstructorDtoConverter instructorToInstructorDtoConverter;
     private final InstructorDtoToInstructorConverter instructorDtoToInstructorConverter;
 
 
-    public InstructorController(InstructorService instructorService, InstructorToInstructorDtoConverter instructorToInstructorDtoConverter, InstructorDtoToInstructorConverter instructorDtoToInstructorConverter) {
+    public InstructorController(InstructorService instructorService, InstructorRegistrationRequestToInstructorConverter registrationRequestToInstructorConverter, InstructorToInstructorDtoConverter instructorToInstructorDtoConverter, InstructorDtoToInstructorConverter instructorDtoToInstructorConverter) {
         this.instructorService = instructorService;
+        this.registrationRequestToInstructorConverter = registrationRequestToInstructorConverter;
         this.instructorToInstructorDtoConverter = instructorToInstructorDtoConverter;
         this.instructorDtoToInstructorConverter = instructorDtoToInstructorConverter;
     }
@@ -40,15 +44,10 @@ public class InstructorController {
         InstructorDto instructorDto = this.instructorToInstructorDtoConverter.convert(instructor);
         return new Result(true, StatusCode.SUCCESS, "Find instructor successfully", instructorDto);
     }
-
-    /**
-     * We are not using InstructorDto to receive the request params, but Instructor, since we require password.
-     *
-     * @param newInstructor
-     * @return
-     */
+    
     @PostMapping
-    public Result addInstructor(@RequestParam Integer courseId, @RequestParam Integer sectionId, @RequestParam String registrationToken, @RequestParam String role, @Valid @RequestBody Instructor newInstructor) {
+    public Result addInstructor(@RequestParam Integer courseId, @RequestParam Integer sectionId, @RequestParam String registrationToken, @RequestParam String role, @Valid @RequestBody InstructorRegistrationRequest registrationRequest) {
+        Instructor newInstructor = this.registrationRequestToInstructorConverter.convert(registrationRequest);
         Instructor savedInstructor = this.instructorService.saveInstructor(newInstructor, courseId, sectionId, registrationToken, role);
         InstructorDto savedInstructorDto = this.instructorToInstructorDtoConverter.convert(savedInstructor);
         return new Result(true, StatusCode.SUCCESS, "Add instructor successfully", savedInstructorDto);

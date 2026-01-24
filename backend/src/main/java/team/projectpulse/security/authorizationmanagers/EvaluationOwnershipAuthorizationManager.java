@@ -1,5 +1,7 @@
 package team.projectpulse.security.authorizationmanagers;
 
+import org.jspecify.annotations.Nullable;
+import org.springframework.security.authorization.AuthorizationResult;
 import team.projectpulse.evaluation.EvaluationSecurityService;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
@@ -23,7 +25,7 @@ public class EvaluationOwnershipAuthorizationManager implements AuthorizationMan
     }
 
     @Override
-    public AuthorizationDecision check(Supplier<Authentication> authenticationSupplier, RequestAuthorizationContext context) {
+    public @Nullable AuthorizationResult authorize(Supplier<? extends @Nullable Authentication> authentication, RequestAuthorizationContext context) {
         // Extract the evaluationId from the request URI: /evaluations/{evaluationId}
         Map<String, String> uriVariables = EVALUATION_URI_TEMPLATE.match(context.getRequest().getRequestURI());
         Integer evaluationIdFromRequestUri = Integer.parseInt(uriVariables.get("evaluationId"));

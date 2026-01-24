@@ -1,6 +1,6 @@
 package team.projectpulse.course;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.testcontainers.containers.MySQLContainer;
 import team.projectpulse.system.StatusCode;
@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -31,7 +31,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
@@ -51,7 +50,7 @@ class CourseIntegrationTest {
     MockMvc mockMvc;
 
     @Autowired
-    ObjectMapper objectMapper;
+    JsonMapper jsonMapper;
 
     String adminBingyangToken; // Bingyang is the admin instructor of course 1 and 2.
 
@@ -102,7 +101,7 @@ class CourseIntegrationTest {
     void adminBingyangFindCoursesByCriteria() throws Exception {
         // Given
         Map<String, String> searchCriteria = new HashMap<>();
-        String json = this.objectMapper.writeValueAsString(searchCriteria);
+        String json = this.jsonMapper.writeValueAsString(searchCriteria);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("page", "0");
@@ -123,7 +122,7 @@ class CourseIntegrationTest {
     void instructorBillFindCoursesByCriteria() throws Exception {
         // Given
         Map<String, String> searchCriteria = new HashMap<>();
-        String json = this.objectMapper.writeValueAsString(searchCriteria);
+        String json = this.jsonMapper.writeValueAsString(searchCriteria);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("page", "0");
@@ -143,7 +142,7 @@ class CourseIntegrationTest {
     void adminTimFindCoursesByCriteria() throws Exception {
         // Given
         Map<String, String> searchCriteria = new HashMap<>();
-        String json = this.objectMapper.writeValueAsString(searchCriteria);
+        String json = this.jsonMapper.writeValueAsString(searchCriteria);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("page", "0");
@@ -192,7 +191,7 @@ class CourseIntegrationTest {
         Map<String, String> courseDto = new HashMap<>();
         courseDto.put("courseName", "New course");
         courseDto.put("courseDescription", "New course description");
-        String json = this.objectMapper.writeValueAsString(courseDto);
+        String json = this.jsonMapper.writeValueAsString(courseDto);
 
         // When and then
         this.mockMvc.perform(post(this.baseUrl + "/courses").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
@@ -210,7 +209,7 @@ class CourseIntegrationTest {
         Map<String, String> courseDto = new HashMap<>();
         courseDto.put("courseName", "New course");
         courseDto.put("courseDescription", "New course description");
-        String json = this.objectMapper.writeValueAsString(courseDto);
+        String json = this.jsonMapper.writeValueAsString(courseDto);
 
         // When and then
         this.mockMvc.perform(post(this.baseUrl + "/courses").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.instructorBillToken))
@@ -226,7 +225,7 @@ class CourseIntegrationTest {
         Map<String, String> courseDto = new HashMap<>();
         courseDto.put("courseName", "COSC 40993 Senior Design (Updated)");
         courseDto.put("courseDescription", "Senior design project course for Computer Science, Computer Information Technology, and Data Science majors");
-        String json = this.objectMapper.writeValueAsString(courseDto);
+        String json = this.jsonMapper.writeValueAsString(courseDto);
 
         // When and then
         this.mockMvc.perform(put(this.baseUrl + "/courses/1").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
@@ -243,7 +242,7 @@ class CourseIntegrationTest {
         Map<String, String> courseDto = new HashMap<>();
         courseDto.put("courseName", "COSC 40993 Senior Design (Updated)");
         courseDto.put("courseDescription", "Senior design project course for Computer Science, Computer Information Technology, and Data Science majors");
-        String json = this.objectMapper.writeValueAsString(courseDto);
+        String json = this.jsonMapper.writeValueAsString(courseDto);
 
         // When and then
         this.mockMvc.perform(put(this.baseUrl + "/courses/1").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminTimToken))
@@ -258,7 +257,7 @@ class CourseIntegrationTest {
         Map<String, String> courseDto = new HashMap<>();
         courseDto.put("courseName", "COSC 40993 Senior Design (Updated)");
         courseDto.put("courseDescription", "Senior design project course for Computer Science, Computer Information Technology, and Data Science majors");
-        String json = this.objectMapper.writeValueAsString(courseDto);
+        String json = this.jsonMapper.writeValueAsString(courseDto);
 
         // When and then
         this.mockMvc.perform(put(this.baseUrl + "/courses/1").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminTimToken))

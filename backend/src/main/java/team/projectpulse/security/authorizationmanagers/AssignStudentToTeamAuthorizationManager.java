@@ -1,5 +1,7 @@
 package team.projectpulse.security.authorizationmanagers;
 
+import org.jspecify.annotations.Nullable;
+import org.springframework.security.authorization.AuthorizationResult;
 import team.projectpulse.team.TeamSecurityService;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
@@ -23,7 +25,7 @@ public class AssignStudentToTeamAuthorizationManager implements AuthorizationMan
     }
 
     @Override
-    public AuthorizationDecision check(Supplier<Authentication> authenticationSupplier, RequestAuthorizationContext context) {
+    public @Nullable AuthorizationResult authorize(Supplier<? extends @Nullable Authentication> authentication, RequestAuthorizationContext context) {
         // Extract the teamId and studentId from the request URI: /teams/{teamId}/students/{studentId}
         Map<String, String> uriVariables = TEAM_URI_TEMPLATE.match(context.getRequest().getRequestURI());
         Integer teamIdFromRequestUri = Integer.parseInt(uriVariables.get("teamId"));

@@ -1,5 +1,7 @@
 package team.projectpulse.security.authorizationmanagers;
 
+import org.jspecify.annotations.Nullable;
+import org.springframework.security.authorization.AuthorizationResult;
 import team.projectpulse.instructor.InstructorSecurityService;
 import team.projectpulse.student.StudentSecurityService;
 import org.springframework.security.authorization.AuthorizationDecision;
@@ -29,7 +31,7 @@ public class UserOwnershipAuthorizationManager implements AuthorizationManager<R
 
 
     @Override
-    public AuthorizationDecision check(Supplier<Authentication> authenticationSupplier, RequestAuthorizationContext context) {
+    public @Nullable AuthorizationResult authorize(Supplier<? extends @Nullable Authentication> authentication, RequestAuthorizationContext context) {
         if (!STUDENT_USER_URI_TEMPLATE.match(context.getRequest().getRequestURI()).isEmpty()) {
             // Extract the studentId from the request URI: /students/{studentId}
             Map<String, String> uriVariables = STUDENT_USER_URI_TEMPLATE.match(context.getRequest().getRequestURI());

@@ -1,6 +1,6 @@
 package team.projectpulse.team;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -47,7 +47,7 @@ class TeamIntegrationTest {
     MockMvc mockMvc;
 
     @Autowired
-    ObjectMapper objectMapper;
+    JsonMapper jsonMapper;
 
     String adminBingyangToken;
 
@@ -96,7 +96,7 @@ class TeamIntegrationTest {
     void adminBingyangFindTeamsByCriteria() throws Exception {
         // Given
         Map<String, String> searchCriteria = new HashMap<>();
-        String json = this.objectMapper.writeValueAsString(searchCriteria);
+        String json = this.jsonMapper.writeValueAsString(searchCriteria);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("page", "0");
@@ -115,7 +115,7 @@ class TeamIntegrationTest {
     void adminTimFindTeamsByCriteria() throws Exception {
         // Given
         Map<String, String> searchCriteria = new HashMap<>();
-        String json = this.objectMapper.writeValueAsString(searchCriteria);
+        String json = this.jsonMapper.writeValueAsString(searchCriteria);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("page", "0");
@@ -192,7 +192,7 @@ class TeamIntegrationTest {
         teamDto.put("teamWebsiteUrl", "https://www.team4.com");
         teamDto.put("sectionId", 2);
 
-        String json = this.objectMapper.writeValueAsString(teamDto);
+        String json = this.jsonMapper.writeValueAsString(teamDto);
 
         // When and then
         this.mockMvc.perform(post(this.baseUrl + "/teams").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
@@ -215,7 +215,7 @@ class TeamIntegrationTest {
         teamDto.put("teamWebsiteUrl", "https://www.team4.com");
         teamDto.put("sectionId", 2);
 
-        String json = this.objectMapper.writeValueAsString(teamDto);
+        String json = this.jsonMapper.writeValueAsString(teamDto);
 
         // When and then
         this.mockMvc.perform(post(this.baseUrl + "/teams").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.instructorBillToken))
@@ -234,7 +234,7 @@ class TeamIntegrationTest {
         teamDto.put("teamWebsiteUrl", "https://www.team1.com");
         teamDto.put("sectionId", 2);
 
-        String json = this.objectMapper.writeValueAsString(teamDto);
+        String json = this.jsonMapper.writeValueAsString(teamDto);
 
         // When and then
         this.mockMvc.perform(put(this.baseUrl + "/teams/1").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
@@ -257,7 +257,7 @@ class TeamIntegrationTest {
         teamDto.put("teamWebsiteUrl", "https://www.team1.com");
         teamDto.put("sectionId", 2);
 
-        String json = this.objectMapper.writeValueAsString(teamDto);
+        String json = this.jsonMapper.writeValueAsString(teamDto);
 
         // When and then
         this.mockMvc.perform(put(this.baseUrl + "/teams/1").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.instructorBillToken))
@@ -275,7 +275,7 @@ class TeamIntegrationTest {
         teamDto.put("teamWebsiteUrl", "https://www.team1.com");
         teamDto.put("sectionId", 2);
 
-        String json = this.objectMapper.writeValueAsString(teamDto);
+        String json = this.jsonMapper.writeValueAsString(teamDto);
 
         // When and then
         this.mockMvc.perform(put(this.baseUrl + "/teams/1").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminTimToken))
@@ -338,7 +338,7 @@ class TeamIntegrationTest {
         Map<String, Object> transferTeamRequest = new HashMap<>();
         transferTeamRequest.put("sectionId", "1");
 
-        String json = this.objectMapper.writeValueAsString(transferTeamRequest);
+        String json = this.jsonMapper.writeValueAsString(transferTeamRequest);
 
         this.mockMvc.perform(patch(this.baseUrl + "/teams/1/section").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
                 .andExpect(jsonPath("$.flag").value(true))
@@ -364,7 +364,7 @@ class TeamIntegrationTest {
         Map<String, Object> transferTeamRequest = new HashMap<>();
         transferTeamRequest.put("sectionId", "3"); // Section 3 belongs to a different course
 
-        String json = this.objectMapper.writeValueAsString(transferTeamRequest);
+        String json = this.jsonMapper.writeValueAsString(transferTeamRequest);
 
         this.mockMvc.perform(patch(this.baseUrl + "/teams/1/section").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
                 .andExpect(jsonPath("$.flag").value(false))
@@ -378,7 +378,7 @@ class TeamIntegrationTest {
         Map<String, Object> transferTeamRequest = new HashMap<>();
         transferTeamRequest.put("sectionId", "1"); // Section 3 belongs to a different course
 
-        String json = this.objectMapper.writeValueAsString(transferTeamRequest);
+        String json = this.jsonMapper.writeValueAsString(transferTeamRequest);
 
         // Let Bill, who is not a course admin, try to transfer the team
         this.mockMvc.perform(patch(this.baseUrl + "/teams/1/section").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.instructorBillToken))

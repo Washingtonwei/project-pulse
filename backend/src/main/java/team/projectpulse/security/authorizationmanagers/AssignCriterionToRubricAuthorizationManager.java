@@ -1,7 +1,9 @@
 package team.projectpulse.security.authorizationmanagers;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
+import org.springframework.security.authorization.AuthorizationResult;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.stereotype.Component;
@@ -23,7 +25,7 @@ public class AssignCriterionToRubricAuthorizationManager implements Authorizatio
     }
 
     @Override
-    public AuthorizationDecision check(Supplier<Authentication> authenticationSupplier, RequestAuthorizationContext context) {
+    public @Nullable AuthorizationResult authorize(Supplier<? extends @Nullable Authentication> authentication, RequestAuthorizationContext context) {
         // Extract the rubricId and criterionId from the request URI: /rubrics/{rubricId}/criteria/{criterionId}
         Map<String, String> uriVariables = RUBRIC_URI_TEMPLATE.match(context.getRequest().getRequestURI());
         Integer rubricIdFromRequestUri = Integer.parseInt(uriVariables.get("rubricId"));

@@ -1,6 +1,6 @@
 package team.projectpulse.rubric;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -47,7 +47,7 @@ class CriterionIntegrationTest {
     MockMvc mockMvc;
 
     @Autowired
-    ObjectMapper objectMapper;
+    JsonMapper jsonMapper;
 
     String adminBingyangToken;
 
@@ -81,7 +81,7 @@ class CriterionIntegrationTest {
     void adminBingyangFindPeerEvaluationCriteriaByCriteriaInCourse1() throws Exception {
         // Given
         Map<String, String> searchCriteria = new HashMap<>();
-        String json = this.objectMapper.writeValueAsString(searchCriteria);
+        String json = this.jsonMapper.writeValueAsString(searchCriteria);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("page", "0");
@@ -100,7 +100,7 @@ class CriterionIntegrationTest {
     void adminTimFindPeerEvaluationCriteriaByCriteriaInCourse1() throws Exception {
         // Given
         Map<String, String> searchCriteria = new HashMap<>();
-        String json = this.objectMapper.writeValueAsString(searchCriteria);
+        String json = this.jsonMapper.writeValueAsString(searchCriteria);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("page", "0");
@@ -144,7 +144,7 @@ class CriterionIntegrationTest {
         criterionDto.put("description", "Description of the criterion. (1-10)");
         criterionDto.put("maxScore", "10");
 
-        String json = this.objectMapper.writeValueAsString(criterionDto);
+        String json = this.jsonMapper.writeValueAsString(criterionDto);
 
         // When and then
         this.mockMvc.perform(post(this.baseUrl + "/criteria").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
@@ -166,7 +166,7 @@ class CriterionIntegrationTest {
         criterionDto.put("criterion", "Quality of work (updated)");
         criterionDto.put("description", "How do you rate the quality of this teammate's work? (1-10)");
         criterionDto.put("maxScore", "10");
-        String json = this.objectMapper.writeValueAsString(criterionDto);
+        String json = this.jsonMapper.writeValueAsString(criterionDto);
 
         // When and then
         this.mockMvc.perform(put(this.baseUrl + "/criteria/1").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
@@ -188,7 +188,7 @@ class CriterionIntegrationTest {
         criterionDto.put("criterion", "Quality of work (updated)");
         criterionDto.put("description", "How do you rate the quality of this teammate's work? (1-10)");
         criterionDto.put("maxScore", "10");
-        String json = this.objectMapper.writeValueAsString(criterionDto);
+        String json = this.jsonMapper.writeValueAsString(criterionDto);
 
         // When and then
         this.mockMvc.perform(put(this.baseUrl + "/criteria/1").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminTimToken))

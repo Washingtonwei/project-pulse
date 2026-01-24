@@ -1,5 +1,7 @@
 package team.projectpulse.security.authorizationmanagers;
 
+import org.jspecify.annotations.Nullable;
+import org.springframework.security.authorization.AuthorizationResult;
 import team.projectpulse.rubric.CriterionSecurityService;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
@@ -23,7 +25,7 @@ public class CriterionOwnershipAuthorizationManager implements AuthorizationMana
     }
 
     @Override
-    public AuthorizationDecision check(Supplier<Authentication> authenticationSupplier, RequestAuthorizationContext context) {
+    public @Nullable AuthorizationResult authorize(Supplier<? extends @Nullable Authentication> authentication, RequestAuthorizationContext context) {
         // Extract the criterionId from the request URI: /criteria/{criterionId}
         Map<String, String> uriVariables = CRITERION_URI_TEMPLATE.match(context.getRequest().getRequestURI());
         Integer criterionIdFromRequestUri = Integer.parseInt(uriVariables.get("criterionId"));

@@ -1,6 +1,6 @@
 package team.projectpulse.instructor;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.testcontainers.containers.MySQLContainer;
 import team.projectpulse.system.StatusCode;
@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -47,7 +47,7 @@ class InstructorIntegrationTest {
     MockMvc mockMvc;
 
     @Autowired
-    ObjectMapper objectMapper;
+    JsonMapper jsonMapper;
 
     String adminBingyangToken;
 
@@ -89,7 +89,7 @@ class InstructorIntegrationTest {
         // Given
         Map<String, String> searchCriteria = new HashMap<>();
         searchCriteria.put("firstName", "Bill");
-        String json = this.objectMapper.writeValueAsString(searchCriteria);
+        String json = this.jsonMapper.writeValueAsString(searchCriteria);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("page", "0");
@@ -149,7 +149,7 @@ class InstructorIntegrationTest {
         instructorDto.put("email", "e.musk@abc.edu");
         instructorDto.put("password", "Abc123456");
 
-        String json = this.objectMapper.writeValueAsString(instructorDto);
+        String json = this.jsonMapper.writeValueAsString(instructorDto);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("courseId", "1");
@@ -179,7 +179,7 @@ class InstructorIntegrationTest {
         instructorDto.put("email", "j.huang@abc.edu");
         instructorDto.put("password", "123456");
 
-        String json = this.objectMapper.writeValueAsString(instructorDto);
+        String json = this.jsonMapper.writeValueAsString(instructorDto);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("courseId", "1");
@@ -203,7 +203,7 @@ class InstructorIntegrationTest {
         instructorDto.put("email", "e.musk@abc.edu");
         instructorDto.put("password", "Abc123456");
 
-        String json = this.objectMapper.writeValueAsString(instructorDto);
+        String json = this.jsonMapper.writeValueAsString(instructorDto);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("courseId", "1");
@@ -227,7 +227,7 @@ class InstructorIntegrationTest {
         instructorDto.put("email", "l.santos@abc.edu");
         instructorDto.put("password", "Abc123456");
 
-        String json = this.objectMapper.writeValueAsString(instructorDto);
+        String json = this.jsonMapper.writeValueAsString(instructorDto);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("courseId", "1");
@@ -253,7 +253,7 @@ class InstructorIntegrationTest {
         instructorDto.put("enabled", true); // Instructor can't change their own enabled status.
         instructorDto.put("roles", "admin"); // Instructor can't change their own role.
 
-        String json = this.objectMapper.writeValueAsString(instructorDto);
+        String json = this.jsonMapper.writeValueAsString(instructorDto);
 
         // When and then
         this.mockMvc.perform(put(this.baseUrl + "/instructors/2").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
@@ -281,7 +281,7 @@ class InstructorIntegrationTest {
         instructorDto.put("enabled", false); // Instructor can't change their own enabled status.
         instructorDto.put("roles", "admin"); // Instructor can't change their own role.
 
-        String json = this.objectMapper.writeValueAsString(instructorDto);
+        String json = this.jsonMapper.writeValueAsString(instructorDto);
 
         // When and then
         this.mockMvc.perform(put(this.baseUrl + "/instructors/2").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.instructorBillToken))
@@ -306,7 +306,7 @@ class InstructorIntegrationTest {
         instructorDto.put("lastName", "Wei");
         instructorDto.put("email", "b.wei@abc.edu");
 
-        String json = this.objectMapper.writeValueAsString(instructorDto);
+        String json = this.jsonMapper.writeValueAsString(instructorDto);
 
         // When and then
         this.mockMvc.perform(put(this.baseUrl + "/instructors/1").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.instructorBillToken))

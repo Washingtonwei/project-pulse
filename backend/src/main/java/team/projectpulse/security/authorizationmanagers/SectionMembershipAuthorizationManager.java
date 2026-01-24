@@ -1,5 +1,7 @@
 package team.projectpulse.security.authorizationmanagers;
 
+import org.jspecify.annotations.Nullable;
+import org.springframework.security.authorization.AuthorizationResult;
 import team.projectpulse.section.SectionSecurityService;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
@@ -21,9 +23,9 @@ public class SectionMembershipAuthorizationManager implements AuthorizationManag
     public SectionMembershipAuthorizationManager(SectionSecurityService sectionSecurityService) {
         this.sectionSecurityService = sectionSecurityService;
     }
-    
+
     @Override
-    public AuthorizationDecision check(Supplier<Authentication> authenticationSupplier, RequestAuthorizationContext context) {
+    public @Nullable AuthorizationResult authorize(Supplier<? extends @Nullable Authentication> authentication, RequestAuthorizationContext context) {
         // Extract the sectionId from the request URI: /sections/{sectionId}
         Map<String, String> uriVariables = SECTION_URI_TEMPLATE.match(context.getRequest().getRequestURI());
         Integer sectionIdFromRequestUri = Integer.parseInt(uriVariables.get("sectionId"));
