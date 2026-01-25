@@ -1,5 +1,7 @@
 package team.projectpulse.security.authorizationmanagers;
 
+import org.jspecify.annotations.Nullable;
+import org.springframework.security.authorization.AuthorizationResult;
 import team.projectpulse.activity.ActivitySecurityService;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
@@ -23,7 +25,7 @@ public class ActivityMembershipAuthorizationManager implements AuthorizationMana
     }
 
     @Override
-    public AuthorizationDecision check(Supplier<Authentication> authenticationSupplier, RequestAuthorizationContext context) {
+    public @Nullable AuthorizationResult authorize(Supplier<? extends @Nullable Authentication> authentication, RequestAuthorizationContext context) {
         // Extract the activityId from the request URI: /activities/{activityId}
         Map<String, String> uriVariables = ACTIVITY_URI_TEMPLATE.match(context.getRequest().getRequestURI());
         Integer activityIdFromRequestUri = Integer.parseInt(uriVariables.get("activityId"));

@@ -3,9 +3,12 @@ spring:
     name: project-pulse
   profiles:
     active: dev # By default, the active profile is "dev". During production, it will be replaced to "prod" due to Azure's environment variables.
-#  web:
-#    resources:
-#      add-mappings: false
+  #  web:
+  #    resources:
+  #      add-mappings: false
+  devtools:
+    livereload:
+      enabled: true
 server:
   port: 80
 api:
@@ -20,7 +23,7 @@ management:
     health:
       show-details: always
       probes:
-        enabled: true
+        enabled: true # Since Spring Boot 4, liveness and readiness probes are enabled by default.
     env:
       show-values: always
     configprops:
@@ -39,7 +42,7 @@ management:
       enabled: true
   tracing:
     sampling:
-      probability: 1 # Only for demo purpose, change it back to 0.1 in production.
+      probability: 0.1 # Only for demo purpose, change it back to 0.1 in production.
 info:
   app:
     name: project-pulse

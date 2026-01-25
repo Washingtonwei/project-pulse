@@ -1,5 +1,7 @@
 package team.projectpulse.security.authorizationmanagers;
 
+import org.jspecify.annotations.Nullable;
+import org.springframework.security.authorization.AuthorizationResult;
 import team.projectpulse.section.SectionSecurityService;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
@@ -23,7 +25,7 @@ public class AssignRubricToSectionAuthorizationManager implements AuthorizationM
     }
 
     @Override
-    public AuthorizationDecision check(Supplier<Authentication> authenticationSupplier, RequestAuthorizationContext context) {
+    public @Nullable AuthorizationResult authorize(Supplier<? extends @Nullable Authentication> authentication, RequestAuthorizationContext context) {
         // Extract the sectionId and rubricId from the request URI: /sections/{sectionId}/rubrics/{rubricId}
         Map<String, String> uriVariables = SECTION_URI_TEMPLATE.match(context.getRequest().getRequestURI());
         Integer sectionIdFromRequestUri = Integer.parseInt(uriVariables.get("sectionId"));

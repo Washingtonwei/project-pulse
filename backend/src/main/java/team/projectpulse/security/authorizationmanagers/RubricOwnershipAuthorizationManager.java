@@ -1,5 +1,7 @@
 package team.projectpulse.security.authorizationmanagers;
 
+import org.jspecify.annotations.Nullable;
+import org.springframework.security.authorization.AuthorizationResult;
 import team.projectpulse.rubric.RubricSecurityService;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
@@ -23,7 +25,7 @@ public class RubricOwnershipAuthorizationManager implements AuthorizationManager
     }
 
     @Override
-    public AuthorizationDecision check(Supplier<Authentication> authenticationSupplier, RequestAuthorizationContext context) {
+    public @Nullable AuthorizationResult authorize(Supplier<? extends @Nullable Authentication> authentication, RequestAuthorizationContext context) {
         // Extract the rubricId from the request URI: /rubrics/{rubricId}
         Map<String, String> uriVariables = RUBRIC_URI_TEMPLATE.match(context.getRequest().getRequestURI());
         Integer rubricIdFromRequestUri = Integer.parseInt(uriVariables.get("rubricId"));

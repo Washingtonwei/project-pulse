@@ -1,6 +1,6 @@
 package team.projectpulse.activity;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -26,6 +26,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+
 
 import java.util.HashMap;
 import java.util.Map;
@@ -47,7 +48,7 @@ public class ActivityIntegrationTest {
     MockMvc mockMvc;
 
     @Autowired
-    ObjectMapper objectMapper;
+    JsonMapper jsonMapper;
 
     String adminBingyangToken; // Bingyang is the instructor of section 2
 
@@ -97,7 +98,7 @@ public class ActivityIntegrationTest {
         Map<String, String> searchCriteria = new HashMap<>();
         searchCriteria.put("teamId", "1");
         searchCriteria.put("week", "2023-W31");
-        String json = this.objectMapper.writeValueAsString(searchCriteria);
+        String json = this.jsonMapper.writeValueAsString(searchCriteria);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("page", "0");
@@ -118,7 +119,7 @@ public class ActivityIntegrationTest {
         Map<String, String> searchCriteria = new HashMap<>();
         searchCriteria.put("teamId", "1");
         searchCriteria.put("week", "2023-W31");
-        String json = this.objectMapper.writeValueAsString(searchCriteria);
+        String json = this.jsonMapper.writeValueAsString(searchCriteria);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("page", "0");
@@ -139,7 +140,7 @@ public class ActivityIntegrationTest {
         Map<String, String> searchCriteria = new HashMap<>();
         searchCriteria.put("teamId", "1");
         searchCriteria.put("week", "2023-W31");
-        String json = this.objectMapper.writeValueAsString(searchCriteria);
+        String json = this.jsonMapper.writeValueAsString(searchCriteria);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("page", "0");
@@ -160,7 +161,7 @@ public class ActivityIntegrationTest {
         Map<String, String> searchCriteria = new HashMap<>();
         searchCriteria.put("teamId", "1");
         searchCriteria.put("week", "2023-W31");
-        String json = this.objectMapper.writeValueAsString(searchCriteria);
+        String json = this.jsonMapper.writeValueAsString(searchCriteria);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("page", "0");
@@ -239,7 +240,7 @@ public class ActivityIntegrationTest {
         activityDto.put("actualHours", 7.5);
         activityDto.put("status", "COMPLETED");
 
-        String json = this.objectMapper.writeValueAsString(activityDto);
+        String json = this.jsonMapper.writeValueAsString(activityDto);
 
         // When and then
         this.mockMvc.perform(post(this.baseUrl + "/activities").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
@@ -270,7 +271,7 @@ public class ActivityIntegrationTest {
         activityDto.put("actualHours", 10.5);
         activityDto.put("status", "COMPLETED");
 
-        String json = this.objectMapper.writeValueAsString(activityDto);
+        String json = this.jsonMapper.writeValueAsString(activityDto);
 
         // When and then
         this.mockMvc.perform(put(this.baseUrl + "/activities/1").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
@@ -298,7 +299,7 @@ public class ActivityIntegrationTest {
         activityDto.put("actualHours", 10.5);
         activityDto.put("status", "COMPLETED");
 
-        String json = this.objectMapper.writeValueAsString(activityDto);
+        String json = this.jsonMapper.writeValueAsString(activityDto);
 
         // When and then
         this.mockMvc.perform(put(this.baseUrl + "/activities/3").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
@@ -331,7 +332,7 @@ public class ActivityIntegrationTest {
         Map<String, Object> comment = new HashMap<>();
         comment.put("comment", "Good job! Keep up the good work!");
 
-        String json = this.objectMapper.writeValueAsString(comment);
+        String json = this.jsonMapper.writeValueAsString(comment);
 
         this.mockMvc.perform(patch(this.baseUrl + "/activities/3/comments").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(true))
@@ -344,7 +345,7 @@ public class ActivityIntegrationTest {
         Map<String, Object> comment = new HashMap<>();
         comment.put("comment", "Good job! Keep up the good work!");
 
-        String json = this.objectMapper.writeValueAsString(comment);
+        String json = this.jsonMapper.writeValueAsString(comment);
 
         this.mockMvc.perform(patch(this.baseUrl + "/activities/3/comments").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJanaToken))
                 .andExpect(jsonPath("$.flag").value(false))

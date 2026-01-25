@@ -1,8 +1,8 @@
 package team.projectpulse.system.exception;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 import team.projectpulse.system.Result;
 import team.projectpulse.system.StatusCode;
 import org.springframework.http.HttpStatus;
@@ -93,7 +93,7 @@ public class ExceptionHandlerAdvice {
     }
 
     @ExceptionHandler({HttpClientErrorException.class, HttpServerErrorException.class})
-    ResponseEntity<Result> handleRestClientException(HttpStatusCodeException ex) throws JsonProcessingException {
+    ResponseEntity<Result> handleRestClientException(HttpStatusCodeException ex) throws JacksonException {
         String exceptionMessage = ex.getMessage();
 
         // Replace <EOL> with actual newlines.
@@ -103,7 +103,7 @@ public class ExceptionHandlerAdvice {
         String jsonPart = exceptionMessage.substring(exceptionMessage.indexOf("{"), exceptionMessage.lastIndexOf("}") + 1);
 
         // Create an ObjectMapper instance.
-        ObjectMapper mapper = new ObjectMapper();
+        JsonMapper mapper = JsonMapper.builder().build();
 
         // Parse the JSON string to a JsonNode.
         JsonNode rootNode = mapper.readTree(jsonPart);

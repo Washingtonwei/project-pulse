@@ -1,6 +1,6 @@
 package team.projectpulse.evaluation;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.testcontainers.containers.MySQLContainer;
@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -63,7 +63,7 @@ public class EvaluationIntegrationTest {
     MockMvc mockMvc;
 
     @Autowired
-    ObjectMapper objectMapper;
+    JsonMapper jsonMapper;
 
     String adminBingyangToken;
 
@@ -118,7 +118,7 @@ public class EvaluationIntegrationTest {
         given(this.clock.getZone()).willReturn(fixedClock.getZone());
 
         PeerEvaluationDto peerEvaluationDto = new PeerEvaluationDto(null, "2023-W36", 4, "John Smith", 5, "Eric Hudson", ratingDtos, 41.0, "Good job", "Keep it up", null, null);
-        String json = this.objectMapper.writeValueAsString(peerEvaluationDto);
+        String json = this.jsonMapper.writeValueAsString(peerEvaluationDto);
 
         this.mockMvc.perform(post(this.baseUrl + "/evaluations").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(true))
@@ -157,7 +157,7 @@ public class EvaluationIntegrationTest {
 
         // Active weeks are "2023-W31", "2023-W32", "2023-W33", "2023-W34", "2023-W35", "2023-W36", "2023-W37", "2023-W38", "2023-W39", "2023-W40"
         PeerEvaluationDto peerEvaluationDto = new PeerEvaluationDto(null, "2023-W19", 3, "John Smith", 6, "Woody Moon", ratingDtos, 41.0, "Good job", "Keep it up", null, null);
-        String json = this.objectMapper.writeValueAsString(peerEvaluationDto);
+        String json = this.jsonMapper.writeValueAsString(peerEvaluationDto);
 
         this.mockMvc.perform(post(this.baseUrl + "/evaluations").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(false))
@@ -182,7 +182,7 @@ public class EvaluationIntegrationTest {
         given(this.clock.getZone()).willReturn(fixedClock.getZone());
 
         PeerEvaluationDto peerEvaluationDto = new PeerEvaluationDto(null, "2023-W33", 3, "John Smith", 6, "Woody Moon", ratingDtos, 41.0, "Good job", "Keep it up", null, null);
-        String json = this.objectMapper.writeValueAsString(peerEvaluationDto);
+        String json = this.jsonMapper.writeValueAsString(peerEvaluationDto);
 
         this.mockMvc.perform(post(this.baseUrl + "/evaluations").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(false))
@@ -207,7 +207,7 @@ public class EvaluationIntegrationTest {
         given(this.clock.getZone()).willReturn(fixedClock.getZone());
 
         PeerEvaluationDto peerEvaluationDto = new PeerEvaluationDto(null, "2023-W31", 4, "John Smith", 7, "Woody Moon", ratingDtos, 41.0, "Good job", "Keep it up", null, null);
-        String json = this.objectMapper.writeValueAsString(peerEvaluationDto);
+        String json = this.jsonMapper.writeValueAsString(peerEvaluationDto);
 
         this.mockMvc.perform(post(this.baseUrl + "/evaluations").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(false))
@@ -232,7 +232,7 @@ public class EvaluationIntegrationTest {
         given(this.clock.getZone()).willReturn(fixedClock.getZone());
 
         PeerEvaluationDto peerEvaluationDto = new PeerEvaluationDto(null, "2023-W31", 4, "John Smith", 5, "Eric Hudson", ratingDtos, 41.0, "Good job", "Keep it up", null, null);
-        String json = this.objectMapper.writeValueAsString(peerEvaluationDto);
+        String json = this.jsonMapper.writeValueAsString(peerEvaluationDto);
 
         this.mockMvc.perform(post(this.baseUrl + "/evaluations").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(false))
@@ -276,7 +276,7 @@ public class EvaluationIntegrationTest {
                 new RatingDto(6, 6, 6.0)
         );
         PeerEvaluationDto peerEvaluationDto = new PeerEvaluationDto(1, "2023-W31", 4, "John Smith", 5, "Eric Hudson", ratingDtos, 41.0, "Good job", "Keep it up", null, null);
-        String json = this.objectMapper.writeValueAsString(peerEvaluationDto);
+        String json = this.jsonMapper.writeValueAsString(peerEvaluationDto);
 
         this.mockMvc.perform(put(this.baseUrl + "/evaluations/1").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(true))
@@ -303,7 +303,7 @@ public class EvaluationIntegrationTest {
                 new RatingDto(6, 6, 6.0)
         );
         PeerEvaluationDto peerEvaluationDto = new PeerEvaluationDto(5, "2023-W31", 4, "John Smith", 5, "Eric Hudson", ratingDtos, 41.0, "Good job", "Keep it up", null, null);
-        String json = this.objectMapper.writeValueAsString(peerEvaluationDto);
+        String json = this.jsonMapper.writeValueAsString(peerEvaluationDto);
 
         this.mockMvc.perform(put(this.baseUrl + "/evaluations/5").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(false))

@@ -1,6 +1,6 @@
 package team.projectpulse.section;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.testcontainers.containers.MySQLContainer;
 import team.projectpulse.system.StatusCode;
@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -51,7 +51,7 @@ class SectionIntegrationTest {
     MockMvc mockMvc;
 
     @Autowired
-    ObjectMapper objectMapper;
+    JsonMapper jsonMapper;
 
     String adminBingyangToken;
 
@@ -111,7 +111,7 @@ class SectionIntegrationTest {
         // Given
         Map<String, String> searchCriteria = new HashMap<>();
         searchCriteria.put("sectionName", "2023");
-        String json = this.objectMapper.writeValueAsString(searchCriteria);
+        String json = this.jsonMapper.writeValueAsString(searchCriteria);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("page", "0");
@@ -131,7 +131,7 @@ class SectionIntegrationTest {
         // Given
         Map<String, String> searchCriteria = new HashMap<>();
         searchCriteria.put("isActive", "true");
-        String json = this.objectMapper.writeValueAsString(searchCriteria);
+        String json = this.jsonMapper.writeValueAsString(searchCriteria);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("page", "0");
@@ -150,7 +150,7 @@ class SectionIntegrationTest {
     void instructorBillFindSectionsByCriteria() throws Exception {
         // Given
         Map<String, String> searchCriteria = new HashMap<>();
-        String json = this.objectMapper.writeValueAsString(searchCriteria);
+        String json = this.jsonMapper.writeValueAsString(searchCriteria);
 
         // When and then
         this.mockMvc.perform(post(this.baseUrl + "/sections/search").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.instructorBillToken))
@@ -164,7 +164,7 @@ class SectionIntegrationTest {
     void adminTimFindSectionsByCriteria() throws Exception {
         // Given
         Map<String, String> searchCriteria = new HashMap<>();
-        String json = this.objectMapper.writeValueAsString(searchCriteria);
+        String json = this.jsonMapper.writeValueAsString(searchCriteria);
 
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("page", "0");
@@ -258,7 +258,7 @@ class SectionIntegrationTest {
         sectionDto.put("peerEvaluationWeeklyDueDay", "TUESDAY");
         sectionDto.put("peerEvaluationDueTime", "15:00");
 
-        String json = this.objectMapper.writeValueAsString(sectionDto);
+        String json = this.jsonMapper.writeValueAsString(sectionDto);
 
         // When and then
         this.mockMvc.perform(post(this.baseUrl + "/sections").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
@@ -277,7 +277,7 @@ class SectionIntegrationTest {
                 .andExpect(jsonPath("$.data.peerEvaluationDueTime").value("15:00"));
 
         Map<String, String> searchCriteria = new HashMap<>();
-        json = this.objectMapper.writeValueAsString(searchCriteria);
+        json = this.jsonMapper.writeValueAsString(searchCriteria);
 
         this.mockMvc.perform(post(this.baseUrl + "/sections/search").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
                 .andExpect(jsonPath("$.flag").value(true))
@@ -300,7 +300,7 @@ class SectionIntegrationTest {
         sectionDto.put("peerEvaluationWeeklyDueDay", "TUESDAY");
         sectionDto.put("peerEvaluationDueTime", "15:00");
 
-        String json = this.objectMapper.writeValueAsString(sectionDto);
+        String json = this.jsonMapper.writeValueAsString(sectionDto);
 
         // When and then
         this.mockMvc.perform(post(this.baseUrl + "/sections").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.instructorBillToken))
@@ -323,7 +323,7 @@ class SectionIntegrationTest {
         sectionDto.put("peerEvaluationWeeklyDueDay", "TUESDAY");
         sectionDto.put("peerEvaluationDueTime", "15:00"); // Updated peerEvaluationDueTime
 
-        String json = this.objectMapper.writeValueAsString(sectionDto);
+        String json = this.jsonMapper.writeValueAsString(sectionDto);
 
         // When and then
         this.mockMvc.perform(put(this.baseUrl + "/sections/2").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
@@ -350,7 +350,7 @@ class SectionIntegrationTest {
         sectionDto.put("startDate", "08-16-2023");
         sectionDto.put("endDate", "04-30-2024");
 
-        String json = this.objectMapper.writeValueAsString(sectionDto);
+        String json = this.jsonMapper.writeValueAsString(sectionDto);
 
         // When and then
         this.mockMvc.perform(put(this.baseUrl + "/sections/2").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminTimToken))
@@ -367,7 +367,7 @@ class SectionIntegrationTest {
     void adminBingyangSetUpActiveWeeks() throws Exception {
         // Given
         List<String> activeWeeks = List.of("2023-W31", "2023-W32", "2023-W33", "2023-W34", "2023-W35");
-        String json = this.objectMapper.writeValueAsString(activeWeeks);
+        String json = this.jsonMapper.writeValueAsString(activeWeeks);
 
         // When and then
         this.mockMvc.perform(post(this.baseUrl + "/sections/2/weeks").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
@@ -380,7 +380,7 @@ class SectionIntegrationTest {
     void instructorBillSetUpActiveWeeks() throws Exception {
         // Given
         List<String> activeWeeks = List.of("2023-W31", "2023-W32", "2023-W33", "2023-W34", "2023-W35");
-        String json = this.objectMapper.writeValueAsString(activeWeeks);
+        String json = this.jsonMapper.writeValueAsString(activeWeeks);
 
         // When and then
         this.mockMvc.perform(post(this.baseUrl + "/sections/2/weeks").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.instructorBillToken))
@@ -393,7 +393,7 @@ class SectionIntegrationTest {
     void adminTimSetUpActiveWeeks() throws Exception {
         // Given
         List<String> activeWeeks = List.of("2023-W31", "2023-W32", "2023-W33", "2023-W34", "2023-W35");
-        String json = this.objectMapper.writeValueAsString(activeWeeks);
+        String json = this.jsonMapper.writeValueAsString(activeWeeks);
 
         // When and then
         this.mockMvc.perform(post(this.baseUrl + "/sections/2/weeks").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminTimToken))
@@ -475,7 +475,7 @@ class SectionIntegrationTest {
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("courseId", "1");
 
-        String json = this.objectMapper.writeValueAsString(emails);
+        String json = this.jsonMapper.writeValueAsString(emails);
 
         // When and then
         this.mockMvc.perform(post(this.baseUrl + "/sections/2/students/email-invitations").contentType(MediaType.APPLICATION_JSON).content(json).params(requestParams).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
@@ -493,7 +493,7 @@ class SectionIntegrationTest {
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("courseId", "1");
 
-        String json = this.objectMapper.writeValueAsString(emails);
+        String json = this.jsonMapper.writeValueAsString(emails);
 
         // When and then
         this.mockMvc.perform(post(this.baseUrl + "/sections/2/students/email-invitations").contentType(MediaType.APPLICATION_JSON).content(json).params(requestParams).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminTimToken))

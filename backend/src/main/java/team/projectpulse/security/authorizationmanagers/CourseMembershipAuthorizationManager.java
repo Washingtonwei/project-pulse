@@ -1,5 +1,7 @@
 package team.projectpulse.security.authorizationmanagers;
 
+import org.jspecify.annotations.Nullable;
+import org.springframework.security.authorization.AuthorizationResult;
 import team.projectpulse.course.CourseSecurityService;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
@@ -20,9 +22,9 @@ public class CourseMembershipAuthorizationManager implements AuthorizationManage
     public CourseMembershipAuthorizationManager(CourseSecurityService courseSecurityService) {
         this.courseSecurityService = courseSecurityService;
     }
-    
+
     @Override
-    public AuthorizationDecision check(Supplier<Authentication> authenticationSupplier, RequestAuthorizationContext context) {
+    public @Nullable AuthorizationResult authorize(Supplier<? extends @Nullable Authentication> authentication, RequestAuthorizationContext context) {
         // Extract the courseId from the request URI: /courses/{courseId}
         Map<String, String> uriVariables = COURSE_URI_TEMPLATE.match(context.getRequest().getRequestURI());
         Integer courseIdFromRequestUri = Integer.parseInt(uriVariables.get("courseId"));
