@@ -10,4 +10,8 @@ public class ObjectNotFoundException extends RuntimeException {
         super("Could not find " + objectName + " with this property: " + property + " :(");
     }
 
+    public ObjectNotFoundException(String objectName, Long id) {
+        super("Could not find " + objectName + " with Id " + id + " :(");
+    }
+
 }

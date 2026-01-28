@@ -10,10 +10,20 @@ import team.projectpulse.evaluation.PeerEvaluation;
 import team.projectpulse.evaluation.PeerEvaluationRepository;
 import team.projectpulse.instructor.Instructor;
 import team.projectpulse.instructor.InstructorRepository;
+import team.projectpulse.ram.collaboration.Comment;
+import team.projectpulse.ram.collaboration.CommentThread;
+import team.projectpulse.ram.collaboration.CommentThreadRepository;
+import team.projectpulse.ram.collaboration.CommentThreadStatus;
+import team.projectpulse.ram.document.*;
+import team.projectpulse.ram.document.template.DocumentTemplate;
+import team.projectpulse.ram.document.template.DocumentTemplateRegistry;
+import team.projectpulse.ram.requirement.*;
+import team.projectpulse.ram.usecase.*;
 import team.projectpulse.rubric.*;
 import team.projectpulse.section.Section;
 import team.projectpulse.student.Student;
 import team.projectpulse.team.Team;
+import team.projectpulse.user.PeerEvaluationUser;
 import team.projectpulse.user.userinvitation.UserInvitation;
 import team.projectpulse.user.userinvitation.UserInvitationRepository;
 import org.springframework.boot.CommandLineRunner;
@@ -21,9 +31,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,15 +45,27 @@ public class DataInitializer implements CommandLineRunner {
     private final ActivityRepository activityRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserInvitationRepository userInvitationRepository;
+    private final RequirementArtifactService requirementArtifactService;
+    private final ArtifactLinkRepository artifactLinkRepository;
+    private final UseCaseService useCaseService;
+    private final DocumentTemplateRegistry documentTemplateRegistry;
+    private final DocumentRepository documentRepository;
+    private final CommentThreadRepository commentThreadRepository;
 
 
-    public DataInitializer(CourseRepository courseRepository, InstructorRepository instructorRepository, PeerEvaluationRepository peerEvaluationRepository, ActivityRepository activityRepository, PasswordEncoder passwordEncoder, UserInvitationRepository userInvitationRepository) {
+    public DataInitializer(CourseRepository courseRepository, InstructorRepository instructorRepository, PeerEvaluationRepository peerEvaluationRepository, ActivityRepository activityRepository, PasswordEncoder passwordEncoder, UserInvitationRepository userInvitationRepository, RequirementArtifactService requirementArtifactService, ArtifactLinkRepository artifactLinkRepository, UseCaseService useCaseService, DocumentTemplateRegistry documentTemplateRegistry, DocumentRepository documentRepository, CommentThreadRepository commentThreadRepository) {
         this.courseRepository = courseRepository;
         this.instructorRepository = instructorRepository;
         this.peerEvaluationRepository = peerEvaluationRepository;
         this.activityRepository = activityRepository;
         this.passwordEncoder = passwordEncoder;
         this.userInvitationRepository = userInvitationRepository;
+        this.requirementArtifactService = requirementArtifactService;
+        this.artifactLinkRepository = artifactLinkRepository;
+        this.useCaseService = useCaseService;
+        this.documentTemplateRegistry = documentTemplateRegistry;
+        this.documentRepository = documentRepository;
+        this.commentThreadRepository = commentThreadRepository;
     }
 
     @Override
@@ -910,6 +930,263 @@ public class DataInitializer implements CommandLineRunner {
         UserInvitation userInvitationForElon = new UserInvitation("e.musk@abc.edu", 1, 2, "registrationToken", "instructor");
         UserInvitation userInvitationForLucas = new UserInvitation("l.santos@abc.edu", 1, 2, "registrationToken", "student");
         this.userInvitationRepository.saveAll(List.of(userInvitationForElon, userInvitationForLucas));
+
+        // Initialize some requirement artifacts and use cases for team1 in section1 of course1
+        RequirementArtifact createUseCase = new RequirementArtifact(team1, RequirementArtifactType.USE_CASE, "Create a use case", "The Student wants to create a new use case in the use case document so that a new user requirement is added in the document.", "");
+        createUseCase.setPriority(Priority.CRITICAL);
+        RequirementArtifact stakeholder1 = new RequirementArtifact(team1, RequirementArtifactType.STAKEHOLDER, "Student", "A student in the senior design team.", "");
+        RequirementArtifact stakeholder2 = new RequirementArtifact(team1, RequirementArtifactType.STAKEHOLDER, "Instructor", "An instructor of the senior design project.", "");
+
+        this.requirementArtifactService.saveRequirementArtifact(1, stakeholder1);
+        this.requirementArtifactService.saveRequirementArtifact(1, stakeholder2);
+
+        RequirementArtifact precondition1 = new RequirementArtifact(team1, RequirementArtifactType.PRECONDITION, "", "The Student is logged into the System.", "");
+        RequirementArtifact precondition2 = new RequirementArtifact(team1, RequirementArtifactType.PRECONDITION, "", "The Student is a member of the team that owns the use case document.", "");
+        RequirementArtifact precondition3 = new RequirementArtifact(team1, RequirementArtifactType.PRECONDITION, "", "Document is not locked for review.", "");
+        RequirementArtifact postcondition1 = new RequirementArtifact(team1, RequirementArtifactType.POSTCONDITION, "", "The new use case is stored in the System.", "");
+        RequirementArtifact postcondition2 = new RequirementArtifact(team1, RequirementArtifactType.POSTCONDITION, "", "The System records collaboration metadata (e.g., last-modified timestamp and editor identity).", "");
+
+        UseCase useCase = new UseCase();
+        useCase.setUseCaseTrigger("The Student indicates to create a new use case in the use case document.");
+        useCase.setArtifact(createUseCase);
+
+        useCase.setPrimaryActor(stakeholder1);
+        useCase.addSecondaryActor(stakeholder2);
+
+        useCase.addPrecondition(precondition1);
+        useCase.addPrecondition(precondition2);
+        useCase.addPrecondition(precondition3);
+        useCase.addPostcondition(postcondition1);
+        useCase.addPostcondition(postcondition2);
+
+        UseCaseMainStep step1 = new UseCaseMainStep("Student", "The Student indicates to create a new use case in the use case document.");
+        UseCaseMainStep step2 = new UseCaseMainStep("System", "The System asks the Student to enter the details of this new use case according to the “Details” defined in the Associated Information of this use case.");
+        UseCaseMainStep step3 = new UseCaseMainStep("Student", "The Student enters the details of this new use case and confirms that she has finished.");
+        UseCaseMainStep step4 = new UseCaseMainStep("System", "The System validates the Student’s inputs according to the “Details” defined in the Associated Information of this use case.");
+        UseCaseMainStep step5 = new UseCaseMainStep("System", "The System validates that the creation of the new use case will not duplicate any existing use case according to the “Duplication detection rules” defined in the Associated Information of this use case.");
+        UseCaseMainStep step6 = new UseCaseMainStep("System", "The System displays the details of the new use case and asks the Student to confirm the creation.");
+        UseCaseMainStep step7 = new UseCaseMainStep("Student", "The Student either confirms the creation (continues the normal flow) or chooses to modify the details (returns to step 3).");
+        UseCaseMainStep step8 = new UseCaseMainStep("System", "The System saves the new use case and informs the Student that this use case has been created.");
+        UseCaseMainStep step9 = new UseCaseMainStep("System", "The System notifies relevant actors about the creation of the use case according to the “Notification” defined in the Associated Information of this use case.");
+        UseCaseMainStep step10 = new UseCaseMainStep("", "Use case ends.");
+
+        useCase.addMainStep(step1);
+        useCase.addMainStep(step2);
+        useCase.addMainStep(step3);
+        useCase.addMainStep(step4);
+        useCase.addMainStep(step5);
+        useCase.addMainStep(step6);
+        useCase.addMainStep(step7);
+        useCase.addMainStep(step8);
+        useCase.addMainStep(step9);
+        useCase.addMainStep(step10);
+
+        UseCaseExtension step4ExtensionA = new UseCaseExtension("Input validation rule violation", ExtensionKind.EXCEPTION, ExtensionExit.RESUME);
+        step4ExtensionA.addStep(new UseCaseExtensionStep("System", "The System alerts the Student that an input validation rule is violated and displays the nature and location of the error."));
+        step4ExtensionA.addStep(new UseCaseExtensionStep("Student", "The Student corrects the mistake and returns to step 4 of the normal flow."));
+        step4.addExtension(step4ExtensionA);
+
+        UseCaseExtension step5ExtensionA = new UseCaseExtension("The System finds possible duplicates from the existing use cases", ExtensionKind.EXCEPTION, ExtensionExit.RESUME);
+        step5ExtensionA.addStep(new UseCaseExtensionStep("System", "The System alerts the Student that the use case she is trying to create already exists in the System."));
+        step5ExtensionA.addStep(new UseCaseExtensionStep("Student", "The Student either chooses to correct the mistake and return to step 4 of the normal flow or chooses to terminate the use case."));
+        step5.addExtension(step5ExtensionA);
+
+        this.useCaseService.saveUseCase(1, useCase);
+
+        // Create a requirement document
+        RequirementDocument doc = new RequirementDocument();
+        doc.setType(DocumentType.SRS);
+        doc.setTeam(team1);
+        doc.setDocumentKey(DocumentType.SRS.name());
+
+        this.documentTemplateRegistry.find(DocumentType.SRS).ifPresentOrElse(
+                tpl -> applyTemplate(doc, tpl),
+                () -> doc.setTitle(DocumentType.SRS.name()) // fallback title if no template file exists
+        );
+
+        this.documentRepository.save(doc);
+
+        // Create some requirement artifacts
+        RequirementArtifact fr1 = new RequirementArtifact(team1, RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "User authentication", "The system shall allow users to log in using their email and password.", "");
+        fr1.setPriority(Priority.CRITICAL);
+        RequirementArtifact fr2 = new RequirementArtifact(team1, RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "Validation", "The system shall validate user inputs to ensure data integrity and prevent errors.", "");
+        fr2.setPriority(Priority.CRITICAL);
+        RequirementArtifact fr3 = new RequirementArtifact(team1, RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "Notification", "The system shall notify team members of changes to the requirement document via email.", "");
+        fr3.setPriority(Priority.HIGH);
+        RequirementArtifact bo1 = new RequirementArtifact(team1, RequirementArtifactType.BUSINESS_OBJECTIVE, "Improve Student Requirements Quality", "Improve the quality of student-written requirements through structure, templates, standards, traceability, AI feedback, and consistency checks.", "");
+        bo1.setPriority(Priority.CRITICAL);
+
+        this.requirementArtifactService.saveRequirementArtifact(1, fr1);
+        this.requirementArtifactService.saveRequirementArtifact(1, fr2);
+        this.requirementArtifactService.saveRequirementArtifact(1, fr3);
+        this.requirementArtifactService.saveRequirementArtifact(1, bo1);
+
+        // Find the "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS" section in the document and add the functional requirements to it
+        doc.getSections().stream()
+                .filter(section -> "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS".equals(section.getSectionKey()))
+                .findFirst()
+                .ifPresent(section -> {
+                    section.addRequirementArtifact(fr1);
+                    section.addRequirementArtifact(fr2);
+
+                });
+
+        // Find the "INTRODUCTION" section in the document and lock it.
+        doc.getSections().stream()
+                .filter(section -> "INTRODUCTION".equals(section.getSectionKey()))
+                .findFirst()
+                .ifPresent(section -> {
+                    DocumentSectionLock sectionLock = section.getLock();
+                    PeerEvaluationUser currentUser = john;
+                    Instant now = Instant.now();
+                    Instant expiresAt = now.plus(Duration.ofMinutes(15));
+                    sectionLock.lock(currentUser, now, expiresAt, "Locking section for editing");
+                });
+
+        this.documentRepository.save(doc);
+
+        ArtifactLink link1 = new ArtifactLink();
+        link1.setTeam(team1);
+        link1.setSourceArtifact(fr1);
+        link1.setTargetArtifact(createUseCase);
+        link1.setType(ArtifactLinkType.DERIVES_FROM);
+        ArtifactLink link2 = new ArtifactLink();
+        link2.setTeam(team1);
+        link2.setSourceArtifact(fr2);
+        link2.setTargetArtifact(createUseCase);
+        link2.setType(ArtifactLinkType.DERIVES_FROM);
+        ArtifactLink link3 = new ArtifactLink();
+        link3.setTeam(team1);
+        link3.setSourceArtifact(createUseCase);
+        link3.setTargetArtifact(bo1);
+        link3.setType(ArtifactLinkType.DERIVES_FROM);
+
+        this.artifactLinkRepository.saveAll(List.of(link1, link2, link3));
+
+        // ---- Doc-level thread #1 (OPEN) ----
+        CommentThread docThread1 = new CommentThread();
+        docThread1.setTeam(team1);
+        docThread1.setCreatedBy(john);
+        doc.addCommentThread(docThread1);
+
+        Comment docThread1c1 = new Comment();
+        docThread1c1.setAuthor(john);
+        docThread1c1.setContent("Please add a glossary term for 'artifact' and maybe 'traceability'.");
+
+        Comment docThread1c2 = new Comment();
+        docThread1c2.setAuthor(instructor1);
+        docThread1c2.setContent("Agree. Add definitions + one example each.");
+
+        docThread1.addComment(docThread1c1);
+        docThread1.addComment(docThread1c2);
+
+        this.commentThreadRepository.save(docThread1);
+
+        // ---- Doc-level thread #2 (RESOLVED) ----
+        CommentThread docThread2 = new CommentThread();
+        docThread2.setTeam(team1);
+        docThread2.setCreatedBy(instructor2);
+        docThread2.setStatus(CommentThreadStatus.RESOLVED);
+        doc.addCommentThread(docThread2);
+
+        Comment docThread2c1 = new Comment();
+        docThread2c1.setAuthor(instructor2);
+        docThread2c1.setContent("Consider adding a short Scope paragraph to the Introduction.");
+
+        Comment docThread2c2 = new Comment();
+        docThread2c2.setAuthor(jerry);
+        docThread2c2.setContent("Done. Added a scope paragraph. Resolving thread.");
+
+        docThread2.addComment(docThread2c1);
+        docThread2.addComment(docThread2c2);
+
+        this.commentThreadRepository.save(docThread2);
+
+        // ---- Section-level thread (OPEN) ----
+        CommentThread sectionThread1 = new CommentThread();
+        sectionThread1.setTeam(team1);
+        sectionThread1.setCreatedBy(eric);
+        doc.addCommentThread(sectionThread1);
+        DocumentSection introSection = doc.getSections().stream()
+                .filter(s -> "INTRODUCTION".equals(s.getSectionKey()))
+                .findFirst()
+                .get();
+        introSection.addCommentThread(sectionThread1);
+
+        Comment sectionThread1c1 = new Comment();
+        sectionThread1c1.setAuthor(eric);
+        sectionThread1c1.setContent("Please include the purpose of this document in the Introduction section.");
+
+        Comment sectionThread1c2 = new Comment();
+        sectionThread1c2.setAuthor(instructor1);
+        sectionThread1c2.setContent("Sure. Added a Purpose subsection under Introduction.");
+
+        sectionThread1.addComment(sectionThread1c1);
+        sectionThread1.addComment(sectionThread1c2);
+
+        this.commentThreadRepository.save(sectionThread1);
+
+        // ---- Artifact-level thread #1 (OPEN) on FR-01 ----
+        CommentThread artifactThread1 = new CommentThread();
+        artifactThread1.setTeam(team1);
+        artifactThread1.setCreatedBy(woody);
+        fr1.addCommentThread(artifactThread1);
+
+        Comment artifactThread1c1 = new Comment();
+        artifactThread1c1.setAuthor(woody);
+        artifactThread1c1.setContent("What does 'log in' mean—email/password only or also SSO?");
+
+        Comment artifactThread1c2 = new Comment();
+        artifactThread1c2.setAuthor(amanda);
+        artifactThread1c2.setContent("Let’s specify email/password now; add SSO as a later requirement.");
+
+        artifactThread1.addComment(artifactThread1c1);
+        artifactThread1.addComment(artifactThread1c2);
+
+        this.commentThreadRepository.save(artifactThread1);
+
+        // ---- Artifact-level thread #2 (RESOLVED) on FR-02 ----
+        CommentThread artifactThread2 = new CommentThread();
+        artifactThread2.setTeam(team1);
+        artifactThread2.setCreatedBy(instructor1);
+        artifactThread2.setStatus(CommentThreadStatus.RESOLVED);
+        fr2.addCommentThread(artifactThread2);
+
+        Comment artifactThread2c1 = new Comment();
+        artifactThread2c1.setAuthor(instructor1);
+        artifactThread2c1.setContent("FR-02 is too broad. Add examples or measurable validation rules.");
+
+        Comment artifactThread2c2 = new Comment();
+        artifactThread2c2.setAuthor(cora);
+        artifactThread2c2.setContent("Added examples: required fields + email format + length checks. Resolving.");
+
+        artifactThread2.addComment(artifactThread2c1);
+        artifactThread2.addComment(artifactThread2c2);
+
+        this.commentThreadRepository.save(artifactThread2);
+    }
+
+    private void applyTemplate(RequirementDocument doc, DocumentTemplate tpl) {
+        doc.setTitle(tpl.getTitle() != null ? tpl.getTitle() : doc.getType().name());
+
+        if (tpl.getSections() == null || tpl.getSections().isEmpty()) {
+            return;
+        }
+
+        for (DocumentTemplate.SectionTemplate sectionTemplate : tpl.getSections()) {
+            DocumentSection section = new DocumentSection();
+            section.setSectionKey(sectionTemplate.getSectionKey());
+            section.setTitle(sectionTemplate.getTitle());
+            section.setType(sectionTemplate.getType());
+            section.setContent(null);
+            if (sectionTemplate.getType() == SectionType.LIST) {
+                section.setRequirementArtifacts(new ArrayList<>());
+            }
+            section.setGuidance(sectionTemplate.getGuidance());
+            section.initLockIfMissing();
+
+            doc.addSection(section);
+        }
     }
 
 }

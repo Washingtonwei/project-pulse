@@ -12,6 +12,10 @@ public class StatusCode {
 
     public static final int NOT_FOUND = 404; // Not found
 
+    public static final int CONFLICT = 409; // Conflict, e.g., resource already exists
+
+    public static final int LOCKED = 423; // Resource is locked
+
     public static final int INTERNAL_SERVER_ERROR = 500; // Server internal error
 
 }

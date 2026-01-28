@@ -91,6 +91,10 @@
             <groupId>com.azure.spring</groupId>
             <artifactId>spring-cloud-azure-starter-keyvault</artifactId>
         </dependency>
+        <dependency>
+            <groupId>tools.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+        </dependency>
 
         <!-- Test Dependencies -->
         <dependency>

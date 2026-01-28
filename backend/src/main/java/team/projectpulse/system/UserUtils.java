@@ -23,8 +23,20 @@ public class UserUtils {
     }
 
     public Integer getUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return ((Long) (((Jwt) authentication.getPrincipal()).getClaim("userId"))).intValue();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) return null;
+
+        Object principal = auth.getPrincipal();
+        if (!(principal instanceof Jwt jwt)) return null;
+
+        Object claim = jwt.getClaim("userId");
+        if (claim == null) return null;
+
+        if (claim instanceof Integer i) return i;
+        if (claim instanceof Long l) return l.intValue();
+        if (claim instanceof String s) return Integer.valueOf(s);
+
+        return null;
     }
 
     public Integer getUserCourseId() {
