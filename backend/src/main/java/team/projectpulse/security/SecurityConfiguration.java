@@ -222,6 +222,56 @@ public class SecurityConfiguration {
                         // The following endpoint is used by the front-end application to check if a user exists during user registration.
                         .requestMatchers(HttpMethod.GET, this.baseUrl + "/users/exists/{email}").permitAll()
 
+                        // Security rules for the RAM /teams/{teamId}/documents/** endpoint.
+                        .requestMatchers(HttpMethod.POST, this.baseUrl + "/teams/{teamId}/documents/search").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.POST, this.baseUrl + "/teams/{teamId}/documents").access(this.teamOwnershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/documents/{documentId}").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.PATCH, this.baseUrl + "/teams/{teamId}/documents/{documentId}").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/teams/{teamId}/documents/{documentId}").access(this.teamOwnershipAuthorizationManager)
+
+                        // Security rules for the RAM /teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}/** endpoint.
+                        .requestMatchers(HttpMethod.PUT, this.baseUrl + "/teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}/lock").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.PUT, this.baseUrl + "/teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}/lock").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}/lock").access(this.teamMembershipAuthorizationManager)
+
+                        // Security rules for the RAM /teams/{teamId}/requirement-artifacts/** endpoint.
+                        .requestMatchers(HttpMethod.POST, this.baseUrl + "/teams/{teamId}/requirement-artifacts/search").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.POST, this.baseUrl + "/teams/{teamId}/requirement-artifacts").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/requirement-artifacts/{artifactId}").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.PUT, this.baseUrl + "/teams/{teamId}/requirement-artifacts/{artifactId}").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/teams/{teamId}/requirement-artifacts/{artifactId}").access(this.teamMembershipAuthorizationManager)
+
+                        // Security rules for the RAM /teams/{teamId}/artifact-links/** endpoint.
+                        .requestMatchers(HttpMethod.POST, this.baseUrl + "/teams/{teamId}/artifact-links/search").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.POST, this.baseUrl + "/teams/{teamId}/artifact-links").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/artifact-links/{artifactLinkId}").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.PUT, this.baseUrl + "/teams/{teamId}/artifact-links/{artifactLinkId}").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/teams/{teamId}/artifact-links/{artifactLinkId}").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/requirement-artifacts/{artifactId}/traceability").access(this.teamMembershipAuthorizationManager)
+
+                        // Security rules for the RAM /teams/{teamId}/use-cases/** endpoint.
+                        .requestMatchers(HttpMethod.POST, this.baseUrl + "/teams/{teamId}/use-cases/search").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.POST, this.baseUrl + "/teams/{teamId}/use-cases").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/use-cases/{useCaseId}").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.PUT, this.baseUrl + "/teams/{teamId}/use-cases/{useCaseId}").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/teams/{teamId}/use-cases/{useCaseId}").access(this.teamMembershipAuthorizationManager)
+
+                        // Security rules for the RAM comment endpoint.
+                        .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/documents/{documentId}/comment-threads").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.POST, this.baseUrl + "/teams/{teamId}/documents/{documentId}/comment-threads").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}/comment-threads").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.POST, this.baseUrl + "/teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}/comment-threads").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/requirement-artifacts/{artifactId}/comment-threads").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.POST, this.baseUrl + "/teams/{teamId}/requirement-artifacts/{artifactId}/comment-threads").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/comment-threads/{commentThreadId}").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.PATCH, this.baseUrl + "/teams/{teamId}/comment-threads/{commentThreadId}").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/teams/{teamId}/comment-threads/{commentThreadId}").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.POST, this.baseUrl + "/teams/{teamId}/comment-threads/{commentThreadId}/comments").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/comment-threads/{commentThreadId}/comments/{commentId}").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.PATCH, this.baseUrl + "/teams/{teamId}/comment-threads/{commentThreadId}/comments/{commentId}").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/teams/{teamId}/comment-threads/{commentThreadId}/comments/{commentId}").access(this.teamMembershipAuthorizationManager)
+                        
                         .requestMatchers(this.baseUrl + "/**").authenticated() // This is the default rule for all other endpoints.
 
                         .anyRequest().permitAll()

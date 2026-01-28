@@ -1,5 +1,7 @@
 package team.projectpulse.system.exception;
 
+import jakarta.persistence.OptimisticLockException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -147,6 +149,30 @@ public class ExceptionHandlerAdvice {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     Result handleIllegalArgumentException(IllegalArgumentException ex) {
         return new Result(false, StatusCode.INVALID_ARGUMENT, ex.getMessage());
+    }
+
+    @ExceptionHandler(SectionAlreadyLockedException.class)
+    @ResponseStatus(HttpStatus.LOCKED)
+    Result handleSectionAlreadyLockedException(SectionAlreadyLockedException ex) {
+        return new Result(false, StatusCode.LOCKED, ex.getMessage());
+    }
+
+    @ExceptionHandler(SectionUnlockNotAllowedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    Result handleSectionUnlockNotAllowedException(SectionUnlockNotAllowedException ex) {
+        return new Result(false, StatusCode.FORBIDDEN, ex.getMessage());
+    }
+
+    @ExceptionHandler(SectionLockRequiredException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    Result handleSectionLockRequiredException(SectionLockRequiredException ex) {
+        return new Result(false, StatusCode.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler({ObjectOptimisticLockingFailureException.class, OptimisticLockException.class})
+    @ResponseStatus(HttpStatus.CONFLICT)
+    Result handleOptimisticLock(RuntimeException ex) {
+        return new Result(false, StatusCode.CONFLICT, "The resource you are trying to update has been modified by another process. Please refresh and try again.", ex.getMessage());
     }
 
     /**

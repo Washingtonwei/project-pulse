@@ -1,0 +1,233 @@
+title: "Vision and Scope Document"
+
+sections:
+
+  - sectionKey: "INTRODUCTION"
+    title: "Introduction"
+    type: "RICH_TEXT"
+    guidance: |
+      This section defines the overarching goals, purpose, and boundaries of the software project.
+
+      Describe:
+      - What the software aims to achieve
+      - The business problems it will solve
+      - The context in which it will operate
+      - How this document relates to use cases and the SRS
+
+  - sectionKey: "BACKGROUND"
+    title: "Background"
+    type: "RICH_TEXT"
+    guidance: |
+      Summarize the rationale and context for the new product or for changes to be made to an existing one. Describe the history or situation that led to the decision to build this product.
+
+      Describe the Business
+      - Introduce the company or organization
+      - What the company does (industry, products/services)
+      - Size of the company (employees, locations)
+      - Mission or goals related to the problem domain
+
+      **Example:**
+      "The client, XYZ Logistics, is a mid-sized shipping company that specializes in last-mile delivery services for e-commerce businesses. The company operates in five major cities, employs 200 delivery staff, and handles over 10,000 deliveries per day. The goal is to optimize delivery efficiency and customer satisfaction."
+
+  - sectionKey: "CURRENT_PROCESS_FLOW"
+    title: "Current Process Flow (As-Is Process Flow)"
+    type: "RICH_TEXT"
+    guidance: |
+      Most projects require the people involved to have a firm grasp of the business process being created, replicated, or improved. Without this understanding, there is little chance that users will adopt the new solution. Process Flows are among the most common and effective models to facilitate this understanding.
+
+      Explain the Current Process Flow
+      - Create a UML Activity Diagram with Swimlanes
+      - Identify actors and assign swimlanes
+      - Show sequence of activities and decisions
+      - Write a textual explanation for non-UML readers
+      - Highlight inefficiencies and pain points
+
+      Describe the Current Tools
+      - List tools currently used (e.g., Excel, Google Sheets, LMS)
+      - Mention limitations of each tool
+
+      Explain the Pain Points
+      - Highlight inefficiencies, delays, or error-prone steps
+      - Use concrete examples
+
+      Checklist
+      - Is the context clear to non-domain readers?
+      - Are all stakeholders and tools described?
+      - Are inefficiencies illustrated clearly?
+      - Is a UML activity diagram included?
+
+  - sectionKey: "REFERENCES"
+    title: "References"
+    type: "LIST"
+    guidance: |
+      Provide a complete list of all documents referenced in this Vision document.
+
+      For each reference include:
+      - Title
+      - Report number (if applicable)
+      - Date
+      - Publishing organization
+      - Where the document can be obtained
+
+  - sectionKey: "BUSINESS_OPPORTUNITY"
+    title: "Business Opportunity / Problem Statement"
+    type: "RICH_TEXT"
+    guidance: |
+      Provide a concise statement summarizing the opportunity being exploited or the problem being solved.
+
+      Focus on:
+      - Current inefficiencies or pain points
+      - Who is affected and how
+      - Why solving this problem matters
+      - The opportunity created by addressing it
+
+  - sectionKey: "BUSINESS_OBJECTIVES"
+    title: "Business Objectives"
+    type: "LIST"
+    guidance: |
+      Summarize the important business benefits the product will provide.
+
+      Guidelines:
+      - Objectives must be quantitative and measurable
+      - Avoid vague statements or platitudes
+      - Use identifiers (e.g., BO-1, BO-2)
+
+      **Example:**
+      - BO-1: Reduce processing time by 50%
+      - BO-2: Increase submission rate by 20%
+
+  - sectionKey: "VISION_STATEMENT"
+    title: "Vision Statement"
+    type: "RICH_TEXT"
+    guidance: |
+      Provide an overall statement summarizing the product’s unique position.
+
+      Use the following structure:
+
+      - **For**: Target users
+      - **Who**: Their key needs
+      - **The product**: Product name
+      - **That**: Key benefits
+      - **Unlike**: Existing alternatives
+      - **Our product**: Differentiation
+
+  - sectionKey: "PROPOSED_PROCESS_FLOW"
+    title: "Proposed New Process Flow (To-Be Process Flow)"
+    type: "RICH_TEXT"
+    guidance: |
+      Design the improved process flow incorporating the new system.
+
+      - Create a UML Activity Diagram with Swimlanes
+      - Show automated vs manual activities
+      - Explain how the new system addresses pain points
+      - Highlight remaining manual tasks (if any)
+
+  - sectionKey: "BUSINESS_RISKS"
+    title: "Business Risks"
+    type: "LIST"
+    guidance: |
+      Summarize major business risks associated with developing or not developing the product.
+
+      For each risk include:
+      - Risk identifier (e.g., RI-1)
+      - Description
+      - Probability
+      - Impact
+      - Possible mitigation
+      
+      **Example:**
+      - RI-1: The Cafeteria Employees Union might require that their contract be renegotiated to reflect the new employee roles and cafeteria hours of operation. (Probability = 0.6; Impact = 3)
+      - RI-2: Too few employees might use the system, reducing the return on investment from the system development and the changes in cafeteria operating procedures. (Probability = 0.3; Impact = 9)
+      - RI-3: Local restaurants might not agree to offer delivery, which would reduce employee satisfaction with the system and possibly their usage of it. (Probability = 0.3; Impact = 3)
+      - RI-4: Insufficient delivery capacity might not be available, which means that employees would not always receive their meals on time and could not always request delivery for the desired times. (Probability = 0.5; Impact = 6).
+
+  - sectionKey: "ASSUMPTIONS_DEPENDENCIES"
+    title: "Business Assumptions and Dependencies"
+    type: "LIST"
+    guidance: |
+      Record assumptions believed to be true without definitive proof.
+
+      Also record dependencies on:
+      - External systems
+      - Third-party services
+      - Regulations
+      - Other projects
+
+      Explain the impact if an assumption is false or a dependency fails.
+      
+      **Example:**
+      - AS-1: Systems with appropriate user interfaces will be available for cafeteria employees to process the expected volume of meals ordered.
+      - AS-2: Cafeteria staff and vehicles will be available to deliver all meals for specified delivery time slots within 15 minutes of the requested delivery time.
+      - DE-1: If a restaurant has its own online ordering system, the Cafeteria Ordering System must be able to communicate with it bi-directionally.
+
+  - sectionKey: "STAKEHOLDER_PROFILES"
+    title: "Stakeholder Profiles"
+    type: "RICH_TEXT"
+    guidance: |
+      Identify all stakeholders and users involved in the project.
+
+      For each stakeholder describe:
+      - Value or benefit from the product
+      - Attitudes toward the product
+      - Features of interest
+      - Constraints
+      - Whether they are end users
+
+  - sectionKey: "USER_ENVIRONMENT"
+    title: "User Environment"
+    type: "RICH_TEXT"
+    guidance: |
+      Describe the working environment of target users.
+
+      Consider:
+      - Number of users
+      - Task duration and frequency
+      - Platforms used
+      - Environmental constraints
+      - Required integrations
+
+  - sectionKey: "ALTERNATIVES_COMPETITION"
+    title: "Alternatives and Competition"
+    type: "RICH_TEXT"
+    guidance: |
+      Identify existing alternatives to the proposed solution.
+
+      Include:
+      - Current tools or processes
+      - Strengths and weaknesses
+      - Why the proposed solution is preferable
+
+  - sectionKey: "PRODUCT_PERSPECTIVE"
+    title: "Product Perspective"
+    type: "RICH_TEXT"
+    guidance: |
+      Describe how the product fits into the larger system environment.
+
+      - Is it standalone or part of a larger system?
+      - What external systems does it interact with?
+      - One easy way to display the major components of the larger system, interconnections, and external interfaces is with a context diagram.
+
+  - sectionKey: "MAJOR_FEATURES"
+    title: "Major Features / Scope"
+    type: "LIST"
+    guidance: |
+      List and briefly describe major product features. Features are the high-level capabilities of the system that are necessary to deliver benefits to the users and other stakeholders. To be more specific, each feature is an externally desired service that typically requires a series of inputs to achieve the desired result. For example, a feature of a problem tracking system might be the ability to provide trending reports.
+
+      Guidelines:
+      - State features as product capabilities
+      - 1–3 sentences per feature
+      - Avoid implementation details
+      - Focus on what and why, not how
+      - Be understandable to non-technical stakeholders
+
+  - sectionKey: "DEPLOYMENT_CONSIDERATIONS"
+    title: "Deployment Considerations"
+    type: "RICH_TEXT"
+    guidance: |
+      Summarize information needed for effective deployment.
+
+      Include:
+      - User access requirements
+      - Deployment environment
+      - Infrastructure changes
+      - Training or process changes

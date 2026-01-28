@@ -1,0 +1,326 @@
+title: "Software Requirements Specification"
+
+sections:
+
+  - sectionKey: "INTRODUCTION"
+    title: "Introduction"
+    type: "RICH_TEXT"
+    guidance: |
+      The introduction of the Software Requirements Specification (SRS) provides an overview of the entire document.
+
+      It includes:
+      - The purpose of the system
+      - The purpose of this document
+      - Document conventions
+      - References
+
+  - sectionKey: "SYSTEM_PURPOSE"
+    title: "The Purpose of the Project"
+    type: "RICH_TEXT"
+    guidance: |
+      Describe what the system is for: who wants it and why.
+
+      Address:
+      - Who will use the system
+      - The business motivation behind it
+      - Why this system is needed
+
+      Even if already described in the Vision and Scope document, reiterate it here for readers who may not have read that document.
+
+  - sectionKey: "DOCUMENT_PURPOSE"
+    title: "The Purpose of this Document"
+    type: "RICH_TEXT"
+    guidance: |
+      Specify the purpose of this Software Requirements Specification.
+
+      The SRS should:
+      - Fully describe the external behavior of the system
+      - Describe functional and nonfunctional requirements
+      - Identify constraints and other relevant factors
+
+      The goal is to provide a complete and unambiguous reference for developers, testers, and stakeholders.
+
+  - sectionKey: "DOCUMENT_CONVENTIONS"
+    title: "Document Conventions"
+    type: "RICH_TEXT"
+    guidance: |
+      Describe any standards or typographical conventions used in this document.
+
+      Examples include:
+      - Requirement identifier formats
+      - Text styles and highlighting conventions
+      - Notations used in diagrams or tables
+
+  - sectionKey: "REFERENCES"
+    title: "References"
+    type: "LIST"
+    guidance: |
+      List any documents or resources referenced by this SRS.
+
+      For each reference include:
+      - Title
+      - Author
+      - Version
+      - Date
+      - Source or URL
+
+      Examples:
+      - Vision and Scope document
+      - Use Case specification
+      - Glossary
+      - UI wireframes
+      - Standards or regulations
+
+  - sectionKey: "PROJECT_GLOSSARY"
+    title: "Project Glossary"
+    type: "RICH_TEXT"
+    guidance: |
+      Define terminology specific to the problem domain.
+
+      This section may act as:
+      - An informal data dictionary
+      - A shared vocabulary for stakeholders
+
+      It is often provided by reference to a separate Glossary document.
+
+  - sectionKey: "VISION_SCOPE_REFERENCE"
+    title: "Vision and Scope"
+    type: "RICH_TEXT"
+    guidance: |
+      Link to the Vision and Scope document.
+
+      This section should explain:
+      - Where the Vision and Scope document can be found
+      - How it informs the requirements in this SRS
+
+  - sectionKey: "SOFTWARE_ARCHITECTURE"
+    title: "Software Architecture"
+    type: "RICH_TEXT"
+    guidance: |
+      Provide a high-level design of the system.
+
+      Include:
+      - System context
+      - Major components
+      - Operating environment
+      - Constraints
+      - Assumptions
+
+      The goal is to ensure architectural alignment with functional and quality requirements.
+
+  - sectionKey: "SYSTEM_CONTEXT"
+    title: "System Context Diagram"
+    type: "RICH_TEXT"
+    guidance: |
+      Draw a system context diagram showing the system at the center and its interactions with users and external systems.
+
+      Guidelines:
+      - Focus on actors and systems, not technologies
+      - Keep the diagram high-level
+      - Follow the diagram with brief component descriptions
+
+  - sectionKey: "CONTAINER_DIAGRAM"
+    title: "Container Diagram"
+    type: "RICH_TEXT"
+    guidance: |
+      Provide a container diagram that zooms into the system boundary.
+
+      Describe:
+      - Major containers (applications, databases, services)
+      - Responsibilities of each container
+      - Communication between containers
+      - Major technology choices
+
+  - sectionKey: "OPERATING_ENVIRONMENT"
+    title: "Operating Environment"
+    type: "RICH_TEXT"
+    guidance: |
+      Describe the environment in which the software will operate.
+
+      Include:
+      - Hardware platforms
+      - Operating systems
+      - User locations
+      - Server and database locations
+      - Coexisting software systems
+
+  - sectionKey: "DESIGN_CONSTRAINTS"
+    title: "Design and Implementation Constraints"
+    type: "LIST"
+    guidance: |
+      Describe factors that limit implementation choices.
+
+      Examples:
+      - Regulatory or corporate policies
+      - Hardware limitations
+      - Required technologies or programming languages
+      - Coding or documentation standards
+
+  - sectionKey: "ASSUMPTIONS_DEPENDENCIES"
+    title: "Assumptions and Dependencies"
+    type: "LIST"
+    guidance: |
+      List assumptions believed to be true without definitive proof.
+
+      Also list dependencies on:
+      - External systems
+      - Third-party libraries or services
+      - External teams or organizations
+
+      Explain the impact if assumptions prove false or dependencies fail.
+
+  - sectionKey: "FUNCTIONAL_REQUIREMENTS"
+    title: "Functional Requirements"
+    type: "RICH_TEXT"
+    guidance: |
+      Describe all functional requirements in sufficient detail for design and testing.
+
+      This section should enable:
+      - Designers to design the system
+      - Testers to verify the system
+
+  - sectionKey: "USE_CASES"
+    title: "Use Cases"
+    type: "RICH_TEXT"
+    guidance: |
+      Provide or link to the Use Case Specification document.
+
+      This section should describe how users interact with the system to achieve goals.
+
+  - sectionKey: "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS"
+    title: "Non-Use Case Functional Requirements"
+    type: "LIST"
+    guidance: |
+      Describe functional requirements that are not easily expressed as use cases.
+
+      Use structured formats such as:
+      - "The system shall…" statements
+      - EARS (Easy Approach to Requirements Syntax)
+
+  - sectionKey: "BUSINESS_RULES"
+    title: "Business Rules"
+    type: "RICH_TEXT"
+    guidance: |
+      Document corporate policies, regulations, standards, and rules the system must conform to.
+
+      This section may reference a separate Business Rules document.
+
+  - sectionKey: "DATA_REQUIREMENTS"
+    title: "Data Requirements"
+    type: "RICH_TEXT"
+    guidance: |
+      Describe data consumed, processed, or produced by the system.
+
+  - sectionKey: "BUSINESS_DOMAIN_MODEL"
+    title: "Business Domain Model"
+    type: "RICH_TEXT"
+    guidance: |
+      Describe the key concepts and relationships within the business domain.
+
+      Domain models are typically expressed as UML class diagrams.
+
+  - sectionKey: "DATA_LIFECYCLE"
+    title: "Data Acquisition, Integrity, Retention, and Disposal"
+    type: "LIST"
+    guidance: |
+      Describe how data is acquired, protected, retained, and disposed of.
+
+      Include:
+      - Retention policies
+      - Backup and recovery
+      - Integrity safeguards
+
+  - sectionKey: "EXTERNAL_INTERFACES"
+    title: "External Interface Requirements"
+    type: "RICH_TEXT"
+    guidance: |
+      Describe how the system communicates with users and external systems.
+
+  - sectionKey: "USER_INTERFACES"
+    title: "User Interfaces"
+    type: "LIST"
+    guidance: |
+      Describe logical characteristics of user interfaces.
+
+      Include:
+      - UI standards
+      - Accessibility requirements
+      - Navigation and interaction constraints
+
+  - sectionKey: "SOFTWARE_INTERFACES"
+    title: "Software Interfaces"
+    type: "LIST"
+    guidance: |
+      Describe interactions with other software systems.
+
+      Include:
+      - Data exchanged
+      - Communication protocols
+      - Security considerations
+
+  - sectionKey: "API_DOCUMENTATION"
+    title: "API Document"
+    type: "RICH_TEXT"
+    guidance: |
+      Link to the API documentation describing endpoints, inputs, outputs, and error handling.
+
+  - sectionKey: "HARDWARE_INTERFACES"
+    title: "Hardware Interfaces"
+    type: "RICH_TEXT"
+    guidance: |
+      Describe interfaces between software and hardware components, if any.
+
+  - sectionKey: "COMMUNICATION_INTERFACES"
+    title: "Communications Interfaces"
+    type: "LIST"
+    guidance: |
+      Describe communication requirements such as email, messaging, and network protocols.
+
+      Include:
+      - Security
+      - Data transfer rates
+      - Formatting constraints
+
+  - sectionKey: "QUALITY_ATTRIBUTES"
+    title: "Quality Attributes"
+    type: "RICH_TEXT"
+    guidance: |
+      Describe quality attributes such as usability, performance, security, and reliability.
+
+      Each attribute should be:
+      - Specific
+      - Quantitative
+      - Verifiable
+
+  - sectionKey: "DEPLOYMENT"
+    title: "Deployment"
+    type: "RICH_TEXT"
+    guidance: |
+      Describe how the system will be deployed, operated, and maintained.
+
+      Include:
+      - Deployment environments
+      - Tools and procedures
+      - Update and rollback strategies
+
+  - sectionKey: "I18N_L10N"
+    title: "Internationalization and Localization Requirements"
+    type: "RICH_TEXT"
+    guidance: |
+      Describe requirements related to internationalization and localization.
+
+      Examples include:
+      - Language support
+      - Date and number formats
+      - Cultural and legal considerations
+
+  - sectionKey: "OTHER_REQUIREMENTS"
+    title: "Other Requirements"
+    type: "RICH_TEXT"
+    guidance: |
+      Capture any additional requirements not covered elsewhere.
+
+      Examples:
+      - Legal or regulatory requirements
+      - Logging and audit requirements
+      - Financial or compliance constraints
