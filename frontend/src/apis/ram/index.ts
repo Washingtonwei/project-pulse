@@ -4,7 +4,11 @@ import type {
   SearchDocumentsResponse,
   CreateRequirementDocumentRequest,
   CreateDocumentResponse,
-  FindDocumentByIdResponse
+  FindDocumentByIdResponse,
+  UpdateDocumentSectionResponse,
+  LockDocumentSectionRequest,
+  LockDocumentSectionResponse,
+  GetDocumentSectionLockResponse
 } from './types'
 
 enum API {
@@ -28,4 +32,44 @@ export const createDocument = (teamId: number, requestBody: CreateRequirementDoc
 export const findDocumentById = (teamId: number, documentId: number) =>
   request.get<any, FindDocumentByIdResponse>(
     `${API.TEAM_DOCUMENTS}/${teamId}/documents/${documentId}`
+  )
+
+export const updateDocumentSection = (
+  teamId: number,
+  documentId: number,
+  documentSectionId: number,
+  section: any
+) =>
+  request.put<any, UpdateDocumentSectionResponse>(
+    `${API.TEAM_DOCUMENTS}/${teamId}/documents/${documentId}/document-sections/${documentSectionId}`,
+    section
+  )
+
+export const getDocumentSectionLock = (
+  teamId: number,
+  documentId: number,
+  documentSectionId: number
+) =>
+  request.get<any, GetDocumentSectionLockResponse>(
+    `${API.TEAM_DOCUMENTS}/${teamId}/documents/${documentId}/document-sections/${documentSectionId}/lock`
+  )
+
+export const lockDocumentSection = (
+  teamId: number,
+  documentId: number,
+  documentSectionId: number,
+  requestBody: LockDocumentSectionRequest
+) =>
+  request.put<any, LockDocumentSectionResponse>(
+    `${API.TEAM_DOCUMENTS}/${teamId}/documents/${documentId}/document-sections/${documentSectionId}/lock`,
+    requestBody
+  )
+
+export const unlockDocumentSection = (
+  teamId: number,
+  documentId: number,
+  documentSectionId: number
+) =>
+  request.delete<any, LockDocumentSectionResponse>(
+    `${API.TEAM_DOCUMENTS}/${teamId}/documents/${documentId}/document-sections/${documentSectionId}/lock`
   )

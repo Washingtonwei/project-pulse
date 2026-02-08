@@ -131,6 +131,16 @@ async function loadDocuments() {
 function handleOpen(type: DocumentType) {
   const existing = docsByType.value[type]
   if (!existing) return
+  if (type === 'GLOSSARY') {
+    router.push({ name: 'ram-glossary', params: { documentId: existing.id } })
+    return
+  }
+
+  if (type === 'USE_CASES') {
+    router.push({ name: 'ram-use-cases', params: { documentId: existing.id } })
+    return
+  }
+
   router.push({ name: 'ram-document-editor', params: { documentId: existing.id } })
 }
 

@@ -23,12 +23,29 @@ export interface RequirementDocumentSummary {
   version: number
 }
 
-export interface RequirementDocumentSectionLock {
+export interface PeerEvaluationUserRef {
   id: number
+  name: string
+}
+
+export interface RequirementDocumentSectionLock {
   locked: boolean
-  lockedAt?: string
-  expiresAt?: string
-  reason?: string
+  documentSectionId: number
+  lockedBy?: PeerEvaluationUserRef | null
+  lockedAt?: string | null
+  expiresAt?: string | null
+  reason?: string | null
+}
+
+export interface RequirementArtifactSummary {
+  id?: number
+  type: string
+  artifactKey?: string | null
+  title: string
+  content: string
+  priority?: string | null
+  sourceSectionId?: number | null
+  notes?: string | null
 }
 
 export interface RequirementDocumentSection {
@@ -37,6 +54,7 @@ export interface RequirementDocumentSection {
   type: string
   title: string
   content?: string | null
+  requirementArtifacts?: RequirementArtifactSummary[]
   guidance?: string | null
   lock?: RequirementDocumentSectionLock | null
 }
@@ -97,3 +115,13 @@ export interface CreateRequirementDocumentRequest {
 }
 
 export interface CreateDocumentResponse extends ApiResult<RequirementDocument> {}
+
+export interface UpdateDocumentSectionResponse extends ApiResult<RequirementDocumentSection> {}
+
+export interface LockDocumentSectionRequest {
+  reason?: string
+}
+
+export interface LockDocumentSectionResponse extends ApiResult<RequirementDocumentSectionLock> {}
+
+export interface GetDocumentSectionLockResponse extends ApiResult<RequirementDocumentSectionLock> {}

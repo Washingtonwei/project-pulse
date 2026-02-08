@@ -149,6 +149,30 @@ export const routes = [
               requiresAuth: true,
               requiresPermissions: ['student']
             }
+          },
+          {
+            path: '/ram/glossary/:documentId',
+            component: () => import('@/pages/ram/RamGlossary.vue'),
+            name: 'ram-glossary',
+            meta: {
+              title: 'Glossary',
+              icon: 'Collection',
+              isMenuItem: false,
+              requiresAuth: true,
+              requiresPermissions: ['student']
+            }
+          },
+          {
+            path: '/ram/use-cases/:documentId',
+            component: () => import('@/pages/ram/RamUseCases.vue'),
+            name: 'ram-use-cases',
+            meta: {
+              title: 'Use Cases',
+              icon: 'Tickets',
+              isMenuItem: false,
+              requiresAuth: true,
+              requiresPermissions: ['student']
+            }
           }
         ]
       },
