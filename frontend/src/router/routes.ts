@@ -1,4 +1,4 @@
-import type { RouteRecordRaw } from 'vue-router'
+﻿import type { RouteRecordRaw } from 'vue-router'
 
 export const routes = [
   {
@@ -110,6 +110,44 @@ export const routes = [
               icon: 'Trophy',
               isMenuItem: true,
               requiresAuth: true
+            }
+          }
+        ]
+      },
+      {
+        path: '/ram',
+        name: 'ram',
+        meta: {
+          title: 'Requirements',
+          icon: 'Document',
+          isMenuItem: true,
+          requiresAuth: true,
+          requiresPermissions: ['student']
+        },
+        redirect: '/ram/documents',
+        children: [
+          {
+            path: '/ram/documents',
+            component: () => import('@/pages/ram/RamDocuments.vue'),
+            name: 'ram-documents',
+            meta: {
+              title: 'Documents',
+              icon: 'Files',
+              isMenuItem: true,
+              requiresAuth: true,
+              requiresPermissions: ['student']
+            }
+          },
+          {
+            path: '/ram/documents/:documentId',
+            component: () => import('@/pages/ram/RamDocumentEditor.vue'),
+            name: 'ram-document-editor',
+            meta: {
+              title: 'Document Editor',
+              icon: 'EditPen',
+              isMenuItem: false,
+              requiresAuth: true,
+              requiresPermissions: ['student']
             }
           }
         ]
@@ -280,3 +318,5 @@ export const routes = [
     name: 'not-found'
   }
 ] as RouteRecordRaw[]
+
+

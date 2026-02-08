@@ -54,7 +54,7 @@ info:
   app:
     name: project-pulse
     description: Project Pulse is a web application designed to track student contributions and peer evaluations in senior design or capstone projects, fostering better team collaboration and accountability.
-    version: @project.version@
+    version: "@project.version@"
     author: Bingyang Wei
     links:
       youtube: https://youtube.com/@BingyangWei
