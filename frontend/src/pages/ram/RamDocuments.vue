@@ -137,7 +137,7 @@ function handleOpen(type: DocumentType) {
   }
 
   if (type === 'USE_CASES') {
-    router.push({ name: 'ram-use-cases', params: { documentId: existing.id } })
+    router.push({ name: 'ram-use-cases' })
     return
   }
 

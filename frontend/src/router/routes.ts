@@ -163,7 +163,7 @@ export const routes = [
             }
           },
           {
-            path: '/ram/use-cases/:documentId',
+            path: '/ram/use-cases',
             component: () => import('@/pages/ram/RamUseCases.vue'),
             name: 'ram-use-cases',
             meta: {

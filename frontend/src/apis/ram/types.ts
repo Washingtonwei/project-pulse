@@ -48,6 +48,15 @@ export interface RequirementArtifactSummary {
   notes?: string | null
 }
 
+export interface RequirementArtifact extends RequirementArtifactSummary {
+  createdAt?: string | null
+  updatedAt?: string | null
+  createdBy?: PeerEvaluationUserRef | null
+  updatedBy?: PeerEvaluationUserRef | null
+}
+
+export interface SearchRequirementArtifactsResponse extends ApiResult<Page<RequirementArtifact>> {}
+
 export interface RequirementDocumentSection {
   id: number
   sectionKey: string
@@ -125,3 +134,54 @@ export interface LockDocumentSectionRequest {
 export interface LockDocumentSectionResponse extends ApiResult<RequirementDocumentSectionLock> {}
 
 export interface GetDocumentSectionLockResponse extends ApiResult<RequirementDocumentSectionLock> {}
+
+export interface ConditionDto {
+  id?: number
+  condition: string
+  type: string
+  priority?: string | null
+  notes?: string | null
+}
+
+export interface UseCaseExtensionStepDto {
+  id?: number
+  actor: string
+  actionText: string
+}
+
+export interface UseCaseExtensionDto {
+  id?: number
+  conditionText: string
+  kind: 'ALTERNATE' | 'EXCEPTION'
+  exit: 'RESUME' | 'END_SUCCESS' | 'END_FAILURE'
+  steps: UseCaseExtensionStepDto[]
+}
+
+export interface UseCaseMainStepDto {
+  id?: number
+  actor: string
+  actionText: string
+  extensions: UseCaseExtensionDto[]
+}
+
+export interface UseCaseDto {
+  id?: number
+  artifactKey?: string | null
+  title: string
+  description: string
+  teamId: number
+  primaryActorId: number
+  secondaryActorIds?: number[]
+  trigger: string
+  preconditions?: ConditionDto[]
+  postconditions?: ConditionDto[]
+  mainSteps: UseCaseMainStepDto[]
+  priority?: string | null
+  notes?: string | null
+  createdAt?: string | null
+  updatedAt?: string | null
+  createdBy?: PeerEvaluationUserRef | null
+  updatedBy?: PeerEvaluationUserRef | null
+}
+
+export interface UseCaseResponse extends ApiResult<UseCaseDto> {}

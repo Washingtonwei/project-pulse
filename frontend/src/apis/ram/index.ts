@@ -8,7 +8,10 @@ import type {
   UpdateDocumentSectionResponse,
   LockDocumentSectionRequest,
   LockDocumentSectionResponse,
-  GetDocumentSectionLockResponse
+  GetDocumentSectionLockResponse,
+  SearchRequirementArtifactsResponse,
+  UseCaseResponse,
+  UseCaseDto
 } from './types'
 
 enum API {
@@ -32,6 +35,17 @@ export const createDocument = (teamId: number, requestBody: CreateRequirementDoc
 export const findDocumentById = (teamId: number, documentId: number) =>
   request.get<any, FindDocumentByIdResponse>(
     `${API.TEAM_DOCUMENTS}/${teamId}/documents/${documentId}`
+  )
+
+export const searchRequirementArtifacts = (
+  teamId: number,
+  params: PaginationParams,
+  searchCriteria: Record<string, string>
+) =>
+  request.post<any, SearchRequirementArtifactsResponse>(
+    `${API.TEAM_DOCUMENTS}/${teamId}/requirement-artifacts/search`,
+    searchCriteria,
+    { params }
   )
 
 export const updateDocumentSection = (
@@ -72,4 +86,16 @@ export const unlockDocumentSection = (
 ) =>
   request.delete<any, LockDocumentSectionResponse>(
     `${API.TEAM_DOCUMENTS}/${teamId}/documents/${documentId}/document-sections/${documentSectionId}/lock`
+  )
+
+export const getUseCaseById = (teamId: number, useCaseId: number) =>
+  request.get<any, UseCaseResponse>(`${API.TEAM_DOCUMENTS}/${teamId}/use-cases/${useCaseId}`)
+
+export const createUseCase = (teamId: number, payload: UseCaseDto) =>
+  request.post<any, UseCaseResponse>(`${API.TEAM_DOCUMENTS}/${teamId}/use-cases`, payload)
+
+export const updateUseCase = (teamId: number, useCaseId: number, payload: UseCaseDto) =>
+  request.put<any, UseCaseResponse>(
+    `${API.TEAM_DOCUMENTS}/${teamId}/use-cases/${useCaseId}`,
+    payload
   )
