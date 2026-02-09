@@ -11,7 +11,9 @@ import type {
   GetDocumentSectionLockResponse,
   SearchRequirementArtifactsResponse,
   UseCaseResponse,
-  UseCaseDto
+  UseCaseDto,
+  GlossaryTermResponse,
+  RequirementArtifact
 } from './types'
 
 enum API {
@@ -97,5 +99,36 @@ export const createUseCase = (teamId: number, payload: UseCaseDto) =>
 export const updateUseCase = (teamId: number, useCaseId: number, payload: UseCaseDto) =>
   request.put<any, UseCaseResponse>(
     `${API.TEAM_DOCUMENTS}/${teamId}/use-cases/${useCaseId}`,
+    payload
+  )
+
+export const getGlossaryTermById = (teamId: number, glossaryTermId: number) =>
+  request.get<any, GlossaryTermResponse>(
+    `${API.TEAM_DOCUMENTS}/${teamId}/glossary-terms/${glossaryTermId}`
+  )
+
+export const createGlossaryTerm = (teamId: number, payload: RequirementArtifact) =>
+  request.post<any, GlossaryTermResponse>(
+    `${API.TEAM_DOCUMENTS}/${teamId}/glossary-terms`,
+    payload
+  )
+
+export const updateGlossaryTermDefinition = (
+  teamId: number,
+  glossaryTermId: number,
+  payload: RequirementArtifact
+) =>
+  request.patch<any, GlossaryTermResponse>(
+    `${API.TEAM_DOCUMENTS}/${teamId}/glossary-terms/${glossaryTermId}`,
+    payload
+  )
+
+export const renameGlossaryTerm = (
+  teamId: number,
+  glossaryTermId: number,
+  payload: RequirementArtifact
+) =>
+  request.patch<any, GlossaryTermResponse>(
+    `${API.TEAM_DOCUMENTS}/${teamId}/glossary-terms/${glossaryTermId}/rename`,
     payload
   )

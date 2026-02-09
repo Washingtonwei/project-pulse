@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserInfoStore } from '@/stores/userInfo'
 import type { Student } from '@/apis/student/types'
@@ -144,7 +144,19 @@ function handleOpen(type: DocumentType) {
   router.push({ name: 'ram-document-editor', params: { documentId: existing.id } })
 }
 
-onMounted(loadDocuments)
+async function ensureDocumentsLoaded() {
+  await loadDocuments()
+}
+
+onMounted(ensureDocumentsLoaded)
+
+watch(
+  () => teamId.value,
+  async (value, previous) => {
+    if (!value || value === previous) return
+    await ensureDocumentsLoaded()
+  }
+)
 </script>
 
 <style scoped>

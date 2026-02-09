@@ -612,7 +612,27 @@ function unsetLink() {
   editor.value?.chain().focus().unsetLink().run()
 }
 
-onMounted(loadDocument)
+async function ensureDocumentLoaded() {
+  await loadDocument()
+}
+
+onMounted(ensureDocumentLoaded)
+
+watch(
+  () => teamId.value,
+  async (value, previous) => {
+    if (!value || value === previous) return
+    await ensureDocumentLoaded()
+  }
+)
+
+watch(
+  () => documentId.value,
+  async (value, previous) => {
+    if (!value || value === previous) return
+    await ensureDocumentLoaded()
+  }
+)
 
 function handleKeydown(event: KeyboardEvent) {
   if (!selectedSection.value || !canEdit.value) return

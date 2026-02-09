@@ -17,9 +17,7 @@
         <template #header>
           <div class="sidebar-header">
             <span>Use Cases</span>
-            <el-button type="primary" plain size="small" @click="createNew">
-              New
-            </el-button>
+            <el-button type="primary" plain size="small" @click="createNew"> New </el-button>
           </div>
         </template>
 
@@ -46,6 +44,7 @@
             </div>
           </el-menu-item>
         </el-menu>
+        <el-empty v-if="!filteredUseCases.length" description="No use cases yet." />
       </el-card>
 
       <el-card class="ram-use-cases__content" shadow="never">
@@ -58,7 +57,7 @@
               </div>
               <div v-if="editingNotice" class="editing-note">{{ editingNotice }}</div>
             </div>
-            <el-button type="success" :loading="saving" @click="saveUseCase">
+            <el-button type="success" :loading="saving" :disabled="!canSave" @click="saveUseCase">
               Save
             </el-button>
           </div>
@@ -74,13 +73,21 @@
             <el-input v-model="currentUseCase.title" placeholder="Use case title" />
           </el-form-item>
           <el-form-item label="Description">
-            <el-input v-model="currentUseCase.description" type="textarea" :autosize="{ minRows: 3 }" />
+            <el-input
+              v-model="currentUseCase.description"
+              type="textarea"
+              :autosize="{ minRows: 3 }"
+            />
           </el-form-item>
           <el-form-item label="Trigger">
             <el-input v-model="currentUseCase.trigger" type="textarea" :autosize="{ minRows: 2 }" />
           </el-form-item>
           <el-form-item label="Primary Actor">
-            <el-select v-model="currentUseCase.primaryActorId" filterable placeholder="Select primary actor">
+            <el-select
+              v-model="currentUseCase.primaryActorId"
+              filterable
+              placeholder="Select primary actor"
+            >
               <el-option
                 v-for="actor in stakeholderOptions"
                 :key="actor.id"
@@ -106,7 +113,12 @@
           </el-form-item>
           <el-form-item label="Priority">
             <el-select v-model="currentUseCase.priority" placeholder="Priority">
-              <el-option v-for="priority in priorities" :key="priority" :label="priority" :value="priority" />
+              <el-option
+                v-for="priority in priorities"
+                :key="priority"
+                :label="priority"
+                :value="priority"
+              />
             </el-select>
           </el-form-item>
           <el-form-item label="Notes">
@@ -117,7 +129,11 @@
         <template v-if="isNew || selectedUseCaseId">
           <el-divider>Preconditions</el-divider>
           <div class="conditions">
-            <div v-for="(condition, index) in currentUseCase.preconditions" :key="index" class="condition-item">
+            <div
+              v-for="(condition, index) in currentUseCase.preconditions"
+              :key="index"
+              class="condition-item"
+            >
               <el-input v-model="condition.condition" placeholder="Condition" />
               <el-button type="danger" plain @click="removePrecondition(index)">Remove</el-button>
             </div>
@@ -126,7 +142,11 @@
 
           <el-divider>Postconditions</el-divider>
           <div class="conditions">
-            <div v-for="(condition, index) in currentUseCase.postconditions" :key="index" class="condition-item">
+            <div
+              v-for="(condition, index) in currentUseCase.postconditions"
+              :key="index"
+              class="condition-item"
+            >
               <el-input v-model="condition.condition" placeholder="Condition" />
               <el-button type="danger" plain @click="removePostcondition(index)">Remove</el-button>
             </div>
@@ -136,9 +156,9 @@
           <el-divider>Main Steps</el-divider>
           <div class="steps">
             <div class="step-between step-between--top">
-              <div class="step-insert" @click="addStepAt(0)">
-                <el-button circle plain size="small" icon="Plus" />
-                <span>Insert step</span>
+              <div class="step-insert">
+                <el-button circle plain size="small" icon="Plus" @click="addStepAt(0)" />
+                <span @click="addStepAt(0)">Insert step</span>
               </div>
             </div>
 
@@ -163,7 +183,9 @@
                       @click="toggleExtensions(stepIndex)"
                     >
                       <el-icon>
-                        <component :is="isExtensionsOpen(stepIndex) ? 'CaretBottom' : 'CaretRight'" />
+                        <component
+                          :is="isExtensionsOpen(stepIndex) ? 'CaretBottom' : 'CaretRight'"
+                        />
                       </el-icon>
                       Extensions ({{ step.extensions.length }})
                     </el-button>
@@ -191,61 +213,109 @@
                     </el-tooltip>
                   </div>
                 </div>
-                <el-input v-model="step.actor" class="actor-hidden" />
-                <el-input
-                  :ref="(el: any) => setActionRef(el, stepIndex)"
-                  v-model="step.actionText"
-                  placeholder="Action"
-                  type="textarea"
-                  :autosize="{ minRows: 2 }"
-                />
+                <div class="step-body">
+                  <el-input v-model="step.actor" class="actor-hidden" />
+                  <el-input
+                    :ref="(el: any) => setActionRef(el, stepIndex)"
+                    v-model="step.actionText"
+                    placeholder="Action"
+                    type="textarea"
+                    :autosize="{ minRows: 2 }"
+                  />
+                </div>
+              </div>
 
-                <div v-show="isExtensionsOpen(stepIndex)" class="extensions">
-                  <h4>Extensions</h4>
-                  <div
-                    v-for="(ext, extIndex) in step.extensions"
-                    :key="extIndex"
-                    class="extension-card"
-                  >
-                    <div class="extension-header">
-                      <span>Extension {{ extIndex + 1 }}</span>
-                      <el-button type="danger" plain size="small" @click="removeExtension(stepIndex, extIndex)">
-                        Remove
-                      </el-button>
-                    </div>
-                    <el-input v-model="ext.conditionText" placeholder="Condition" />
-                    <div class="extension-meta">
-                      <el-select v-model="ext.kind" placeholder="Kind">
-                        <el-option label="Alternate" value="ALTERNATE" />
-                        <el-option label="Exception" value="EXCEPTION" />
-                      </el-select>
-                      <el-select v-model="ext.exit" placeholder="Exit">
-                        <el-option label="Resume" value="RESUME" />
-                        <el-option label="End Success" value="END_SUCCESS" />
-                        <el-option label="End Failure" value="END_FAILURE" />
-                      </el-select>
-                    </div>
+              <div v-show="isExtensionsOpen(stepIndex)" class="extensions">
+                <h4>Extensions</h4>
+                <div
+                  v-for="(ext, extIndex) in step.extensions"
+                  :key="extIndex"
+                  class="extension-card"
+                >
+                  <div class="extension-header">
+                    <span>Extension {{ extIndex + 1 }}</span>
+                    <el-tooltip content="Remove extension" placement="top">
+                      <el-button
+                        type="danger"
+                        plain
+                        size="small"
+                        circle
+                        icon="Delete"
+                        @click="removeExtension(stepIndex, extIndex)"
+                      />
+                    </el-tooltip>
+                  </div>
+                  <el-input v-model="ext.conditionText" placeholder="Condition" />
+                  <div class="extension-meta">
+                    <el-select v-model="ext.kind" placeholder="Kind">
+                      <el-option label="Alternate" value="ALTERNATE" />
+                      <el-option label="Exception" value="EXCEPTION" />
+                    </el-select>
+                    <el-select v-model="ext.exit" placeholder="Exit">
+                      <el-option label="Resume" value="RESUME" />
+                      <el-option label="End Success" value="END_SUCCESS" />
+                      <el-option label="End Failure" value="END_FAILURE" />
+                    </el-select>
+                  </div>
 
-                    <div class="extension-steps">
-                      <div
-                        v-for="(extStep, extStepIndex) in ext.steps"
-                        :key="extStepIndex"
-                        class="extension-step"
-                      >
+                  <div class="extension-steps">
+                    <div
+                      v-for="(extStep, extStepIndex) in ext.steps"
+                      :key="extStepIndex"
+                      class="extension-step-block"
+                    >
+                      <div class="step-between extension-step-between">
+                        <div class="step-insert">
+                          <el-button
+                            circle
+                            plain
+                            size="small"
+                            icon="Plus"
+                            @click="addExtensionStepAt(stepIndex, extIndex, extStepIndex)"
+                          />
+                          <span @click="addExtensionStepAt(stepIndex, extIndex, extStepIndex)">
+                            Insert step
+                          </span>
+                        </div>
+                      </div>
+
+                      <div class="extension-step">
                         <el-input v-model="extStep.actor" class="actor-hidden" />
-                        <el-input v-model="extStep.actionText" placeholder="Action" />
+                        <el-input
+                          v-model="extStep.actionText"
+                          placeholder="Action"
+                          type="textarea"
+                          :autosize="{ minRows: 2 }"
+                        />
+                        <div class="extension-step-actions">
+                          <el-tooltip content="Remove step" placement="top">
+                            <el-button
+                              type="danger"
+                              plain
+                              size="small"
+                              circle
+                              icon="Delete"
+                              @click="removeExtensionStep(stepIndex, extIndex, extStepIndex)"
+                            />
+                          </el-tooltip>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="step-between extension-step-between">
+                      <div class="step-insert">
                         <el-button
-                          type="danger"
+                          circle
                           plain
                           size="small"
-                          @click="removeExtensionStep(stepIndex, extIndex, extStepIndex)"
+                          icon="Plus"
+                          @click="addExtensionStepAt(stepIndex, extIndex, ext.steps.length)"
+                        />
+                        <span
+                          @click="addExtensionStepAt(stepIndex, extIndex, ext.steps.length)"
                         >
-                          Remove
-                        </el-button>
+                          Insert step
+                        </span>
                       </div>
-                      <el-button type="primary" plain size="small" @click="addExtensionStep(stepIndex, extIndex)">
-                        Add extension step
-                      </el-button>
                     </div>
                   </div>
                   <el-button type="primary" plain size="small" @click="addExtension(stepIndex)">
@@ -254,20 +324,31 @@
                 </div>
               </div>
               <div class="step-between">
-                <div class="step-insert" @click="addStepAt(stepIndex + 1)">
-                  <el-button circle plain size="small" icon="Plus" />
-                  <span>Insert step</span>
+                <div class="step-insert">
+                  <el-button
+                    circle
+                    plain
+                    size="small"
+                    icon="Plus"
+                    @click="addStepAt(stepIndex + 1)"
+                  />
+                  <span @click="addStepAt(stepIndex + 1)">Insert step</span>
                 </div>
               </div>
             </div>
 
             <div class="step-between step-between--bottom">
-              <div class="step-insert" @click="addStepAt(currentUseCase.mainSteps.length)">
-                <el-button circle plain size="small" icon="Plus" />
-                <span>Insert step</span>
+              <div class="step-insert">
+                <el-button
+                  circle
+                  plain
+                  size="small"
+                  icon="Plus"
+                  @click="addStepAt(currentUseCase.mainSteps.length)"
+                />
+                <span @click="addStepAt(currentUseCase.mainSteps.length)">Insert step</span>
               </div>
             </div>
-
           </div>
         </template>
       </el-card>
@@ -276,15 +357,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserInfoStore } from '@/stores/userInfo'
 import type { Student } from '@/apis/student/types'
-import type {
-  RequirementArtifact,
-  UseCaseDto
-} from '@/apis/ram/types'
+import type { RequirementArtifact, UseCaseDto } from '@/apis/ram/types'
 import {
   searchRequirementArtifacts,
   getUseCaseById,
@@ -324,6 +402,8 @@ const editingNotice = computed(() => {
   return `Editing in this session since ${new Date(startedAt).toLocaleTimeString()}`
 })
 
+const canSave = computed(() => isNew.value || Boolean(selectedUseCaseId.value))
+
 function isEditing(id?: number) {
   if (!id) return false
   return Boolean(editingMap.value[id])
@@ -351,17 +431,31 @@ function goBack() {
 
 async function loadUseCases() {
   if (!teamId.value) return
-  const result = await searchRequirementArtifacts(teamId.value, { page: 0, size: 200 }, { type: 'USE_CASE' })
-  useCases.value = result.data.content
-  filterList()
+  try {
+    const result = await searchRequirementArtifacts(
+      teamId.value,
+      { page: 0, size: 200 },
+      { type: 'USE_CASE' }
+    )
+    useCases.value = result.data.content
+    filterList()
+  } catch (error: any) {
+    const message = error?.response?.data?.message || 'Failed to load use cases'
+    ElMessage.error(message)
+  }
 }
 
 async function loadStakeholders() {
   if (!teamId.value) return
-  const result = await searchRequirementArtifacts(teamId.value, { page: 0, size: 500 }, {})
-  stakeholderOptions.value = result.data.content.filter((artifact) =>
-    ['STAKEHOLDER', 'EXTERNAL_INTERFACE_REQUIREMENT'].includes(artifact.type)
-  )
+  try {
+    const result = await searchRequirementArtifacts(teamId.value, { page: 0, size: 500 }, {})
+    stakeholderOptions.value = result.data.content.filter((artifact) =>
+      ['STAKEHOLDER', 'EXTERNAL_INTERFACE_REQUIREMENT'].includes(artifact.type)
+    )
+  } catch (error: any) {
+    const message = error?.response?.data?.message || 'Failed to load actors'
+    ElMessage.error(message)
+  }
 }
 
 function filterList() {
@@ -377,10 +471,15 @@ async function handleSelect(id: string) {
   if (!teamId.value) return
   selectedUseCaseId.value = Number(id)
   isNew.value = false
-  const result = await getUseCaseById(teamId.value, selectedUseCaseId.value)
-  currentUseCase.value = normalizeUseCase(result.data)
-  markEditing(selectedUseCaseId.value)
-  activeStepIndex.value = null
+  try {
+    const result = await getUseCaseById(teamId.value, selectedUseCaseId.value)
+    currentUseCase.value = normalizeUseCase(result.data)
+    markEditing(selectedUseCaseId.value)
+    activeStepIndex.value = null
+  } catch (error: any) {
+    const message = error?.response?.data?.message || 'Failed to load use case'
+    ElMessage.error(message)
+  }
 }
 
 function createNew() {
@@ -483,6 +582,11 @@ function addExtensionStep(stepIndex: number, extIndex: number) {
   extension.steps.push({ actor: '', actionText: '' })
 }
 
+function addExtensionStepAt(stepIndex: number, extIndex: number, insertIndex: number) {
+  const extension = currentUseCase.value.mainSteps[stepIndex].extensions[extIndex]
+  extension.steps.splice(insertIndex, 0, { actor: '', actionText: '' })
+}
+
 function removeExtensionStep(stepIndex: number, extIndex: number, extStepIndex: number) {
   const extension = currentUseCase.value.mainSteps[stepIndex].extensions[extIndex]
   extension.steps.splice(extStepIndex, 1)
@@ -564,9 +668,10 @@ async function saveUseCase() {
       }))
     }
 
-    const result = isNew.value || !currentUseCase.value.id
-      ? await createUseCase(teamId.value, payload)
-      : await updateUseCase(teamId.value, currentUseCase.value.id, payload)
+    const result =
+      isNew.value || !currentUseCase.value.id
+        ? await createUseCase(teamId.value, payload)
+        : await updateUseCase(teamId.value, currentUseCase.value.id, payload)
 
     currentUseCase.value = normalizeUseCase(result.data)
     selectedUseCaseId.value = result.data.id || null
@@ -574,12 +679,15 @@ async function saveUseCase() {
     await loadUseCases()
     if (selectedUseCaseId.value) markEditing(selectedUseCaseId.value)
     ElMessage.success('Use case saved')
+  } catch (error: any) {
+    const message = error?.response?.data?.message || 'Failed to save use case'
+    ElMessage.error(message)
   } finally {
     saving.value = false
   }
 }
 
-onMounted(async () => {
+async function ensureUseCasesLoaded() {
   if (!teamId.value) return
   loading.value = true
   try {
@@ -587,7 +695,19 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+}
+
+onMounted(async () => {
+  await ensureUseCasesLoaded()
 })
+
+watch(
+  () => teamId.value,
+  async (value, previous) => {
+    if (!value || value === previous) return
+    await ensureUseCasesLoaded()
+  }
+)
 </script>
 
 <style scoped>
@@ -726,6 +846,10 @@ onMounted(async () => {
   transition: opacity 0.2s ease;
 }
 
+.step-insert span {
+  cursor: pointer;
+}
+
 .step-between {
   min-height: 28px;
   display: flex;
@@ -741,6 +865,10 @@ onMounted(async () => {
   opacity: 1;
 }
 
+.extension-step-between {
+  min-height: 22px;
+}
+
 .step-card {
   border: 1px solid #ebeef5;
   border-radius: 8px;
@@ -748,6 +876,13 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  background: #f9fafb;
+}
+
+.step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .step-card--active {
@@ -800,6 +935,9 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  background: #fffbeb;
+  border-left: 4px solid #f59e0b;
+  margin-left: 12px;
 }
 
 .extension-header {
@@ -820,10 +958,23 @@ onMounted(async () => {
 }
 
 .extension-step {
-  display: grid;
-  grid-template-columns: 1fr 2fr auto;
+  display: flex;
   gap: 8px;
-  align-items: center;
+  align-items: flex-start;
+}
+
+.extension-step :deep(.el-textarea) {
+  flex: 1;
+}
+
+.extension-step :deep(.el-textarea__inner) {
+  width: 100%;
+}
+
+.extension-step-actions {
+  display: flex;
+  align-items: flex-start;
+  padding-top: 6px;
 }
 
 @media (max-width: 960px) {

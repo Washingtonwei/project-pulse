@@ -185,3 +185,5 @@ export interface UseCaseDto {
 }
 
 export interface UseCaseResponse extends ApiResult<UseCaseDto> {}
+
+export interface GlossaryTermResponse extends ApiResult<RequirementArtifact> {}
