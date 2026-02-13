@@ -317,7 +317,7 @@ const transferData = ref({
 })
 
 const availableSections = ref<Section[]>([])
-const docCreating = ref<Record<number, boolean>>({})
+const docCreating = ref<Record<number, boolean>>({}) // Track which team is currently creating documents to show loading state on the button
 
 // studentsWithoutTeam is a computed property that returns students who are not in any team and whose name (full name) matches the studentNameSearch input by the user
 const studentsWithoutTeam = computed(() =>
@@ -611,6 +611,7 @@ async function createRequirementDocuments(team: Team) {
   try {
     const existing = await searchDocuments(teamId, { page: 0, size: 50 }, {})
     const existingTypes = new Set(existing.data.content.map((doc) => doc.type))
+    // Find out which required document types are missing
     const missing = requiredTypes.filter((type) => !existingTypes.has(type))
 
     if (!missing.length) {
@@ -619,13 +620,12 @@ async function createRequirementDocuments(team: Team) {
     }
 
     for (const type of missing) {
-      await createDocument(teamId, { type })
+      await createDocument(teamId, { type }) // Create missing document with the specified type
     }
 
     ElMessage.success(`Created ${missing.length} requirement document(s).`)
   } catch (error: any) {
-    const errorMessage =
-      error?.response?.data?.message || 'Failed to create requirement documents'
+    const errorMessage = error?.response?.data?.message || 'Failed to create requirement documents'
     ElMessage.error(errorMessage)
   } finally {
     docCreating.value[teamId] = false

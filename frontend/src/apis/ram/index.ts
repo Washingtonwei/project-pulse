@@ -11,9 +11,10 @@ import type {
   GetDocumentSectionLockResponse,
   SearchRequirementArtifactsResponse,
   UseCaseResponse,
-  UseCaseDto,
+  UseCase,
   GlossaryTermResponse,
-  RequirementArtifact
+  RequirementArtifact,
+  UpdateDocumentSectionRequest
 } from './types'
 
 enum API {
@@ -32,7 +33,10 @@ export const searchDocuments = (
   )
 
 export const createDocument = (teamId: number, requestBody: CreateRequirementDocumentRequest) =>
-  request.post<any, CreateDocumentResponse>(`${API.TEAM_DOCUMENTS}/${teamId}/documents`, requestBody)
+  request.post<any, CreateDocumentResponse>(
+    `${API.TEAM_DOCUMENTS}/${teamId}/documents`,
+    requestBody
+  )
 
 export const findDocumentById = (teamId: number, documentId: number) =>
   request.get<any, FindDocumentByIdResponse>(
@@ -54,7 +58,7 @@ export const updateDocumentSection = (
   teamId: number,
   documentId: number,
   documentSectionId: number,
-  section: any
+  section: UpdateDocumentSectionRequest
 ) =>
   request.put<any, UpdateDocumentSectionResponse>(
     `${API.TEAM_DOCUMENTS}/${teamId}/documents/${documentId}/document-sections/${documentSectionId}`,
@@ -93,10 +97,10 @@ export const unlockDocumentSection = (
 export const getUseCaseById = (teamId: number, useCaseId: number) =>
   request.get<any, UseCaseResponse>(`${API.TEAM_DOCUMENTS}/${teamId}/use-cases/${useCaseId}`)
 
-export const createUseCase = (teamId: number, payload: UseCaseDto) =>
+export const createUseCase = (teamId: number, payload: UseCase) =>
   request.post<any, UseCaseResponse>(`${API.TEAM_DOCUMENTS}/${teamId}/use-cases`, payload)
 
-export const updateUseCase = (teamId: number, useCaseId: number, payload: UseCaseDto) =>
+export const updateUseCase = (teamId: number, useCaseId: number, payload: UseCase) =>
   request.put<any, UseCaseResponse>(
     `${API.TEAM_DOCUMENTS}/${teamId}/use-cases/${useCaseId}`,
     payload
@@ -108,10 +112,7 @@ export const getGlossaryTermById = (teamId: number, glossaryTermId: number) =>
   )
 
 export const createGlossaryTerm = (teamId: number, payload: RequirementArtifact) =>
-  request.post<any, GlossaryTermResponse>(
-    `${API.TEAM_DOCUMENTS}/${teamId}/glossary-terms`,
-    payload
-  )
+  request.post<any, GlossaryTermResponse>(`${API.TEAM_DOCUMENTS}/${teamId}/glossary-terms`, payload)
 
 export const updateGlossaryTermDefinition = (
   teamId: number,

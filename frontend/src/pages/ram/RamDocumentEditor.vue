@@ -35,12 +35,7 @@
             :index="String(section.id)"
           >
             <span class="section-title">{{ section.title }}</span>
-            <el-tag
-              v-if="section.lock?.locked"
-              size="small"
-              type="warning"
-              class="lock-tag"
-            >
+            <el-tag v-if="section.lock?.locked" size="small" type="warning" class="lock-tag">
               Locked
             </el-tag>
           </el-menu-item>
@@ -76,12 +71,7 @@
               >
                 Unlock
               </el-button>
-              <el-button
-                type="success"
-                :disabled="!canEdit"
-                :loading="saving"
-                @click="saveSection"
-              >
+              <el-button type="success" :disabled="!canEdit" :loading="saving" @click="saveSection">
                 Save
               </el-button>
             </div>
@@ -102,7 +92,11 @@
               </template>
             </el-alert>
 
-            <el-collapse v-if="selectedSection.guidance" class="guidance" :model-value="['guidance']">
+            <el-collapse
+              v-if="selectedSection.guidance"
+              class="guidance"
+              :model-value="['guidance']"
+            >
               <el-collapse-item name="guidance" title="Guidance">
                 <el-alert type="info" show-icon :closable="false">
                   <template #default>
@@ -113,6 +107,7 @@
             </el-collapse>
           </div>
 
+          <!-- If the section type is RICH_TEXT, show the rich text editor. If it's LIST, show the requirement artifacts table -->
           <div v-if="selectedSection.type === 'RICH_TEXT'" class="rich-text-editor">
             <div class="toolbar">
               <el-button-group>
@@ -223,9 +218,7 @@
                 <el-button size="small" :disabled="!canEdit" @click="openLinkDialog">
                   Link
                 </el-button>
-                <el-button size="small" :disabled="!canEdit" @click="unsetLink">
-                  Unlink
-                </el-button>
+                <el-button size="small" :disabled="!canEdit" @click="unsetLink"> Unlink </el-button>
               </el-button-group>
 
               <el-button-group>
@@ -281,11 +274,17 @@
       </el-card>
     </div>
 
+    <!-- Requirement Artifact Dialog for both adding and editing -->
     <el-dialog v-model="artifactDialogVisible" title="Requirement" width="600px">
       <el-form label-width="140px">
         <el-form-item label="Type">
           <el-select v-model="artifactDraft.type" filterable placeholder="Select type">
-            <el-option v-for="type in artifactTypes" :key="type" :label="type" :value="type" />
+            <el-option
+              v-for="type in REQUIREMENT_ARTIFACT_TYPES"
+              :key="type"
+              :label="type"
+              :value="type"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="Title">
@@ -296,7 +295,12 @@
         </el-form-item>
         <el-form-item label="Priority">
           <el-select v-model="artifactDraft.priority" placeholder="Select priority">
-            <el-option v-for="priority in priorities" :key="priority" :label="priority" :value="priority" />
+            <el-option
+              v-for="priority in PRIORITIES"
+              :key="priority"
+              :label="priority"
+              :value="priority"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="Notes">
@@ -309,6 +313,7 @@
       </template>
     </el-dialog>
 
+    <!-- A user can insert a link in the rich text editor -->
     <el-dialog v-model="linkDialogVisible" title="Insert Link" width="420px">
       <el-form label-width="90px">
         <el-form-item label="URL">
@@ -333,11 +338,14 @@ import Underline from '@tiptap/extension-underline'
 import Link from '@tiptap/extension-link'
 import { useUserInfoStore } from '@/stores/userInfo'
 import type { Student } from '@/apis/student/types'
-import type {
-  RequirementArtifactSummary,
-  RequirementDocument,
-  RequirementDocumentSection,
-  RequirementDocumentSectionLock
+import {
+  PRIORITIES,
+  REQUIREMENT_ARTIFACT_TYPES,
+  type RequirementArtifactSummary,
+  type RequirementDocument,
+  type RequirementDocumentSection,
+  type RequirementDocumentSectionLock,
+  type UpdateDocumentSectionRequest
 } from '@/apis/ram/types'
 import {
   findDocumentById,
@@ -356,7 +364,10 @@ const teamId = computed(() => (userInfoStore.userInfo as Student | null)?.teamId
 const currentUserId = computed(() => (userInfoStore.userInfo as Student | null)?.id ?? null)
 const hasTeam = computed(() => Boolean(teamId.value))
 
+// The main document being edited
 const document = ref<RequirementDocument | null>(null)
+
+// The ID of the currently selected section in the sidebar menu
 const selectedSectionId = ref<number | null>(null)
 
 const loading = ref(false)
@@ -364,6 +375,7 @@ const saving = ref(false)
 const locking = ref(false)
 const unlocking = ref(false)
 
+// Local state for the rich text editor content and requirement artifacts list, which are edited before saving to the server
 const draftContent = ref('')
 const draftArtifacts = ref<RequirementArtifactSummary[]>([])
 
@@ -378,33 +390,6 @@ const artifactDraft = ref<RequirementArtifactSummary>({
 const artifactEditingIndex = ref<number | null>(null)
 const linkDialogVisible = ref(false)
 const linkUrl = ref('')
-
-const artifactTypes = [
-  'GLOSSARY_TERM',
-  'BUSINESS_PROBLEM',
-  'BUSINESS_OPPORTUNITY',
-  'BUSINESS_OBJECTIVE',
-  'SUCCESS_METRIC',
-  'VISION_STATEMENT',
-  'BUSINESS_RISK',
-  'ASSUMPTION',
-  'RISK',
-  'STAKEHOLDER',
-  'BUSINESS_RULE',
-  'FUNCTIONAL_REQUIREMENT',
-  'FEATURE',
-  'USE_CASE',
-  'PRECONDITION',
-  'POSTCONDITION',
-  'USER_STORY',
-  'QUALITY_ATTRIBUTE',
-  'EXTERNAL_INTERFACE_REQUIREMENT',
-  'CONSTRAINT',
-  'DATA_REQUIREMENT',
-  'OTHER'
-]
-
-const priorities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
 
 function formatTimestamp(value?: string | null) {
   if (!value) return 'unknown'
@@ -432,13 +417,14 @@ const editor = useEditor({
   }
 })
 
+// When a new section is selected in the left menu, load its content into the editor and artifacts list
 const selectedSection = computed<RequirementDocumentSection | null>(() => {
   if (!document.value || selectedSectionId.value === null) return null
   return document.value.sections.find((section) => section.id === selectedSectionId.value) || null
 })
 
-const lockInfo = computed<RequirementDocumentSectionLock | null>(() =>
-  selectedSection.value?.lock || null
+const lockInfo = computed<RequirementDocumentSectionLock | null>(
+  () => selectedSection.value?.lock || null
 )
 
 const lockedByMe = computed(() => {
@@ -447,8 +433,11 @@ const lockedByMe = computed(() => {
   return lockInfo.value.lockedBy?.id === currentUserId.value
 })
 
+// Determine if the current user can lock, unlock, or edit the selected section based on its lock status and ownership
 const canLock = computed(() => Boolean(selectedSection.value && !lockInfo.value?.locked))
-const canUnlock = computed(() => Boolean(selectedSection.value && lockInfo.value?.locked && lockedByMe.value))
+const canUnlock = computed(() =>
+  Boolean(selectedSection.value && lockInfo.value?.locked && lockedByMe.value)
+)
 const canEdit = computed(() => Boolean(selectedSection.value && lockedByMe.value))
 
 function goBack() {
@@ -462,13 +451,14 @@ async function loadDocument() {
     const result = await findDocumentById(teamId.value, documentId.value)
     document.value = result.data
     if (document.value.sections.length) {
-      selectedSectionId.value = document.value.sections[0].id
+      selectedSectionId.value = document.value.sections[0]!.id
     }
   } finally {
     loading.value = false
   }
 }
 
+// Update the selected section ID when a section is clicked in the sidebar menu
 function handleSelect(id: string) {
   selectedSectionId.value = Number(id)
 }
@@ -494,7 +484,12 @@ async function lockSection() {
   if (!teamId.value || !documentId.value || !selectedSection.value) return
   locking.value = true
   try {
-    const result = await lockDocumentSection(teamId.value, documentId.value, selectedSection.value.id, {})
+    const result = await lockDocumentSection(
+      teamId.value,
+      documentId.value,
+      selectedSection.value.id,
+      {}
+    )
     selectedSection.value.lock = result.data
     ElMessage.success('Section locked')
   } finally {
@@ -507,7 +502,11 @@ async function unlockSection() {
   unlocking.value = true
   try {
     await unlockDocumentSection(teamId.value, documentId.value, selectedSection.value.id)
-    const refreshed = await getDocumentSectionLock(teamId.value, documentId.value, selectedSection.value.id)
+    const refreshed = await getDocumentSectionLock(
+      teamId.value,
+      documentId.value,
+      selectedSection.value.id
+    )
     selectedSection.value.lock = refreshed.data
     ElMessage.success('Section unlocked')
   } finally {
@@ -519,20 +518,16 @@ async function saveSection() {
   if (!teamId.value || !documentId.value || !selectedSection.value) return
   saving.value = true
   try {
-    const payload = {
-      id: selectedSection.value.id,
-      sectionKey: selectedSection.value.sectionKey,
-      type: selectedSection.value.type,
-      title: selectedSection.value.title,
-      content: draftContent.value,
+    const payload: UpdateDocumentSectionRequest = {
+      content: draftContent.value, // For rich text sections, this is the HTML content. For list sections, this can be ignored.
+      // For list sections, send the updated list of requirement artifacts. For rich text sections, this can be an empty array.
       requirementArtifacts:
         selectedSection.value.type === 'LIST'
           ? draftArtifacts.value.map((artifact) => ({
-              ...artifact,
-              sourceSectionId: selectedSection.value!.id
+              ...artifact, // spread the artifact summary fields
+              sourceSectionId: selectedSection.value!.id // include the source section ID for the backend to know which section these artifacts belong to
             }))
-          : [],
-      guidance: selectedSection.value.guidance
+          : []
     }
 
     const result = await updateDocumentSection(
@@ -634,6 +629,7 @@ watch(
   }
 )
 
+// Add a global keydown listener to save the section when Ctrl+S or Cmd+S is pressed, but only if a section is selected and locked by the current user
 function handleKeydown(event: KeyboardEvent) {
   if (!selectedSection.value || !canEdit.value) return
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {

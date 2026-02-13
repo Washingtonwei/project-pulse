@@ -64,13 +64,15 @@ const teamId = computed(() => (userInfoStore.userInfo as Student | null)?.teamId
 const hasTeam = computed(() => Boolean(teamId.value))
 
 const loading = ref(false)
-const documents = ref<RequirementDocumentSummary[]>([])
 
+const documents = ref<RequirementDocumentSummary[]>([]) // All documents for the team, loaded from the API
+
+// Catalog of core requirement document types with descriptions
 const catalog = [
   {
     type: 'VISION_SCOPE' as DocumentType,
     title: 'Vision & Scope',
-    description: 'Define the project’s goals, scope boundaries, and stakeholders.'
+    description: "Define the project's goals, scope boundaries, and stakeholders."
   },
   {
     type: 'GLOSSARY' as DocumentType,
@@ -89,6 +91,7 @@ const catalog = [
   }
 ]
 
+// Map of document type to the existing document summary for the team (if any)
 const docsByType = computed<Record<DocumentType, RequirementDocumentSummary | undefined>>(() => {
   const map: Record<DocumentType, RequirementDocumentSummary | undefined> = {
     VISION_SCOPE: undefined,
@@ -104,6 +107,7 @@ const docsByType = computed<Record<DocumentType, RequirementDocumentSummary | un
   return map
 })
 
+// Only show document types that have been created for the team
 const visibleDocs = computed(() => catalog.filter((doc) => docsByType.value[doc.type]))
 
 function statusTagType(status: string) {
@@ -150,6 +154,7 @@ async function ensureDocumentsLoaded() {
 
 onMounted(ensureDocumentsLoaded)
 
+// Reload documents whenever the team changes (e.g. user gets assigned to a team after initially having no team)
 watch(
   () => teamId.value,
   async (value, previous) => {

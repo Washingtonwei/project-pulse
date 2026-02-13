@@ -114,7 +114,7 @@
           <el-form-item label="Priority">
             <el-select v-model="currentUseCase.priority" placeholder="Priority">
               <el-option
-                v-for="priority in priorities"
+                v-for="priority in PRIORITIES"
                 :key="priority"
                 :label="priority"
                 :value="priority"
@@ -310,9 +310,7 @@
                           icon="Plus"
                           @click="addExtensionStepAt(stepIndex, extIndex, ext.steps.length)"
                         />
-                        <span
-                          @click="addExtensionStepAt(stepIndex, extIndex, ext.steps.length)"
-                        >
+                        <span @click="addExtensionStepAt(stepIndex, extIndex, ext.steps.length)">
                           Insert step
                         </span>
                       </div>
@@ -362,7 +360,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserInfoStore } from '@/stores/userInfo'
 import type { Student } from '@/apis/student/types'
-import type { RequirementArtifact, UseCaseDto } from '@/apis/ram/types'
+import { PRIORITIES, type RequirementArtifact, type UseCase } from '@/apis/ram/types'
 import {
   searchRequirementArtifacts,
   getUseCaseById,
@@ -380,18 +378,23 @@ const loading = ref(false)
 const saving = ref(false)
 const searchText = ref('')
 
+// We maintain a separate list of use cases for the sidebar to allow for fast searching and filtering without affecting the main use case data. The sidebar only loads basic artifact info, while the main content loads full use case details on demand.
 const useCases = ref<RequirementArtifact[]>([])
 const filteredUseCases = ref<RequirementArtifact[]>([])
+
+// selectedUseCaseId tracks which use case is currently selected and displayed in the main content area. When a use case is selected, we load its full details to show in the form.
 const selectedUseCaseId = ref<number | null>(null)
 const isNew = ref(false)
 
 const stakeholderOptions = ref<RequirementArtifact[]>([])
 
-const currentUseCase = ref<UseCaseDto>(createEmptyUseCase())
+// currentUseCase holds the full details of the currently selected use case for editing.
+const currentUseCase = ref<UseCase>(createEmptyUseCase())
 
-const priorities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
-
+// editingMap tracks which use cases have been edited in the current session. This is used to show an "Editing" tag in the sidebar and to display how long a use case has been in editing mode.
 const editingMap = ref<Record<number, string>>({})
+
+// activeStepIndex tracks which main step is currently active for editing. This allows us to show the step details in the sidebar and manage focus when adding new steps.
 const activeStepIndex = ref<number | null>(null)
 const actionRefs = ref<Record<number, any>>({})
 
@@ -409,7 +412,7 @@ function isEditing(id?: number) {
   return Boolean(editingMap.value[id])
 }
 
-function createEmptyUseCase(): UseCaseDto {
+function createEmptyUseCase(): UseCase {
   return {
     title: '',
     description: '',
@@ -429,6 +432,7 @@ function goBack() {
   router.push({ name: 'ram-documents' })
 }
 
+// We use searchRequirementArtifacts instead of searchUseCases to populate the sidebar without loading too many use case details at once. The main content will load the full use case data when selected.
 async function loadUseCases() {
   if (!teamId.value) return
   try {
@@ -445,6 +449,7 @@ async function loadUseCases() {
   }
 }
 
+// In a use case, actors can be either stakeholders or external interface requirements. For example, a stakeholder could be a user role like "Customer" or "Admin", while an external interface requirement could represent an external system that interacts with the use case.
 async function loadStakeholders() {
   if (!teamId.value) return
   try {
@@ -467,6 +472,7 @@ function filterList() {
   filteredUseCases.value = useCases.value.filter((item) => item.title.toLowerCase().includes(query))
 }
 
+// When a use case is selected from the sidebar, we load its full details to display in the main content area. This allows us to keep the sidebar list fast and responsive, even if there are many use cases.
 async function handleSelect(id: string) {
   if (!teamId.value) return
   selectedUseCaseId.value = Number(id)
@@ -482,6 +488,7 @@ async function handleSelect(id: string) {
   }
 }
 
+// When creating a new use case, we clear the selectedUseCaseId and set isNew to true. We also initialize currentUseCase with an empty use case object. This allows the form to be used for both creating new use cases and editing existing ones.
 function createNew() {
   selectedUseCaseId.value = null
   isNew.value = true
@@ -489,7 +496,8 @@ function createNew() {
   activeStepIndex.value = null
 }
 
-function normalizeUseCase(useCase: UseCaseDto): UseCaseDto {
+// This function ensures that all optional fields in the use case have default values. This prevents issues with undefined values when rendering the form and allows us to work with a consistent data structure.
+function normalizeUseCase(useCase: UseCase): UseCase {
   return {
     ...useCase,
     secondaryActorIds: useCase.secondaryActorIds || [],
@@ -530,11 +538,7 @@ function removePostcondition(index: number) {
   currentUseCase.value.postconditions?.splice(index, 1)
 }
 
-function addStep() {
-  currentUseCase.value.mainSteps.push({ actor: '', actionText: '', extensions: [] })
-  focusStep(currentUseCase.value.mainSteps.length - 1)
-}
-
+// Steps are a core part of the use case, and users often need to add new steps in between existing ones. The addStepAt function allows us to insert a new step at any position in the mainSteps array. After adding a step, we also set it as the active step and focus the action input for a smooth editing experience.
 function addStepAt(index: number) {
   currentUseCase.value.mainSteps.splice(index, 0, { actor: '', actionText: '', extensions: [] })
   focusStep(index)
@@ -565,39 +569,40 @@ async function focusStep(index: number) {
   }
 }
 
+// Extensions allow us to capture alternate flows and exceptions in the use case. Each extension has its own set of steps that can be edited independently from the main steps. The addExtension function adds a new extension to a specific step, while removeExtension deletes an existing extension. We also have functions to manage the steps within each extension.
 function addExtension(stepIndex: number) {
-  const step = currentUseCase.value.mainSteps[stepIndex]
-  step.extensions.push({ conditionText: '', kind: 'ALTERNATE', exit: 'RESUME', steps: [] })
+  const step = currentUseCase.value.mainSteps[stepIndex] // Get the main step at the specified index
+  step!.extensions.push({ conditionText: '', kind: 'EXCEPTION', exit: 'RESUME', steps: [] })
   openExtensions(stepIndex)
 }
 
 function removeExtension(stepIndex: number, extIndex: number) {
   const step = currentUseCase.value.mainSteps[stepIndex]
-  step.extensions.splice(extIndex, 1)
-  if (!step.extensions.length) closeExtensions(stepIndex)
+  step!.extensions.splice(extIndex, 1)
+  if (!step!.extensions.length) closeExtensions(stepIndex)
 }
 
-function addExtensionStep(stepIndex: number, extIndex: number) {
-  const extension = currentUseCase.value.mainSteps[stepIndex].extensions[extIndex]
-  extension.steps.push({ actor: '', actionText: '' })
-}
-
+// Similar to main steps, we want to allow users to insert new steps within an extension flow. The addExtensionStepAt function inserts a new step at a specified index within the extension's steps array, while removeExtensionStep deletes a step from the extension.
 function addExtensionStepAt(stepIndex: number, extIndex: number, insertIndex: number) {
-  const extension = currentUseCase.value.mainSteps[stepIndex].extensions[extIndex]
-  extension.steps.splice(insertIndex, 0, { actor: '', actionText: '' })
+  const extension = currentUseCase.value.mainSteps[stepIndex]!.extensions[extIndex]
+  extension!.steps.splice(insertIndex, 0, { actor: '', actionText: '' })
 }
 
 function removeExtensionStep(stepIndex: number, extIndex: number, extStepIndex: number) {
-  const extension = currentUseCase.value.mainSteps[stepIndex].extensions[extIndex]
-  extension.steps.splice(extStepIndex, 1)
+  const extension = currentUseCase.value.mainSteps[stepIndex]!.extensions[extIndex]
+  extension!.steps.splice(extStepIndex, 1)
 }
 
+// We use openExtensionsMap to track which steps have their extensions currently open in the UI. This allows us to toggle the visibility of the extensions section for each step independently, providing a cleaner editing experience when there are many steps with extensions.
+// An example: if openExtensionsMap[2] is true, it means that the extensions for the step at index 2 are currently visible in the UI. If it's false or undefined, the extensions for that step are hidden.
 const openExtensionsMap = ref<Record<number, boolean>>({})
 
+// This function checks if the extensions for a given step index are currently open. It returns a boolean value based on the state stored in openExtensionsMap.
 function isExtensionsOpen(stepIndex: number) {
   return Boolean(openExtensionsMap.value[stepIndex])
 }
 
+// This function toggles the open/closed state of the extensions for a specific step index. It updates the openExtensionsMap by inverting the current value for the given step index.
 function toggleExtensions(stepIndex: number) {
   openExtensionsMap.value = {
     ...openExtensionsMap.value,
@@ -605,6 +610,7 @@ function toggleExtensions(stepIndex: number) {
   }
 }
 
+// These functions allow us to explicitly open or close the extensions for a specific step index. They update the openExtensionsMap accordingly, which in turn controls the visibility of the extensions section in the UI.
 function openExtensions(stepIndex: number) {
   openExtensionsMap.value = { ...openExtensionsMap.value, [stepIndex]: true }
 }
@@ -633,12 +639,16 @@ function validateUseCase(): boolean {
   return true
 }
 
+// The saveUseCase function handles both creating new use cases and updating existing ones. It first validates the form data, then constructs the payload for the API request. For existing use cases, it sends an update request, while for new use cases, it sends a create request. After saving, it reloads the list of use cases to reflect any changes and shows a success message. If there's an error during saving, it displays an error message with details.
 async function saveUseCase() {
   if (!teamId.value) return
   if (!validateUseCase()) return
 
   saving.value = true
   try {
+    // Currently, we leave the step.actor empty.
+    // TODO: In the future, we need to identify the actor for each step, which can be either a stakeholder or an external interface requirement. For now, we will set it to 'N/A' to indicate that it's not applicable or not yet defined.
+    // Should be a very simple logic, scan the step text for the first mention of any primary and secondary actor, and set that as the actor for the step.
     const sanitizeActor = (value?: string) => {
       const trimmed = value?.trim()
       return trimmed ? trimmed : 'N/A'
@@ -657,14 +667,6 @@ async function saveUseCase() {
             actor: sanitizeActor(extStep.actor)
           }))
         }))
-      })),
-      preconditions: (currentUseCase.value.preconditions || []).map((condition) => ({
-        ...condition,
-        type: 'PRECONDITION'
-      })),
-      postconditions: (currentUseCase.value.postconditions || []).map((condition) => ({
-        ...condition,
-        type: 'POSTCONDITION'
       }))
     }
 
