@@ -1,0 +1,32 @@
+spring:
+  cloud:
+    azure:
+      keyvault:
+        secret:
+          property-sources[0]:
+            endpoint: ${AZURE_KEY_VAULT_ENDPOINT}
+  datasource:
+    url: ${datasource-url}
+    username: ${datasource-username}
+    password: ${datasource-password}
+  jpa:
+    hibernate:
+      ddl-auto: none
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${email-username}
+    password: ${email-password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+front-end:
+  url: https://staging.projectpulse.team
+app:
+  timezone: America/Chicago
+  reminders:
+    enabled: false   # IMPORTANT: don't email people from staging
+    cron: "0 0 8 * * *"
