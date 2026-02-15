@@ -27,10 +27,17 @@ public class DocumentSectionController {
         this.documentSectionToDocumentSectionDtoConverter = documentSectionToDocumentSectionDtoConverter;
     }
 
+    @GetMapping("/teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}")
+    public Result findDocumentSectionById(@PathVariable Integer teamId, @PathVariable Long documentId, @PathVariable Long documentSectionId) {
+        DocumentSection documentSection = this.documentSectionService.findDocumentSectionByIdWithFullGraph(teamId, documentId, documentSectionId);
+        DocumentSectionDto documentSectionDto = this.documentSectionToDocumentSectionDtoConverter.convert(documentSection);
+        return new Result(true, 200, "Find document section successfully", documentSectionDto);
+    }
+
     @PutMapping("/teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}")
     public Result updateDocumentSectionContent(@PathVariable Integer teamId, @PathVariable Long documentId, @PathVariable Long documentSectionId, @RequestBody DocumentSectionDto documentSectionDto) {
         DocumentSection update = this.documentSectionDtoToDocumentSectionConverter.convert(documentSectionDto);
-        DocumentSection updatedDocumentSection = this.documentSectionService.updateDocumentSectionContent(teamId, documentId, documentSectionId, update);
+        DocumentSection updatedDocumentSection = this.documentSectionService.updateDocumentSectionContent(teamId, documentId, documentSectionId, update, documentSectionDto.version());
         DocumentSectionDto updatedDocumentSectionDto = this.documentSectionToDocumentSectionDtoConverter.convert(updatedDocumentSection);
         return new Result(true, 200, "Update document section content successfully", updatedDocumentSectionDto);
     }

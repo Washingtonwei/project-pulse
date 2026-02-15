@@ -119,6 +119,9 @@ export interface RequirementDocumentSection {
   content?: string | null
   requirementArtifacts?: RequirementArtifactSummary[]
   guidance?: string | null
+  createdAt?: string | null
+  updatedAt?: string | null
+  version?: number | null
   lock?: RequirementDocumentSectionLock | null
 }
 
@@ -147,6 +150,7 @@ export interface RequirementDocument {
 export interface SearchDocumentsResponse extends ApiResult<Page<RequirementDocumentSummary>> {}
 
 export interface FindDocumentByIdResponse extends ApiResult<RequirementDocument> {}
+export interface FindDocumentSectionByIdResponse extends ApiResult<RequirementDocumentSection> {}
 
 export interface CreateRequirementDocumentRequest {
   type: DocumentType
@@ -157,6 +161,7 @@ export interface CreateDocumentResponse extends ApiResult<RequirementDocument> {
 export interface UpdateDocumentSectionRequest {
   content?: string
   requirementArtifacts?: RequirementArtifactSummary[]
+  version?: number | null
 }
 
 export interface UpdateDocumentSectionResponse extends ApiResult<RequirementDocumentSection> {}

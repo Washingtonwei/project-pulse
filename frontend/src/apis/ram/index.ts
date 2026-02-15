@@ -5,6 +5,7 @@ import type {
   CreateRequirementDocumentRequest,
   CreateDocumentResponse,
   FindDocumentByIdResponse,
+  FindDocumentSectionByIdResponse,
   UpdateDocumentSectionResponse,
   LockDocumentSectionRequest,
   LockDocumentSectionResponse,
@@ -41,6 +42,15 @@ export const createDocument = (teamId: number, requestBody: CreateRequirementDoc
 export const findDocumentById = (teamId: number, documentId: number) =>
   request.get<any, FindDocumentByIdResponse>(
     `${API.TEAM_DOCUMENTS}/${teamId}/documents/${documentId}`
+  )
+
+export const findDocumentSectionById = (
+  teamId: number,
+  documentId: number,
+  documentSectionId: number
+) =>
+  request.get<any, FindDocumentSectionByIdResponse>(
+    `${API.TEAM_DOCUMENTS}/${teamId}/documents/${documentId}/document-sections/${documentSectionId}`
   )
 
 export const searchRequirementArtifacts = (

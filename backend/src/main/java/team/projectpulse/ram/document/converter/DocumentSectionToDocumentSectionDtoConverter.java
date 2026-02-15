@@ -41,6 +41,7 @@ public class DocumentSectionToDocumentSectionDtoConverter implements Converter<D
                 source.getUpdatedAt(),
                 source.getCreatedBy() != null ? this.peerEvaluationUserConverter.convert(source.getCreatedBy()) : null,
                 source.getUpdatedBy() != null ? this.peerEvaluationUserConverter.convert(source.getUpdatedBy()) : null,
+                source.getVersion(),
                 this.documentSectionLockToDocumentSectionLockDtoConverter.convert(source.getLock())
         );
     }

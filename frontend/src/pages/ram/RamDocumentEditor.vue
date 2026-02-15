@@ -45,14 +45,14 @@
       <el-card class="ram-editor__content" shadow="never">
         <template #header>
           <div class="content-header">
-            <div>
+            <div v-if="!sectionLoading">
               <h2>{{ selectedSection?.title || 'Select a section' }}</h2>
               <div class="section-meta" v-if="selectedSection">
                 <el-tag type="info" size="small">{{ selectedSection.type }}</el-tag>
                 <span class="section-key">{{ selectedSection.sectionKey }}</span>
               </div>
             </div>
-            <div class="content-actions" v-if="selectedSection">
+            <div class="content-actions" v-if="selectedSection && !sectionLoading">
               <el-button
                 v-if="canLock"
                 type="primary"
@@ -75,200 +75,214 @@
                 Save
               </el-button>
             </div>
+            <div v-else class="content-header__placeholder" />
           </div>
         </template>
 
         <el-empty v-if="!selectedSection" description="Select a section to start editing." />
 
         <div v-else class="content-body">
-          <div class="sticky-info">
-            <el-alert v-if="lockInfo?.locked" type="warning" show-icon class="lock-alert">
-              <template #title>
-                Section locked by {{ lockInfo.lockedBy?.name || 'another user' }}
-              </template>
-              <template #default>
-                <div>Expires at: {{ formatTimestamp(lockInfo.expiresAt) }}</div>
-                <div v-if="lockInfo.reason">Reason: {{ lockInfo.reason }}</div>
-              </template>
-            </el-alert>
+          <!-- Show a loading skeleton while the section content and lock info are being fetched, so the user sees immediate feedback in the editor area without blocking the entire document view with a spinner. -->
+          <el-skeleton v-if="sectionLoading" :rows="6" animated />
 
-            <el-collapse
-              v-if="selectedSection.guidance"
-              class="guidance"
-              :model-value="['guidance']"
-            >
-              <el-collapse-item name="guidance" title="Guidance">
-                <el-alert type="info" show-icon :closable="false">
-                  <template #default>
-                    <pre>{{ selectedSection.guidance }}</pre>
-                  </template>
-                </el-alert>
-              </el-collapse-item>
-            </el-collapse>
-          </div>
+          <div v-else class="content-body__inner">
+            <div class="sticky-info">
+              <el-alert v-if="lockInfo?.locked" type="warning" show-icon class="lock-alert">
+                <template #title>
+                  Section locked by {{ lockInfo.lockedBy?.name || 'another user' }}
+                </template>
+                <template #default>
+                  <div>Expires at: {{ formatTimestamp(lockInfo.expiresAt) }}</div>
+                  <div v-if="lockInfo.reason">Reason: {{ lockInfo.reason }}</div>
+                </template>
+              </el-alert>
 
-          <!-- If the section type is RICH_TEXT, show the rich text editor. If it's LIST, show the requirement artifacts table -->
-          <div v-if="selectedSection.type === 'RICH_TEXT'" class="rich-text-editor">
-            <div class="toolbar">
-              <el-button-group>
-                <el-button
-                  size="small"
-                  :type="editor?.isActive('heading', { level: 1 }) ? 'primary' : 'default'"
-                  :disabled="!canEdit"
-                  @click="editor?.chain().focus().toggleHeading({ level: 1 }).run()"
-                >
-                  H1
-                </el-button>
-                <el-button
-                  size="small"
-                  :type="editor?.isActive('heading', { level: 2 }) ? 'primary' : 'default'"
-                  :disabled="!canEdit"
-                  @click="editor?.chain().focus().toggleHeading({ level: 2 }).run()"
-                >
-                  H2
-                </el-button>
-                <el-button
-                  size="small"
-                  :type="editor?.isActive('heading', { level: 3 }) ? 'primary' : 'default'"
-                  :disabled="!canEdit"
-                  @click="editor?.chain().focus().toggleHeading({ level: 3 }).run()"
-                >
-                  H3
-                </el-button>
-              </el-button-group>
-
-              <el-button-group>
-                <el-button
-                  size="small"
-                  :type="editor?.isActive('bold') ? 'primary' : 'default'"
-                  :disabled="!canEdit"
-                  @click="editor?.chain().focus().toggleBold().run()"
-                >
-                  Bold
-                </el-button>
-                <el-button
-                  size="small"
-                  :type="editor?.isActive('italic') ? 'primary' : 'default'"
-                  :disabled="!canEdit"
-                  @click="editor?.chain().focus().toggleItalic().run()"
-                >
-                  Italic
-                </el-button>
-                <el-button
-                  size="small"
-                  :type="editor?.isActive('underline') ? 'primary' : 'default'"
-                  :disabled="!canEdit"
-                  @click="editor?.chain().focus().toggleUnderline().run()"
-                >
-                  Underline
-                </el-button>
-                <el-button
-                  size="small"
-                  :type="editor?.isActive('strike') ? 'primary' : 'default'"
-                  :disabled="!canEdit"
-                  @click="editor?.chain().focus().toggleStrike().run()"
-                >
-                  Strike
-                </el-button>
-                <el-button
-                  size="small"
-                  :type="editor?.isActive('code') ? 'primary' : 'default'"
-                  :disabled="!canEdit"
-                  @click="editor?.chain().focus().toggleCode().run()"
-                >
-                  Code
-                </el-button>
-              </el-button-group>
-
-              <el-button-group>
-                <el-button
-                  size="small"
-                  :type="editor?.isActive('bulletList') ? 'primary' : 'default'"
-                  :disabled="!canEdit"
-                  @click="editor?.chain().focus().toggleBulletList().run()"
-                >
-                  Bullets
-                </el-button>
-                <el-button
-                  size="small"
-                  :type="editor?.isActive('orderedList') ? 'primary' : 'default'"
-                  :disabled="!canEdit"
-                  @click="editor?.chain().focus().toggleOrderedList().run()"
-                >
-                  Numbered
-                </el-button>
-                <el-button
-                  size="small"
-                  :type="editor?.isActive('blockquote') ? 'primary' : 'default'"
-                  :disabled="!canEdit"
-                  @click="editor?.chain().focus().toggleBlockquote().run()"
-                >
-                  Quote
-                </el-button>
-                <el-button
-                  size="small"
-                  :disabled="!canEdit"
-                  @click="editor?.chain().focus().setHorizontalRule().run()"
-                >
-                  Rule
-                </el-button>
-              </el-button-group>
-
-              <el-button-group>
-                <el-button size="small" :disabled="!canEdit" @click="openLinkDialog">
-                  Link
-                </el-button>
-                <el-button size="small" :disabled="!canEdit" @click="unsetLink"> Unlink </el-button>
-              </el-button-group>
-
-              <el-button-group>
-                <el-button
-                  size="small"
-                  :disabled="!editor?.can().undo()"
-                  @click="editor?.chain().focus().undo().run()"
-                >
-                  Undo
-                </el-button>
-                <el-button
-                  size="small"
-                  :disabled="!editor?.can().redo()"
-                  @click="editor?.chain().focus().redo().run()"
-                >
-                  Redo
-                </el-button>
-              </el-button-group>
+              <el-collapse
+                v-if="selectedSection.guidance"
+                class="guidance"
+                :model-value="['guidance']"
+              >
+                <el-collapse-item name="guidance" title="Guidance">
+                  <el-alert type="info" show-icon :closable="false">
+                    <template #default>
+                      <pre>{{ selectedSection.guidance }}</pre>
+                    </template>
+                  </el-alert>
+                </el-collapse-item>
+              </el-collapse>
             </div>
-            <EditorContent :editor="editor" class="editor-content" />
-          </div>
 
-          <div v-else class="list-editor">
-            <div class="list-header">
-              <h3>Requirements</h3>
-              <el-button type="primary" :disabled="!canEdit" @click="openAddArtifact">
-                Add Requirement
-              </el-button>
-            </div>
-            <el-table :data="draftArtifacts" border stripe>
-              <el-table-column label="Key" prop="artifactKey" width="110" />
-              <el-table-column label="Type" prop="type" width="180" />
-              <el-table-column label="Title" prop="title" />
-              <el-table-column label="Priority" prop="priority" width="120" />
-              <el-table-column label="Actions" width="140">
-                <template #default="{ $index }">
-                  <el-button size="small" :disabled="!canEdit" @click="openEditArtifact($index)">
-                    Edit
+            <!-- If the section type is RICH_TEXT, show the rich text editor. If it's LIST, show the requirement artifacts table -->
+            <div v-if="selectedSection.type === 'RICH_TEXT'" class="rich-text-editor">
+              <div class="toolbar">
+                <el-button-group>
+                  <el-button
+                    size="small"
+                    :type="editor?.isActive('heading', { level: 1 }) ? 'primary' : 'default'"
+                    :disabled="!canEdit"
+                    @click="editor?.chain().focus().toggleHeading({ level: 1 }).run()"
+                  >
+                    H1
                   </el-button>
                   <el-button
                     size="small"
-                    type="danger"
+                    :type="editor?.isActive('heading', { level: 2 }) ? 'primary' : 'default'"
                     :disabled="!canEdit"
-                    @click="removeArtifact($index)"
+                    @click="editor?.chain().focus().toggleHeading({ level: 2 }).run()"
                   >
-                    Delete
+                    H2
                   </el-button>
-                </template>
-              </el-table-column>
-            </el-table>
+                  <el-button
+                    size="small"
+                    :type="editor?.isActive('heading', { level: 3 }) ? 'primary' : 'default'"
+                    :disabled="!canEdit"
+                    @click="editor?.chain().focus().toggleHeading({ level: 3 }).run()"
+                  >
+                    H3
+                  </el-button>
+                </el-button-group>
+
+                <el-button-group>
+                  <el-button
+                    size="small"
+                    :type="editor?.isActive('bold') ? 'primary' : 'default'"
+                    :disabled="!canEdit"
+                    @click="editor?.chain().focus().toggleBold().run()"
+                  >
+                    Bold
+                  </el-button>
+                  <el-button
+                    size="small"
+                    :type="editor?.isActive('italic') ? 'primary' : 'default'"
+                    :disabled="!canEdit"
+                    @click="editor?.chain().focus().toggleItalic().run()"
+                  >
+                    Italic
+                  </el-button>
+                  <el-button
+                    size="small"
+                    :type="editor?.isActive('underline') ? 'primary' : 'default'"
+                    :disabled="!canEdit"
+                    @click="editor?.chain().focus().toggleUnderline().run()"
+                  >
+                    Underline
+                  </el-button>
+                  <el-button
+                    size="small"
+                    :type="editor?.isActive('strike') ? 'primary' : 'default'"
+                    :disabled="!canEdit"
+                    @click="editor?.chain().focus().toggleStrike().run()"
+                  >
+                    Strike
+                  </el-button>
+                  <el-button
+                    size="small"
+                    :type="editor?.isActive('code') ? 'primary' : 'default'"
+                    :disabled="!canEdit"
+                    @click="editor?.chain().focus().toggleCode().run()"
+                  >
+                    Code
+                  </el-button>
+                </el-button-group>
+
+                <el-button-group>
+                  <el-button
+                    size="small"
+                    :type="editor?.isActive('bulletList') ? 'primary' : 'default'"
+                    :disabled="!canEdit"
+                    @click="editor?.chain().focus().toggleBulletList().run()"
+                  >
+                    Bullets
+                  </el-button>
+                  <el-button
+                    size="small"
+                    :type="editor?.isActive('orderedList') ? 'primary' : 'default'"
+                    :disabled="!canEdit"
+                    @click="editor?.chain().focus().toggleOrderedList().run()"
+                  >
+                    Numbered
+                  </el-button>
+                  <el-button
+                    size="small"
+                    :type="editor?.isActive('blockquote') ? 'primary' : 'default'"
+                    :disabled="!canEdit"
+                    @click="editor?.chain().focus().toggleBlockquote().run()"
+                  >
+                    Quote
+                  </el-button>
+                  <el-button
+                    size="small"
+                    :disabled="!canEdit"
+                    @click="editor?.chain().focus().setHorizontalRule().run()"
+                  >
+                    Rule
+                  </el-button>
+                </el-button-group>
+
+                <el-button-group>
+                  <el-button size="small" :disabled="!canEdit" @click="openLinkDialog">
+                    Link
+                  </el-button>
+                  <el-button size="small" :disabled="!canEdit" @click="unsetLink">
+                    Unlink
+                  </el-button>
+                </el-button-group>
+
+                <el-button-group>
+                  <el-button
+                    size="small"
+                    :disabled="!editor?.can().undo()"
+                    @click="editor?.chain().focus().undo().run()"
+                  >
+                    Undo
+                  </el-button>
+                  <el-button
+                    size="small"
+                    :disabled="!editor?.can().redo()"
+                    @click="editor?.chain().focus().redo().run()"
+                  >
+                    Redo
+                  </el-button>
+                </el-button-group>
+              </div>
+              <EditorContent :editor="editor" class="editor-content" />
+            </div>
+
+            <div v-else class="list-editor">
+              <div class="list-header">
+                <h3>Requirements</h3>
+                <el-button type="primary" :disabled="!canEdit" @click="openAddArtifact">
+                  Add Requirement
+                </el-button>
+              </div>
+              <el-table :data="draftArtifacts" border stripe>
+                <el-table-column label="Key" prop="artifactKey" width="110" />
+                <el-table-column label="Type" prop="type" width="180" />
+                <el-table-column label="Title" prop="title" />
+                <el-table-column label="Priority" prop="priority" width="120" />
+                <el-table-column label="Actions" width="170">
+                  <template #default="{ $index }">
+                    <div class="actions-cell">
+                      <el-button
+                        size="small"
+                        :disabled="!canEdit"
+                        @click="openEditArtifact($index)"
+                      >
+                        Edit
+                      </el-button>
+                      <el-button
+                        size="small"
+                        type="danger"
+                        :disabled="!canEdit"
+                        @click="removeArtifact($index)"
+                      >
+                        Delete
+                      </el-button>
+                    </div>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
           </div>
         </div>
       </el-card>
@@ -349,6 +363,7 @@ import {
 } from '@/apis/ram/types'
 import {
   findDocumentById,
+  findDocumentSectionById,
   getDocumentSectionLock,
   lockDocumentSection,
   unlockDocumentSection,
@@ -374,6 +389,13 @@ const loading = ref(false)
 const saving = ref(false)
 const locking = ref(false)
 const unlocking = ref(false)
+
+// Incremented for each section fetch so stale responses don't overwrite newer selections.
+// For example, if a user clicks on Section A, then quickly clicks on Section B before A finishes loading, we want to ignore the response for A when it arrives.
+const sectionRequestToken = ref(0)
+
+// Local loading state for the currently selected section's content and artifacts. This allows showing a loading indicator in the editor area while the section data is being fetched, without blocking the entire document view.
+const sectionLoading = ref(false)
 
 // Local state for the rich text editor content and requirement artifacts list, which are edited before saving to the server
 const draftContent = ref('')
@@ -452,15 +474,43 @@ async function loadDocument() {
     document.value = result.data
     if (document.value.sections.length) {
       selectedSectionId.value = document.value.sections[0]!.id
+      await loadSection(selectedSectionId.value) // Load the first section by default when the document is loaded
     }
   } finally {
     loading.value = false
   }
 }
 
+// Load a specific section's content and lock info from the server. This is called when a section is selected in the sidebar, and also after locking/unlocking to refresh the lock status and any server-side updates to the section.
+async function loadSection(sectionId: number) {
+  if (!teamId.value || !documentId.value) return
+  // Track the latest in-flight request to avoid race conditions when users switch fast.
+  sectionRequestToken.value += 1
+  const currentToken = sectionRequestToken.value
+  sectionLoading.value = true
+  try {
+    const result = await findDocumentSectionById(teamId.value, documentId.value, sectionId)
+    if (sectionRequestToken.value !== currentToken) return // A newer request has started, ignore this response
+    if (document.value) {
+      const index = document.value.sections.findIndex((section) => section.id === sectionId)
+      if (index >= 0) {
+        document.value.sections[index] = result.data // Update the section in the document with the latest content and lock info
+      } else {
+        document.value.sections.push(result.data)
+      }
+    }
+  } finally {
+    if (sectionRequestToken.value === currentToken) {
+      sectionLoading.value = false
+    }
+  }
+}
+
 // Update the selected section ID when a section is clicked in the sidebar menu
 function handleSelect(id: string) {
-  selectedSectionId.value = Number(id)
+  const sectionId = Number(id)
+  selectedSectionId.value = sectionId
+  loadSection(sectionId)
 }
 
 function refresh() {
@@ -482,15 +532,35 @@ watch(canEdit, (value) => {
 
 async function lockSection() {
   if (!teamId.value || !documentId.value || !selectedSection.value) return
+  const sectionId = selectedSection.value.id
   locking.value = true
   try {
-    const result = await lockDocumentSection(
-      teamId.value,
-      documentId.value,
-      selectedSection.value.id,
-      {}
-    )
+    // Fetch the latest section before locking to avoid editing stale content.
+    const latestResult = await findDocumentSectionById(teamId.value, documentId.value, sectionId)
+    if (selectedSectionId.value !== sectionId) return // The user switched to another section while this request was in-flight, ignore the result
+    const latestSection = latestResult.data
+    if (selectedSection.value.updatedAt && latestSection.updatedAt) {
+      if (selectedSection.value.updatedAt !== latestSection.updatedAt) {
+        // The section was updated on the server since it was loaded, warn the user and refresh the content before locking to avoid overwriting others' changes.
+        // Notify the user if their local copy was outdated.
+        ElMessage.warning('Section updated on server. Reloaded latest content before locking.')
+      }
+    }
+    if (document.value) {
+      const index = document.value.sections.findIndex((section) => section.id === sectionId)
+      if (index >= 0) {
+        document.value.sections[index] = latestSection // Update the section in the document with the latest content and lock info before locking
+      } else {
+        document.value.sections.push(latestSection)
+      }
+    }
+
+    // Lock the section after refreshing content to prevent overwriting others' changes.
+    const result = await lockDocumentSection(teamId.value, documentId.value, sectionId, {})
+    if (selectedSectionId.value !== sectionId) return
     selectedSection.value.lock = result.data
+    // Reload to get latest lock metadata and any server-side updates.
+    await loadSection(sectionId)
     ElMessage.success('Section locked')
   } finally {
     locking.value = false
@@ -527,7 +597,8 @@ async function saveSection() {
               ...artifact, // spread the artifact summary fields
               sourceSectionId: selectedSection.value!.id // include the source section ID for the backend to know which section these artifacts belong to
             }))
-          : []
+          : [],
+      version: selectedSection.value.version ?? null
     }
 
     const result = await updateDocumentSection(
@@ -543,6 +614,13 @@ async function saveSection() {
       if (index >= 0) document.value.sections[index] = updated
     }
     ElMessage.success('Section saved')
+  } catch (error: any) {
+    if (error?.response?.status === 409) {
+      ElMessage.error('Section was updated by someone else. Please refresh and try again.')
+      await loadSection(selectedSection.value.id)
+      return
+    }
+    throw error
   } finally {
     saving.value = false
   }
@@ -743,7 +821,19 @@ onUnmounted(() => {
   gap: 8px;
 }
 
+.content-header__placeholder {
+  flex: 1;
+}
+
 .content-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+.content-body__inner {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -804,6 +894,13 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: nowrap;
 }
 
 @media (max-width: 960px) {

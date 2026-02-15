@@ -83,6 +83,18 @@ public class DocumentSectionControllerTest {
     }
 
     @Test
+    void findDocumentSectionById() throws Exception {
+        this.mockMvc.perform(get(this.baseUrl + "/teams/1/documents/1/document-sections/1").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.message").value("Find document section successfully"))
+                .andExpect(jsonPath("$.data.id").value(1))
+                .andExpect(jsonPath("$.data.sectionKey").value("INTRODUCTION"))
+                .andExpect(jsonPath("$.data.type").value("RICH_TEXT"))
+                .andExpect(jsonPath("$.data.title").value("Introduction"));
+    }
+
+    @Test
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     void updateDocumentSectionContent1() throws Exception {
         String json = """
@@ -99,6 +111,7 @@ public class DocumentSectionControllerTest {
                 .andExpect(jsonPath("$.data.documentSectionId").value(16))
                 .andExpect(jsonPath("$.data.reason").value("Locking section for editing"));
 
+        int version = fetchSectionVersion(1, 1, 16, this.adminBingyangToken);
         json = """
                 {
                     "id": 16,
@@ -136,9 +149,10 @@ public class DocumentSectionControllerTest {
                             "notes": "This requirement is crucial to prevent concurrent edits."
                         }
                     ],
-                    "guidance": "Describe functional requirements that are not easily expressed as use cases.\\n\\nUse structured formats such as:\\n- \\"The system shall…\\" statements\\n- EARS (Easy Approach to Requirements Syntax)\\n"
+                    "guidance": "Describe functional requirements that are not easily expressed as use cases.\\n\\nUse structured formats such as:\\n- \\"The system shall…\\" statements\\n- EARS (Easy Approach to Requirements Syntax)\\n",
+                    "version": %d
                 }
-                """;
+                """.formatted(version);
 
         this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/16").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
                 .andExpect(jsonPath("$.flag").value(true))
@@ -167,6 +181,7 @@ public class DocumentSectionControllerTest {
                 .andExpect(jsonPath("$.data.documentSectionId").value(16))
                 .andExpect(jsonPath("$.data.reason").value("Locking section for editing"));
 
+        int version = fetchSectionVersion(1, 1, 16, this.studentJohnToken);
         json = """
                 {
                     "id": 16,
@@ -184,9 +199,10 @@ public class DocumentSectionControllerTest {
                             "notes": "This requirement is crucial to prevent concurrent edits."
                         }
                     ],
-                    "guidance": "Describe functional requirements that are not easily expressed as use cases.\\n\\nUse structured formats such as:\\n- \\"The system shall…\\" statements\\n- EARS (Easy Approach to Requirements Syntax)\\n"
+                    "guidance": "Describe functional requirements that are not easily expressed as use cases.\\n\\nUse structured formats such as:\\n- \\"The system shall…\\" statements\\n- EARS (Easy Approach to Requirements Syntax)\\n",
+                    "version": %d
                 }
-                """;
+                """.formatted(version);
 
         this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/16").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(true))
@@ -214,14 +230,16 @@ public class DocumentSectionControllerTest {
                 .andExpect(jsonPath("$.data.documentSectionId").value(1))
                 .andExpect(jsonPath("$.data.reason").value("Locking section for editing"));
 
+        int version = fetchSectionVersion(1, 1, 1, this.studentJohnToken);
         json = """
                 {
                     "id": 1,
                     "sectionKey": "INTRODUCTION",
                     "type": "RICH_TEXT",
-                    "content": "Updated section content goes here."
+                    "content": "Updated section content goes here.",
+                    "version": %d
                 }
-                """;
+                """.formatted(version);
 
         this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/1").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(true))
@@ -248,14 +266,16 @@ public class DocumentSectionControllerTest {
                 .andExpect(jsonPath("$.data.documentSectionId").value(1))
                 .andExpect(jsonPath("$.data.reason").value("Locking section for editing"));
 
+        int version = fetchSectionVersion(1, 1, 1, this.studentJohnToken);
         json = """
                 {
                     "id": 1,
                     "sectionKey": "INTRODUCTION",
                     "type": "RICH_TEXT",
-                    "content": "Updated section content goes here."
+                    "content": "Updated section content goes here.",
+                    "version": %d
                 }
-                """;
+                """.formatted(version);
 
         this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/1").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentEricToken))
                 .andExpect(jsonPath("$.flag").value(false))
@@ -266,14 +286,16 @@ public class DocumentSectionControllerTest {
     @Test
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     void updateDocumentSectionWithoutRequirementsArtifacts_NotLocked() throws Exception {
+        int version = fetchSectionVersion(1, 1, 2, this.studentJohnToken);
         String json = """
                 {
                     "id": 1,
                     "sectionKey": "INTRODUCTION",
                     "type": "RICH_TEXT",
-                    "content": "Updated section content goes here."
+                    "content": "Updated section content goes here.",
+                    "version": %d
                 }
-                """;
+                """.formatted(version);
 
         this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/2").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(false))
@@ -384,6 +406,18 @@ public class DocumentSectionControllerTest {
                 .andExpect(jsonPath("$.flag").value(true))
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.message").value("Unlock document section successfully"));
+    }
+
+    private int fetchSectionVersion(int teamId, int documentId, int documentSectionId, String token) throws Exception {
+        MvcResult result = this.mockMvc.perform(
+                        get(this.baseUrl + "/teams/" + teamId + "/documents/" + documentId + "/document-sections/" + documentSectionId)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .header(HttpHeaders.AUTHORIZATION, token)
+                )
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        JSONObject json = new JSONObject(content);
+        return json.getJSONObject("data").getInt("version");
     }
 
 }
