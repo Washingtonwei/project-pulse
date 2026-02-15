@@ -18,5 +18,6 @@ public record DocumentSectionDto(Long id,
                                  Instant updatedAt,
                                  PeerEvaluationUserDto createdBy,
                                  PeerEvaluationUserDto updatedBy,
+                                 Integer version,
                                  DocumentSectionLockDto lock) {
 }

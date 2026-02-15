@@ -64,7 +64,7 @@
           <el-table-column label="Name" prop="teamName"> </el-table-column>
           <el-table-column label="Description" prop="description"> </el-table-column>
           <el-table-column label="Website URL" prop="teamWebsiteUrl"> </el-table-column>
-          <el-table-column label="Operations" width="200">
+          <el-table-column label="Operations" width="260">
             <template #default="{ row }">
               <el-button
                 icon="Edit"
@@ -81,6 +81,15 @@
                 type="warning"
                 @click="showTransferDialog(row)"
                 title="Transfer Team"
+              ></el-button>
+              <el-button
+                icon="Files"
+                circle
+                plain
+                type="success"
+                :loading="docCreating[row.teamId]"
+                @click="createRequirementDocuments(row)"
+                title="Create Requirement Documents"
               ></el-button>
               <!-- <el-button
                 icon="Delete"
@@ -266,6 +275,8 @@ import { searchStudents } from '@/apis/student'
 import draggable from 'vuedraggable'
 import type { Section } from '@/apis/section/types'
 import { searchSections } from '@/apis/section'
+import { createDocument, searchDocuments } from '@/apis/ram'
+import type { DocumentType } from '@/apis/ram/types'
 
 const teamSearchCriteria = ref<TeamSearchCriteria>({
   teamName: '',
@@ -306,6 +317,7 @@ const transferData = ref({
 })
 
 const availableSections = ref<Section[]>([])
+const docCreating = ref<Record<number, boolean>>({}) // Track which team is currently creating documents to show loading state on the button
 
 // studentsWithoutTeam is a computed property that returns students who are not in any team and whose name (full name) matches the studentNameSearch input by the user
 const studentsWithoutTeam = computed(() =>
@@ -574,6 +586,49 @@ async function confirmTransferTeam() {
     console.error(error)
   } finally {
     buttonLoading.value = false
+  }
+}
+
+async function createRequirementDocuments(team: Team) {
+  if (!team.teamId) return
+  const teamId = team.teamId
+  try {
+    await ElMessageBox.confirm(
+      `Create requirement documents for ${team.teamName}?`,
+      'Create Requirement Documents',
+      {
+        confirmButtonText: 'Create',
+        cancelButtonText: 'Cancel',
+        type: 'info'
+      }
+    )
+  } catch {
+    return
+  }
+
+  docCreating.value[teamId] = true
+  const requiredTypes: DocumentType[] = ['VISION_SCOPE', 'GLOSSARY', 'USE_CASES', 'SRS']
+  try {
+    const existing = await searchDocuments(teamId, { page: 0, size: 50 }, {})
+    const existingTypes = new Set(existing.data.content.map((doc) => doc.type))
+    // Find out which required document types are missing
+    const missing = requiredTypes.filter((type) => !existingTypes.has(type))
+
+    if (!missing.length) {
+      ElMessage.info('All requirement documents already exist for this team.')
+      return
+    }
+
+    for (const type of missing) {
+      await createDocument(teamId, { type }) // Create missing document with the specified type
+    }
+
+    ElMessage.success(`Created ${missing.length} requirement document(s).`)
+  } catch (error: any) {
+    const errorMessage = error?.response?.data?.message || 'Failed to create requirement documents'
+    ElMessage.error(errorMessage)
+  } finally {
+    docCreating.value[teamId] = false
   }
 }
 

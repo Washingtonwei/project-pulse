@@ -1,5 +1,6 @@
 package team.projectpulse.ram.document;
 
+import jakarta.persistence.OptimisticLockException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import team.projectpulse.ram.requirement.SectionType;
@@ -25,6 +26,12 @@ public class DocumentSectionService {
         this.documentSectionRepository = documentSectionRepository;
         this.userUtils = userUtils;
         this.userRepository = userRepository;
+    }
+
+    public DocumentSection findDocumentSectionByIdWithFullGraph(Integer teamId, Long documentId, Long documentSectionId) {
+        return this.documentSectionRepository
+                .findByIdWithFullGraph(teamId, documentId, documentSectionId)
+                .orElseThrow(() -> new ObjectNotFoundException("document section", documentSectionId));
     }
 
     public DocumentSectionLock findSectionLock(Integer teamId, Long documentId, Long documentSectionId) {
@@ -92,9 +99,17 @@ public class DocumentSectionService {
         sectionLock.unlock();
     }
 
-    public DocumentSection updateDocumentSectionContent(Integer teamId, Long documentId, Long documentSectionId, DocumentSection update) {
+    public DocumentSection updateDocumentSectionContent(Integer teamId, Long documentId, Long documentSectionId, DocumentSection update, Integer expectedVersion) {
         DocumentSection oldDocumentSection = this.documentSectionRepository.findById(documentSectionId)
                 .orElseThrow(() -> new ObjectNotFoundException("document section", documentSectionId));
+        if (expectedVersion == null) {
+            throw new IllegalArgumentException("Document section version is required for update.");
+        }
+
+        Integer currentVersion = oldDocumentSection.getVersion();
+        if (!expectedVersion.equals(currentVersion)) {
+            throw new OptimisticLockException("Document section has been updated by another user. Please refresh and try again.");
+        }
 
         Instant now = Instant.now();
         DocumentSectionLock lock = oldDocumentSection.getLock();
