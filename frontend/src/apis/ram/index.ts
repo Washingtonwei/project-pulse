@@ -13,6 +13,8 @@ import type {
   SearchRequirementArtifactsResponse,
   UseCaseResponse,
   UseCase,
+  UseCaseLockRequest,
+  UseCaseLockResponse,
   GlossaryTermResponse,
   RequirementArtifact,
   UpdateDocumentSectionRequest
@@ -115,6 +117,18 @@ export const updateUseCase = (teamId: number, useCaseId: number, payload: UseCas
     `${API.TEAM_DOCUMENTS}/${teamId}/use-cases/${useCaseId}`,
     payload
   )
+
+export const getUseCaseLock = (teamId: number, useCaseId: number) =>
+  request.get<any, UseCaseLockResponse>(`${API.TEAM_DOCUMENTS}/${teamId}/use-cases/${useCaseId}/lock`)
+
+export const lockUseCase = (teamId: number, useCaseId: number, requestBody: UseCaseLockRequest) =>
+  request.put<any, UseCaseLockResponse>(
+    `${API.TEAM_DOCUMENTS}/${teamId}/use-cases/${useCaseId}/lock`,
+    requestBody
+  )
+
+export const unlockUseCase = (teamId: number, useCaseId: number) =>
+  request.delete<any, UseCaseLockResponse>(`${API.TEAM_DOCUMENTS}/${teamId}/use-cases/${useCaseId}/lock`)
 
 export const getGlossaryTermById = (teamId: number, glossaryTermId: number) =>
   request.get<any, GlossaryTermResponse>(

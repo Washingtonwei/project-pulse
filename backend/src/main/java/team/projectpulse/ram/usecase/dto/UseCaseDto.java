@@ -31,5 +31,7 @@ public record UseCaseDto(
         Instant createdAt,
         Instant updatedAt,
         PeerEvaluationUserDto createdBy,
-        PeerEvaluationUserDto updatedBy) {
+        PeerEvaluationUserDto updatedBy,
+        Integer version,
+        UseCaseLockDto lock) {
 }

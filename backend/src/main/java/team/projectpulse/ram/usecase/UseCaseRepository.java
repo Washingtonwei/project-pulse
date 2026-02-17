@@ -13,6 +13,8 @@ public interface UseCaseRepository extends JpaRepository<UseCase, Long> {
                 select uc from UseCase uc
                 left join fetch uc.artifact
                 left join fetch uc.primaryActor
+                left join fetch uc.lock l
+                left join fetch l.lockedBy
                 where uc.id = :id
             """)
     Optional<UseCase> findByIdWithScalars(@Param("id") Long id);

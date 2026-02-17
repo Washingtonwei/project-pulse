@@ -1,4 +1,4 @@
-package team.projectpulse.ram.document;
+package team.projectpulse.ram.usecase;
 
 import jakarta.persistence.*;
 import team.projectpulse.user.PeerEvaluationUser;
@@ -6,18 +6,18 @@ import team.projectpulse.user.PeerEvaluationUser;
 import java.time.Instant;
 
 /**
- * Represents a lock on a specific section of a document to prevent concurrent edits.
+ * Represents a lock on a specific use case to prevent concurrent edits.
  */
 @Entity
-public class DocumentSectionLock {
+public class UseCaseLock {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Exactly one lock per section
+    // Exactly one lock per use case
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    private DocumentSection documentSection;
+    private UseCase useCase;
 
     @ManyToOne
     private PeerEvaluationUser lockedBy;
@@ -32,7 +32,7 @@ public class DocumentSectionLock {
     private Integer version;
 
 
-    public DocumentSectionLock() {
+    public UseCaseLock() {
     }
 
     public boolean isLocked(Instant now) {
@@ -48,13 +48,13 @@ public class DocumentSectionLock {
     public void lock(PeerEvaluationUser user, Instant now, Instant expiresAt, String reason) {
         this.lockedBy = user;
         this.lockedAt = now;
-        this.expiresAt = expiresAt; // null => manual lock
+        this.expiresAt = expiresAt;
         this.reason = reason;
     }
 
     public void extend(Instant newExpiresAt, Instant now) {
         if (lockedAt == null) {
-            throw new IllegalStateException("Cannot extend: section is not locked.");
+            throw new IllegalStateException("Cannot extend: use case is not locked.");
         }
         if (expiresAt == null) {
             throw new IllegalStateException("Cannot extend: lock is manual (no expiresAt).");
@@ -69,7 +69,7 @@ public class DocumentSectionLock {
     }
 
     /**
-     * Release the lock (also used after detecting expiration to normalize state).
+     * Release the lock
      */
     public void unlock() {
         this.lockedBy = null;
@@ -82,56 +82,28 @@ public class DocumentSectionLock {
         return id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public UseCase getUseCase() {
+        return useCase;
     }
 
-    public DocumentSection getDocumentSection() {
-        return documentSection;
-    }
-
-    public void setDocumentSection(DocumentSection documentSection) {
-        this.documentSection = documentSection;
+    public void setUseCase(UseCase useCase) {
+        this.useCase = useCase;
     }
 
     public PeerEvaluationUser getLockedBy() {
         return lockedBy;
     }
 
-    public void setLockedBy(PeerEvaluationUser lockedBy) {
-        this.lockedBy = lockedBy;
-    }
-
     public Instant getLockedAt() {
         return lockedAt;
-    }
-
-    public void setLockedAt(Instant lockedAt) {
-        this.lockedAt = lockedAt;
     }
 
     public Instant getExpiresAt() {
         return expiresAt;
     }
 
-    public void setExpiresAt(Instant expiresAt) {
-        this.expiresAt = expiresAt;
-    }
-
     public String getReason() {
         return reason;
-    }
-
-    public void setReason(String reason) {
-        this.reason = reason;
-    }
-
-    public Integer getVersion() {
-        return version;
-    }
-
-    public void setVersion(Integer version) {
-        this.version = version;
     }
 
 }

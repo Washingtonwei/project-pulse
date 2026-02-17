@@ -1,34 +1,32 @@
-package team.projectpulse.ram.document.converter;
+package team.projectpulse.ram.usecase.converter;
 
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
-import team.projectpulse.ram.document.DocumentSectionLock;
-import team.projectpulse.ram.document.dto.DocumentSectionLockDto;
+import team.projectpulse.ram.usecase.UseCaseLock;
+import team.projectpulse.ram.usecase.dto.UseCaseLockDto;
 import team.projectpulse.user.converter.PeerEvaluationUserToPeerEvaluationUserDtoConverter;
 
 import java.time.Instant;
 
 @Component
-public class DocumentSectionLockToDocumentSectionLockDtoConverter implements Converter<DocumentSectionLock, DocumentSectionLockDto> {
+public class UseCaseLockToUseCaseLockDtoConverter implements Converter<UseCaseLock, UseCaseLockDto> {
 
     private final PeerEvaluationUserToPeerEvaluationUserDtoConverter peerEvaluationUserToPeerEvaluationUserDtoConverter;
 
 
-    public DocumentSectionLockToDocumentSectionLockDtoConverter(
-            PeerEvaluationUserToPeerEvaluationUserDtoConverter peerEvaluationUserToPeerEvaluationUserDtoConverter) {
+    public UseCaseLockToUseCaseLockDtoConverter(PeerEvaluationUserToPeerEvaluationUserDtoConverter peerEvaluationUserToPeerEvaluationUserDtoConverter) {
         this.peerEvaluationUserToPeerEvaluationUserDtoConverter = peerEvaluationUserToPeerEvaluationUserDtoConverter;
     }
 
     @Override
-    public DocumentSectionLockDto convert(DocumentSectionLock source) {
+    public UseCaseLockDto convert(UseCaseLock source) {
         Instant now = Instant.now();
         boolean locked = source.isLocked(now);
 
         if (!locked) {
-            // Section is effectively unlocked
-            return new DocumentSectionLockDto(
+            return new UseCaseLockDto(
                     false,
-                    source.getDocumentSection().getId(),
+                    source.getUseCase().getId(),
                     null,
                     null,
                     null,
@@ -36,9 +34,9 @@ public class DocumentSectionLockToDocumentSectionLockDtoConverter implements Con
             );
         }
 
-        return new DocumentSectionLockDto(
+        return new UseCaseLockDto(
                 true,
-                source.getDocumentSection().getId(),
+                source.getUseCase().getId(),
                 source.getLockedBy() != null ?
                         peerEvaluationUserToPeerEvaluationUserDtoConverter.convert(source.getLockedBy()) : null,
                 source.getLockedAt(),
@@ -48,4 +46,3 @@ public class DocumentSectionLockToDocumentSectionLockDtoConverter implements Con
     }
     
 }
-

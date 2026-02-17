@@ -15,11 +15,13 @@ public class UseCaseToUseCaseDtoConverter implements Converter<UseCase, UseCaseD
     private final UseCaseMainStepToUseCaseMainStepDtoConverter useCaseMainStepToUseCaseMainStepDtoConverter;
     private final RequirementArtifactToConditionDtoConverter requirementArtifactToConditionDtoConverter;
     private final PeerEvaluationUserToPeerEvaluationUserDtoConverter peerEvaluationUserToPeerEvaluationUserDtoConverter;
+    private final UseCaseLockToUseCaseLockDtoConverter useCaseLockToUseCaseLockDtoConverter;
 
-    public UseCaseToUseCaseDtoConverter(UseCaseMainStepToUseCaseMainStepDtoConverter useCaseMainStepToUseCaseMainStepDtoConverter, RequirementArtifactToConditionDtoConverter requirementArtifactToConditionDtoConverter, PeerEvaluationUserToPeerEvaluationUserDtoConverter peerEvaluationUserToPeerEvaluationUserDtoConverter) {
+    public UseCaseToUseCaseDtoConverter(UseCaseMainStepToUseCaseMainStepDtoConverter useCaseMainStepToUseCaseMainStepDtoConverter, RequirementArtifactToConditionDtoConverter requirementArtifactToConditionDtoConverter, PeerEvaluationUserToPeerEvaluationUserDtoConverter peerEvaluationUserToPeerEvaluationUserDtoConverter, UseCaseLockToUseCaseLockDtoConverter useCaseLockToUseCaseLockDtoConverter) {
         this.useCaseMainStepToUseCaseMainStepDtoConverter = useCaseMainStepToUseCaseMainStepDtoConverter;
         this.requirementArtifactToConditionDtoConverter = requirementArtifactToConditionDtoConverter;
         this.peerEvaluationUserToPeerEvaluationUserDtoConverter = peerEvaluationUserToPeerEvaluationUserDtoConverter;
+        this.useCaseLockToUseCaseLockDtoConverter = useCaseLockToUseCaseLockDtoConverter;
     }
 
     @Override
@@ -41,7 +43,9 @@ public class UseCaseToUseCaseDtoConverter implements Converter<UseCase, UseCaseD
                 source.getArtifact().getCreatedAt(),
                 source.getArtifact().getUpdatedAt(),
                 source.getArtifact().getCreatedBy() == null ? null : peerEvaluationUserToPeerEvaluationUserDtoConverter.convert(source.getArtifact().getCreatedBy()),
-                source.getArtifact().getUpdatedBy() == null ? null : peerEvaluationUserToPeerEvaluationUserDtoConverter.convert(source.getArtifact().getUpdatedBy())
+                source.getArtifact().getUpdatedBy() == null ? null : peerEvaluationUserToPeerEvaluationUserDtoConverter.convert(source.getArtifact().getUpdatedBy()),
+                source.getVersion(),
+                source.getLock() == null ? null : useCaseLockToUseCaseLockDtoConverter.convert(source.getLock())
         );
     }
 

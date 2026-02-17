@@ -370,6 +370,8 @@ class UseCaseControllerTest {
     @Test
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     void updateUseCaseWithRewordedContent() throws Exception {
+        lockUseCase(1, 3, this.studentEricToken);
+        int version = fetchUseCaseVersion(1, 3, this.studentEricToken);
         // Given
         String json = """
                 {
@@ -526,6 +528,7 @@ class UseCaseControllerTest {
                      "notes": "Updated notes"
                  }
                 """;
+        json = addVersionToUseCasePayload(json, version);
 
         // When and then
         this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentEricToken))
@@ -542,6 +545,8 @@ class UseCaseControllerTest {
     @Test
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     void updateUseCaseWithNewSteps() throws Exception {
+        lockUseCase(1, 3, this.studentJohnToken);
+        int version = fetchUseCaseVersion(1, 3, this.studentJohnToken);
         // Given
         String json = """
                 {
@@ -721,6 +726,7 @@ class UseCaseControllerTest {
                     "notes": ""
                 }
                 """;
+        json = addVersionToUseCasePayload(json, version);
 
         // When and then
         this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
@@ -738,6 +744,8 @@ class UseCaseControllerTest {
     @Test
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     void updateUseCaseWithDeletedSteps() throws Exception {
+        lockUseCase(1, 3, this.adminBingyangToken);
+        int version = fetchUseCaseVersion(1, 3, this.adminBingyangToken);
         // Given
         String json = """
                 {
@@ -883,6 +891,7 @@ class UseCaseControllerTest {
                      "notes": ""
                  }
                 """;
+        json = addVersionToUseCasePayload(json, version);
 
         // When and then
         this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
@@ -1050,6 +1059,128 @@ class UseCaseControllerTest {
                 .andExpect(jsonPath("$.flag").value(false))
                 .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
                 .andExpect(jsonPath("$.message").value("No permission."));
+    }
+
+    @Test
+    void getUseCaseLockStatus() throws Exception {
+        this.mockMvc.perform(get(this.baseUrl + "/teams/1/use-cases/3/lock")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.message").value("Find lock status successfully"))
+                .andExpect(jsonPath("$.data.useCaseId").value(3));
+    }
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    void lockUseCase() throws Exception {
+        lockUseCase(1, 3, this.studentJohnToken);
+
+        this.mockMvc.perform(get(this.baseUrl + "/teams/1/use-cases/3/lock")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.data.locked").value(true))
+                .andExpect(jsonPath("$.data.useCaseId").value(3));
+    }
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    void lockUseCase_AlreadyLocked() throws Exception {
+        lockUseCase(1, 3, this.studentJohnToken);
+
+        String json = """
+                {
+                    "reason": "Locking use case for editing"
+                }
+                """;
+
+        this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3/lock")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.studentEricToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.LOCKED));
+    }
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    void unlockUseCase() throws Exception {
+        lockUseCase(1, 3, this.studentJohnToken);
+
+        this.mockMvc.perform(delete(this.baseUrl + "/teams/1/use-cases/3/lock")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.message").value("Unlock use case successfully"));
+    }
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    void unlockUseCase_DifferentOwner() throws Exception {
+        lockUseCase(1, 3, this.studentJohnToken);
+
+        this.mockMvc.perform(delete(this.baseUrl + "/teams/1/use-cases/3/lock")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.studentEricToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
+                .andExpect(jsonPath("$.message").value("Only the lock owner or an instructor can unlock this use case."));
+    }
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    void unlockUseCase_Instructor() throws Exception {
+        lockUseCase(1, 3, this.studentJohnToken);
+
+        this.mockMvc.perform(delete(this.baseUrl + "/teams/1/use-cases/3/lock")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.message").value("Unlock use case successfully"));
+    }
+
+    private void lockUseCase(int teamId, int useCaseId, String token) throws Exception {
+        String json = """
+                {
+                    "reason": "Locking use case for editing"
+                }
+                """;
+        this.mockMvc.perform(put(this.baseUrl + "/teams/" + teamId + "/use-cases/" + useCaseId + "/lock")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, token))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.message").value("Lock use case successfully"))
+                .andExpect(jsonPath("$.data.locked").value(true))
+                .andExpect(jsonPath("$.data.useCaseId").value(useCaseId));
+    }
+
+    private int fetchUseCaseVersion(int teamId, int useCaseId, String token) throws Exception {
+        MvcResult result = this.mockMvc.perform(
+                        get(this.baseUrl + "/teams/" + teamId + "/use-cases/" + useCaseId)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .header(HttpHeaders.AUTHORIZATION, token)
+                )
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        JSONObject json = new JSONObject(content);
+        return json.getJSONObject("data").getInt("version");
+    }
+
+    private String addVersionToUseCasePayload(String payload, int version) {
+        int lastBrace = payload.lastIndexOf('}');
+        if (lastBrace < 0) {
+            return payload;
+        }
+        return payload.substring(0, lastBrace) + ",\n                     \"version\": " + version + "\n                 }";
     }
 
 }
