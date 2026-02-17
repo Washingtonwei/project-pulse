@@ -206,6 +206,15 @@ export interface UseCaseMainStep {
   extensions: UseCaseExtension[]
 }
 
+export interface UseCaseLock {
+  locked: boolean
+  useCaseId: number
+  lockedBy?: PeerEvaluationUserRef | null
+  lockedAt?: string | null
+  expiresAt?: string | null
+  reason?: string | null
+}
+
 export interface UseCase {
   id?: number
   artifactKey?: string | null
@@ -224,8 +233,16 @@ export interface UseCase {
   updatedAt?: string | null
   createdBy?: PeerEvaluationUserRef | null
   updatedBy?: PeerEvaluationUserRef | null
+  version?: number | null
+  lock?: UseCaseLock | null
+}
+
+export interface UseCaseLockRequest {
+  reason?: string
 }
 
 export interface UseCaseResponse extends ApiResult<UseCase> {}
+
+export interface UseCaseLockResponse extends ApiResult<UseCaseLock> {}
 
 export interface GlossaryTermResponse extends ApiResult<RequirementArtifact> {}

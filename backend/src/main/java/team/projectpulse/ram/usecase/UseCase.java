@@ -66,10 +66,13 @@ public class UseCase {
     @OrderColumn(name = "main_step_index")
     private List<UseCaseMainStep> mainSteps = new ArrayList<>();
 
+    @OneToOne(mappedBy = "useCase", cascade = CascadeType.ALL, orphanRemoval = true)
+    private UseCaseLock lock; // Only one user can edit a use case at a time
+
     @Version
     private Integer version;
 
-    
+
     public UseCase() {
     }
 
@@ -92,6 +95,13 @@ public class UseCase {
         this.mainSteps.clear();
         if (newSteps != null) {
             newSteps.forEach(this::addMainStep);
+        }
+    }
+
+    public void initLockIfMissing() {
+        if (this.lock == null) {
+            this.lock = new UseCaseLock();
+            this.lock.setUseCase(this);
         }
     }
 
@@ -208,6 +218,10 @@ public class UseCase {
 
     public Integer getVersion() {
         return version;
+    }
+
+    public UseCaseLock getLock() {
+        return lock;
     }
 
 }

@@ -1,6 +1,7 @@
 package team.projectpulse.ram.document;
 
 import jakarta.persistence.OptimisticLockException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import team.projectpulse.ram.requirement.SectionType;
@@ -16,16 +17,18 @@ import java.time.Instant;
 @Transactional
 public class DocumentSectionService {
 
-    private static final Duration DEFAULT_LOCK_TTL = Duration.ofMinutes(15);
+    private final Duration defaultLockTtl;
     private final DocumentSectionRepository documentSectionRepository;
     private final UserUtils userUtils;
     private final UserRepository userRepository;
 
 
-    public DocumentSectionService(DocumentSectionRepository documentSectionRepository, UserUtils userUtils, UserRepository userRepository) {
+    public DocumentSectionService(DocumentSectionRepository documentSectionRepository, UserUtils userUtils, UserRepository userRepository,
+                                  @Value("${ram.lock.default-lock-ttl:PT15M}") Duration defaultLockTtl) {
         this.documentSectionRepository = documentSectionRepository;
         this.userUtils = userUtils;
         this.userRepository = userRepository;
+        this.defaultLockTtl = defaultLockTtl;
     }
 
     public DocumentSection findDocumentSectionByIdWithFullGraph(Integer teamId, Long documentId, Long documentSectionId) {
@@ -58,7 +61,7 @@ public class DocumentSectionService {
                 .orElseThrow(() -> new ObjectNotFoundException("user", currentUserId));
 
         Instant now = Instant.now();
-        Instant expiresAt = now.plus(DEFAULT_LOCK_TTL);
+        Instant expiresAt = now.plus(defaultLockTtl);
 
         // Normalize expired lock
         if (sectionLock.isExpired(now)) {

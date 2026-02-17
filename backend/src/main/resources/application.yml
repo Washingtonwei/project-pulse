@@ -21,6 +21,9 @@ server:
 api:
   endpoint:
     base-url: /api/v1
+ram:
+  lock:
+    default-lock-ttl: PT15M # 15 minutes, adjust as needed based on expected operation duration and load.
 management:
   endpoints:
     web:
