@@ -45,19 +45,17 @@
 
 <script setup lang="ts">
 defineProps(['menuRoute']) // menuRoute is the route object that contains the children
+import { computed } from 'vue'
 import { useUserInfoStore } from '@/stores/userInfo'
 
 const userInfoStore = useUserInfoStore()
-let userPermissions: string[] = []
-
-if (userInfoStore.userInfo) {
-  // if userInfo is not null, split the roles string into an array of permissions
-  userPermissions = userInfoStore.userInfo.roles!.split(' ') as string[]
-}
+const userPermissions = computed(() => userInfoStore.roleList)
 
 const hasPermission = (requiredPermissions: string[] | undefined) => {
   if (requiredPermissions === undefined) return true
-  return requiredPermissions.every((permission) => userPermissions.includes(permission))
+  return requiredPermissions.some((permission) =>
+    userPermissions.value.includes(permission.toLowerCase())
+  )
 }
 </script>
 

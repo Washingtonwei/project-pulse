@@ -71,14 +71,14 @@ function isLoggedIn(): boolean {
 function checkPermissions(to: RouteLocationNormalized) {
   // Get the user's permissions from the store
   const userInfoStore = useUserInfoStore()
-  const userPermissions = userInfoStore.userInfo!.roles
+  const userPermissions = userInfoStore.roleList
   // Check if the route requires permissions
   if (to.meta.requiresPermissions) {
     // Get the required permissions from the route
     const requiredPermissions: string[] = to.meta.requiresPermissions as string[]
-    // Check if the user has the required permissions
-    const hasPermissions = requiredPermissions.every((permission) =>
-      userPermissions!.includes(permission)
+    // A route can allow multiple roles; user needs any one of them.
+    const hasPermissions = requiredPermissions.some((permission) =>
+      userPermissions.includes(permission.toLowerCase())
     )
     return hasPermissions
   } else {

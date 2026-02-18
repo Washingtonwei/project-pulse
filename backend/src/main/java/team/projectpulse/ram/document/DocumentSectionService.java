@@ -4,6 +4,9 @@ import jakarta.persistence.OptimisticLockException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+import team.projectpulse.ram.requirement.RequirementArtifact;
+import team.projectpulse.ram.requirement.RequirementArtifactService;
 import team.projectpulse.ram.requirement.SectionType;
 import team.projectpulse.system.UserUtils;
 import team.projectpulse.system.exception.*;
@@ -19,13 +22,15 @@ public class DocumentSectionService {
 
     private final Duration defaultLockTtl;
     private final DocumentSectionRepository documentSectionRepository;
+    private final RequirementArtifactService requirementArtifactService;
     private final UserUtils userUtils;
     private final UserRepository userRepository;
 
 
-    public DocumentSectionService(DocumentSectionRepository documentSectionRepository, UserUtils userUtils, UserRepository userRepository,
+    public DocumentSectionService(DocumentSectionRepository documentSectionRepository, RequirementArtifactService requirementArtifactService, UserUtils userUtils, UserRepository userRepository,
                                   @Value("${ram.lock.default-lock-ttl:PT15M}") Duration defaultLockTtl) {
         this.documentSectionRepository = documentSectionRepository;
+        this.requirementArtifactService = requirementArtifactService;
         this.userUtils = userUtils;
         this.userRepository = userRepository;
         this.defaultLockTtl = defaultLockTtl;
@@ -134,6 +139,23 @@ public class DocumentSectionService {
 
         oldDocumentSection.setContent(update.getContent());
         if (oldDocumentSection.getType() == SectionType.LIST) {
+            if (update.getRequirementArtifacts() != null) {
+                for (RequirementArtifact artifact : update.getRequirementArtifacts()) {
+                    artifact.setTeam(oldDocumentSection.getDocument().getTeam()); // ensure team is set for artifact
+                    if (artifact.getId() == null) { // new artifact, generate key
+                        if (artifact.getType() == null) {
+                            throw new IllegalArgumentException("Requirement artifact type is required.");
+                        }
+                        artifact.setArtifactKey(
+                                requirementArtifactService.generateNextArtifactKey(teamId, artifact.getType())
+                        );
+                    } else if (!StringUtils.hasText(artifact.getArtifactKey())) {
+                        artifact.setArtifactKey(
+                                requirementArtifactService.generateNextArtifactKey(teamId, artifact.getType())
+                        );
+                    }
+                }
+            }
             oldDocumentSection.replaceAllRequirementArtifacts(update.getRequirementArtifacts());
         }
         return this.documentSectionRepository.save(oldDocumentSection);

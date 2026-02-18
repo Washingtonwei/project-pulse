@@ -58,7 +58,7 @@ sections:
 
   - sectionKey: "REFERENCES"
     title: "References"
-    type: "LIST"
+    type: "RICH_TEXT"
     guidance: |
       Provide a complete list of all documents referenced in this Vision document.
 
@@ -162,7 +162,7 @@ sections:
 
   - sectionKey: "STAKEHOLDER_PROFILES"
     title: "Stakeholder Profiles"
-    type: "RICH_TEXT"
+    type: "LIST"
     guidance: |
       Identify all stakeholders and users involved in the project.
 
