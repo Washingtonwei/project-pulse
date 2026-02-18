@@ -53,7 +53,7 @@ sections:
 
   - sectionKey: "REFERENCES"
     title: "References"
-    type: "LIST"
+    type: "RICH_TEXT"
     guidance: |
       List any documents or resources referenced by this SRS.
 
@@ -199,7 +199,7 @@ sections:
 
   - sectionKey: "BUSINESS_RULES"
     title: "Business Rules"
-    type: "RICH_TEXT"
+    type: "LIST"
     guidance: |
       Document corporate policies, regulations, standards, and rules the system must conform to.
 
@@ -221,7 +221,7 @@ sections:
 
   - sectionKey: "DATA_LIFECYCLE"
     title: "Data Acquisition, Integrity, Retention, and Disposal"
-    type: "LIST"
+    type: "RICH_TEXT"
     guidance: |
       Describe how data is acquired, protected, retained, and disposed of.
 
@@ -283,7 +283,7 @@ sections:
 
   - sectionKey: "QUALITY_ATTRIBUTES"
     title: "Quality Attributes"
-    type: "RICH_TEXT"
+    type: "LIST"
     guidance: |
       Describe quality attributes such as usability, performance, security, and reliability.
 

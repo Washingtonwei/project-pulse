@@ -6,8 +6,12 @@
       v-if="!hasTeam"
       type="warning"
       show-icon
-      title="No team assigned"
-      description="Ask your instructor to assign you to a team before authoring requirements."
+      :title="isInstructor ? 'No team selected' : 'No team assigned'"
+      :description="
+        isInstructor
+          ? 'Select a team to view and manage requirement documents.'
+          : 'Ask your instructor to assign you to a team before authoring requirements.'
+      "
     />
 
     <el-skeleton v-else-if="loading" :rows="6" animated />
@@ -351,6 +355,7 @@ import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import Link from '@tiptap/extension-link'
 import { useUserInfoStore } from '@/stores/userInfo'
+import type { Instructor } from '@/apis/instructor/types'
 import type { Student } from '@/apis/student/types'
 import {
   PRIORITIES,
@@ -375,9 +380,24 @@ const route = useRoute()
 const userInfoStore = useUserInfoStore()
 
 const documentId = computed(() => Number(route.params.documentId))
-const teamId = computed(() => (userInfoStore.userInfo as Student | null)?.teamId ?? null)
-const currentUserId = computed(() => (userInfoStore.userInfo as Student | null)?.id ?? null)
-const hasTeam = computed(() => Boolean(teamId.value))
+const isInstructor = computed(() => userInfoStore.isInstructor)
+const studentTeamId = computed(() => (userInfoStore.userInfo as Student | null)?.teamId ?? null)
+const routeTeamId = computed(() => {
+  const raw = route.query.teamId
+  const value = Array.isArray(raw) ? raw[0] : raw
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null
+})
+const effectiveTeamId = computed(() =>
+  isInstructor.value ? routeTeamId.value : studentTeamId.value
+)
+const currentUserId = computed(() => (userInfoStore.userInfo as Student | Instructor | null)?.id ?? null)
+const hasTeam = computed(() => Boolean(effectiveTeamId.value))
+const ramQuery = computed(() =>
+  isInstructor.value && effectiveTeamId.value
+    ? { teamId: String(effectiveTeamId.value) }
+    : undefined
+)
 
 // The main document being edited
 const document = ref<RequirementDocument | null>(null)
@@ -458,19 +478,23 @@ const lockedByMe = computed(() => {
 // Determine if the current user can lock, unlock, or edit the selected section based on its lock status and ownership
 const canLock = computed(() => Boolean(selectedSection.value && !lockInfo.value?.locked))
 const canUnlock = computed(() =>
-  Boolean(selectedSection.value && lockInfo.value?.locked && lockedByMe.value)
+  Boolean(
+    selectedSection.value &&
+      lockInfo.value?.locked &&
+      (lockedByMe.value || isInstructor.value)
+  )
 )
 const canEdit = computed(() => Boolean(selectedSection.value && lockedByMe.value))
 
 function goBack() {
-  router.push({ name: 'ram-documents' })
+  router.push({ name: 'ram-documents', query: ramQuery.value })
 }
 
 async function loadDocument() {
-  if (!teamId.value || !documentId.value) return
+  if (!effectiveTeamId.value || !documentId.value) return
   loading.value = true
   try {
-    const result = await findDocumentById(teamId.value, documentId.value)
+    const result = await findDocumentById(effectiveTeamId.value, documentId.value)
     document.value = result.data
     if (document.value.sections.length) {
       selectedSectionId.value = document.value.sections[0]!.id
@@ -483,13 +507,13 @@ async function loadDocument() {
 
 // Load a specific section's content and lock info from the server. This is called when a section is selected in the sidebar, and also after locking/unlocking to refresh the lock status and any server-side updates to the section.
 async function loadSection(sectionId: number) {
-  if (!teamId.value || !documentId.value) return
+  if (!effectiveTeamId.value || !documentId.value) return
   // Track the latest in-flight request to avoid race conditions when users switch fast.
   sectionRequestToken.value += 1
   const currentToken = sectionRequestToken.value
   sectionLoading.value = true
   try {
-    const result = await findDocumentSectionById(teamId.value, documentId.value, sectionId)
+    const result = await findDocumentSectionById(effectiveTeamId.value, documentId.value, sectionId)
     if (sectionRequestToken.value !== currentToken) return // A newer request has started, ignore this response
     if (document.value) {
       const index = document.value.sections.findIndex((section) => section.id === sectionId)
@@ -531,12 +555,16 @@ watch(canEdit, (value) => {
 })
 
 async function lockSection() {
-  if (!teamId.value || !documentId.value || !selectedSection.value) return
+  if (!effectiveTeamId.value || !documentId.value || !selectedSection.value) return
   const sectionId = selectedSection.value.id
   locking.value = true
   try {
     // Fetch the latest section before locking to avoid editing stale content.
-    const latestResult = await findDocumentSectionById(teamId.value, documentId.value, sectionId)
+    const latestResult = await findDocumentSectionById(
+      effectiveTeamId.value,
+      documentId.value,
+      sectionId
+    )
     if (selectedSectionId.value !== sectionId) return // The user switched to another section while this request was in-flight, ignore the result
     const latestSection = latestResult.data
     if (selectedSection.value.updatedAt && latestSection.updatedAt) {
@@ -556,7 +584,7 @@ async function lockSection() {
     }
 
     // Lock the section after refreshing content to prevent overwriting others' changes.
-    const result = await lockDocumentSection(teamId.value, documentId.value, sectionId, {})
+    const result = await lockDocumentSection(effectiveTeamId.value, documentId.value, sectionId, {})
     if (selectedSectionId.value !== sectionId) return
     selectedSection.value.lock = result.data
     // Reload to get latest lock metadata and any server-side updates.
@@ -568,12 +596,12 @@ async function lockSection() {
 }
 
 async function unlockSection() {
-  if (!teamId.value || !documentId.value || !selectedSection.value) return
+  if (!effectiveTeamId.value || !documentId.value || !selectedSection.value) return
   unlocking.value = true
   try {
-    await unlockDocumentSection(teamId.value, documentId.value, selectedSection.value.id)
+    await unlockDocumentSection(effectiveTeamId.value, documentId.value, selectedSection.value.id)
     const refreshed = await getDocumentSectionLock(
-      teamId.value,
+      effectiveTeamId.value,
       documentId.value,
       selectedSection.value.id
     )
@@ -585,10 +613,11 @@ async function unlockSection() {
 }
 
 async function saveSection() {
-  if (!teamId.value || !documentId.value || !selectedSection.value) return
+  if (!effectiveTeamId.value || !documentId.value || !selectedSection.value) return
   saving.value = true
   try {
     const payload: UpdateDocumentSectionRequest = {
+      type: selectedSection.value.type,
       content: draftContent.value, // For rich text sections, this is the HTML content. For list sections, this can be ignored.
       // For list sections, send the updated list of requirement artifacts. For rich text sections, this can be an empty array.
       requirementArtifacts:
@@ -602,7 +631,7 @@ async function saveSection() {
     }
 
     const result = await updateDocumentSection(
-      teamId.value,
+      effectiveTeamId.value,
       documentId.value,
       selectedSection.value.id,
       payload
@@ -616,7 +645,6 @@ async function saveSection() {
     ElMessage.success('Section saved')
   } catch (error: any) {
     if (error?.response?.status === 409) {
-      ElMessage.error('Section was updated by someone else. Please refresh and try again.')
       await loadSection(selectedSection.value.id)
       return
     }
@@ -692,7 +720,7 @@ async function ensureDocumentLoaded() {
 onMounted(ensureDocumentLoaded)
 
 watch(
-  () => teamId.value,
+  () => effectiveTeamId.value,
   async (value, previous) => {
     if (!value || value === previous) return
     await ensureDocumentLoaded()

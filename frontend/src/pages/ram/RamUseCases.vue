@@ -6,8 +6,12 @@
       v-if="!hasTeam"
       type="warning"
       show-icon
-      title="No team assigned"
-      description="Ask your instructor to assign you to a team before authoring use cases."
+      :title="isInstructor ? 'No team selected' : 'No team assigned'"
+      :description="
+        isInstructor
+          ? 'Select a team to view and manage use cases.'
+          : 'Ask your instructor to assign you to a team before authoring use cases.'
+      "
     />
 
     <el-skeleton v-else-if="loading" :rows="6" animated />
@@ -414,8 +418,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserInfoStore } from '@/stores/userInfo'
 import type { Student } from '@/apis/student/types'
@@ -430,13 +434,28 @@ import {
   unlockUseCase
 } from '@/apis/ram'
 
+const route = useRoute()
 const router = useRouter()
 const userInfoStore = useUserInfoStore()
 
-const teamId = computed(() => (userInfoStore.userInfo as Student | null)?.teamId ?? null)
-const currentUserId = computed(() => userInfoStore.userInfo?.id ?? null)
 const isInstructor = computed(() => userInfoStore.isInstructor)
-const hasTeam = computed(() => Boolean(teamId.value))
+const studentTeamId = computed(() => (userInfoStore.userInfo as Student | null)?.teamId ?? null)
+const routeTeamId = computed(() => {
+  const raw = route.query.teamId
+  const value = Array.isArray(raw) ? raw[0] : raw
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null
+})
+const effectiveTeamId = computed(() =>
+  isInstructor.value ? routeTeamId.value : studentTeamId.value
+)
+const currentUserId = computed(() => userInfoStore.userInfo?.id ?? null)
+const hasTeam = computed(() => Boolean(effectiveTeamId.value))
+const ramQuery = computed(() =>
+  isInstructor.value && effectiveTeamId.value
+    ? { teamId: String(effectiveTeamId.value) }
+    : undefined
+)
 
 const loading = ref(false)
 const saving = ref(false)
@@ -460,7 +479,6 @@ const currentUseCase = ref<UseCase>(createEmptyUseCase())
 // activeStepIndex tracks which main step is currently active for editing. This allows us to show the step details in the sidebar and manage focus when adding new steps.
 const activeStepIndex = ref<number | null>(null)
 const actionRefs = ref<Record<number, any>>({})
-let lockPollTimer: ReturnType<typeof setInterval> | null = null
 
 const lockInfo = computed(() => currentUseCase.value.lock || null)
 const lockedByMe = computed(
@@ -492,7 +510,7 @@ function createEmptyUseCase(): UseCase {
   return {
     title: '',
     description: '',
-    teamId: teamId.value || 0,
+    teamId: effectiveTeamId.value || 0,
     primaryActorId: 0,
     secondaryActorIds: [],
     trigger: '',
@@ -507,37 +525,33 @@ function createEmptyUseCase(): UseCase {
 }
 
 function goBack() {
-  router.push({ name: 'ram-documents' })
+  router.push({ name: 'ram-documents', query: ramQuery.value })
 }
 
 // We use searchRequirementArtifacts instead of searchUseCases to populate the sidebar without loading too many use case details at once. The main content will load the full use case data when selected.
 async function loadUseCases() {
-  if (!teamId.value) return
+  if (!effectiveTeamId.value) return
   try {
     const result = await searchRequirementArtifacts(
-      teamId.value,
+      effectiveTeamId.value,
       { page: 0, size: 200 },
       { type: 'USE_CASE' }
     )
     useCases.value = result.data.content
     filterList()
-  } catch (error: any) {
-    const message = error?.response?.data?.message || 'Failed to load use cases'
-    ElMessage.error(message)
+  } catch {
   }
 }
 
 // In a use case, actors can be either stakeholders or external interface requirements. For example, a stakeholder could be a user role like "Customer" or "Admin", while an external interface requirement could represent an external system that interacts with the use case.
 async function loadStakeholders() {
-  if (!teamId.value) return
+  if (!effectiveTeamId.value) return
   try {
-    const result = await searchRequirementArtifacts(teamId.value, { page: 0, size: 500 }, {})
+    const result = await searchRequirementArtifacts(effectiveTeamId.value, { page: 0, size: 500 }, {})
     stakeholderOptions.value = result.data.content.filter((artifact) =>
       ['STAKEHOLDER', 'EXTERNAL_INTERFACE_REQUIREMENT'].includes(artifact.type)
     )
-  } catch (error: any) {
-    const message = error?.response?.data?.message || 'Failed to load actors'
-    ElMessage.error(message)
+  } catch {
   }
 }
 
@@ -552,17 +566,15 @@ function filterList() {
 
 // When a use case is selected from the sidebar, we load its full details to display in the main content area. This allows us to keep the sidebar list fast and responsive, even if there are many use cases.
 async function handleSelect(id: string) {
-  if (!teamId.value) return
+  if (!effectiveTeamId.value) return
   selectedUseCaseId.value = Number(id)
   isNew.value = false
   try {
-    const result = await getUseCaseById(teamId.value, selectedUseCaseId.value)
+    const result = await getUseCaseById(effectiveTeamId.value, selectedUseCaseId.value)
     currentUseCase.value = normalizeUseCase(result.data)
     await refreshUseCaseLock()
     activeStepIndex.value = null
-  } catch (error: any) {
-    const message = error?.response?.data?.message || 'Failed to load use case'
-    ElMessage.error(message)
+  } catch {
   }
 }
 
@@ -572,7 +584,6 @@ function createNew() {
   isNew.value = true
   currentUseCase.value = createEmptyUseCase()
   activeStepIndex.value = null
-  stopLockPolling()
 }
 
 // This function ensures that all optional fields in the use case have default values. This prevents issues with undefined values when rendering the form and allows us to work with a consistent data structure.
@@ -589,8 +600,8 @@ function normalizeUseCase(useCase: UseCase): UseCase {
 }
 
 async function refreshUseCaseLock() {
-  if (!teamId.value || !selectedUseCaseId.value || isNew.value) return
-  const result = await getUseCaseLock(teamId.value, selectedUseCaseId.value)
+  if (!effectiveTeamId.value || !selectedUseCaseId.value || isNew.value) return
+  const result = await getUseCaseLock(effectiveTeamId.value, selectedUseCaseId.value)
   currentUseCase.value = normalizeUseCase({
     ...currentUseCase.value,
     lock: result.data
@@ -598,31 +609,29 @@ async function refreshUseCaseLock() {
 }
 
 async function lockSelectedUseCase() {
-  if (!teamId.value || !selectedUseCaseId.value || isNew.value) return
+  if (!effectiveTeamId.value || !selectedUseCaseId.value || isNew.value) return
   locking.value = true
   try {
-    const result = await lockUseCase(teamId.value, selectedUseCaseId.value, {})
+    const result = await lockUseCase(effectiveTeamId.value, selectedUseCaseId.value, {})
     currentUseCase.value = normalizeUseCase({ ...currentUseCase.value, lock: result.data })
     await refreshUseCaseLock()
     ElMessage.success('Use case locked')
   } catch (error: any) {
-    const message = error?.response?.data?.message || 'Failed to lock use case'
-    ElMessage.error(message)
+    await refreshUseCaseLock().catch(() => undefined)
   } finally {
     locking.value = false
   }
 }
 
 async function unlockSelectedUseCase() {
-  if (!teamId.value || !selectedUseCaseId.value || isNew.value) return
+  if (!effectiveTeamId.value || !selectedUseCaseId.value || isNew.value) return
   unlocking.value = true
   try {
-    await unlockUseCase(teamId.value, selectedUseCaseId.value)
+    await unlockUseCase(effectiveTeamId.value, selectedUseCaseId.value)
     await refreshUseCaseLock()
     ElMessage.success('Use case unlocked')
-  } catch (error: any) {
-    const message = error?.response?.data?.message || 'Failed to unlock use case'
-    ElMessage.error(message)
+  } catch {
+    await refreshUseCaseLock().catch(() => undefined)
   } finally {
     unlocking.value = false
   }
@@ -765,7 +774,7 @@ function validateUseCase(): boolean {
 
 // The saveUseCase function handles both creating new use cases and updating existing ones. It first validates the form data, then constructs the payload for the API request. For existing use cases, it sends an update request, while for new use cases, it sends a create request. After saving, it reloads the list of use cases to reflect any changes and shows a success message. If there's an error during saving, it displays an error message with details.
 async function saveUseCase() {
-  if (!teamId.value) return
+  if (!effectiveTeamId.value) return
   if (!validateUseCase()) return
   if (!isNew.value && !lockedByMe.value) {
     ElMessage.warning('Lock this use case before saving changes.')
@@ -784,7 +793,7 @@ async function saveUseCase() {
 
     const payload = {
       ...currentUseCase.value,
-      teamId: teamId.value,
+      teamId: effectiveTeamId.value,
       mainSteps: currentUseCase.value.mainSteps.map((step) => ({
         ...step,
         actor: sanitizeActor(step.actor),
@@ -800,8 +809,8 @@ async function saveUseCase() {
 
     const result =
       isNew.value || !currentUseCase.value.id
-        ? await createUseCase(teamId.value, payload)
-        : await updateUseCase(teamId.value, currentUseCase.value.id, payload)
+        ? await createUseCase(effectiveTeamId.value, payload)
+        : await updateUseCase(effectiveTeamId.value, currentUseCase.value.id, payload)
 
     currentUseCase.value = normalizeUseCase(result.data)
     selectedUseCaseId.value = result.data.id || null
@@ -812,15 +821,13 @@ async function saveUseCase() {
     if (error?.response?.status === 409 || error?.response?.status === 423) {
       await refreshUseCaseLock()
     }
-    const message = error?.response?.data?.message || 'Failed to save use case'
-    ElMessage.error(message)
   } finally {
     saving.value = false
   }
 }
 
 async function ensureUseCasesLoaded() {
-  if (!teamId.value) return
+  if (!effectiveTeamId.value) return
   loading.value = true
   try {
     await Promise.all([loadUseCases(), loadStakeholders()])
@@ -833,53 +840,13 @@ onMounted(async () => {
   await ensureUseCasesLoaded()
 })
 
-function startLockPolling() {
-  stopLockPolling()
-  lockPollTimer = setInterval(() => {
-    refreshUseCaseLock().catch(() => {})
-  }, 15000)
-}
-
-function stopLockPolling() {
-  if (lockPollTimer) {
-    clearInterval(lockPollTimer)
-    lockPollTimer = null
-  }
-}
-
 watch(
-  () => teamId.value,
+  () => effectiveTeamId.value,
   async (value, previous) => {
     if (!value || value === previous) return
     await ensureUseCasesLoaded()
   }
 )
-
-watch(
-  () => selectedUseCaseId.value,
-  (value) => {
-    if (value && !isNew.value) {
-      startLockPolling()
-      return
-    }
-    stopLockPolling()
-  }
-)
-
-watch(
-  () => isNew.value,
-  (value) => {
-    if (value) {
-      stopLockPolling()
-      return
-    }
-    if (selectedUseCaseId.value) startLockPolling()
-  }
-)
-
-onUnmounted(() => {
-  stopLockPolling()
-})
 </script>
 
 <style scoped>

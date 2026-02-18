@@ -90,7 +90,7 @@ public class RequirementArtifactService {
         this.requirementArtifactRepository.delete(existing);
     }
 
-    private String generateNextArtifactKey(Integer teamId, RequirementArtifactType type) {
+    public String generateNextArtifactKey(Integer teamId, RequirementArtifactType type) {
         String prefix = ArtifactKeyPrefix.of(type);
 
         // Lock the counter row for this (team, type)

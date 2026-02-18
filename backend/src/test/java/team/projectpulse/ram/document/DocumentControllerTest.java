@@ -99,6 +99,19 @@ public class DocumentControllerTest {
     }
 
     @Test
+    void findDocumentsByCriteria_InstructorFromDifferentSection() throws Exception {
+        String json = """
+                {
+                    "type": "SRS"
+                }
+                """;
+        this.mockMvc.perform(post(this.baseUrl + "/teams/1/documents/search").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminTimToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
+                .andExpect(jsonPath("$.message").value("No permission."));
+    }
+
+    @Test
     void findDocumentById() throws Exception {
         this.mockMvc.perform(get(this.baseUrl + "/teams/1/documents/1").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(true))

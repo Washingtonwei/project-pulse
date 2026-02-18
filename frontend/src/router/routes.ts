@@ -115,68 +115,6 @@ export const routes = [
         ]
       },
       {
-        path: '/ram',
-        name: 'ram',
-        meta: {
-          title: 'Requirements',
-          icon: 'Document',
-          isMenuItem: true,
-          requiresAuth: true,
-          requiresPermissions: ['student']
-        },
-        redirect: '/ram/documents',
-        children: [
-          {
-            path: '/ram/documents',
-            component: () => import('@/pages/ram/RamDocuments.vue'),
-            name: 'ram-documents',
-            meta: {
-              title: 'Documents',
-              icon: 'Files',
-              isMenuItem: true,
-              requiresAuth: true,
-              requiresPermissions: ['student']
-            }
-          },
-          {
-            path: '/ram/documents/:documentId',
-            component: () => import('@/pages/ram/RamDocumentEditor.vue'),
-            name: 'ram-document-editor',
-            meta: {
-              title: 'Document Editor',
-              icon: 'EditPen',
-              isMenuItem: false,
-              requiresAuth: true,
-              requiresPermissions: ['student']
-            }
-          },
-          {
-            path: '/ram/glossary/:documentId',
-            component: () => import('@/pages/ram/RamGlossary.vue'),
-            name: 'ram-glossary',
-            meta: {
-              title: 'Glossary',
-              icon: 'Collection',
-              isMenuItem: false,
-              requiresAuth: true,
-              requiresPermissions: ['student']
-            }
-          },
-          {
-            path: '/ram/use-cases',
-            component: () => import('@/pages/ram/RamUseCases.vue'),
-            name: 'ram-use-cases',
-            meta: {
-              title: 'Use Cases',
-              icon: 'Tickets',
-              isMenuItem: false,
-              requiresAuth: true,
-              requiresPermissions: ['student']
-            }
-          }
-        ]
-      },
-      {
         path: '/courses',
         component: () => import('@/pages/courses/Courses.vue'),
         name: 'courses',
@@ -259,6 +197,68 @@ export const routes = [
           requiresAuth: true,
           requiresPermissions: ['instructor']
         }
+      },
+      {
+        path: '/ram',
+        name: 'ram',
+        meta: {
+          title: 'Requirements',
+          icon: 'Document',
+          isMenuItem: true,
+          requiresAuth: true,
+          requiresPermissions: ['student', 'instructor']
+        },
+        redirect: '/ram/documents',
+        children: [
+          {
+            path: '/ram/documents',
+            component: () => import('@/pages/ram/RamDocuments.vue'),
+            name: 'ram-documents',
+            meta: {
+              title: 'Documents',
+              icon: 'Files',
+              isMenuItem: true,
+              requiresAuth: true,
+              requiresPermissions: ['student', 'instructor']
+            }
+          },
+          {
+            path: '/ram/documents/:documentId',
+            component: () => import('@/pages/ram/RamDocumentEditor.vue'),
+            name: 'ram-document-editor',
+            meta: {
+              title: 'Document Editor',
+              icon: 'EditPen',
+              isMenuItem: false,
+              requiresAuth: true,
+              requiresPermissions: ['student', 'instructor']
+            }
+          },
+          {
+            path: '/ram/glossary/:documentId',
+            component: () => import('@/pages/ram/RamGlossary.vue'),
+            name: 'ram-glossary',
+            meta: {
+              title: 'Glossary',
+              icon: 'Collection',
+              isMenuItem: false,
+              requiresAuth: true,
+              requiresPermissions: ['student', 'instructor']
+            }
+          },
+          {
+            path: '/ram/use-cases',
+            component: () => import('@/pages/ram/RamUseCases.vue'),
+            name: 'ram-use-cases',
+            meta: {
+              title: 'Use Cases',
+              icon: 'Tickets',
+              isMenuItem: false,
+              requiresAuth: true,
+              requiresPermissions: ['student', 'instructor']
+            }
+          }
+        ]
       },
       {
         path: '/rubrics-criteria',

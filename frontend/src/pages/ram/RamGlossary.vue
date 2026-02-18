@@ -6,8 +6,12 @@
       v-if="!hasTeam"
       type="warning"
       show-icon
-      title="No team assigned"
-      description="Ask your instructor to assign you to a team before authoring glossary terms."
+      :title="isInstructor ? 'No team selected' : 'No team assigned'"
+      :description="
+        isInstructor
+          ? 'Select a team to view and manage glossary terms.'
+          : 'Ask your instructor to assign you to a team before authoring glossary terms.'
+      "
     />
 
     <el-skeleton v-else-if="loading" :rows="6" animated />
@@ -136,7 +140,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserInfoStore } from '@/stores/userInfo'
 import type { Student } from '@/apis/student/types'
@@ -149,11 +153,27 @@ import {
   renameGlossaryTerm
 } from '@/apis/ram'
 
+const route = useRoute()
 const router = useRouter()
 const userInfoStore = useUserInfoStore()
 
-const teamId = computed(() => (userInfoStore.userInfo as Student | null)?.teamId ?? null)
-const hasTeam = computed(() => Boolean(teamId.value))
+const isInstructor = computed(() => userInfoStore.isInstructor)
+const studentTeamId = computed(() => (userInfoStore.userInfo as Student | null)?.teamId ?? null)
+const routeTeamId = computed(() => {
+  const raw = route.query.teamId
+  const value = Array.isArray(raw) ? raw[0] : raw
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null
+})
+const effectiveTeamId = computed(() =>
+  isInstructor.value ? routeTeamId.value : studentTeamId.value
+)
+const hasTeam = computed(() => Boolean(effectiveTeamId.value))
+const ramQuery = computed(() =>
+  isInstructor.value && effectiveTeamId.value
+    ? { teamId: String(effectiveTeamId.value) }
+    : undefined
+)
 
 const loading = ref(false)
 const saving = ref(false)
@@ -179,22 +199,20 @@ const newTerm = ref<RequirementArtifact>({
 const renameValue = ref('')
 
 function goBack() {
-  router.push({ name: 'ram-documents' })
+  router.push({ name: 'ram-documents', query: ramQuery.value })
 }
 
 async function loadGlossary() {
-  if (!teamId.value) return
+  if (!effectiveTeamId.value) return
   try {
     const result = await searchRequirementArtifacts(
-      teamId.value,
+      effectiveTeamId.value,
       { page: 0, size: 200 },
       { type: 'GLOSSARY_TERM' }
     )
     glossaryTerms.value = result.data.content
     filterList()
-  } catch (error: any) {
-    const message = error?.response?.data?.message || 'Failed to load glossary'
-    ElMessage.error(message)
+  } catch {
   }
 }
 
@@ -208,14 +226,12 @@ function filterList() {
 }
 
 async function handleSelect(id: string) {
-  if (!teamId.value) return
+  if (!effectiveTeamId.value) return
   selectedTermId.value = Number(id)
   try {
-    const result = await getGlossaryTermById(teamId.value, selectedTermId.value)
+    const result = await getGlossaryTermById(effectiveTeamId.value, selectedTermId.value)
     currentTerm.value = result.data
-  } catch (error: any) {
-    const message = error?.response?.data?.message || 'Failed to load glossary term'
-    ElMessage.error(message)
+  } catch {
   }
 }
 
@@ -225,7 +241,7 @@ function openCreate() {
 }
 
 async function createTerm() {
-  if (!teamId.value) return
+  if (!effectiveTeamId.value) return
   if (!newTerm.value.title.trim() || !newTerm.value.content.trim()) {
     ElMessage.warning('Term and definition are required')
     return
@@ -233,16 +249,14 @@ async function createTerm() {
   saving.value = true
   try {
     const payload = { ...newTerm.value, type: 'GLOSSARY_TERM' }
-    const result = await createGlossaryTerm(teamId.value, payload)
+    const result = await createGlossaryTerm(effectiveTeamId.value, payload)
     glossaryTerms.value.unshift(result.data)
     filterList()
     selectedTermId.value = result.data.id || null
     currentTerm.value = result.data
     createDialogVisible.value = false
     ElMessage.success('Glossary term created')
-  } catch (error: any) {
-    const message = error?.response?.data?.message || 'Failed to create glossary term'
-    ElMessage.error(message)
+  } catch {
   } finally {
     saving.value = false
   }
@@ -254,7 +268,7 @@ function openRename() {
 }
 
 async function renameTerm() {
-  if (!teamId.value || !selectedTermId.value) return
+  if (!effectiveTeamId.value || !selectedTermId.value) return
   if (!renameValue.value.trim()) {
     ElMessage.warning('Term is required')
     return
@@ -262,42 +276,42 @@ async function renameTerm() {
   saving.value = true
   try {
     const payload = { ...currentTerm.value, title: renameValue.value }
-    const result = await renameGlossaryTerm(teamId.value, selectedTermId.value, payload)
+    const result = await renameGlossaryTerm(effectiveTeamId.value, selectedTermId.value, payload)
     currentTerm.value = result.data
     const idx = glossaryTerms.value.findIndex((term) => term.id === selectedTermId.value)
     if (idx >= 0) glossaryTerms.value[idx] = result.data
     filterList()
     renameDialogVisible.value = false
     ElMessage.success('Glossary term renamed')
-  } catch (error: any) {
-    const message = error?.response?.data?.message || 'Failed to rename glossary term'
-    ElMessage.error(message)
+  } catch {
   } finally {
     saving.value = false
   }
 }
 
 async function saveDefinition() {
-  if (!teamId.value || !selectedTermId.value) return
+  if (!effectiveTeamId.value || !selectedTermId.value) return
   saving.value = true
   try {
     const payload = { ...currentTerm.value, type: 'GLOSSARY_TERM' }
-    const result = await updateGlossaryTermDefinition(teamId.value, selectedTermId.value, payload)
+    const result = await updateGlossaryTermDefinition(
+      effectiveTeamId.value,
+      selectedTermId.value,
+      payload
+    )
     currentTerm.value = result.data
     const idx = glossaryTerms.value.findIndex((term) => term.id === selectedTermId.value)
     if (idx >= 0) glossaryTerms.value[idx] = result.data
     filterList()
     ElMessage.success('Definition saved')
-  } catch (error: any) {
-    const message = error?.response?.data?.message || 'Failed to save definition'
-    ElMessage.error(message)
+  } catch {
   } finally {
     saving.value = false
   }
 }
 
 async function ensureGlossaryLoaded() {
-  if (!teamId.value) return
+  if (!effectiveTeamId.value) return
   loading.value = true
   try {
     await loadGlossary()
@@ -311,7 +325,7 @@ onMounted(async () => {
 })
 
 watch(
-  () => teamId.value,
+  () => effectiveTeamId.value,
   async (value, previous) => {
     if (!value || value === previous) return
     await ensureGlossaryLoaded()

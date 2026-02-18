@@ -83,12 +83,8 @@ public class DocumentSection {
      */
     public void replaceAllRequirementArtifacts(List<RequirementArtifact> newArtifacts) {
         if (this.requirementArtifacts != null) {
-            System.out.println("Before copying, requirementArtifacts initialized? " +
-                    org.hibernate.Hibernate.isInitialized(this.requirementArtifacts));
             // Create a copy to avoid ConcurrentModificationException
             List<RequirementArtifact> oldArtifacts = new ArrayList<>(this.requirementArtifacts);
-            System.out.println("After copying, requirementArtifacts initialized? " +
-                    org.hibernate.Hibernate.isInitialized(this.requirementArtifacts));
             for (RequirementArtifact artifact : oldArtifacts) {
                 artifact.setSourceDocumentSection(null);  // Break back-reference
             }

@@ -159,6 +159,7 @@ export interface CreateRequirementDocumentRequest {
 export interface CreateDocumentResponse extends ApiResult<RequirementDocument> {}
 
 export interface UpdateDocumentSectionRequest {
+  type?: string
   content?: string
   requirementArtifacts?: RequirementArtifactSummary[]
   version?: number | null
