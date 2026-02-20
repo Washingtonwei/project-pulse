@@ -5,7 +5,8 @@ import { useTokenStore } from '@/stores/token'
 import { useUserInfoStore } from '@/stores/userInfo'
 import router from '@/router'
 
-const baseURL = import.meta.env.VITE_SERVER_URL as string
+// const baseURL = import.meta.env.VITE_SERVER_URL as string
+const baseURL = '/api/v1' // Frontend and backend are served from the same origin, so we can use a relative URL for API requests.
 const requestInstance = axios.create({ baseURL, timeout: 10_000 }) // 10 seconds
 
 // Simple toast cooldown (prevents spam on cascading failures)
