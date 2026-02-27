@@ -25,6 +25,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -92,6 +93,12 @@ public class ExceptionHandlerAdvice {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     Result handleNoHandlerFoundException(NoHandlerFoundException ex) {
         return new Result(false, StatusCode.NOT_FOUND, "This API endpoint is not found.", ex.getMessage());
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    Result handleNoResourceFoundException(NoResourceFoundException ex) {
+        return new Result(false, StatusCode.NOT_FOUND, "This resource is not found.", ex.getMessage());
     }
 
     @ExceptionHandler({HttpClientErrorException.class, HttpServerErrorException.class})

@@ -9,12 +9,16 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
-        // Forward non-API routes (not starting with /api) to index.html, e.g. /home, /login
-        registry.addViewController("/{spring:(?!api)[a-zA-Z0-9-]+}")
+        // Forward non-API UI routes to index.html, e.g. /home, /login.
+        registry.addViewController("/{spring:(?!api|actuator|v3|swagger-ui)[a-zA-Z0-9-]+}")
                 .setViewName("forward:/index.html");
 
-        // Forward non-API routes (not starting with /api) to index.html, e.g. /evaluation/my-evaluations
-        registry.addViewController("/{spring1:(?!api)[a-zA-Z0-9-]+}/{spring2:[a-zA-Z0-9-]+}")
+        // Forward nested UI routes to index.html, e.g. /evaluation/my-evaluations.
+        registry.addViewController("/{spring1:(?!api|actuator|v3|swagger-ui)[a-zA-Z0-9-]+}/{spring2:[a-zA-Z0-9-]+}")
+                .setViewName("forward:/index.html");
+
+        // Forward 3-segment UI routes to index.html, e.g. /ram/documents/1.
+        registry.addViewController("/{spring1:(?!api|actuator|v3|swagger-ui)[a-zA-Z0-9-]+}/{spring2:[a-zA-Z0-9-]+}/{spring3:[a-zA-Z0-9-]+}")
                 .setViewName("forward:/index.html");
     }
 
