@@ -1,6 +1,8 @@
 .DS_Store
 .idea/
 .vscode/*
+*.tmp.*
+.claude/settings.local.json
 
 backend/HELP.md
 backend/target/
