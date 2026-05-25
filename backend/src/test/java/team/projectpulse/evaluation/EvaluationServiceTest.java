@@ -1,5 +1,6 @@
 package team.projectpulse.evaluation;
 
+import org.junit.jupiter.api.AfterEach;
 import team.projectpulse.instructor.Instructor;
 import team.projectpulse.rubric.Criterion;
 import team.projectpulse.rubric.Rating;
@@ -288,6 +289,11 @@ class EvaluationServiceTest {
         PeerEvaluation peerEvaluation14 = new PeerEvaluation("2023-W32", jerry, eric, jerryEricRatingsW32, "eric needs to attend meeting!", "I am Jerry.");
 
         this.ericsW32Evaluations = List.of(peerEvaluation12, peerEvaluation13, peerEvaluation14);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext(); // Clear the security context after each test to avoid interference between tests
     }
 
     @Test
