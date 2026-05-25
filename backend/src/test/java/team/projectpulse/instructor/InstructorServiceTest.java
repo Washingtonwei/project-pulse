@@ -1,5 +1,6 @@
 package team.projectpulse.instructor;
 
+import org.junit.jupiter.api.AfterEach;
 import team.projectpulse.course.Course;
 import team.projectpulse.course.CourseRepository;
 import team.projectpulse.section.Section;
@@ -79,6 +80,11 @@ class InstructorServiceTest {
         instructor2.setDefaultSection(this.section);
 
         this.instructors = List.of(instructor1, instructor2);
+    }
+    
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext(); // Clear the security context after each test to avoid interference between tests
     }
 
     @Test

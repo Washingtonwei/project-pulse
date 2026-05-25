@@ -1,5 +1,6 @@
 package team.projectpulse.student;
 
+import org.junit.jupiter.api.AfterEach;
 import team.projectpulse.instructor.Instructor;
 import team.projectpulse.section.Section;
 import team.projectpulse.section.SectionRepository;
@@ -65,6 +66,11 @@ class StudentServiceTest {
         Student rosendo = new Student("rosendo", "Rosendo", "Maxwell", "r.maxwell@abc.edu", "123456", true, "student");
 
         this.students = List.of(john, eric, jerry, woody, amanda, cora, agustin, mavis, mary, rosendo);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext(); // Clear the security context after each test to avoid interference between tests
     }
 
     @Test
