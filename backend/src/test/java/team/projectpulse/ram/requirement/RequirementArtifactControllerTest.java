@@ -6,18 +6,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.utility.DockerImageName;
+import team.projectpulse.AbstractIntegrationTest;
 import team.projectpulse.system.StatusCode;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
@@ -25,9 +19,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-public class RequirementArtifactControllerTest {
+public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
 
     @Autowired
     MockMvc mockMvc;
@@ -44,10 +36,6 @@ public class RequirementArtifactControllerTest {
 
     @Value("${api.endpoint.base-url}")
     String baseUrl;
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"));
 
     @BeforeEach
     void setUp() throws Exception {
@@ -83,7 +71,7 @@ public class RequirementArtifactControllerTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
+
     void findRequirementArtifactsByCriteria1() throws Exception {
         String json = """
                 {
@@ -101,7 +89,7 @@ public class RequirementArtifactControllerTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
+
     void findRequirementArtifactsByCriteria2() throws Exception {
         String json = """
                 {
@@ -116,7 +104,7 @@ public class RequirementArtifactControllerTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
+
     void findRequirementArtifactsByCriteria3() throws Exception {
         String json = """
                 {
@@ -201,7 +189,7 @@ public class RequirementArtifactControllerTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+
     void updateRequirementArtifact() throws Exception {
         String json = """
                 {

@@ -1,33 +1,20 @@
 package team.projectpulse.user;
 
+import team.projectpulse.AbstractIntegrationTest;
 import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 import team.projectpulse.system.StatusCode;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
-@SpringBootTest
-@Testcontainers
-@AutoConfigureMockMvc
 @DisplayName("Integration tests for User API endpoints")
-@Tag("integration")
-@ActiveProfiles(value = "dev")
-class UserIntegrationTest {
+class UserIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     MockMvc mockMvc;
@@ -37,10 +24,6 @@ class UserIntegrationTest {
 
     @Value("${api.endpoint.base-url}")
     String baseUrl;
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"));
 
     @Test
     void testCheckUserExists1() throws Exception {

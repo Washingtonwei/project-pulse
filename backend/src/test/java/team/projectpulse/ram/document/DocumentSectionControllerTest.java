@@ -6,18 +6,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.utility.DockerImageName;
+import team.projectpulse.AbstractIntegrationTest;
 import team.projectpulse.system.StatusCode;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
@@ -25,9 +19,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-public class DocumentSectionControllerTest {
+public class DocumentSectionControllerTest extends AbstractIntegrationTest {
 
     @Autowired
     MockMvc mockMvc;
@@ -44,10 +36,6 @@ public class DocumentSectionControllerTest {
 
     @Value("${api.endpoint.base-url}")
     String baseUrl;
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"));
 
     @BeforeEach
     void setUp() throws Exception {
@@ -95,7 +83,7 @@ public class DocumentSectionControllerTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+
     void updateDocumentSectionContent1() throws Exception {
         String json = """
                 {
@@ -165,7 +153,7 @@ public class DocumentSectionControllerTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+
     void updateDocumentSectionContent2() throws Exception {
         String json = """
                 {
@@ -214,7 +202,7 @@ public class DocumentSectionControllerTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+
     void updateDocumentSectionWithoutRequirementsArtifacts() throws Exception {
         String json = """
                 {
@@ -250,7 +238,7 @@ public class DocumentSectionControllerTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+
     void updateDocumentSectionWithoutRequirementsArtifacts_LockedByAnotherUser() throws Exception {
         String json = """
                 {
@@ -284,7 +272,7 @@ public class DocumentSectionControllerTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+
     void updateDocumentSectionWithoutRequirementsArtifacts_NotLocked() throws Exception {
         int version = fetchSectionVersion(1, 1, 2, this.studentJohnToken);
         String json = """
@@ -383,7 +371,7 @@ public class DocumentSectionControllerTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+
     void unlockDocumentSection() throws Exception {
         this.mockMvc.perform(delete(this.baseUrl + "/teams/1/documents/1/document-sections/1/lock").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(true))
@@ -400,7 +388,7 @@ public class DocumentSectionControllerTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+
     void unlockDocumentSection_Instructor() throws Exception {
         this.mockMvc.perform(delete(this.baseUrl + "/teams/1/documents/1/document-sections/1/lock").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
                 .andExpect(jsonPath("$.flag").value(true))

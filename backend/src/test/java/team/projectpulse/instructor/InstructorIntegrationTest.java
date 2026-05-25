@@ -1,31 +1,22 @@
 package team.projectpulse.instructor;
 
 import tools.jackson.databind.json.JsonMapper;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.testcontainers.containers.MySQLContainer;
+import team.projectpulse.AbstractIntegrationTest;
 import team.projectpulse.system.StatusCode;
 import org.hamcrest.Matchers;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,13 +26,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
-@SpringBootTest
-@Testcontainers
-@AutoConfigureMockMvc
 @DisplayName("Integration tests for Instructor API endpoints")
-@Tag("integration")
-@ActiveProfiles(value = "dev")
-class InstructorIntegrationTest {
+class InstructorIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     MockMvc mockMvc;
@@ -57,10 +43,6 @@ class InstructorIntegrationTest {
 
     @Value("${api.endpoint.base-url}")
     String baseUrl;
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"));
 
 
     @BeforeEach
@@ -140,7 +122,6 @@ class InstructorIntegrationTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     void testAddInstructor() throws Exception {
         Map<String, String> instructorDto = new HashMap<>();
         instructorDto.put("username", "e.musk@abc.edu");
@@ -243,7 +224,6 @@ class InstructorIntegrationTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     void testAdminBingyangUpdatesOwnInfo() throws Exception {
         Map<String, Object> instructorDto = new HashMap<>();
         instructorDto.put("username", "b.wei@abc.edu");
@@ -271,7 +251,6 @@ class InstructorIntegrationTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     void testInstructorBillUpdatesOwnInfo() throws Exception {
         Map<String, Object> instructorDto = new HashMap<>();
         instructorDto.put("username", "b.gates@abc.edu");
@@ -317,7 +296,6 @@ class InstructorIntegrationTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     void testAdminBingyangSetDefaultSection() throws Exception {
         // When and then
         this.mockMvc.perform(put(this.baseUrl + "/instructors/sections/1/default").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
@@ -360,7 +338,6 @@ class InstructorIntegrationTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     void testAdminBingyangSetDefaultCourse() throws Exception {
         // When and then
         this.mockMvc.perform(put(this.baseUrl + "/instructors/courses/2/default").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))

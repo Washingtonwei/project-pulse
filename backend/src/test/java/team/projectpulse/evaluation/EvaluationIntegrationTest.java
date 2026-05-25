@@ -1,12 +1,8 @@
 package team.projectpulse.evaluation;
 
 import tools.jackson.databind.json.JsonMapper;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
+import team.projectpulse.AbstractIntegrationTest;
 import team.projectpulse.evaluation.dto.PeerEvaluationDto;
 import team.projectpulse.evaluation.dto.RatingDto;
 import team.projectpulse.system.StatusCode;
@@ -14,16 +10,11 @@ import org.hamcrest.Matchers;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
@@ -41,13 +32,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
-@SpringBootTest
-@Testcontainers
-@AutoConfigureMockMvc
 @DisplayName("Integration tests for Evaluation API endpoints")
-@Tag("integration")
-@ActiveProfiles(value = "dev")
-public class EvaluationIntegrationTest {
+public class EvaluationIntegrationTest extends AbstractIntegrationTest {
 
     /**
      * @MockitoSpyBean creates a Mockito spy and registers it as the active Spring bean.
@@ -74,10 +60,6 @@ public class EvaluationIntegrationTest {
     @Value("${api.endpoint.base-url}")
     String baseUrl;
 
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"));
-
 
     @BeforeEach
     void setUp() throws Exception {
@@ -101,7 +83,7 @@ public class EvaluationIntegrationTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+
     void testStudentJohnAddEvaluation() throws Exception {
         List<RatingDto> ratingDtos = List.of(
                 new RatingDto(null, 1, 4.0),
@@ -265,7 +247,7 @@ public class EvaluationIntegrationTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+
     void testEvaluatorJohnUpdatesOwnEvaluation() throws Exception {
         List<RatingDto> ratingDtos = List.of(
                 new RatingDto(1, 1, 4.0),
