@@ -5,11 +5,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
+import team.projectpulse.SharedContainers;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -17,15 +18,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
-@Testcontainers
+@ActiveProfiles("dev")
 class WebConfigSpaForwardingTest {
 
     @Autowired
     MockMvc mockMvc;
 
-    @Container
     @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"));
+    static final MySQLContainer<?> mysql = SharedContainers.MYSQL;
+
+    @DynamicPropertySource
+    static void setProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.mail.host", SharedContainers.MAILPIT::getHost);
+        registry.add("spring.mail.port", () -> SharedContainers.MAILPIT.getMappedPort(1025));
+    }
 
     @Test
     void shouldForwardThreeSegmentSpaRouteToIndexHtml() throws Exception {

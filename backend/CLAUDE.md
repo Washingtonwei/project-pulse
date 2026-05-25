@@ -114,22 +114,20 @@ class FooServiceTest {
 ```
 
 ### Integration Tests (`*IntegrationTest.java`)
+
+All integration tests extend `AbstractIntegrationTest`, which provides:
+- **Shared containers** — `SharedContainers` starts a single MySQL and Mailpit container per JVM (singleton pattern), shared by all test classes
+- **`@Transactional` rollback** — each test runs in a transaction that rolls back automatically, restoring the DataInitializer-seeded state without needing `@DirtiesContext`
+- **Common annotations** — `@SpringBootTest`, `@AutoConfigureMockMvc`, `@ActiveProfiles("dev")`, `@Tag("integration")`
+
 ```java
-@SpringBootTest
-@Testcontainers
-@AutoConfigureMockMvc
 @DisplayName("Integration tests for Foo API endpoints")
-@Tag("integration")
-@ActiveProfiles(value = "dev")
-public class FooIntegrationTest {
+public class FooIntegrationTest extends AbstractIntegrationTest {
     @Autowired MockMvc mockMvc;
     @Autowired JsonMapper jsonMapper;
 
     @Value("${api.endpoint.base-url}")
     String baseUrl;
-
-    @Container @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"));
 
     String adminToken;
     String studentToken;
@@ -153,4 +151,4 @@ public class FooIntegrationTest {
 }
 ```
 
-Integration tests use Testcontainers (MySQL 8.0), seed data from `DataInitializer`, and authenticate via HTTP Basic to get JWT tokens for subsequent requests. Tests verify both the `flag` and `code` fields in the `Result` response. Use `@DirtiesContext` on tests that modify state and could affect other tests.
+Integration tests use Testcontainers (MySQL 8.0), seed data from `DataInitializer`, and authenticate via HTTP Basic to get JWT tokens for subsequent requests. Tests verify both the `flag` and `code` fields in the `Result` response. Do **not** use `@DirtiesContext` — the `@Transactional` rollback on the base class handles database reset automatically.

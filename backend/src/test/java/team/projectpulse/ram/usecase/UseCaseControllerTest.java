@@ -6,18 +6,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.utility.DockerImageName;
+import team.projectpulse.AbstractIntegrationTest;
 import team.projectpulse.system.StatusCode;
 
 import static org.hamcrest.Matchers.hasSize;
@@ -26,9 +20,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-class UseCaseControllerTest {
+class UseCaseControllerTest extends AbstractIntegrationTest {
 
     @Autowired
     MockMvc mockMvc;
@@ -45,10 +37,6 @@ class UseCaseControllerTest {
 
     @Value("${api.endpoint.base-url}")
     String baseUrl;
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"));
 
     @BeforeEach
     void setUp() throws Exception {
@@ -95,7 +83,7 @@ class UseCaseControllerTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+
     void addUseCase() throws Exception {
         // Given
         String json = """
@@ -233,7 +221,7 @@ class UseCaseControllerTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+
     void addUseCase_NotSameTeam() throws Exception {
         // Given
         String json = """
@@ -368,7 +356,7 @@ class UseCaseControllerTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+
     void updateUseCaseWithRewordedContent() throws Exception {
         lockUseCase(1, 3, this.studentEricToken);
         int version = fetchUseCaseVersion(1, 3, this.studentEricToken);
@@ -543,7 +531,7 @@ class UseCaseControllerTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+
     void updateUseCaseWithNewSteps() throws Exception {
         lockUseCase(1, 3, this.studentJohnToken);
         int version = fetchUseCaseVersion(1, 3, this.studentJohnToken);
@@ -742,7 +730,7 @@ class UseCaseControllerTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+
     void updateUseCaseWithDeletedSteps() throws Exception {
         lockUseCase(1, 3, this.adminBingyangToken);
         int version = fetchUseCaseVersion(1, 3, this.adminBingyangToken);
@@ -906,7 +894,7 @@ class UseCaseControllerTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+
     void updateUseCaseWithDeletedSteps_NotSameTeam() throws Exception {
         // Given
         String json = """
@@ -1073,7 +1061,7 @@ class UseCaseControllerTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+
     void lockUseCase() throws Exception {
         lockUseCase(1, 3, this.studentJohnToken);
 
@@ -1087,7 +1075,7 @@ class UseCaseControllerTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+
     void lockUseCase_AlreadyLocked() throws Exception {
         lockUseCase(1, 3, this.studentJohnToken);
 
@@ -1107,7 +1095,7 @@ class UseCaseControllerTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+
     void unlockUseCase() throws Exception {
         lockUseCase(1, 3, this.studentJohnToken);
 
@@ -1120,7 +1108,7 @@ class UseCaseControllerTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+
     void unlockUseCase_DifferentOwner() throws Exception {
         lockUseCase(1, 3, this.studentJohnToken);
 
@@ -1133,7 +1121,7 @@ class UseCaseControllerTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+
     void unlockUseCase_Instructor() throws Exception {
         lockUseCase(1, 3, this.studentJohnToken);
 

@@ -1,26 +1,17 @@
 package team.projectpulse.activity;
 
 import tools.jackson.databind.json.JsonMapper;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
+import team.projectpulse.AbstractIntegrationTest;
 import team.projectpulse.system.StatusCode;
 import org.hamcrest.Matchers;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
@@ -36,13 +27,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
-@SpringBootTest
-@Testcontainers
-@AutoConfigureMockMvc
 @DisplayName("Integration tests for Activity API endpoints")
-@Tag("integration")
-@ActiveProfiles(value = "dev")
-public class ActivityIntegrationTest {
+public class ActivityIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     MockMvc mockMvc;
@@ -60,10 +46,6 @@ public class ActivityIntegrationTest {
 
     @Value("${api.endpoint.base-url}")
     String baseUrl;
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"));
 
     @BeforeEach
     void setUp() throws Exception {
@@ -228,7 +210,6 @@ public class ActivityIntegrationTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     void testStudentJohnAddActivity() throws Exception {
         // Given
         Map<String, Object> activityDto = new HashMap<>();
@@ -259,7 +240,6 @@ public class ActivityIntegrationTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     void testStudentJohnUpdatesOwnActivity() throws Exception {
         // Given
         Map<String, Object> activityDto = new HashMap<>();
@@ -310,7 +290,6 @@ public class ActivityIntegrationTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     void testStudentJohnDeletesOwnActivity() throws Exception {
         this.mockMvc.perform(delete(this.baseUrl + "/activities/1").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(true))
