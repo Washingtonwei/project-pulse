@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Project Pulse is a web application for managing senior design / capstone course projects. Students submit weekly activity reports and peer evaluations; instructors monitor progress via dashboards. It also includes a Requirements Authoring Management (RAM) module that lets student teams define software requirements before coding — collaborative requirement documents, use cases, glossaries, and traceability.
+Project Pulse is a web application for managing senior design / capstone course projects. Students submit weekly activity reports and peer evaluations; instructors monitor progress via dashboards. It also includes a Requirements Authoring & Management (RAM) module that lets student teams define software requirements before coding — collaborative requirement documents, use cases, glossaries, and traceability.
+
+RAM functionality is built **spec-first**: its requirements live as Markdown under `docs/ram/` and drive implementation through the `/feature` workflow. See **Spec-driven RAM development** below before adding or changing RAM features.
 
 ## Starting the Project
 
@@ -96,7 +98,7 @@ The CI pipeline (`azure-webapps-deploy.yml`) builds the Vue frontend, copies the
 - `security/` — JWT-based auth (RSA key pair generated at startup), `SecurityConfiguration` defines URL-level authorization rules, `authorizationmanagers/` package has fine-grained ownership/membership `AuthorizationManager` implementations
 - `user/` — Shared `PeerEvaluationUser` base class, password reset, user invitation flows
 
-**RAM domain** (`ram/`): Requirements Authoring Management — originally a separate project, merged into Project Pulse to reuse the existing course/section/team/student infrastructure. Sub-packages: `document/` (requirement documents with section-level pessimistic locking), `requirement/` (artifacts, traceability links), `usecase/`, `glossary/`, `collaboration/` (comment threads)
+**RAM domain** (`ram/`): Requirements Authoring & Management — originally a separate project, merged into Project Pulse to reuse the existing course/section/team/student infrastructure. Sub-packages: `document/` (requirement documents with section-level pessimistic locking), `requirement/` (artifacts, traceability links), `usecase/`, `glossary/`, `collaboration/` (comment threads)
 
 **Patterns:**
 - All API endpoints are prefixed with `/api/v1` (configured via `api.endpoint.base-url` in `application.yml`)
@@ -125,6 +127,52 @@ The CI pipeline (`azure-webapps-deploy.yml`) builds the Vue frontend, copies the
 - Integration tests (`*IntegrationTest.java`) — use Testcontainers with MySQL, test full controller→DB round-trips with `@SpringBootTest` and `MockMvc`
 
 Both types live under `backend/src/test/java/team/projectpulse/`.
+
+## Spec-driven RAM development
+
+The RAM module is developed **spec-first**: its requirements are authored as Markdown and are the contract the code implements. Don't design RAM features ad hoc — start from the spec, build from it, and trace the work back.
+
+### The spec is the source of truth
+
+`docs/` is organized **area-first** — each module gets a self-contained subtree holding its full spec→design chain. RAM lives under `docs/ram/`:
+
+- `docs/ram/requirements/` — the spec (what):
+   1. `project-glossary.md` — domain vocabulary; canonical term definitions.
+   2. `vision-and-scope.md` — business objectives (BO-*), risks (RI-*), assumptions (AS-*), features.
+   3. `use-cases.md` — behavioral specs as use cases with area-prefixed IDs (`UC-GLO-1`, `UC-DOC-5`, `UC-AI-3`), grouped by area.
+   4. `business-rules.md` — cross-cutting policies, constraints, and access rules (BR-*).
+   5. `software-requirements-specification.md` — architecture, functional requirements (FR-*), quality attributes.
+- `docs/ram/design/` — design docs generated from the spec, one per UC area. They sit *below* the SRS (component/class design, sequence diagrams, API contracts, DB schema) and cite the UC/FRs they realize without restating them.
+- `docs/ram/traceability.md` — the spec→code map: one row per use case → FR IDs → design doc → frontend/backend modules → tests → status.
+- `docs/ram/CLAUDE.md` — authoring rules for these docs (numbering, TOCs, anchor slugs, ID schemes, cross-doc consistency); it governs edits anywhere under `docs/ram/`.
+
+(A second, non-RAM requirement set will later land under `docs/pulse-core/` with the same shape.)
+
+**Functional requirements.** A **use case is itself a high-level functional requirement** (SRS §5.1) — its "System shall" steps + Associated Information are its detailed spec. SRS **§5.2** holds only the non-use-case, system-level behaviors, with IDs in `FR-<AREA>-<n>` format (parallel to `UC-<AREA>-<n>`): `FR-SAVE-*` autosave, `FR-LOCK-*` locking, `FR-COL-*` collaboration, `FR-VAL-*` validation, `FR-AI-*` AI, `FR-TPL-*` templates, `FR-GLO-*` glossary, `FR-HIS-*` history/authorship, `FR-SEC-*` security, `FR-EXP-*` export, `FR-IMP-*` import, `FR-PERF-*` performance, `FR-NOT-*` notifications. **Business rules** (`BR-*`, in `business-rules.md`) are an append-only sequence cited by use cases and the SRS. FR/BR/UC IDs are identifier spaces independent of section numbering — never renumber them.
+
+### Spec-driven feature workflow
+
+A RAM feature begins as a use case. The loop:
+
+1. A use case is added or changed in `docs/ram/requirements/use-cases.md` (follow `docs/ram/CLAUDE.md`; run `/build` to resync TOCs, numbering, and cross-references).
+2. Run **`/feature <UC-ID>`** (`.claude/commands/feature.md`) to drive it through plan → design (write/update the area's `docs/ram/design/` doc) → code → test.
+3. The work is recorded back into `docs/ram/traceability.md`.
+
+Treat the use case as the contract:
+- The **use case** gives actors, trigger, main success scenario, extensions, and pre/postconditions — *what to build and the flows to test*.
+- The **linked FRs** are the atomic, testable "shall" statements — *acceptance criteria*. Map every step/extension to an FR or flag the gap; don't invent silently.
+- The **glossary** fixes vocabulary — use the defined term in code identifiers and UI text, never a synonym.
+
+Cross-cutting behavior is already specified, and some is already built — reuse it, don't reinvent per feature:
+- **Locking** (`FR-LOCK-*`): section-level pessimistic locking already exists in `ram/document/`. See UC-DOC-2 / UC-DOC-6.
+- **Collaboration** (`FR-COL-*`): comment threads exist in `ram/collaboration/`; real-time presence/broadcast is specified in UC-COL-1 (not yet built).
+- **Validation** (`FR-VAL-*`, ReqLint): deterministic structural checks. See UC-VAL-1.
+
+When implementing, **extend the existing RAM packages** (`ram/document`, `ram/requirement`, `ram/usecase`, `ram/glossary`, `ram/collaboration`) and the shared course/section/team/auth/email infrastructure — RAM is a module inside this codebase, not a separate system, so don't fork or duplicate the architecture "for RAM." Then map the use case back into `docs/ram/traceability.md` (frontend `apis/` + views + stores, backend `ram/*` controller/service/repository/entity, tests).
+
+### Editing the docs
+
+When editing anything under `docs/ram/`, the rules in `docs/ram/CLAUDE.md` apply (heading numbering, TOC regeneration, anchor slugs, FR/BR/UC ID schemes, cross-doc terminology). Run **`/build`** to verify and resync. A future `docs/pulse-core/` module will carry its own nested `CLAUDE.md`.
 
 ## CI
 
