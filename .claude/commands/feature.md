@@ -29,8 +29,8 @@ Read widely — pull in as much relevant context as helps — but read **skeptic
 
 Produce a concise implementation plan and present it for approval before coding. Include:
 
-- **Acceptance criteria** — the main-flow steps + extensions restated as testable outcomes, each tied to an FR ID. **Flag any step with no backing FR** (a spec gap to confirm or fill) and any referenced FR that doesn't exist.
-- **Design doc** — which `docs/ram/design/` doc (the touched UC area) you'll create or extend, and the key design decisions to record there: components/classes, sequence, API contracts, DB schema. The design doc sits below the SRS — it cites the UC/FRs it realizes, never restates them.
+- **Acceptance criteria** — the main-flow steps + extensions restated as testable outcomes. These steps *are* the use case's own functional requirement (a UC is a high-level FR), so they don't each carry a separate FR ID — they tie to the use case itself. Tie a step to a specific §5.2 FR ID *only* where it invokes cross-cutting behavior (locking `FR-LOCK-*`, autosave `FR-SAVE-*`, validation `FR-VAL-*`, collaboration `FR-COL-*`, …). **Flag any step that relies on cross-cutting behavior with no backing §5.2 FR** (a spec gap to confirm or fill) and any cited FR that doesn't exist.
+- **Design doc** — which `docs/ram/design/` doc (the touched UC area) you'll create or extend, and the non-obvious design decisions to record there. **Keep it lean** (see `docs/ram/design/README.md`): a design doc holds what code can't — the diagram(s) and the decisions that aren't self-evident from the code (an invariant, the auth rule, a reuse choice) — and *links* to files and SRS §7.1 rather than transcribing endpoints, schemas, or the shared domain model. Thoroughness lives in `requirements/`, not here. It sits below the SRS — cites the UC/FRs it realizes, never restates them — and is structured by concern, not as a per-UC changelog.
 - **Design diagram(s) — design-first.** Include **at least one Mermaid diagram in the plan itself** (a sequence diagram of the main success scenario, or a class/ER sketch of the new structure) so the design's shape is reviewed *at the approval gate*, not after coding. Name the full set of diagrams the design doc will carry — sequence / class / ER / state as the area needs (e.g. a **state** diagram for a lock or review/submission lifecycle). See `docs/ram/design/README.md` for which diagram fits which concern.
 - **Backend changes** — endpoints (method + path), service logic, repository/entity changes, DB schema/migration. Note auth/permission rules (who may do this — Student on own team, Instructor on assigned section, etc.).
 - **Frontend changes** — views/components, store/state, API client calls, key UI states from the flow (including extension/error paths).
@@ -38,13 +38,21 @@ Produce a concise implementation plan and present it for approval before coding.
 - **Reuse vs. new** — which existing modules are extended vs. what's genuinely new.
 - **Open questions / risks.**
 
-**Enter plan mode to present this plan and wait for explicit approval.** If the harness is not already in plan mode, enter it before presenting the plan. Edit nothing in this phase — not code, not docs, not the design doc (the Phase 1 reads are the only filesystem access allowed before approval). Proceed to Phase 3 only once the plan is approved.
+**Present the plan and wait for explicit approval.** Default: present it in plan mode, rendered in the terminal, and iterate via replies. If the harness is not already in plan mode, enter it before presenting.
+
+**Optional scratch-file editing.** Some developers find editing a file faster than terminal back-and-forth. So *offer* — or honor a request — to write the plan to a temporary scratch `.md` and let them edit it directly:
+
+- Write it **outside the working tree** — the OS temp dir (e.g. `$env:TEMP` on Windows), **never inside the repo**, so an interrupted run can't leave a committable plan file behind (there is no `.gitignore` to catch one).
+- Print its **absolute path** (the harness renders it as a clickable link) and **pause** while they edit it in place.
+- When they say to continue, **read the edited file**, treat their edits as the revised plan, and then **delete the scratch file** — it is not a persisted artifact.
+
+Either path ends at the **same approval gate**: present the final plan in plan mode and proceed to Phase 3 only once it's approved. Apart from that one optional scratch file — created *and* deleted within this phase — **edit nothing in Phase 2**: not code, not docs, not the design doc. The Phase 1 reads plus that single scratch file are the only filesystem access allowed before approval.
 
 ## Phase 3 — Implement (after approval)
 
 Implement back to front, matching existing conventions:
 
-0. Write or update the area's design doc under `docs/ram/design/` to reflect the approved plan (components/classes, sequence, API contracts, DB schema) — the design of record the code realizes.
+0. Write or update the area's design doc under `docs/ram/design/` to reflect the approved plan — the design of record the code realizes. Keep it lean per `docs/ram/design/README.md`: diagrams + non-obvious decisions, revising the area-wide class/ER diagrams in place and appending a sequence per new flow; link to files and SRS §7.1, don't transcribe code.
 1. Backend: entity/migration → repository → service (incl. permission checks and the lock/collaboration/validation hooks the FRs require) → controller.
 2. Frontend: API client → store → view/components, covering the main flow and the extension/error states.
 3. Keep changes scoped to the use case; reuse existing utilities, services, and components.
