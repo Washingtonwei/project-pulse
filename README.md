@@ -54,7 +54,7 @@ Instructors can view the weekly activity reports and peer evaluations submitted 
 
 Before writing any code, student teams use the RAM module to define their software requirements. RAM is a graph-first requirements environment where teams author and maintain:
 
-- **Requirement documents** — section-based documents (vision and scope, glossary, SRS, etc.) with section-level locking so teammates can edit collaboratively without overwriting each other.
+- **Requirement documents** — section-based documents (vision and scope, SRS, business rules, etc.) with section-level locking so teammates can edit collaboratively without overwriting each other.
 - **Use cases** — structured behavioral specifications with actors, flows, and extensions.
 - **A project glossary** — canonical domain vocabulary shared across the team's documents.
 - **Traceability** — typed links between requirement artifacts so teams can trace how requirements relate to one another.
@@ -69,6 +69,7 @@ The requirements specifications themselves are authored as Markdown under [`docs
     ├── docker/                      # Folder containing configuration files for grafana and prometheus
     ├── docs/                        # Spec-first requirements docs (e.g. docs/ram/ for the RAM module)
     ├── frontend/                    # Vue.js frontend (Vite)
+    ├── CLAUDE.md                    # Guidance for Claude Code / contributors
     ├── .gitignore                   # Git ignore rules for both frontend and backend
     ├── Dockerfile                   # Dockerfile for building the Spring Boot application
     ├── LICENSE                      # License information

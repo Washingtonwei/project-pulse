@@ -25,7 +25,7 @@ docs/ram/
 └── README.md                                  # this file
 ```
 
-The five files under `requirements/` are intentionally ordered and describe the same system from different angles — a change in one usually requires updates in others (especially glossary terms). Read and edit them in that order.
+The five files under `requirements/` are intentionally ordered and describe the same underlying model from different angles — a change in one usually requires updates in others (especially glossary terms). Read and edit them in that order.
 
 ## Editing these docs
 
@@ -40,15 +40,3 @@ edit a doc  →  run /build  →  review the report  →  fix flagged issues  �
 `/build` (defined in [`../../.claude/commands/build.md`](../../.claude/commands/build.md)) treats the docs as artifacts that must "compile": it auto-fixes mechanical issues (heading numbering, stray `{#slug}` anchors, TOC regeneration, straight quotes) and reports semantic issues for your review (undefined glossary terms, dangling FR/BR references, ReqLint writing issues, cross-doc terminology drift). It is run from [Claude Code](https://claude.com/claude-code).
 
 To implement a use case end to end, run `/feature <UC-ID>` ([`../../.claude/commands/feature.md`](../../.claude/commands/feature.md)) — it drives the use case through plan → design → code → test and records the result back into `traceability.md`.
-
-## Notes and known quirks
-
-- **Revision History tables** at the top of each doc are placeholder rows. Fill them in only when finalizing a version.
-- **Square-bracketed italic text** (e.g., `*[Note: ...]*`) is author-guidance from the Wiegers/Beatty template. Leave it in place until the doc is finalized.
-- **`software-requirements-specification.md` Section 4** (System Context / Container Diagram) describes *Project Pulse* — the Vue.js + Spring Boot + relational DB + Gmail platform — as the host environment. This is correct, not stale: RAM is a module inside Project Pulse and relies on its existing course/section/team/auth infrastructure.
-
-## References
-
-- Wiegers, K., & Beatty, J. (2013). *Software Requirements* (3rd ed.). Pearson Education.
-- [The Easy Approach to Requirements Syntax (EARS)](https://alistairmavin.com/ears/)
-- [Claude Code](https://claude.com/claude-code) — the AI development environment used by `/build` and `/feature`
