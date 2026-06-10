@@ -240,7 +240,7 @@ Not all functional behaviors of the RAM tool are best expressed as use cases. Th
 
 These requirements describe system-level functions that support or enable the use cases but are not user-initiated workflows.
 
-### _5.2.1 Autosave and Persistence Requirements_
+### *5.2.1 Autosave and Persistence Requirements*
 
 **FR-SAVE-1 (State-Driven):** While a student is actively editing an authoring destination, the system shall automatically save the authoring destination's content at least every 10 seconds.
 
@@ -250,7 +250,7 @@ These requirements describe system-level functions that support or enable the us
 
 **FR-SAVE-4 (Event-Driven):** When an autosave operation fails, the system shall notify the user and retry in the background without interrupting editing.
 
-### _5.2.2 Authoring Destination Locking Requirements_
+### *5.2.2 Authoring Destination Locking Requirements*
 
 **FR-LOCK-1 (Event-Driven):** When a student begins editing an authoring destination, the system shall acquire an exclusive lock for that authoring destination for that student.
 
@@ -262,7 +262,7 @@ These requirements describe system-level functions that support or enable the us
 
 **FR-LOCK-5 (Event-Driven):** When a lock is acquired or released, the system shall broadcast the updated lock state to all team members viewing the document.
 
-### _5.2.3 Real-Time Collaboration Requirements_
+### *5.2.3 Real-Time Collaboration Requirements*
 
 **FR-COL-1 (State-Driven):** While multiple students are connected to the same document, the system shall display the presence of each connected collaborator and the current lock state of each document section and use case.
 
@@ -272,7 +272,7 @@ These requirements describe system-level functions that support or enable the us
 
 **FR-COL-4 (Ubiquitous):** The system shall ensure that real-time updates do not overwrite or corrupt content saved by other collaborators.
 
-### _5.2.4 Validation and Consistency Requirements (ReqLint)_
+### *5.2.4 Validation and Consistency Requirements (ReqLint)*
 
 **FR-VAL-1 (Ubiquitous):** The system shall provide a ReqLint validation engine that evaluates a requirement document against the applicable deterministic validation rules and produces a structured list of issues, each classified by severity (ERROR, WARNING, INFO) and tied to the document section or item it concerns. This engine is invoked both on student request (UC-VAL-1) and by the periodic background re-evaluation of FR-VAL-2.
 
@@ -286,7 +286,7 @@ These requirements describe system-level functions that support or enable the us
 
 **FR-VAL-6 (Ubiquitous):** The system shall flag ambiguous, unverifiable, or subjective wording based on instructor-defined rules and defaults.
 
-### _5.2.5 AI/LLM Integration Requirements_
+### *5.2.5 AI/LLM Integration Requirements*
 
 RAM's AI assistance is delivered through Socratic assistants whose primary purpose is educational: to train students to author high-quality requirements rather than to hand them finished text. Where a design choice trades productivity against educational value, educational value governs.
 
@@ -336,7 +336,7 @@ RAM's AI assistance is delivered through Socratic assistants whose primary purpo
 
 **FR-AI-23 (State-Driven):** While a course section's cross-document review criteria are undefined, the system shall make the whole-project review unavailable to that course section's students.
 
-### _5.2.6 Template and Standards Enforcement Requirements_
+### *5.2.6 Template and Standards Enforcement Requirements*
 
 The initial release ships fixed, built-in templates, and the enforcement requirements (FR-TPL-1, FR-TPL-3) apply to them. Template customization — letting a course admin or instructor author or edit templates (FR-TPL-2) — is **deferred to a future release and is not part of the MVP scope** (see Vision and Scope §4.2.2). FR-TPL-2 is retained here, with its ID, so the intent is not lost.
 
@@ -346,7 +346,7 @@ The initial release ships fixed, built-in templates, and the enforcement require
 
 **FR-TPL-3 (Ubiquitous):** The system shall apply the numbering and section-key scheme defined by the active template to all document sections within a document.
 
-### _5.2.7 Terminology and Glossary Requirements_
+### *5.2.7 Terminology and Glossary Requirements*
 
 **FR-GLO-1 (Ubiquitous):** The system shall provide a single authoritative definition for each glossary term within a project.
 
@@ -354,7 +354,7 @@ The initial release ships fixed, built-in templates, and the enforcement require
 
 **FR-GLO-3 (State-Driven):** While a student is writing or editing text, the system shall suggest existing glossary terms when there is a match.
 
-### _5.2.8 Authorship Metadata and Document Versioning Requirements_
+### *5.2.8 Authorship Metadata and Document Versioning Requirements*
 
 Authorship metadata (FR-HIS-4) is in scope for the initial release and is relied on by the authoring use cases. Document versioning — checkpointing, restoring, and retaining prior versions (FR-HIS-1, FR-HIS-2, FR-HIS-3) — is **deferred to a future release and is not part of the MVP scope** (see Vision and Scope §4.2; tracked as OI-4). The three deferred requirements are retained here, with their IDs, so the intent is not lost.
 
@@ -366,7 +366,7 @@ Authorship metadata (FR-HIS-4) is in scope for the initial release and is relied
 
 **FR-HIS-4 (Ubiquitous):** The system shall record, for every authored item (glossary term, requirement artifact, use case, document section, artifact link, and comment), the identity of its creator and creation timestamp and the identity of its last editor and last-modified timestamp. _(Cross-cutting; relied on by the authoring use cases — the create, edit, rename, and resolve flows across the glossary, documents, artifacts, links, and comments.)_
 
-### _5.2.9 Security and Authorization Requirements_
+### *5.2.9 Security and Authorization Requirements*
 
 **FR-SEC-1 (Ubiquitous):** The system shall authenticate users via institutional SSO before granting access to protected resources.
 
@@ -374,25 +374,25 @@ Authorship metadata (FR-HIS-4) is in scope for the initial release and is relied
 
 **FR-SEC-3 (Event-Driven):** When an unauthorized user attempts to access a protected resource, the system shall deny access and provide an appropriate error message.
 
-### _5.2.10 Export and Formatting Requirements_
+### *5.2.10 Export and Formatting Requirements*
 
 **FR-EXP-1 (Event-Driven):** When a user exports a document, the system shall generate a PDF, DOCX, or Markdown file consistent with the template-defined structure. _(Realizes UC-EXP-1; honors BR-1.)_
 
 **FR-EXP-2 (Ubiquitous):** The system shall maintain table of contents, heading hierarchy, numbering, and formatting consistency in exported documents.
 
-### _5.2.11 Project Source Material and Import Requirements_
+### *5.2.11 Project Source Material and Import Requirements*
 
 **FR-IMP-1 (Event-Driven):** When a student imports client pitch materials, the system shall accept PDF (`.pdf`) and PowerPoint (`.pptx`, `.ppt`) files, reject any file whose type is not on this allowlist or whose size exceeds a configurable per-file size limit (default 25 MB), and store each accepted file as the team's project source material.
 
 **FR-IMP-2 (Event-Driven):** When project source material is imported, the system shall extract its text content for reference and for use as assistant context, and shall report when extraction is incomplete (for example, for image-only or scanned files).
 
-### _5.2.12 Performance and Reliability Requirements_
+### *5.2.12 Performance and Reliability Requirements*
 
 **FR-PERF-1 (State-Driven):** While up to 100 users are actively editing concurrently, the system shall propagate collaborator presence events (join, disconnect) within 1 second for 95% of events.
 
 **FR-PERF-2 (Ubiquitous):** The system shall remain available at least 99% of the academic term.
 
-### _5.2.13 Notification Requirements_
+### *5.2.13 Notification Requirements*
 
 **FR-NOT-1 (Event-Driven):** When the system raises a review-workflow notification — a requirement document submitted for review, returned for revision, or accepted — it shall deliver it by email to the designated recipients through the Gmail SMTP integration. _(Supports UC-REV-1, UC-REV-2; honors DE-3.)_
 
