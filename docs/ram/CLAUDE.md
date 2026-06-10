@@ -1,20 +1,27 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file governs edits to the **`docs/ram/` spec subtree** — the requirements documentation for the Requirements Authoring & Management (RAM) module. It applies to anything under `docs/ram/`.
 
-## What this repository is
+## What this directory is
 
-A **documentation-only** repo for the **Requirements Authoring & Management (RAM)** tool — a graph-first, model-driven requirements IDE for software engineering / senior design courses at TCU. There is no source code, build system, or test suite here; the artifacts ARE the deliverables.
+`docs/ram/` is the **spec→design→trace chain for the RAM module** — a graph-first, model-driven requirements IDE for software engineering / senior design courses at TCU. RAM is a module **inside the Project Pulse codebase**, not a separate system. The repo-root `CLAUDE.md` governs the codebase as a whole and explains how this spec drives code (its **Spec-driven RAM development** section); *this* file governs how the spec docs themselves are authored and kept consistent.
 
-The five numbered Markdown files are intentionally ordered and form a coherent set:
+Layout of `docs/ram/`:
 
-1. `project-glossary.md` — domain vocabulary; canonical definitions
-2. `vision-and-scope.md` — business objectives (BO-*), risks (RI-*), assumptions (AS-*), major features
-3. `use-cases.md` — behavioral specs ("The Student …", "The Instructor …")
-4. `business-rules.md` — cross-cutting policies, constraints, and access rules (BR-*) cited by the use cases and the SRS
-5. `software-requirements-specification.md` — architecture, functional requirements (FR-*), quality attributes
+- `requirements/` — the five core spec docs (below).
+- `design/` — design docs generated from the spec, one per UC area; they sit *below* the SRS and cite the UC/FRs they realize without restating them.
+- `traceability.md` — the spec→code matrix: one row per use case → FR IDs → design doc → frontend/backend modules → tests → status.
+- `guides/` — supporting authoring/build guidance that isn't itself a spec doc.
 
-Markdown is canonical here — Google Docs round-tripping has been dropped, so edit `.md` directly.
+The five numbered Markdown files under `requirements/` are intentionally ordered and form a coherent set:
+
+1. `requirements/project-glossary.md` — domain vocabulary; canonical definitions
+2. `requirements/vision-and-scope.md` — business objectives (BO-*), risks (RI-*), assumptions (AS-*), major features
+3. `requirements/use-cases.md` — behavioral specs ("The Student …", "The Instructor …")
+4. `requirements/business-rules.md` — cross-cutting policies, constraints, and access rules (BR-*) cited by the use cases and the SRS
+5. `requirements/software-requirements-specification.md` — architecture, functional requirements (FR-*), quality attributes
+
+Markdown is canonical — Google Docs round-tripping has been dropped, so edit `.md` directly. (Below, the five core docs are referred to by bare filename; all live under `requirements/`.)
 
 ## Conceptual model to internalize before editing
 
@@ -22,7 +29,7 @@ RAM models requirements as **atomic artifacts** (graph nodes) connected by **typ
 
 - A **glossary term** added/renamed in `project-glossary.md` should be used consistently across docs 2–5. Don't introduce a synonym for an already-defined term.
 - A **feature** mentioned in `vision-and-scope.md` typically maps to use cases in `use-cases.md` and functional requirements in `software-requirements-specification.md`.
-- **A use case is itself a (high-level) functional requirement.** That is why `use-cases.md` is referenced from SRS §5.1 *Use Cases*, under Functional Requirements. A use case's "System shall …" steps plus its **Associated Information** are its detailed functional spec — so **do not restate a use case's flow (CRUD: create/view/edit/delete/search) as a separate FR.** When a use-case step needs more detail, elaborate it in that use case's Associated Information, not in a new FR. SRS **§5.2 is the complement**: only non-use-case, system-driven, event-driven, global, or background behaviors (autosave, locking, validation engine, real-time collaboration, AI/LLM orchestration, templates, terminology invariants, versioning, authorship metadata, security, export formatting, import, performance).
+- **A use case is itself a (high-level) functional requirement.** That is why `use-cases.md` is referenced from SRS §5.1 *Use Cases*, under Functional Requirements. A use case's "The system …" steps plus its **Associated Information** are its detailed functional spec — so **do not restate a use case's flow (CRUD: create/view/edit/delete/search) as a separate FR.** When a use-case step needs more detail, elaborate it in that use case's Associated Information, not in a new FR. SRS **§5.2 is the complement**: only non-use-case, system-driven, event-driven, global, or background behaviors (autosave, locking, validation engine, real-time collaboration, AI/LLM orchestration, templates, terminology invariants, versioning, authorship metadata, security, export formatting, import, performance). The litmus test before adding a §5.2 FR: *is there a use case whose system-subject step already says this?* If yes, it belongs in that use case (or its Associated Information), not §5.2 — keep the bright line so §5.2 never re-describes use-case behavior. Because the **use case is the unit of citation** — `traceability.md` carries one row per UC and tests are tagged to the UC, with no finer per-step handle — keep each use case right-sized so "UC-X is done / passing" is a meaningful statement (split a use case that grows large enough to half-satisfy rather than giving its steps sub-IDs), and write **extensions** precisely: with no step-level IDs, a use case's extensions plus their Associated Information are the only record of its negative/exception behavior, so they carry the edge-case requirements.
 - §5.2 functional requirement IDs use the format `FR-<AREA>-<n>` — a descriptive area code, a hyphen, then a number — deliberately **parallel to the `UC-<AREA>-<n>` use-case IDs**, and an identifier space independent of section numbering. The EARS-style §5.2 areas are: `FR-SAVE-*` autosave, `FR-LOCK-*` locking, `FR-COL-*` collaboration, `FR-VAL-*` validation, `FR-AI-*` AI, `FR-TPL-*` templates, `FR-GLO-*` glossary (terminology invariants), `FR-HIS-*` history & authorship metadata, `FR-SEC-*` security, `FR-EXP-*` export, `FR-IMP-*` import, `FR-PERF-*` performance, `FR-NOT-*` notifications. Reuse an existing area when adding a §5.2 FR; introduce a new descriptive area code only for a genuinely new non-use-case category, and never renumber an existing FR.
 - **Business rule IDs (`BR-*`)** live in `business-rules.md` and are a single append-only sequence (`BR-1`, `BR-2`, …), grouped thematically into numbered §2 subsections. Like FR IDs, they are an **identifier space independent of section numbering** — never renumber a `BR-*` when sections move. Use cases cite them by ID in their **Business Rules** field; the SRS cites them where an FR or quality attribute enforces one.
 
@@ -56,11 +63,11 @@ These files are the single source of truth for the project's requirements — th
 
 **Cross-doc propagation.** Glossary terms, FR IDs, BR IDs, feature names, and actor names span multiple files. When you rename or restructure something in one doc, grep the *whole repo* (not just the other four core docs) before finalizing — see the dependency map below.
 
-**Cross-document dependency map.** Requirements here are spread across files that reference each other, so a change in one place usually obligates a check elsewhere. When you change the left column, re-sync the right. Don't trust memory — run `/build`, which mechanically verifies the checkable couplings (UC↔traceability rows, FR-ID resolution, BR-ID resolution). Note that `guides/traceability.md` is a **sixth** coupled file beyond the five core docs; it is the most-forgotten dependency precisely because it lives outside the core set and outside older mental models of "the doc set."
+**Cross-document dependency map.** Requirements here are spread across files that reference each other, so a change in one place usually obligates a check elsewhere. When you change the left column, re-sync the right. Don't trust memory — run `/build`, which mechanically verifies the checkable couplings (UC↔traceability rows, FR-ID resolution, BR-ID resolution). Note that `traceability.md` is a **sixth** coupled file beyond the five core docs; it is the most-forgotten dependency precisely because it lives outside the `requirements/` set.
 
 | When you change… | …check / re-sync |
 |---|---|
-| a `UC-<AREA>-<n>` in `use-cases.md` (add to an area / rename / remove) | `guides/traceability.md` (exactly one row per UC, in UC-area order), the SRS (every `FR-*` the UC cites must exist), `project-glossary.md` (terms used), `vision-and-scope.md` (the feature/actor it realizes), and regenerate the grouped use-cases TOC |
+| a `UC-<AREA>-<n>` in `use-cases.md` (add to an area / rename / remove) | `traceability.md` (exactly one row per UC, in UC-area order), the SRS (every `FR-*` the UC cites must exist), `project-glossary.md` (terms used), `vision-and-scope.md` (the feature/actor it realizes), and regenerate the grouped use-cases TOC |
 | an `FR-*` in `software-requirements-specification.md` (add / renumber / remove) | use cases that cite it (`Realized by` / `honors` lines), `traceability.md` (`FR IDs` column), `vision-and-scope.md` features, glossary terms it leans on |
 | a `BR-*` in `business-rules.md` (add / reword / remove) | use cases that cite it in their **Business Rules** field, the SRS where an `FR-*` or quality attribute enforces it, glossary terms it leans on |
 | a glossary term in `project-glossary.md` (add / rename / delete) | every use of it across docs 2–5 (no synonyms, no dangling references), and the glossary TOC |
@@ -79,19 +86,18 @@ The two couplings `/build` checks deterministically are **`UC-<AREA>-<n>` ↔ tr
 - **Revision History tables** at the top of each doc are placeholders (`<dd/mmm/yy>`, `<x.x>`). Only fill them in when the user explicitly asks.
 - **Square-bracketed italic blocks** (e.g. `*[Note: ...]*`, `*[Describe ...]*`) are author-guidance from the Wiegers/Beatty template. Leave them in place when editing surrounding content unless the user is finalizing the doc.
 
-## Working in this repo
+## Working in `docs/ram/`
 
-- No traditional build, lint, or test commands — but the `/build` slash command (see Authoring conventions above) acts as the project's build-and-verify pass. "Correctness" means cross-document consistency and adherence to the templates the docs themselves describe (ReqLint-style: no vague verbs like "manage"/"support", no subjective adjectives like "fast"/"user-friendly", "shall" statements for FRs, atomic and testable).
-- The Use Cases doc is large (~160 KB). Prefer targeted reads (offset + limit, or Grep) over reading it whole.
-- The `.claude/` folder holds project-local settings and slash commands — leave it alone unless the user asks to change permissions, hooks, or commands.
+- No traditional build, lint, or test commands for the spec docs — but the `/build` slash command (see Authoring conventions above) acts as their build-and-verify pass. "Correctness" means cross-document consistency and adherence to the templates the docs themselves describe (ReqLint-style: no vague verbs like "manage"/"support", no subjective adjectives like "fast"/"user-friendly", "shall" statements for FRs, atomic and testable).
+- The Use Cases doc is large (~88 KB). Prefer targeted reads (offset + limit, or Grep) over reading it whole.
+- The `.claude/` folder at the repo root holds project-local settings and the `/build` and `/feature` slash commands — leave it alone unless the user asks to change permissions, hooks, or commands.
 
-## Other files in this repo (beyond the five core docs)
+## Other files under `docs/ram/` (beyond the five core docs)
 
-- **`OPEN-ISSUES.md`** — the working backlog of everything still needed to make the docs implementation-ready. Items carry stable append-only `OI-n` IDs grouped by priority (P0–P3); check the box and add a one-line note when one is done, append the next free `OI-n` for new gaps. When the user says "let's do OI-3" or asks what's left, this is the source; check the file itself for current status rather than relying on examples in guidance docs. Owner tags: ✍️ Claude can draft, 🧑 needs a user decision, 🔢 needs a value only the user has.
-- **`README.md`** — human-facing repo overview that **restates much of the Authoring conventions above** (numbering, anchors, TOC, FR/BR IDs, ReqLint, cross-doc coherence). It is therefore a drift risk: when a convention here changes, check whether `README.md` repeats it and re-sync.
-- **`guides/`** — a **staged relocation kit**, not active config for this repo. These are drafts to be moved into the `project-pulse` *code* repo later, to make a new use case drive Claude through plan→design→code→test:
-  - `traceability.md` — the live UC ↔ FR ↔ (future) code/test matrix; this one is **already coupled to the core docs today** (the sixth coupled file in the dependency map — one row per UC, `FR IDs` column). Keep it in sync now.
-  - `root-CLAUDE.md` — a **draft** repo-root `CLAUDE.md` for the future merged code repo (with `<!-- TODO -->` markers for stack/run/test commands). It does **not** govern this docs repo — `docs/CLAUDE.md` (this file) does. Don't confuse the two.
-  - `feature.md` — draft `/feature <UC-ID>` command for the future repo. `ai-implementation-notes.md` — build guidance for the AI Assistants. `cross-document-review-criteria.md` — drafted criteria + system prompt for the whole-project critique (see OI-16). `claude-code-tips.md` — project-agnostic Claude Code practices.
-  - `design-README.md` — the design-doc conventions template (one doc per UC area, link up to UC/FR IDs, never restate the requirement, sits below the SRS); becomes `docs/ram/design/README.md` after relocation. `RELOCATION-CHECKLIST.md` — the one-time follow-along guide for moving `docs/` into the code repo.
-  - See `guides/README.md` for the intended post-relocation layout. Nothing here is wired up until moved into the code repo.
+- **`traceability.md`** — the live UC ↔ FR ↔ code/test matrix, the spec→code map. **Coupled to the core docs** (the sixth coupled file in the dependency map — one row per UC, `FR IDs` column); keep it in sync. `/feature` updates the relevant row in its Phase 5; `/build` verifies it.
+- **`requirements/OPEN-ISSUES.md`** — the working backlog of everything still needed to make the docs implementation-ready. Items carry stable append-only `OI-n` IDs grouped by priority (P0–P3); check the box and add a one-line note when one is done, append the next free `OI-n` for new gaps. When the user says "let's do OI-3" or asks what's left, this is the source; check the file itself for current status rather than relying on examples in guidance docs. Owner tags: ✍️ Claude can draft, 🧑 needs a user decision, 🔢 needs a value only the user has.
+- **`README.md`** — a short human-facing pointer into `docs/ram/` (layout + where the conventions live). It deliberately does **not** restate the authoring conventions — those live here, in this file — so it isn't a drift risk; keep it that way.
+- **`design/`** — design docs generated by `/feature`, one per UC area, sitting below the SRS (component/class design, sequence diagrams, API contracts, DB schema). `design/README.md` holds the conventions (one doc per area, cite the UC/FRs, never restate them); the per-area docs are added as each area is implemented.
+- **`guides/`** — supporting authoring/build guidance, not spec docs:
+  - `ai-implementation-notes.md` — build guidance for the AI Assistants.
+  - `cross-document-review-criteria.md` — criteria + system prompt for the whole-project critique (see `OI-16`).

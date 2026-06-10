@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fraw.githubusercontent.com%2FWashingtonwei%2Fproject-pulse%2Fmain%2Fbackend%2Fpom.xml&query=%2F*%5Blocal-name()%3D'project'%5D%2F*%5Blocal-name()%3D'properties'%5D%2F*%5Blocal-name()%3D'spring-cloud-azure.version'%5D&label=Spring%20Cloud%20Azure" alt="Spring Cloud Azure Version">
 </p>
 
-**Project Pulse** is a web application designed to support senior design or capstone projects where students work in teams. The goal is to create a structured and transparent environment for students and instructors. By encouraging frequent reporting and peer evaluation, the platform aims to foster collaboration, accountability, and productive team dynamics throughout the project. The web application is available at the following
+**Project Pulse** is a web application designed to support senior design or capstone projects where students work in teams. The goal is to create a structured and transparent environment for students and instructors. By encouraging frequent reporting and peer evaluation, the platform aims to foster collaboration, accountability, and productive team dynamics throughout the project. It also includes a **Requirements Authoring & Management (RAM)** module that lets student teams define their software requirements before they start coding. The web application is available at the following
 URL: https://projectpulse.team
 
 ## Features
@@ -50,12 +50,24 @@ Peer evaluations provide a way to identify and address these issues early, enabl
 
 Instructors can view the weekly activity reports and peer evaluations submitted by students. The dashboard provides a way to monitor the progress of each team and identify potential issues that need to be addressed. Instructors can also use the data to provide feedback to students and help them improve their performance.
 
+### 4. Requirements Authoring & Management (RAM)
+
+Before writing any code, student teams use the RAM module to define their software requirements. RAM is a graph-first requirements environment where teams author and maintain:
+
+- **Requirement documents** — section-based documents (vision and scope, glossary, SRS, etc.) with section-level locking so teammates can edit collaboratively without overwriting each other.
+- **Use cases** — structured behavioral specifications with actors, flows, and extensions.
+- **A project glossary** — canonical domain vocabulary shared across the team's documents.
+- **Traceability** — typed links between requirement artifacts so teams can trace how requirements relate to one another.
+
+The requirements specifications themselves are authored as Markdown under [`docs/ram/`](docs/ram/) and drive the module's implementation. See [`docs/ram/README.md`](docs/ram/README.md) for the spec layout.
+
 ## Repository Structure
    ```bash
    project-pulse/
     ├── .github/                     # GitHub Actions workflows
     ├── backend/                     # Spring Boot backend (Maven)
     ├── docker/                      # Folder containing configuration files for grafana and prometheus
+    ├── docs/                        # Spec-first requirements docs (e.g. docs/ram/ for the RAM module)
     ├── frontend/                    # Vue.js frontend (Vite)
     ├── .gitignore                   # Git ignore rules for both frontend and backend
     ├── Dockerfile                   # Dockerfile for building the Spring Boot application
@@ -73,7 +85,7 @@ Spring Boot, Vue.js, MySQL, Docker, Microsoft Azure, etc.
 
 ### Project Use Cases
 
-🔗 [Use Cases](https://docs.google.com/document/d/14_S35LY8Fu9pPpNU8m3cB8XM4O2CCzFu-15TJJBATls/edit?usp=sharing)
+🔗 [Use Cases](docs/ram/requirements/use-cases.md)
 
 ### API Documentation
 
@@ -81,7 +93,7 @@ Spring Boot, Vue.js, MySQL, Docker, Microsoft Azure, etc.
 
 ### UML Class Diagram
 
-🔗 [UML Class Diagram](https://www.mermaidchart.com/raw/1f4be78a-0597-4fc4-8986-1ceb8937250e?theme=dark&version=v0.1&format=svg)
+🔗 [UML Class Diagram](docs/ram/requirements/software-requirements-specification.md#71-business-domain-model)
 
 ## Getting Started
 

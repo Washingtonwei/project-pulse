@@ -38,7 +38,7 @@ The app is ready at http://localhost:5173. Mailpit UI is at http://localhost:802
    # Windows (PowerShell) — backend on port 80, frontend on port 5173
    (Get-NetTCPConnection -LocalPort 80 -ErrorAction SilentlyContinue).OwningProcess | ForEach-Object { Stop-Process -Id $_ -Force }
    (Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue).OwningProcess | ForEach-Object { Stop-Process -Id $_ -Force }
-
+   
    # macOS/Linux
    lsof -ti:80 | xargs kill
    lsof -ti:5173 | xargs kill
@@ -148,7 +148,7 @@ The RAM module is developed **spec-first**: its requirements are authored as Mar
 
 (A second, non-RAM requirement set will later land under `docs/pulse-core/` with the same shape.)
 
-**Functional requirements.** A **use case is itself a high-level functional requirement** (SRS §5.1) — its "System shall" steps + Associated Information are its detailed spec. SRS **§5.2** holds only the non-use-case, system-level behaviors, with IDs in `FR-<AREA>-<n>` format (parallel to `UC-<AREA>-<n>`): `FR-SAVE-*` autosave, `FR-LOCK-*` locking, `FR-COL-*` collaboration, `FR-VAL-*` validation, `FR-AI-*` AI, `FR-TPL-*` templates, `FR-GLO-*` glossary, `FR-HIS-*` history/authorship, `FR-SEC-*` security, `FR-EXP-*` export, `FR-IMP-*` import, `FR-PERF-*` performance, `FR-NOT-*` notifications. **Business rules** (`BR-*`, in `business-rules.md`) are an append-only sequence cited by use cases and the SRS. FR/BR/UC IDs are identifier spaces independent of section numbering — never renumber them.
+**Functional requirements.** A **use case is itself a high-level functional requirement** (SRS §5.1) — its "The system ..." steps + Associated Information are its detailed spec. SRS **§5.2** holds only the non-use-case, system-level behaviors, with IDs in `FR-<AREA>-<n>` format (parallel to `UC-<AREA>-<n>`): `FR-SAVE-*` autosave, `FR-LOCK-*` locking, `FR-COL-*` collaboration, `FR-VAL-*` validation, `FR-AI-*` AI, `FR-TPL-*` templates, `FR-GLO-*` glossary, `FR-HIS-*` history/authorship, `FR-SEC-*` security, `FR-EXP-*` export, `FR-IMP-*` import, `FR-PERF-*` performance, `FR-NOT-*` notifications. **Business rules** (`BR-*`, in `business-rules.md`) are an append-only sequence cited by use cases and the SRS. FR/BR/UC IDs are identifier spaces independent of section numbering — never renumber them.
 
 ### Spec-driven feature workflow
 
@@ -159,9 +159,10 @@ A RAM feature begins as a use case. The loop:
 3. The work is recorded back into `docs/ram/traceability.md`.
 
 Treat the use case as the contract:
-- The **use case** gives actors, trigger, main success scenario, extensions, and pre/postconditions — *what to build and the flows to test*.
-- The **linked FRs** are the atomic, testable "shall" statements — *acceptance criteria*. Map every step/extension to an FR or flag the gap; don't invent silently.
+- The **use case** gives actors, trigger, main success scenario, extensions, and pre/postconditions — *what to build and the flows to test*. Its system-subject steps plus their **Associated Information** are themselves the detailed functional requirement (a use case is a high-level FR); the cross-cutting **§5.2 FRs** (`FR-LOCK-*`, `FR-SAVE-*`, …) it cites are the additional atomic "shall" statements it must honor. Together they are the *acceptance criteria* — don't restate the use-case flow as a new FR, and don't invent missing detail silently.
+- **Citation is at the use-case level.** Traceability is one row per UC and tests are tagged to the UC — there is no finer (per-step) handle, so the UC's tests must cover the whole main flow **and every extension**, and a use case must stay small enough that "UC-X passes" is a meaningful statement. The extensions carry the edge-case requirements.
 - The **glossary** fixes vocabulary — use the defined term in code identifiers and UI text, never a synonym.
+- **The spec is authoritative but not infallible.** When a step is ambiguous, an assumption breaks against the existing code, or requirements contradict — ask a clarifying question or challenge the spec; don't silently comply or silently invent. Fix the spec and re-derive rather than diverging quietly in code. `/feature` builds this in.
 
 Cross-cutting behavior is already specified, and some is already built — reuse it, don't reinvent per feature:
 - **Locking** (`FR-LOCK-*`): section-level pessimistic locking already exists in `ram/document/`. See UC-DOC-2 / UC-DOC-6.

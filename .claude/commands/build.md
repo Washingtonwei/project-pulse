@@ -61,6 +61,8 @@ For each .md file, fix the following without asking. Track every change for the 
 
 These need user judgment. Surface them; don't fix.
 
+**The spec is authoritative but not infallible — don't limit yourself to the checklist below.** The enumerated checks are the floor, not the ceiling. If, while sweeping the docs, you notice a substantive spec defect — two docs that contradict each other, a use-case step that no FR backs (or that quietly restates a §5.2 FR), an extension that can't be tested as written, a "shall" statement that isn't atomic or testable, an assumption that looks wrong — **flag it and challenge it**, even when no Phase 2 rule names it. Phrase it as a question or a recommended fix for the user to decide; never silently normalize over a meaning problem while fixing formatting. (Mechanical normalization in Phase 1 stays automatic — this applies to substance, not whitespace.)
+
 1. **Glossary coverage.** Any concept used as a domain term in docs 2–5 should be defined in `docs/ram/requirements/project-glossary.md`. Flag terms that look domain-specific but are undefined there. Don't flag generic English words or common technical terms.
 
 2. **FR ID references.** If text in any doc references an FR ID (e.g., `FR-VAL-3`, `FR-LOCK-2`), the ID must exist as a definition in `docs/ram/requirements/software-requirements-specification.md`. Flag dangling references. **Scope includes `docs/ram/traceability.md`** — its `FR IDs` column mixes specific IDs (`FR-AI-6`) and category wildcards (`FR-GLO*`); verify each specific ID resolves and leave wildcards alone.
