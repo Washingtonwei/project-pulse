@@ -1,6 +1,6 @@
 # Cross-Document Review Criteria & Critique-Assistant System Prompt
 
-> The criteria a reviewer (human or the **critique assistant**) applies when reviewing a team's **whole requirement set** — the team's requirement documents together — for gaps, inconsistencies, conflicts, and broken traceability. Part 1 is the methodology (human-readable checklist). Part 2 is a paste-ready **system prompt** that operationalizes it for the assistant. Part 3 is build guidance, consistent with [`ai-implementation-notes.md`](ai-implementation-notes.md).
+> The criteria a reviewer (human or the **critique assistant**) applies when reviewing a team's **whole requirement set** — the team's requirement documents together — for gaps, inconsistencies, conflicts, and broken traceability. Part 1 is the methodology (human-readable checklist). Part 2 is a paste-ready **system prompt** that operationalizes it for the assistant. Part 3 is build guidance, consistent with [`ai-implementation-notes.md`](../guides/ai-implementation-notes.md).
 
 ## Scope note — this is the *project-wide* review mode
 
@@ -19,10 +19,10 @@ This whole-project mode is now a **distinct use case and FR** (resolved as OI-16
 The current core document types and their roles (documents are **views over one shared graph of typed artifacts and links** — they are supposed to agree because they describe the same model):
 
 1. **Glossary** — canonical domain vocabulary.
-2. **Vision and Scope** — business objectives (BO-*), risks (RI-*), assumptions (AS-*), features, MVP scope.
-3. **Use Cases** — behavioral specs; area-prefixed IDs `UC-<AREA>-<n>`.
+2. **Vision and Scope** — business objectives (BO-*), risks, assumptions, features, MVP scope.
+3. **Use Cases** — behavioral specs; each carries a unique ID (e.g., `UC-1`).
 4. **Business Rules** — cross-cutting policies/access rules `BR-*`.
-5. **SRS** — architecture, functional requirements `FR-*`, quality attributes, data model.
+5. **SRS** — architecture, functional requirements `FR-*`, quality attributes, data model. Its **Non-Use Case Functional Requirements** section holds the system-level "shall" statements that complement the use cases.
 
 Review across **seven dimensions**. For each finding, capture *where*, *what*, *why it matters*, and *the fix or the question*.
 
@@ -36,7 +36,7 @@ Review across **seven dimensions**. For each finding, capture *where*, *what*, *
 ### D2 — Coverage & traceability (across documents)
 - **Every use case cites FRs that exist**, and (where a traceability matrix exists) has **exactly one** matrix row.
 - **Every FR is realized or honored by some use case** — or is justified as system-driven/background. Flag **orphan FRs** (defined, never referenced) — but an FR explicitly marked **_(Deferred — future release)_** is a parked future requirement, **not** an orphan; don't flag it for lacking a use case.
-- **§5.2 complements the use cases; it must not duplicate them.** A use case is itself a high-level FR (its "System shall" steps + Associated Information are its spec). Flag any §5.2 FR that merely restates a use case's CRUD flow instead of capturing genuinely non-use-case behavior (system-driven, event-driven, global, or background).
+- **The Non-Use Case Functional Requirements complement the use cases; they must not duplicate them.** A use case is itself a high-level functional requirement (its "system shall" steps + associated information are its spec). Flag any non-use-case FR that merely restates a use case's CRUD flow instead of capturing genuinely non-use-case behavior (system-driven, event-driven, global, or background).
 - **Every glossary term is used consistently** in docs 2–5; flag **undefined terms** (used as a domain term but never defined) and **orphan terms** (defined, never used).
 - **Every cited business rule resolves** to the BR catalog; flag **orphan rules**.
 - **Actors** named in use cases are defined in the glossary and used consistently everywhere — including their **scope and role hierarchy** (e.g., the Course Admin is course-scoped and also holds every Instructor capability). Flag an action attributed to **different actors in different docs** (e.g., document provisioning assigned to the Instructor in Vision but the Course Admin in the use case / business rule).
@@ -45,7 +45,7 @@ Review across **seven dimensions**. For each finding, capture *where*, *what*, *
 - **Terminology:** one defined term per concept — **no synonyms** for an already-defined term. Watch overloaded words (e.g., qualify "Section" as *Course Section* vs *Document Section*).
 - **Scope statements agree:** what is "MVP" vs "post-MVP" must be stated the **same way** across glossary, Vision, Use Cases, Business Rules, and SRS. A **deferred capability** should be labeled in **all three** of its homes: a post-MVP note on the Vision feature/BO, an entry in the Vision MVP-exclusion list, and (if it has an FR) the FR marked **_(Deferred — future release)_**. Flag a capability that is committed in one doc but deferred in another (e.g., a Vision feature still reading as in-scope while its FR is deferred).
 - **Lists agree:** the same enumeration (e.g., supported export formats, the set of AI assistants, document types) should match wherever it appears.
-- **ID schemes** are used consistently and are independent of section numbering.
+- **ID schemes** are used consistently, and IDs stay stable as documents evolve.
 
 ### D4 — Conflicts & contradictions (documents assert *opposing* things)
 - **Rule conflicts** — e.g., a glossary example says "only the author may delete X" while a use case lets any teammate delete X.
@@ -55,10 +55,10 @@ Review across **seven dimensions**. For each finding, capture *where*, *what*, *
 
 ### D5 — Atomicity, testability & writing quality (ReqLint-style; applies to FR "shall" statements and use cases)
 - FRs: use **"shall"**, are **atomic** (one behavior each), and are **testable/measurable**. Flag **vague verbs** (`manage`, `support`, `handle`, `process`, `deal with`), **subjective adjectives** (`fast`, `user-friendly`, `intuitive`, `easy`, `quick`, `appropriate`, `seamless`), and ambiguity.
-- Use cases: have a **trigger**, **preconditions/postconditions**, a **numbered main flow** alternating actor action / system response, and **extensions**; the ID follows the area scheme.
+- Use cases: have a **trigger**, **preconditions/postconditions**, a **numbered main flow** alternating actor action / system response, and **extensions**; each carries a unique ID.
 
 ### D6 — ID & structure hygiene
-- ID spaces (`FR-*`, `BR-*`, `UC-<AREA>-<n>`, `BO/RI/AS-*`) are **append-only**, with **no gaps or duplicates** within a category/area, and **every cross-reference resolves**.
+- ID spaces (`FR-*`, `BR-*`, `UC-*`, `BO-*`, …) are **stable and unique**, with **no duplicates** within a category, and **every cross-reference resolves**.
 - TOCs, headings, and anchors are internally consistent (deterministic tools own this, but flag obvious drift).
 
 ### D7 — Scope discipline (don't cry wolf)
@@ -97,9 +97,10 @@ Requirements are atomic artifacts (graph nodes) connected by typed links (edges)
 The current core document types and their roles:
 - Glossary — canonical domain terms.
 - Vision and Scope — objectives (BO-*), risks (RI-*), assumptions (AS-*), features, MVP scope.
-- Use Cases — behavioral specs; IDs are UC-<AREA>-<n>.
+- Use Cases — behavioral specs; each has a unique ID (e.g., UC-1).
 - Business Rules — cross-cutting policies/access rules (BR-*).
-- SRS — architecture, functional requirements (FR-*), quality attributes, data model.
+- SRS — architecture, functional requirements (FR-*), quality attributes, data model;
+  its Non-Use Case Functional Requirements section holds the system-level "shall" statements.
 Because the documents describe the same model, they must agree.
 
 YOUR JOB — review across these dimensions:
@@ -108,8 +109,8 @@ YOUR JOB — review across these dimensions:
    quality attributes are specified and measurable; the data model is concrete.
 2. Coverage & traceability — every use case cites FRs that exist; every FR is realized
    or honored by some use case (flag orphans — but an FR marked "(Deferred — future
-   release)" is a parked future requirement, not an orphan); a Section 5.2 FR must
-   complement the use cases, not merely restate a use case's flow; every glossary term
+   release)" is a parked future requirement, not an orphan); a non-use-case (system-level)
+   FR must complement the use cases, not merely restate a use case's flow; every glossary term
    is used consistently (flag undefined and orphan terms); every cited BR resolves;
    actors are consistent in name AND scope (e.g., the Course Admin is course-scoped and
    also an Instructor; flag an action assigned to different actors in different docs).
@@ -122,7 +123,7 @@ YOUR JOB — review across these dimensions:
    (manage, support, handle, process), subjective adjectives (fast, user-friendly,
    intuitive, easy, appropriate), and ambiguity. Use cases have a trigger,
    pre/postconditions, a numbered flow, and extensions.
-6. ID & structure hygiene — IDs append-only, no gaps/duplicates within a category;
+6. ID & structure hygiene — IDs stable and unique, no duplicates within a category;
    every cross-reference resolves.
 7. Scope discipline — distinguish a real gap from a deliberate MVP exclusion; if you
    can't tell, ASK rather than assert. A deferred capability should be labeled
@@ -151,7 +152,7 @@ OUTPUT — return JSON only, matching this shape:
       "id": "F1",
       "category": "completeness | coverage | consistency | conflict | writing | hygiene | scope",
       "severity": "blocker | major | minor",
-      "locations": ["SRS §9.1", "use-cases UC-COL-2"],
+      "locations": ["SRS / Quality Attributes", "Use Cases / UC-2"],
       "problem": "One sentence: what is wrong.",
       "rationale": "Why it weakens the requirements / what the student should learn.",
       "suggestion": "A concrete fix, OR null if this needs a decision.",
@@ -168,7 +169,7 @@ Order findings by severity (blocker → minor), then group mentally by category.
 
 ## Part 3 — Implementation notes
 
-Consistent with [`ai-implementation-notes.md`](ai-implementation-notes.md) (Assistant = system prompt + context builder + one Claude call, server-side, behind the AI proxy):
+Consistent with [`ai-implementation-notes.md`](../guides/ai-implementation-notes.md) (Assistant = system prompt + context builder + one Claude call, server-side, behind the AI proxy):
 
 - **Context assembly is the hard part, not the prompt.** A whole-project review needs the *content* of the team's requirement documents. Don't blindly dump everything — assemble a structured payload: each document's sections/items, the artifact/link graph (for traceability checks), the glossary term list, the BR catalog, the FR list, and the **template definitions** (for required-section checks). For large projects, send a structured coverage map plus the slices most likely to conflict, and let the model request more.
 - **Deterministic checks first.** Resolve the mechanical couplings in code before calling the model — does every cited `FR-*`/`BR-*`/`UC-*` exist? every glossary term used? one traceability row per UC? Feed the model the *results* (e.g., "these FRs are orphaned, these terms undefined") so it spends its reasoning on judgment calls (conflicts, drift, scope) rather than rediscovering broken links. This is faster, cheaper, and more reliable.

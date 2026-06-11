@@ -18,9 +18,10 @@ docs/ram/
 ├── design/                                    # design docs, one per UC area (below the SRS)
 │   └── README.md                              # design-doc conventions
 ├── traceability.md                            # spec→code matrix: one row per use case
-├── guides/                                    # supporting authoring/build guidance
-│   ├── ai-implementation-notes.md
-│   └── cross-document-review-criteria.md
+├── guides/                                    # supporting build guidance (not spec docs)
+│   └── ai-implementation-notes.md
+├── product/                                   # RAM product material: shipped default content
+│   └── cross-document-review-criteria.md      #   default review criteria + critique system prompt
 ├── CLAUDE.md                                  # authoring rules for everything under docs/ram/
 └── README.md                                  # this file
 ```

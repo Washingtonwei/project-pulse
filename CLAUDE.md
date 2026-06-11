@@ -144,9 +144,12 @@ The RAM module is developed **spec-first**: its requirements are authored as Mar
    5. `software-requirements-specification.md` — architecture, functional requirements (FR-*), quality attributes.
 - `docs/ram/design/` — design docs generated from the spec, one per UC area. They sit *below* the SRS (component/class design, sequence diagrams, API contracts, DB schema) and cite the UC/FRs they realize without restating them.
 - `docs/ram/traceability.md` — the spec→code map: one row per use case → FR IDs → design doc → frontend/backend modules → tests → status.
+- `docs/ram/requirements/OPEN-ISSUES.md` — the working backlog (`OI-n`, P0–P3) of gaps still needed to make the spec implementation-ready.
+- `docs/ram/guides/` — supporting build guidance that isn't itself a spec doc (e.g., AI implementation notes).
+- `docs/ram/product/` — RAM product material: shipped default content the product seeds at runtime (e.g., the default cross-document review criteria + critique-assistant system prompt).
 - `docs/ram/CLAUDE.md` — authoring rules for these docs (numbering, TOCs, anchor slugs, ID schemes, cross-doc consistency); it governs edits anywhere under `docs/ram/`.
 
-(A second, non-RAM requirement set will later land under `docs/pulse-core/` with the same shape.)
+(A second, non-RAM requirement set is scaffolded as a placeholder under `docs/pulse-core/` and will be authored later with the same shape.)
 
 **Functional requirements.** A **use case is itself a high-level functional requirement** (SRS §5.1) — its "The system ..." steps + Associated Information are its detailed spec. SRS **§5.2** holds only the non-use-case, system-level behaviors, with IDs in `FR-<AREA>-<n>` format (parallel to `UC-<AREA>-<n>`; `docs/ram/CLAUDE.md` enumerates the area codes). **Business rules** (`BR-*`, in `business-rules.md`) are an append-only sequence cited by use cases and the SRS. FR/BR/UC IDs are identifier spaces independent of section numbering — never renumber them.
 
@@ -173,7 +176,7 @@ When implementing, **extend the existing RAM packages** (`ram/document`, `ram/re
 
 ### Editing the docs
 
-When editing anything under `docs/ram/`, the rules in `docs/ram/CLAUDE.md` apply (heading numbering, TOC regeneration, anchor slugs, FR/BR/UC ID schemes, cross-doc terminology). Run **`/build`** to verify and resync. A future `docs/pulse-core/` module will carry its own nested `CLAUDE.md`.
+When editing anything under `docs/ram/`, the rules in `docs/ram/CLAUDE.md` apply (heading numbering, TOC regeneration, anchor slugs, FR/BR/UC ID schemes, cross-doc terminology). Run **`/build`** to verify and resync. The placeholder `docs/pulse-core/` module will carry its own nested `CLAUDE.md` once authored.
 
 ## CI
 
