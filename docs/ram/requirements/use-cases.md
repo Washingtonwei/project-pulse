@@ -2097,6 +2097,7 @@ File names include document type and team identifier.
 **Associated Information:**
 - The cross-document review criteria are a course-section-level teaching artifact, distinct from the teaching context (UC-CFG-1) and per-assistant assistant instructions (UC-CFG-3); they govern the critique assistant's whole-project review mode (UC-AI-10) specifically.
 - While the criteria are undefined for a course section, the whole-project review is unavailable to that course section's students (FR-AI-23).
+- The system-provided default the criteria are seeded from (main flow step 2) is maintained in `docs/ram/product/cross-document-review-criteria.md` (the default criteria set + the critique assistant's whole-project-review system prompt).
 - Realized by FR-AI-22; honors FR-AI-23.
 
 **Related Use Cases:** UC-AI-10: Request a whole-project review from the critique assistant; UC-CFG-1: Configure the teaching context for a course section; UC-CFG-3: Configure the assistant instructions for a course section.
@@ -2595,7 +2596,7 @@ File names include document type and team identifier.
 **Business Rules:** BR-16, BR-17 — Every finding shall include an instructive rationale. The critique assistant must be enabled for the course section (UC-CFG-2). The assistant shall not modify student-authored content without explicit confirmation (UC-AI-8). The review is advisory and distinct from ReqLint validation (UC-VAL-1).
 **Associated Information:**
 - The whole-project review reads the team's entire set of requirement documents together (the document set may grow beyond the current five); it is the project-wide complement to the per-destination critique in UC-AI-5 and to the elicitation assistant's broad-mode gap analysis (FR-AI-15).
-- The dimensions and standards applied are the cross-document review criteria configured by the instructor for the course section (UC-CFG-4); the review methodology and a default criteria set are drafted in guides/cross-document-review-criteria.md.
+- The dimensions and standards applied are the cross-document review criteria configured by the instructor for the course section (UC-CFG-4); the review methodology and the system-provided default criteria set are maintained in `docs/ram/product/cross-document-review-criteria.md`.
 - Requesting a whole-project review is read-only — it neither locks nor modifies any document. Acting on a finding changes content only through the normal path: a manual revision (UC-DOC-2 / UC-DOC-6) or an accepted rewrite (extension 4a) via UC-AI-8, each subject to the affected item's lock.
 - Reachable directly (a "Review whole project" action) and via the project assistant (UC-AI-9), which routes the student into this use case.
 - Realized by FR-AI-21, FR-AI-22; honors FR-AI-3, FR-AI-9, FR-AI-13, FR-AI-23.
