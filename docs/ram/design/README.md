@@ -40,6 +40,8 @@ Each design doc covers exactly one UC area and is named after that area's lowerc
 
 Add a doc only when its area is first designed; this directory grows as `/feature` runs. If a new UC area is introduced in `requirements/use-cases.md`, add the matching row above and a same-named design doc when it's implemented.
 
+**Cross-cutting exception — `architectural-design.md`.** Not every design doc maps to a UC area. [`architectural-design.md`](architectural-design.md) is the design-of-record for the host architecture RAM is constrained to: the C4 system-context and container diagrams, the operating environment (`OE-*`), design and implementation constraints (`CO-*`), the architecture-level assumptions and dependencies (`AS-*` / `DE-*`), and deployment. It holds the content that used to live in SRS §4 and §10 (the SRS now cites it by name), and the per-area docs above cite its Container Diagram rather than redrawing it. It is not named after a UC area and is not produced by a single `/feature` run.
+
 ## What a design doc contains
 
 A design doc is **structured by concern, not by use case.** An area accumulates several use cases over time (`UC-DOC-2`, then `-5`, then `-6`), each landed by its own `/feature` run — but the doc must not become a per-UC changelog (`## UC-DOC-2 design`, `## UC-DOC-5 design`, … stacked up). Keep the skeleton below and let the two axes grow differently:
@@ -48,7 +50,7 @@ A design doc is **structured by concern, not by use case.** An area accumulates 
 - **Per-flow, appended** — Sequence diagrams (one per main success scenario + each non-trivial extension) and API-contract rows. These accumulate as use cases are added.
 - **Realizes / Depends header** — append the new `UC-`/`FR-` ID each time the area gains a use case.
 
-**Cite the SRS for the shared model; design only the delta.** Areas sit on a shared substrate — the requirement artifact graph underlies ART/LNK/VAL/REV, documents+sections+locking underlie DOC/TPL/COL. That cross-area model lives **above** these docs, in SRS §7.1 (Business Domain Model) and §4.2 (Container Diagram). **Do not redraw the shared entity graph here** — link to SRS §7.1 and design only the implementation-level delta this area adds (JPA mapping, columns, migration names, the bits below SRS granularity). Two area docs each re-drawing the artifact ER means three copies (SRS + both) to keep in sync.
+**Cite the SRS for the shared model; design only the delta.** Areas sit on a shared substrate — the requirement artifact graph underlies ART/LNK/VAL/REV, documents+sections+locking underlie DOC/TPL/COL. That cross-area model lives **above** these docs, in SRS §6.1 (Business Domain Model) and the Container Diagram in [`architectural-design.md`](architectural-design.md). **Do not redraw the shared entity graph here** — link to SRS §6.1 and design only the implementation-level delta this area adds (JPA mapping, columns, migration names, the bits below SRS granularity). Two area docs each re-drawing the artifact ER means three copies (SRS + both) to keep in sync.
 
 **Keep it lean — design is close to the code, so don't duplicate the code.** Thoroughness belongs in `requirements/`; a design doc earns its place only by holding what code *can't* show: the **diagram** (the shape of a flow, the lifecycle of a state, how classes relate) and the **non-obvious decisions** (an invariant, an auth rule, a reuse choice, a *why*). Everything a reader could recover by opening the files — full request/response bodies, every column, every getter — does **not** go here; `traceability.md` already maps the UC to its actual frontend/backend/test files, so **link to them, don't transcribe them.** If a section would just paraphrase the code or the SRS, drop it. A good area doc is mostly diagrams plus a few lines of rationale, not prose.
 
@@ -80,7 +82,7 @@ trade-off, a reuse choice. Skip anything self-evident from the code.
 
 ## Data model
 The *delta* this area adds (new tables/columns/migrations) — as an ER diagram where it
-helps. Don't redraw the shared graph; link to SRS §7.1 (Business Domain Model) instead.
+helps. Don't redraw the shared graph; link to SRS §6.1 (Business Domain Model) instead.
 
 ## Reuse & cross-cutting
 Which existing subsystems this leans on — locking (FR-LOCK-*), collaboration
@@ -95,9 +97,9 @@ Good design before implementation is the point of these docs — pick the UML vi
 
 - **Sequence** — request/response flows: SPA → controller → service → repository, plus any LLM-service round-trip. One for the main success scenario; add one for each non-trivial extension/error flow. Tie every interaction to the UC step it implements.
 - **Class** — component/structure design: backend controllers/services/repositories/entities and frontend views/stores/api clients, and their relationships. Mark what is reused vs. new.
-- **ER** — DB schema: tables, key fields, relationships, migrations. Tie back to SRS §7.1 (Business Domain Model).
+- **ER** — DB schema: tables, key fields, relationships, migrations. Tie back to SRS §6.1 (Business Domain Model).
 - **State** — lifecycle-heavy areas, where the subtle behavior (and the bugs) live: document-section **lock** states (DOC), **review & submission** states (REV), AI candidate accept/reject (AI). If an area has a state machine, diagram it.
-- **Flowchart / C4** — how the area fits the Project Pulse containers (SRS §4.2), when the architectural placement isn't obvious.
+- **Flowchart / C4** — how the area fits the Project Pulse containers (the Container Diagram in [`architectural-design.md`](architectural-design.md)), when the architectural placement isn't obvious.
 
 ## Conventions
 

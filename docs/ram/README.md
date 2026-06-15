@@ -13,10 +13,11 @@ docs/ram/
 │   ├── vision-and-scope.md                    # business objectives, risks, features
 │   ├── use-cases.md                           # behavioral specs (UC-<AREA>-<n>)
 │   ├── business-rules.md                      # cross-cutting policies (BR-*)
-│   ├── software-requirements-specification.md # architecture, FRs, quality attrs
+│   ├── software-requirements-specification.md # FRs, data model, quality attrs
 │   └── OPEN-ISSUES.md                          # working backlog (OI-n, P0–P3)
-├── design/                                    # design docs, one per UC area (below the SRS)
-│   └── README.md                              # design-doc conventions
+├── design/                                    # design docs (below the SRS)
+│   ├── README.md                              # design-doc conventions
+│   └── architectural-design.md                # host architecture, constraints, deployment (cross-cutting)
 ├── traceability.md                            # spec→code matrix: one row per use case
 ├── guides/                                    # supporting build guidance (not spec docs)
 │   └── ai-implementation-notes.md

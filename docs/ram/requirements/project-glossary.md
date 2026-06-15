@@ -118,7 +118,7 @@ A requirement artifact may represent:
   - an assumption
   - a dependency
 
-These map one-to-one to the `RequirementArtifactType` enumeration in the data model (SRS §7.1), which is the authoritative taxonomy; the `OTHER` enum value is an implementation fallback and is not a distinct domain concept. "Background" is document narrative (a prose document section), not a tracked artifact.
+These map one-to-one to the `RequirementArtifactType` enumeration in the data model (SRS §6.1), which is the authoritative taxonomy; the `OTHER` enum value is an implementation fallback and is not a distinct domain concept. "Background" is document narrative (a prose document section), not a tracked artifact.
 
 Requirement artifacts are:
 
@@ -311,7 +311,7 @@ A requirement artifact describing a specific, testable behavior the system must 
 
 Examples: FR-1 (the system autosaves the active document section every 10 seconds), FR-2 (the system grants a student an exclusive lock before editing a document section), FR-3 (the system assigns a unique key to each new artifact).
 
-Note: the area-prefixed form `FR-<AREA>-<n>` (e.g., `FR-SAVE-1`, `FR-LOCK-1`) is not a product-generated artifact key — it is the organizing convention used by this specification's own SRS §5.2, parallel to the `UC-<AREA>-<n>` use-case IDs. See artifact key.
+Note: the area-prefixed form `FR-<AREA>-<n>` (e.g., `FR-SAVE-1`, `FR-LOCK-1`) is not a product-generated artifact key — it is the organizing convention used by this specification's own SRS §4.2, parallel to the `UC-<AREA>-<n>` use-case IDs. See artifact key.
 
 ## **Constraint**
 
