@@ -13,41 +13,7 @@
 |               |         |             |          |
 |               |         |             |          |
 
-# **Table of Contents**
-
-- [1. Introduction](#1-introduction)
-  - [1.1 Background](#11-background)
-  - [1.2 Current Process Flows (As-Is Process Flows)](#12-current-process-flows-as-is-process-flows)
-  - [1.3 References](#13-references)
-- [2. Business Requirements](#2-business-requirements)
-  - [2.1 Business Opportunity/Problem Statement](#21-business-opportunityproblem-statement)
-  - [2.2 Business Objectives](#22-business-objectives)
-  - [2.3 Vision Statement](#23-vision-statement)
-  - [2.4 Proposed New/Improved Process Flows (To-Be Process Flows)](#24-proposed-newimproved-process-flows-to-be-process-flows)
-  - [2.5 Risks](#25-risks)
-  - [2.6 Business Assumptions and Dependencies](#26-business-assumptions-and-dependencies)
-- [3. Stakeholder Profiles and User Descriptions](#3-stakeholder-profiles-and-user-descriptions)
-  - [3.1 Stakeholder Profiles](#31-stakeholder-profiles)
-  - [3.2 User Environment](#32-user-environment)
-  - [3.3 Alternatives and Competition](#33-alternatives-and-competition)
-- [4. Scope and Limitations](#4-scope-and-limitations)
-  - [4.1 Product Perspective](#41-product-perspective)
-  - [4.2 Major Features / Scope](#42-major-features--scope)
-    - [4.2.1 Graph-First Requirements Model](#421-graph-first-requirements-model)
-    - [4.2.2 Template Management](#422-template-management)
-    - [4.2.3 Smart Editing and Validation (ReqLint)](#423-smart-editing-and-validation-reqlint)
-    - [4.2.4 Full Requirements Traceability](#424-full-requirements-traceability)
-    - [4.2.5 AI-Assisted Guidance and Feedback](#425-ai-assisted-guidance-and-feedback)
-    - [4.2.6 Collaboration and Document Workflow](#426-collaboration-and-document-workflow)
-    - [4.2.7 Instructor Dashboard, Feedback, and Grading](#427-instructor-dashboard-feedback-and-grading)
-    - [4.2.8 Project Source Material Import](#428-project-source-material-import)
-    - [4.2.9 Export and Delivery](#429-export-and-delivery)
-    - [4.2.10 Administration and Course Management](#4210-administration-and-course-management)
-  - [4.3 Deployment Considerations](#43-deployment-considerations)
-
-# **Vision and Scope**
-
-# **1. Introduction**
+# **Introduction**
 
 This document defines the purpose, goals, and boundaries of the **Requirements Authoring & Management (RAM)** Tool. RAM is a web-based requirements authoring environment designed to modernize how software requirements are written, understood, and evaluated in educational settings. Its primary goal is to replace unstructured, document-centric requirement writing with a structured, model-driven approach that reflects professional requirements engineering practices while remaining accessible to students and instructors.
 
@@ -61,7 +27,7 @@ RAM is designed specifically for software engineering, senior design, and capsto
 
 This document outlines the business opportunity, major features, stakeholders, and proposed workflows. Detailed behavioral specifications, cross-cutting business rules, and implementation-facing requirements are defined in the Use Cases, Business Rules, and Software Requirements Specification (SRS) documents.
 
-## **1.1 Background**
+## **Background**
 
 Requirements are the foundation of all software development efforts, describing what the system must do, how it behaves, and any constraints under which it must operate. Requirements engineering is a core competency in software engineering and is essential for successful senior design and capstone projects.
 
@@ -71,7 +37,7 @@ In academic settings, students typically write requirements using Microsoft Word
 
 The Department of Computer Science at TCU teaches a two-semester Software Engineering / Senior Design sequence in which students must deliver professional-grade requirements for real clients. RAM is designed to support this educational process with structure, intelligence, and explicit modeling of requirements and their relationships.
 
-## **1.2 Current Process Flows (As-Is Process Flows)**
+## **Current Process Flows (As-Is Process Flows)**
 
 Students currently author requirements using Google Docs templates, including:
 
@@ -85,14 +51,14 @@ While effective to a degree, this traditional process leads to incomplete docume
 
 To understand the full requirements of a project, students and instructors must manually open and cross-reference multiple documents. There is limited support for enforcing completeness, validating structure, or understanding how high-level goals map to concrete system behavior.
 
-## **1.3 References**
+## **References**
 
 - Wiegers, K., & Beatty, J. (2013). Software requirements. Pearson Education.
 - [TCU COSC 40943/40993 Senior Design Templates](https://drive.google.com/drive/folders/1zhAg61cuGpplvg6zCTdvrY-9pTeH9Xg1?usp=sharing)
 
-# **2. Business Requirements**
+# **Business Requirements**
 
-## **2.1 Business Opportunity/Problem Statement**
+## **Business Opportunity/Problem Statement**
 
 Modern IDEs provide powerful support for writing and maintaining code, including navigation, refactoring, validation, and dependency analysis. In contrast, requirements authoring in educational settings remains largely unchanged. Students continue to write requirements in generic, document-centric tools such as Microsoft Word or Google Docs—tools that are not designed to model the structure, relationships, or semantics of requirements engineering.
 
@@ -213,7 +179,7 @@ An education-focused, graph-first, model-driven requirements authoring environme
 
 The RAM tool will elevate student requirements to professional industry standards while modernizing and streamlining software engineering education.
 
-## **2.2 Business Objectives**
+## **Business Objectives**
 
 BO-1: Improve the quality of student-written requirements through structure, templates, standards, traceability, AI feedback, and consistency checks.
 
@@ -229,7 +195,7 @@ BO-6: Enable navigation, visualization, and impact analysis of requirements rela
 
 BO-7: Create opportunities for research in educational technology, AI-in-the-loop requirements engineering, NLP-based requirement quality analysis, and HCI.
 
-## **2.3 Vision Statement**
+## **Vision Statement**
 
 RAM is a modern, web-based requirements engineering IDE that captures requirements as a structured, navigable graph rather than isolated documents. Every problem, objective, feature, use case, functional requirement, risk, and glossary term is modeled as a first-class entity with explicit relationships. Document templates (Vision and Scope, Glossary, Use Cases, Business Rules, SRS) are views over the shared requirements model, enabling trace navigation, impact analysis, and IDE-like refactoring (e.g., renaming a glossary term updates all references). RAM empowers students to understand, author, and evolve requirements holistically while providing instructors with powerful tools for validation, feedback, and grading.
 
@@ -242,7 +208,7 @@ RAM is a modern, web-based requirements engineering IDE that captures requiremen
 | Unlike             | generic word processors that offer no enforcement of structure, standards, or requirements-specific validation,                                                                                                                                                                                |
 | Our product        | delivers a customizable, education-focused requirements IDE—complete with template enforcement, writing standards, terminology consistency checks, and LLM-powered guidance—to raise student requirements to professional industry standards and streamline the teaching and grading workflow. |
 
-## **2.4 Proposed New/Improved Process Flows (To-Be Process Flows)**
+## **Proposed New/Improved Process Flows (To-Be Process Flows)**
 
 The to-be process describes how a student team authors a project's requirements in RAM, from the client's initial pitch through a delivered specification. RAM's AI assistants are deliberately Socratic: they coach the students' own elicitation and writing rather than produce finished requirements.
 
@@ -259,7 +225,7 @@ The to-be process describes how a student team authors a project's requirements 
 
 The process is iterative: as authoring reveals gaps, the team returns to elicitation (steps 3–5) for further client conversations before finalizing and delivering.
 
-## **2.5 Risks**
+## **Risks**
 
 Risks to the success of the system or project — spanning business/adoption, technical/feasibility, and security/safety categories. Each is identified by an `RI-*` key.
 
@@ -275,7 +241,7 @@ RI-5: Browser compatibility: Ensuring smooth performance across many devices.
 
 RI-6: Accessibility: Must meet WCAG accessibility requirements.
 
-## **2.6 Business Assumptions and Dependencies**
+## **Business Assumptions and Dependencies**
 
 AS-1: Students and instructors have stable internet access.
 
@@ -287,9 +253,9 @@ AS-4: LLM APIs (e.g., OpenAI) remain available and cost-effective.
 
 AS-5: Faculty buy-in will be sufficient for pilot use.
 
-# **3. Stakeholder Profiles and User Descriptions**
+# **Stakeholder Profiles and User Descriptions**
 
-## **3.1 Stakeholder Profiles**
+## **Stakeholder Profiles**
 
 | Stakeholder                                                      | Major value or benefit from this product                                                                                                                               | Attitudes                                                                                                              | Major features of interest                                                                                                          | Constraints                                                                     | End user or not? |
 | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ---------------- |
@@ -297,7 +263,7 @@ AS-5: Faculty buy-in will be sufficient for pilot use.
 | Software Engineering & Senior Design Instructors                 | Teach requirements effectively; efficient grading; consistent formatting; Ability to enforce standards; dashboards for progress; reduced manual review                 | Strongly supportive if tool reduces grading burden; expect accuracy and reliability                                    | Template customization, LLM tutoring, example patterns, traceability, dashboards, completeness metrics, requirement quality scoring | Limited time; large class sizes; need reliable, accurate checks                 | Yes              |
 | Course Admin (course creator)                                    | Efficient course section and team setup; reliable roster and access management; one-click provisioning of each team's documents from built-in templates                | Wants minimal-friction setup; values reliability, correctness, and auditability                                        | Course section / team creation, roster and enrollment management, instructor invitations, template assignment, document provisioning | Owns a single course and is also an Instructor of it; limited time; needs correctness and an audit trail | Yes              |
 
-## **3.2 User Environment**
+## **User Environment**
 
 - Web-based interface accessible via Chrome, Safari, and Firefox.
 - Cloud-hosted on Microsoft Azure.
@@ -305,7 +271,7 @@ AS-5: Faculty buy-in will be sufficient for pilot use.
 - Instructors use desktop or laptop environments for grading.
 - Tool must support high concurrency during assignment deadlines.
 
-## **3.3 Alternatives and Competition**
+## **Alternatives and Competition**
 
 | Tool                         | Strengths                       | Weakness for Academic use                               |
 | :--------------------------- | :------------------------------ | :------------------------------------------------------ |
@@ -314,21 +280,21 @@ AS-5: Faculty buy-in will be sufficient for pilot use.
 | reqSuite                     | Simpler requirements management | Limited integration with teaching workflows             |
 | Microsoft Word / Google Docs | Familiar, flexible              | No structure, no validation, no consistency checking    |
 
-# **4. Scope and Limitations**
+# **Scope and Limitations**
 
-## **4.1 Product Perspective**
+## **Product Perspective**
 
 RAM is a web-based requirements Integrated Authoring Environment — a module within the **Project Pulse** platform, which provides course, course section, team, and user management, authentication, and notifications — offering structured templates, validation, AI-assistant assistance, collaboration, and instructor evaluation tools.
 
-## **4.2 Major Features / Scope**
+## **Major Features / Scope**
 
 The RAM tool will provide a modern, intelligent environment for authoring, validating, and managing software requirements. The features below describe the major functional capabilities at a high level. Detailed behavioral descriptions, actor interactions, and exception scenarios are defined in the accompanying [Use Cases document](use-cases.md).
 
-### *4.2.1 Graph-First Requirements Model*
+### *Graph-First Requirements Model*
 
-The tool is not a document editor intended to replicate Google Docs or Microsoft Word. Instead, RAM is model-first: it stores requirements as a connected domain model (a requirements graph) where nodes represent requirement elements (e.g., objectives, features, use case steps, functional requirements, glossary terms) and edges represent relationships (traceability, realization, references). Traditional "documents" are generated and edited as structured views of this underlying model. This enables capabilities that are difficult or impossible in text-first tools, including instant navigation across requirement chains (objective → feature → use case step/extension → functional requirement), "find all references" for glossary terms, safe rename, and change-impact analysis. *(MVP scope: the requirements graph with trace navigation and safe rename ships in the initial release; interactive graph visualization and change-impact analysis are post-MVP — see §4.2.4.)*
+The tool is not a document editor intended to replicate Google Docs or Microsoft Word. Instead, RAM is model-first: it stores requirements as a connected domain model (a requirements graph) where nodes represent requirement elements (e.g., objectives, features, use case steps, functional requirements, glossary terms) and edges represent relationships (traceability, realization, references). Traditional "documents" are generated and edited as structured views of this underlying model. This enables capabilities that are difficult or impossible in text-first tools, including instant navigation across requirement chains (objective → feature → use case step/extension → functional requirement), "find all references" for glossary terms, safe rename, and change-impact analysis. *(MVP scope: the requirements graph with trace navigation and safe rename ships in the initial release; interactive graph visualization and change-impact analysis are post-MVP — see [Full Requirements Traceability](#full-requirements-traceability).)*
 
-### *4.2.2 Template Management*
+### *Template Management*
 
 The tool includes built-in structured document templates (based on Wiegers & Beatty's Software Requirements 3rd Edition Book) for Vision and Scope, Use Cases, Glossary, Business Rules, SRS, and other requirement documents. These templates define the structure of each document and give students clear expectations for required document sections, content, and writing styles and standards.
 
@@ -342,7 +308,7 @@ Course admins or instructors can also create new structured document templates b
 
 This enables flexibility across methodologies and supports instructor-specific teaching goals. Template customization by a course admin or instructor is a post-MVP capability; the initial release ships with fixed, built-in templates.
 
-### *4.2.3 Smart Editing and Validation (ReqLint)*
+### *Smart Editing and Validation (ReqLint)*
 
 The tool includes ReqLint, a lightweight rule-based validation engine inspired by code linters such as ESLint. ReqLint is non-AI and performs deterministic checks that enforce structure, completeness, and writing standards. Typical checks include:
 
@@ -356,7 +322,7 @@ A central and shared glossary is integrated into ReqLint to maintain consistent 
 
 Beyond glossary-term suggestion, which the initial release provides, broader smart-editing assistance — auto-suggesting actors, requirement patterns, and cross-document links, and auto-completing requirement types and scenarios — is **post-MVP**; the MVP focuses on deterministic ReqLint validation together with glossary-term suggestion.
 
-### *4.2.4 Full Requirements Traceability*
+### *Full Requirements Traceability*
 
 The tool will support bidirectional traceability across all major requirement types, enabling students and instructors to see how business goals flow down into user requirements and functional specifications. Users can link:
 
@@ -369,7 +335,7 @@ The tool will support bidirectional traceability across all major requirement ty
 
 Interactive traceability-matrix generation, highlighting of missing or incomplete linkages and orphan artifacts, and basic change-impact analysis when upstream or downstream requirements are modified are **post-MVP** capabilities; the initial release supports creating and navigating the typed links themselves (see the Use Cases document, *Artifact Links and Tracing*: UC-LNK-1 through UC-LNK-6). This allows students to practice industry-standard traceability and helps instructors quickly evaluate completeness, coverage, and consistency across all requirement artifacts.
 
-### *4.2.5 AI-Assisted Guidance and Feedback*
+### *AI-Assisted Guidance and Feedback*
 
 Beyond rule-based validation, RAM provides AI assistance through a set of deliberately Socratic assistants whose purpose is educational: they coach students to author high-quality requirements and to communicate with non-technical clients, rather than producing finished requirements. Each assistant behaves according to its instructor-authored assistant instructions — the per-assistant role, persona, and boundaries — and draws on the course section's teaching context (the standards, common student mistakes, and thinking order the course teaches); instructors enable or disable each assistant per course section.
 
@@ -390,27 +356,27 @@ Two principles govern every assistant:
 
 Combined with ReqLint, the assistant layer improves learning outcomes, trains client communication, and reduces instructor workload while preserving student authorship.
 
-### *4.2.6 Collaboration and Document Workflow*
+### *Collaboration and Document Workflow*
 
 Student teams can collaborate in real time through presence indicators, document-section-level editing, and commenting. The tool supports submission-and-review workflows that allow students to submit drafts, receive instructor feedback, and revise their work iteratively.
 
 Document version history — checkpointing each save, viewing prior versions, and restoring them — is a **post-MVP** capability; the initial release keeps only authorship metadata (the creator/editor and timestamps recorded on every authored item).
 
-### *4.2.7 Instructor Dashboard, Feedback, and Grading*
+### *Instructor Dashboard, Feedback, and Grading*
 
 Instructors will have access to dashboards summarizing team progress, document completeness, and validation results. Integrated grading tools enable rubric-based evaluation aligned with the selected templates, as well as inline comments and structured feedback. This improves grading consistency and reduces review effort.
 
 **MVP scope:** the initial release provides only the review-and-feedback workflow — an instructor opens a submitted document, leaves inline comments, and either accepts it or returns it for revision (see the Use Cases document, *Review and Submission*: UC-REV-1, UC-REV-2, and commenting UC-COL-2 / UC-COL-3, governed by the business rules in [business-rules.md](business-rules.md)). Progress/completeness dashboards and rubric-based grading are **post-MVP**.
 
-### *4.2.8 Project Source Material Import*
+### *Project Source Material Import*
 
 At the start of a project the client provides pitch materials — typically a slide deck and a short brief — describing the background, stakeholders, problem, users, objectives, desired functionality, possible solutions, prototypes, and a candidate tech stack. Students import these into RAM as project source material, the input the team works from. RAM stores the materials, extracts their text, and makes them available as context to the AI assistants — most directly to the elicitation assistant, which uses them in its gap analysis (project-wide across the team's documents and sections for early-phase workshop prep, or focused on a target against its template) to help the team prepare client-interview questions. Because the pitch goes stale as the project evolves, later-authored, verified requirements take precedence over it, and a student can exclude the project source material from an elicitation session entirely. Project source material is a project input, not authored requirement content, and is not itself graded.
 
-### *4.2.9 Export and Delivery*
+### *Export and Delivery*
 
 Students can export requirement documents to professional-quality PDF, Word (DOCX), or Markdown formats that follow the structure of the chosen template (Markdown prioritizes structure and traceability over visual styling, and supports downstream code generation). Exported documents are suitable for client or stakeholder review in senior design and capstone projects.
 
-### *4.2.10 Administration and Course Management*
+### *Administration and Course Management*
 
 The system supports secure authentication, role-based access control, and FERPA-compliant data storage. The course admin (the user who created the Course) sets up its course sections and project teams, manages rosters and document access, invites instructors, and provisions each team's requirement documents from the built-in templates; instructors configure their course sections' teaching context and AI assistants and run the review-and-feedback workflow.
 
@@ -418,9 +384,9 @@ The system supports secure authentication, role-based access control, and FERPA-
 
 MVP Scope (Initial Classroom Deployment)
 
-The initial release of RAM will focus on structured, collaborative authoring of requirements documents (Vision and Scope, Glossary, Use Cases, Business Rules, SRS) using fixed, built-in templates, together with the Socratic AI assistants that coach requirements authoring and client elicitation (the elicitation, critique, tutor, structuring, and client role-play assistants), reached through the project assistant — the project-level conversational front door that orients students and routes them to the right assistant. The MVP will exclude free-form AI generation of finished requirements (the drafting assistant is off by default in course use), template customization, advanced analytics and instructor dashboards, automated/rubric grading, document version history (checkpointing each save, viewing prior versions, and restoring them), the interactive traceability-matrix view, graph visualization, and change-impact analysis (the typed links and trace navigation themselves remain in scope), and broader smart-editing auto-suggestions and auto-complete beyond glossary-term suggestion — these capabilities are deferred to a future release — focusing instead on correctness, traceability, collaboration, coaching, and export quality. In the MVP, instructor support is limited to the review-and-feedback workflow (see §4.2.7).
+The initial release of RAM will focus on structured, collaborative authoring of requirements documents (Vision and Scope, Glossary, Use Cases, Business Rules, SRS) using fixed, built-in templates, together with the Socratic AI assistants that coach requirements authoring and client elicitation (the elicitation, critique, tutor, structuring, and client role-play assistants), reached through the project assistant — the project-level conversational front door that orients students and routes them to the right assistant. The MVP will exclude free-form AI generation of finished requirements (the drafting assistant is off by default in course use), template customization, advanced analytics and instructor dashboards, automated/rubric grading, document version history (checkpointing each save, viewing prior versions, and restoring them), the interactive traceability-matrix view, graph visualization, and change-impact analysis (the typed links and trace navigation themselves remain in scope), and broader smart-editing auto-suggestions and auto-complete beyond glossary-term suggestion — these capabilities are deferred to a future release — focusing instead on correctness, traceability, collaboration, coaching, and export quality. In the MVP, instructor support is limited to the review-and-feedback workflow (see [Instructor Dashboard, Feedback, and Grading](#instructor-dashboard-feedback-and-grading)).
 
-## **4.3 Deployment Considerations**
+## **Deployment Considerations**
 
 - Deploy to Microsoft Azure App Service
 - OpenAI API for LLM integration

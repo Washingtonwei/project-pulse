@@ -13,80 +13,23 @@
 |               |         |             |          |
 |               |         |             |          |
 
-# **Table of Contents**
+# **Introduction**
 
-- [1. Introduction](#1-introduction)
-  - [1.1 Purpose](#11-purpose)
-  - [1.2 Scope](#12-scope)
-  - [1.3 References](#13-references)
-  - [1.4 Overview](#14-overview)
-- [2. Definitions](#2-definitions)
-  - [Requirement Artifact](#requirement-artifact)
-  - [Artifact Type](#artifact-type)
-  - [Artifact Key](#artifact-key)
-  - [Requirement Link](#requirement-link)
-  - [Artifact Link Type](#artifact-link-type)
-  - [Graph-First Model](#graph-first-model)
-  - [Requirements Graph](#requirements-graph)
-  - [Traceability](#traceability)
-  - [Graph Navigation](#graph-navigation)
-  - [Requirement Document](#requirement-document)
-  - [Document Section](#document-section)
-  - [Section Key](#section-key)
-  - [Template](#template)
-  - [Authoring Destination](#authoring-destination)
-  - [Business Objective](#business-objective)
-  - [Risk](#risk)
-  - [Business Rule](#business-rule)
-  - [Feature](#feature)
-  - [Use Case](#use-case)
-  - [Functional Requirement](#functional-requirement)
-  - [Constraint](#constraint)
-  - [Quality Attribute](#quality-attribute)
-  - [External Interface Requirement](#external-interface-requirement)
-  - [Glossary Term](#glossary-term)
-  - [Stakeholder](#stakeholder)
-  - [Assumption](#assumption)
-  - [Dependency](#dependency)
-  - [Validation (ReqLint)](#validation-reqlint)
-  - [Keyword](#keyword)
-  - [Assistant](#assistant)
-  - [Assistant Instructions](#assistant-instructions)
-  - [Teaching Context](#teaching-context)
-  - [Cross-Document Review Criteria](#cross-document-review-criteria)
-  - [Project Source Material](#project-source-material)
-  - [Team](#team)
-  - [Course](#course)
-  - [Course Section](#course-section)
-  - [Course Admin](#course-admin)
-  - [Instructor](#instructor)
-  - [Student](#student)
-  - [MVP](#mvp)
-  - [FERPA](#ferpa)
-  - [EARS](#ears)
-  - [INVEST](#invest)
-  - [Wiegers Requirement Categories](#wiegers-requirement-categories)
-  - [SSO](#sso)
-  - [LLM](#llm)
-  - [WCAG](#wcag)
-
-# **1. Introduction**
-
-## **1.1 Purpose**
+## **Purpose**
 
 This document is used to define terms used throughout the planning, design, and software development of this project. To be used by current and future software engineers as well as stakeholders to reference key terms that may cause confusion or any terms that need clarification. The glossary allows all parties involved in the project to have a standard definition of vocabulary, terms, or phrases. Also, this glossary will help define complex concepts and various abbreviations used throughout the project.
 
-## **1.2 Scope**
+## **Scope**
 
 This glossary is associated with the Requirements Authoring & Management (RAM) Tool project. The terms in this document will be used in the Vision and Scope document, the Use Cases document, the Business Rules document, the Software Requirements Specification, and other project documents.
 
-## **1.3 References**
+## **References**
 
-## **1.4 Overview**
+## **Overview**
 
 The remainder of this document contains terms followed by their definitions. Terms are organized thematically and identified by name rather than number, so related terms sit together and new terms can be inserted into their group without renumbering.
 
-# **2. Definitions**
+# **Definitions**
 
 ## **Requirement Artifact**
 
@@ -118,7 +61,7 @@ A requirement artifact may represent:
   - an assumption
   - a dependency
 
-These map one-to-one to the `RequirementArtifactType` enumeration in the data model (SRS §6.1), which is the authoritative taxonomy; the `OTHER` enum value is an implementation fallback and is not a distinct domain concept. "Background" is document narrative (a prose document section), not a tracked artifact.
+These map one-to-one to the `RequirementArtifactType` enumeration in the data model (the SRS's Business Domain Model), which is the authoritative taxonomy; the `OTHER` enum value is an implementation fallback and is not a distinct domain concept. "Background" is document narrative (a prose document section), not a tracked artifact.
 
 Requirement artifacts are:
 
@@ -311,7 +254,7 @@ A requirement artifact describing a specific, testable behavior the system must 
 
 Examples: FR-1 (the system autosaves the active document section every 10 seconds), FR-2 (the system grants a student an exclusive lock before editing a document section), FR-3 (the system assigns a unique key to each new artifact).
 
-Note: the area-prefixed form `FR-<AREA>-<n>` (e.g., `FR-SAVE-1`, `FR-LOCK-1`) is not a product-generated artifact key — it is the organizing convention used by this specification's own SRS §4.2, parallel to the `UC-<AREA>-<n>` use-case IDs. See artifact key.
+Note: the area-prefixed form `FR-<AREA>-<n>` (e.g., `FR-SAVE-1`, `FR-LOCK-1`) is not a product-generated artifact key — it is the organizing convention used by this specification's own Non-Use Case Functional Requirements, parallel to the `UC-<AREA>-<n>` use-case IDs. See artifact key.
 
 ## **Constraint**
 

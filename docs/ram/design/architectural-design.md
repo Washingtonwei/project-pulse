@@ -1,7 +1,7 @@
 # Architectural Design
 
 > Scope: the host architecture RAM is constrained to, its operating environment, design/implementation constraints, the architecture-level assumptions and dependencies, and deployment.
-> See: ../requirements/software-requirements-specification.md (§4 and §10 point here), ../requirements/vision-and-scope.md
+> See: ../requirements/software-requirements-specification.md (which references this doc for architecture and deployment), ../requirements/vision-and-scope.md
 
 This is a **cross-cutting** design doc, not a per-UC-area one. It is the design-of-record for how the RAM module sits inside the Project Pulse host platform — the system context and container views, the operating environment, the design and implementation constraints, the architecture-level assumptions and dependencies, and how RAM is deployed. The per-area design docs (`doc.md`, `art.md`, …) cite the views here (especially the **Container Diagram**) rather than redrawing them.
 
@@ -98,7 +98,7 @@ CO-7: Email notifications shall be sent through the existing Gmail SMTP integrat
 
 ## Assumptions and Dependencies
 
-_Assumptions and dependencies are graph artifacts with **team-wide** key sequences (`AS-*`, `DE-*`) that are unique within a team (BR-5) — documents are views over one shared graph, so the keys do not restart per document. The business-level assumptions `AS-1`…`AS-5` are in Vision and Scope §2.6; the architecture-level assumptions below continue that same `AS-*` sequence._
+_Assumptions and dependencies are graph artifacts with **team-wide** key sequences (`AS-*`, `DE-*`) that are unique within a team (BR-5) — documents are views over one shared graph, so the keys do not restart per document. The business-level assumptions `AS-1`…`AS-5` are in Vision and Scope's Business Assumptions and Dependencies; the architecture-level assumptions below continue that same `AS-*` sequence._
 
 AS-6: Users have a supported web browser and a reliable internet connection.
 
@@ -114,4 +114,4 @@ DE-3: Email notifications depend on the Gmail SMTP integration provided by Proje
 
 ## Deployment
 
-RAM is a module within the existing Project Pulse application (CO-1, INT-1), so it is deployed, operated, and maintained as part of Project Pulse rather than as a separate system — the same Vue.js single-page application, Spring Boot REST API, and relational database, through the same pipeline and environments. The target deployment environment and operational specifics — Microsoft Azure App Service, GitHub Actions CI/CD, the external OpenAI LLM integration, and load testing for peak usage — are given in Vision and Scope §4.3 and are not repeated here; the runtime integrations RAM relies on are specified in the Operating Environment above and in the SRS's External Interface Requirements section. Schema changes for the requirements graph are delivered as versioned database migrations applied during deployment.
+RAM is a module within the existing Project Pulse application (CO-1, INT-1), so it is deployed, operated, and maintained as part of Project Pulse rather than as a separate system — the same Vue.js single-page application, Spring Boot REST API, and relational database, through the same pipeline and environments. The target deployment environment and operational specifics — Microsoft Azure App Service, GitHub Actions CI/CD, the external OpenAI LLM integration, and load testing for peak usage — are given in Vision and Scope's Deployment Considerations and are not repeated here; the runtime integrations RAM relies on are specified in the Operating Environment above and in the SRS's External Interface Requirements section. Schema changes for the requirements graph are delivered as versioned database migrations applied during deployment.
