@@ -1,11 +1,11 @@
 # Architectural Design
 
-> Scope: the host architecture RAM is constrained to, its operating environment, design/implementation constraints, the architecture-level assumptions and dependencies, and deployment.
-> See: ../requirements/software-requirements-specification.md (which references this doc for architecture and deployment), ../requirements/vision-and-scope.md
+> Scope: the host architecture RAM is constrained to — the system context and container views — and how RAM is deployed.
+> See: ../requirements/software-requirements-specification.md (which owns RAM's operating environment, constraints, and assumptions/dependencies, and references this doc for architecture and deployment), ../requirements/vision-and-scope.md
 
-This is a **cross-cutting** design doc, not a per-UC-area one. It is the design-of-record for how the RAM module sits inside the Project Pulse host platform — the system context and container views, the operating environment, the design and implementation constraints, the architecture-level assumptions and dependencies, and how RAM is deployed. The per-area design docs (`doc.md`, `art.md`, …) cite the views here (especially the **Container Diagram**) rather than redrawing them.
+This is a **cross-cutting** design doc, not a per-UC-area one. It is the design-of-record for how the RAM module sits inside the Project Pulse host platform — the system context and container views and how RAM is deployed. The operating environment, design and implementation constraints, and architecture-level assumptions and dependencies that frame this architecture are requirements-level concerns and are specified in the SRS's Overall Description ([../requirements/software-requirements-specification.md](../requirements/software-requirements-specification.md#overall-description)); this doc cites them by their stable IDs (`OE-*`, `CO-*`, `AS-*`, `DE-*`). The per-area design docs (`doc.md`, `art.md`, …) cite the views here (especially the **Container Diagram**) rather than redrawing them.
 
-The architecture-level requirement artifacts in this doc — `OE-*` (operating environment), `CO-*` (constraints), and the architecture-level `AS-*` / `DE-*` (assumptions and dependencies) — keep their stable IDs and are cited by ID from the SRS (Data Requirements, External Interface Requirements, Quality Attributes) and traceability. The C4 diagrams depict architecture RAM is **given** (a module inside a fixed host, per CO-1 / OE-4), not architecture decided here.
+The C4 diagrams depict architecture RAM is **given** (a module inside a fixed host, per `CO-1` / `OE-4`), not architecture decided here.
 
 ## System Context Diagram
 
@@ -68,50 +68,10 @@ The Level 2: Container Diagram for the Project Pulse system provides a detailed 
 
 This sequence of actions outlines how the Project Pulse system components collaborate to facilitate functionality for the student while ensuring efficient data management and communication. RAM-specific flows (graph navigation, document editing, ReqLint validation, and AI-assisted review) follow the same SPA → REST API → Database path, with the REST API additionally proxying requests to the external LLM service.
 
-## Operating Environment
+## Operating Environment, Constraints, Assumptions, and Dependencies
 
-OE-1: RAM operates as a module of the Project Pulse web application and shall run in the current released versions of Google Chrome, Mozilla Firefox, Microsoft Edge, and Apple Safari.
-
-OE-2: The Project Pulse server shall run the REST API as a Java/Spring Boot application on a supported Java Virtual Machine, serve the Vue.js single-page application to clients, and persist data in a relational database.
-
-OE-3: Users shall access RAM over HTTPS from the public internet, requiring no client software beyond a web browser.
-
-OE-4: RAM shall be deployed within the existing Project Pulse deployment and coexist with the existing WAR and peer-evaluation functionality, sharing the same single-page application, REST API, and database.
-
-OE-5: RAM shall reach the external LLM service over HTTPS and the Gmail system over SMTP for AI-assisted review and email notifications, respectively.
-
-## Design and Implementation Constraints
-
-CO-1: RAM shall be implemented as a module within the existing Project Pulse codebase, reusing its Vue.js single-page application, Java/Spring Boot REST API, and relational database rather than introducing a separate system.
-
-CO-2: The client shall be implemented in Vue.js and the backend in Java using the Spring Boot framework.
-
-CO-3: Requirement artifacts, links, documents, and document sections shall be persisted in the existing Project Pulse relational database.
-
-CO-4: User authentication shall be delegated to the host platform's institutional Single Sign-On (SSO); RAM shall not implement a separate login mechanism.
-
-CO-5: RAM shall comply with FERPA when storing and transmitting student educational records.
-
-CO-6: All calls to the external LLM service shall be routed through the REST API's AI proxy so that service credentials remain server-side and are never exposed to the browser.
-
-CO-7: Email notifications shall be sent through the existing Gmail SMTP integration.
-
-## Assumptions and Dependencies
-
-_Assumptions and dependencies are graph artifacts with **team-wide** key sequences (`AS-*`, `DE-*`) that are unique within a team (BR-5) — documents are views over one shared graph, so the keys do not restart per document. The business-level assumptions `AS-1`…`AS-5` are in Vision and Scope's Business Assumptions and Dependencies; the architecture-level assumptions below continue that same `AS-*` sequence._
-
-AS-6: Users have a supported web browser and a reliable internet connection.
-
-AS-7: The external LLM service (e.g., OpenAI) remains available and its API contract stays stable for the integration RAM relies on.
-
-AS-8: Project Pulse's existing course, course section, team, and user data is accurate and current; RAM reuses this data rather than maintaining its own copy.
-
-DE-1: RAM depends on Project Pulse for authentication and Single Sign-On, the course/course section/team data model, and the course admin, instructor, and student roles.
-
-DE-2: AI-assisted requirement review depends on the external LLM service; if it is unavailable, the AI features are unavailable while the rest of RAM continues to operate.
-
-DE-3: Email notifications depend on the Gmail SMTP integration provided by Project Pulse.
+RAM's operating environment (`OE-*`), design and implementation constraints (`CO-*`), and architecture-level assumptions and dependencies (`AS-6`…, `DE-*`) are requirements-level concerns owned by the SRS — see its Overall Description ([Operating Environment](../requirements/software-requirements-specification.md#operating-environment), [Design and Implementation Constraints](../requirements/software-requirements-specification.md#design-and-implementation-constraints), [Assumptions and Dependencies](../requirements/software-requirements-specification.md#assumptions-and-dependencies)). The architecture in this doc realizes them; it does not redefine them.
 
 ## Deployment
 
-RAM is a module within the existing Project Pulse application (CO-1, INT-1), so it is deployed, operated, and maintained as part of Project Pulse rather than as a separate system — the same Vue.js single-page application, Spring Boot REST API, and relational database, through the same pipeline and environments. The target deployment environment and operational specifics — Microsoft Azure App Service, GitHub Actions CI/CD, the external OpenAI LLM integration, and load testing for peak usage — are given in Vision and Scope's Deployment Considerations and are not repeated here; the runtime integrations RAM relies on are specified in the Operating Environment above and in the SRS's External Interface Requirements section. Schema changes for the requirements graph are delivered as versioned database migrations applied during deployment.
+RAM is a module within the existing Project Pulse application (CO-1, INT-1), so it is deployed, operated, and maintained as part of Project Pulse rather than as a separate system — the same Vue.js single-page application, Spring Boot REST API, and relational database, through the same pipeline and environments. The target deployment environment and operational specifics — Microsoft Azure App Service, GitHub Actions CI/CD, the external OpenAI LLM integration, and load testing for peak usage — are given in Vision and Scope's Deployment Considerations and are not repeated here; the runtime integrations RAM relies on are specified in the SRS's Operating Environment and External Interface Requirements sections. Schema changes for the requirements graph are delivered as versioned database migrations applied during deployment.

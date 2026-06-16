@@ -13,20 +13,6 @@
 |               |         |             |          |
 |               |         |             |          |
 
-_The SRS states as completely as necessary the system's behaviors under various conditions, as well as desired system qualities such as performance, security, and usability etc._
-
-_Numerous audiences rely on this SRS. When you write SRS, keep the following audience in mind._
-
-- _Customers, the marketing department, and sales staff need to know what product they can expect to be delivered._
-- _Project managers base their estimates of schedule, effort, and resources on the requirements._
-- _Software development teams need to know what to build._
-- _Testers use it to develop requirements-based tests, test plans, and test procedures._
-- _Maintenance and support staff use it to understand what each part of the product is supposed to do._
-- _Documentation writers base user manuals and help screens on the SRS and the user interface design._
-- _Training personnel use the SRS and user documentation to develop educational materials._
-- _Legal staff ensures that the requirements comply with applicable laws and regulations._
-- _Subcontractors base their work on—and can be legally held to—the specified requirements._
-
 # **Introduction**
 
 ## **The Purpose of the Project**
@@ -35,11 +21,42 @@ RAM (Requirements Authoring & Management) is a graph-first, model-driven require
 
 ## **The Purpose of this Document**
 
-This Software Requirements Specification describes the external behavior and quality attributes of the RAM module for release 1.0: its functional requirements (the Functional Requirements section — the Use Cases document, [use-cases.md](use-cases.md), together with the non-use-case system behaviors), the business rules it enforces as catalogued in the Business Rules document ([business-rules.md](business-rules.md)), its data model, external interfaces, quality attributes, and other constraints. RAM's software architecture and deployment are specified separately in the Architectural Design document ([../design/architectural-design.md](../design/architectural-design.md)). It is the reference against which RAM is built, tested, and maintained, and it aligns students, instructors, and developers on what the system does. Where another document is the source of truth for a topic, this SRS links to it rather than restating it.
+This Software Requirements Specification describes the external behavior and quality attributes of the RAM module for release 1.0. It is the reference against which RAM is built, tested, and maintained, and it aligns students, instructors, and developers on what the system does.
+
+**How RAM's requirements are organized.** RAM's requirements are not one document but a set of linked documents that describe a single shared model of the system from complementary angles, each the source of truth for its own topic. The SRS is the integrating entry point: it specifies the requirements it owns and links to the others rather than restating them, so each topic is defined once. The documents, in reading order:
+
+- **Project Glossary** ([project-glossary.md](project-glossary.md)) — the domain vocabulary; the canonical definition of every term the other documents use.
+- **Vision and Scope** ([vision-and-scope.md](vision-and-scope.md)) — the business motivation: problem and opportunity, business objectives, stakeholders and user classes, risks, assumptions, and the major features in and out of scope.
+- **Use Cases** ([use-cases.md](use-cases.md)) — the behavioral specification: each user-initiated workflow as a use case, which is itself a high-level functional requirement.
+- **Business Rules** ([business-rules.md](business-rules.md)) — the cross-cutting policies, constraints, and access rules (`BR-*`) that the use cases and this SRS enforce.
+- **Software Requirements Specification** (this document) — the integrating specification: it orients the reader (the Overall Description section), then specifies the non-use-case functional requirements, the data model, external interfaces, and quality attributes, citing the documents above rather than repeating them.
+- **Architectural Design** ([../design/architectural-design.md](../design/architectural-design.md)) — sits below this SRS and specifies the design-level concerns it does not own: software architecture and deployment.
+- **Traceability** ([../traceability.md](../traceability.md)) — the spec→code map: one row per use case linking it to the requirements and design it realizes and the code and tests that implement it.
+
+```mermaid
+flowchart TB
+    GLO["Project Glossary<br/>vocabulary"]
+    VS["Vision and Scope<br/>why and scope"]
+    UC["Use Cases<br/>behavior = high-level FRs"]
+    BR["Business Rules<br/>policies (BR-*)"]
+    SRS["Software Requirements Specification<br/>integrating entry point"]
+    AD["Architectural Design<br/>architecture, deployment"]
+    TR["Traceability<br/>UC to design to code to tests"]
+
+    GLO --> SRS
+    VS --> SRS
+    UC --> SRS
+    BR --> SRS
+    SRS --> AD
+    UC --> TR
+    AD --> TR
+```
+
+The arrows read "is referenced by": the Project Glossary, Vision and Scope, Use Cases, and Business Rules documents are integrated by this SRS; the Architectural Design document sits below the SRS; and Traceability maps each use case, through the design, to the code and tests that realize it.
 
 ## **Document Conventions**
 
-- Identifier schemes are stable, append-only handles, independent of heading position. Non-use-case functional requirements use `FR-<AREA>-<n>` (e.g., `FR-LOCK-2`); use cases use `UC-<AREA>-<n>` ([use-cases.md](use-cases.md)); business rules use `BR-<n>` ([business-rules.md](business-rules.md)). Product-generated artifact keys (e.g., `BO-3`, `RI-1`, `AS-6`, `UC-5`) follow a per-type running sequence, unique within a team, as defined under artifact key in the Project Glossary. SRS-local identifiers label its interface and quality items: the External Interface Requirements codes (`UI-*`, `SI-*`, `CI-*`) and the Quality Attributes codes (`USE-*`, `PER-*`, `SEC-*`, `SAF-*`, `AVL-*`, `ROB-*`, `SCA-*`, `INT-*`). The architecture-level `CO-*` (constraints) and `OE-*` (operating environment) identifiers are defined in the Architectural Design document ([../design/architectural-design.md](../design/architectural-design.md)).
+- Identifier schemes are stable, append-only handles, independent of heading position. Non-use-case functional requirements use `FR-<AREA>-<n>` (e.g., `FR-LOCK-2`); use cases use `UC-<AREA>-<n>` ([use-cases.md](use-cases.md)); business rules use `BR-<n>` ([business-rules.md](business-rules.md)). Product-generated artifact keys (e.g., `BO-3`, `RI-1`, `AS-6`, `UC-5`) follow a per-type running sequence, unique within a team, as defined under artifact key in the Project Glossary. SRS-local identifiers label its interface, data, and quality items: the External Interface Requirements codes (`UI-*`, `SI-*`, `CI-*`), the Data Requirements codes (`DI-*`), and the Quality Attributes codes (`USE-*`, `PER-*`, `SEC-*`, `SAF-*`, `AVL-*`, `ROB-*`, `SCA-*`, `INT-*`, `MNT-*`). The operating environment (`OE-*`), design and implementation constraints (`CO-*`), and architecture-level assumptions and dependencies (`AS-*`, continuing the sequence begun in Vision and Scope, and `DE-*`) are defined in the Overall Description section below.
 - Non-use-case functional requirements are written as EARS-style "shall" statements. A use case is itself a high-level functional requirement, so its steps and Associated Information are its detailed specification and are not restated as separate functional requirements.
 - Markdown is the canonical format and cross-references are live links. Square-bracketed italic passages are template author-guidance, not requirements.
 - This document does not duplicate content owned by another document: each topic has a single source of truth and is referenced here (for example, the Project Glossary, Vision and Scope, Use Cases, and Business Rules documents are linked here rather than copied in).
@@ -48,12 +65,67 @@ This Software Requirements Specification describes the external behavior and qua
 
 - Project Glossary: [project-glossary.md](project-glossary.md)
 - Vision and Scope: [vision-and-scope.md](vision-and-scope.md)
-- Architectural Design: [../design/architectural-design.md](../design/architectural-design.md)
 - Use Cases: [use-cases.md](use-cases.md)
 - Business Rules: [business-rules.md](business-rules.md)
+- Architectural Design: [../design/architectural-design.md](../design/architectural-design.md)
 - User Interface Wireframe/Prototypes: URL (N/A)
-- Business Domain Model: [Business Domain Model](#business-domain-model)
-- API Document: [Project Pulse API](https://app.swaggerhub.com/apis/Washingtonwei/project-pulse)
+- API Document: [RAM API](https://app.swaggerhub.com/apis/Washingtonwei/RAM/1.0.0)
+
+# **Overall Description**
+
+This section orients the reader to RAM's context, users, environment, and the constraints and assumptions under which it is built. Where another document is the source of truth — the product positioning and stakeholder profiles in Vision and Scope, the architecture views in the Architectural Design document — this section points to it rather than restating it. The operating environment, design and implementation constraints, and architecture-level assumptions and dependencies are specified here because requirements throughout this SRS — in Data Requirements, External Interface Requirements, and Quality Attributes — cite them by ID.
+
+## **Product Perspective**
+
+RAM is a module within the Project Pulse platform, reusing the host's single-page application, REST API, relational database, authentication, and notification services rather than introducing a parallel system. The system context and container views are in the Architectural Design document ([System Context Diagram](../design/architectural-design.md#system-context-diagram), [Container Diagram](../design/architectural-design.md#container-diagram)); the product positioning and competitive alternatives are in Vision and Scope ([Product Perspective](vision-and-scope.md#product-perspective)).
+
+## **User Classes and Characteristics**
+
+RAM has three user classes — student, instructor, and course admin — profiled in Vision and Scope ([Stakeholder Profiles and User Descriptions](vision-and-scope.md#stakeholder-profiles-and-user-descriptions)). Students are the favored user class: where their needs conflict with another class's, the student's learning outcome governs (consistent with the educational-value priority that drives the AI assistant design).
+
+## **Operating Environment**
+
+OE-1: RAM operates as a module of the Project Pulse web application and shall run in the current released versions of Google Chrome, Mozilla Firefox, Microsoft Edge, and Apple Safari.
+
+OE-2: The Project Pulse server shall run the REST API as a Java/Spring Boot application on a supported Java Virtual Machine, serve the Vue.js single-page application to clients, and persist data in a relational database.
+
+OE-3: Users shall access RAM over HTTPS from the public internet, requiring no client software beyond a web browser.
+
+OE-4: RAM shall be deployed within the existing Project Pulse deployment and coexist with the existing WAR and peer-evaluation functionality, sharing the same single-page application, REST API, and database.
+
+OE-5: RAM shall reach the external LLM service over HTTPS and the Gmail system over SMTP for AI-assisted review and email notifications, respectively.
+
+## **Design and Implementation Constraints**
+
+CO-1: RAM shall be implemented as a module within the existing Project Pulse codebase, reusing its Vue.js single-page application, Java/Spring Boot REST API, and relational database rather than introducing a separate system.
+
+CO-2: The client shall be implemented in Vue.js and the backend in Java using the Spring Boot framework.
+
+CO-3: Requirement artifacts, links, documents, and document sections shall be persisted in the existing Project Pulse relational database.
+
+CO-4: User authentication shall be delegated to the host platform's institutional Single Sign-On (SSO); RAM shall not implement a separate login mechanism.
+
+CO-5: RAM shall comply with FERPA when storing and transmitting student educational records.
+
+CO-6: All calls to the external LLM service shall be routed through the REST API's AI proxy so that service credentials remain server-side and are never exposed to the browser.
+
+CO-7: Email notifications shall be sent through the existing Gmail SMTP integration.
+
+## **Assumptions and Dependencies**
+
+Assumptions and dependencies are graph artifacts with team-wide key sequences (`AS-*`, `DE-*`) unique within a team (BR-5); documents are views over one shared graph, so the keys do not restart per document. The business-level assumptions `AS-1`…`AS-5` are in Vision and Scope ([Business Assumptions and Dependencies](vision-and-scope.md#business-assumptions-and-dependencies)); the architecture-level assumptions below continue that same `AS-*` sequence.
+
+AS-6: Users have a supported web browser and a reliable internet connection.
+
+AS-7: The external LLM service (e.g., OpenAI) remains available and its API contract stays stable for the integration RAM relies on.
+
+AS-8: Project Pulse's existing course, course section, team, and user data is accurate and current; RAM reuses this data rather than maintaining its own copy.
+
+DE-1: RAM depends on Project Pulse for authentication and Single Sign-On, the course/course section/team data model, and the course admin, instructor, and student roles.
+
+DE-2: AI-assisted requirement review depends on the external LLM service; if it is unavailable, the AI features are unavailable while the rest of RAM continues to operate.
+
+DE-3: Email notifications depend on the Gmail SMTP integration provided by Project Pulse.
 
 # **Project Glossary**
 
@@ -69,7 +141,7 @@ The Vision and Scope document is available here: [vision-and-scope.md](vision-an
 
 The Use Cases document is available here: [use-cases.md](use-cases.md).
 
-Each **use case is itself a functional requirement**, expressed at a high level: it states a user goal and the system's behavior in achieving it. Within a use case, the individual steps whose subject is "the system" — together with the use case's **Associated Information** (validation rules, duplication rules, search and display strategies, deletion strategies, notifications, and the like) — are the **finer-grained functional requirements** that detail that behavior. The use cases therefore carry the full functional specification for every user-initiated workflow, and those requirements are deliberately **not restated** here; doing so would duplicate the specification and create two copies to keep in sync. Section 4.2 below complements the use cases by capturing the remaining functional behaviors that are _not_ user-initiated workflows (system-driven, event-driven, global, or background). Together, Sections 4.1 and 4.2 define the complete set of functional requirements for the RAM tool, including a small number of capabilities deferred to a future release, which are labeled as such.
+Each **use case is itself a functional requirement**, expressed at a high level: it states a user goal and the system's behavior in achieving it. Within a use case, the individual steps whose subject is "the system" — together with the use case's **Associated Information** (validation rules, duplication rules, search and display strategies, deletion strategies, notifications, and the like) — are the **finer-grained functional requirements** that detail that behavior. The use cases therefore carry the full functional specification for every user-initiated workflow, and those requirements are deliberately **not restated** here; doing so would duplicate the specification and create two copies to keep in sync. The Non-Use Case Functional Requirements section below complements the use cases by capturing the remaining functional behaviors that are _not_ user-initiated workflows (system-driven, event-driven, global, or background). Together, the use cases and the non-use-case functional requirements define the complete set of functional requirements for the RAM tool, including a small number of capabilities deferred to a future release, which are labeled as such.
 
 ## **Non-Use Case Functional Requirements**
 
@@ -412,6 +484,7 @@ direction TB
         EXTERNAL_INTERFACE_REQUIREMENT
         CONSTRAINT
         DATA_REQUIREMENT
+        OPERATING_ENVIRONMENT
         OTHER
     }
 
@@ -481,7 +554,7 @@ direction TB
 **Notes.**
 
 - The built-in templates that provision a team's documents and sections (UC-TPL-1) are the _provisioning_ layer and are not shown in this domain diagram; the MVP ships fixed, built-in templates.
-- `RequirementArtifactType` is the authoritative artifact taxonomy and is reconciled one-to-one with the glossary's requirement artifact list (OI-15). `OTHER` is an implementation fallback, not a domain concept. A single `RISK` type is the umbrella over business/adoption, technical/feasibility, and security/safety risks (the earlier `BUSINESS_RISK`/`RISK` pair was collapsed into `RISK`, which may carry an optional category); `DEPENDENCY` is a tracked artifact.
+- `RequirementArtifactType` is the authoritative artifact taxonomy and is reconciled one-to-one with the glossary's requirement artifact list (OI-15). `OTHER` is an implementation fallback, not a domain concept. A single `RISK` type is the umbrella over business/adoption, technical/feasibility, and security/safety risks (the earlier `BUSINESS_RISK`/`RISK` pair was collapsed into `RISK`); `DEPENDENCY` is a tracked artifact.
 - User stories are a **deferred** concept: the `USER_STORY` artifact type and the `USER_STORIES` `DocumentType` are retained so a future, optional User Stories document can be enabled without a schema change, but no User Stories document, template, or use case ships in the MVP.
 
 **Artifact type → authoring home.** Each artifact type is authored in a specific document section, which determines where it appears in a document. In the MVP the student authors an artifact in the document section she is in, which fixes its type (UC-ART-3); the map below is the canonical placement (and the basis for the future requirements-graph "add by type" path):
@@ -493,7 +566,7 @@ direction TB
 | `BUSINESS_OBJECTIVE`, `SUCCESS_METRIC`      | Vision and Scope → Business Objectives                                                                                                                                                    |
 | `VISION_STATEMENT`                          | Vision and Scope → Vision Statement                                                                                                                                                       |
 | `RISK`                                      | Vision and Scope → Risks                                                                                                                                                                  |
-| `ASSUMPTION`, `DEPENDENCY`                  | Vision and Scope → Business Assumptions and Dependencies (business-level) **and** Architectural Design doc → Assumptions and Dependencies (architecture-level, e.g., `DE-1`/`DE-2`) — these two types are authored in either document's Assumptions-and-Dependencies section |
+| `ASSUMPTION`, `DEPENDENCY`                  | Vision and Scope → Business Assumptions and Dependencies (business-level) **and** SRS → Assumptions and Dependencies (architecture-level, e.g., `DE-1`/`DE-2`) — these two types are authored in either document's Assumptions-and-Dependencies section |
 | `STAKEHOLDER`                               | Vision and Scope → Stakeholder Profiles                                                                                                                                                   |
 | `FEATURE`                                   | Vision and Scope → Major Features / Scope                                                                                                                                                 |
 | `USE_CASE`, `PRECONDITION`, `POSTCONDITION` | Use Cases → the use case (preconditions/postconditions are its constituents)                                                                                                                   |
@@ -502,9 +575,18 @@ direction TB
 | `EXTERNAL_INTERFACE_REQUIREMENT`            | SRS → External Interface Requirements                                                                                                                                                       |
 | `DATA_REQUIREMENT`                          | SRS → Data Requirements                                                                                                                                                                     |
 | `QUALITY_ATTRIBUTE`                         | SRS → Quality Attributes                                                                                                                                                                    |
-| `CONSTRAINT`                                | Architectural Design doc → Design and Implementation Constraints (CO-\*)                                                                                                                       |
+| `CONSTRAINT`                                | SRS → Design and Implementation Constraints (CO-\*)                                                                                                                                            |
+| `OPERATING_ENVIRONMENT`                     | SRS → Operating Environment (OE-\*)                                                                                                                                                            |
 | `USER_STORY`                                | _(deferred — a future, optional User Stories document)_                                                                                                                                        |
 | `OTHER`                                     | _(fallback — no fixed home)_                                                                                                                                                                   |
+
+## **Data Dictionary**
+
+The Business Domain Model above names the system's entities, their fields, and their enumerations. Field-level definitions — data type, length, format, required/optional, and allowed values — are maintained with the database schema in the design docs ([../design/](../design/)), not restated here, so that a single source defines each field and the SRS does not drift from the implementation. Format-bearing fields that are themselves requirements (the `artifactKey`, `sectionKey`, and `documentKey` schemes and the document/comment status values) are specified where they are introduced: artifact key, section key, and the artifact-key uniqueness and stability rules in the Project Glossary and Business Rules (BR-5, BR-12), and the `DRAFT` → `SUBMITTED` → `RETURNED` status values in the Business Domain Model above.
+
+## **Reports**
+
+Release 1.0 generates no reports. Completeness-metric, progress, and requirement-quality dashboards over a team's requirements graph are a deferred RAM capability (future release); the host Project Pulse platform provides its own instructor monitoring outside RAM's scope. Document export — PDF, DOCX, or Markdown rendered to the template structure — is a formatted document, not a report, and is specified under External Interface Requirements (SI-3, FR-EXP-1, FR-EXP-2).
 
 ## **Data Acquisition, Integrity, Retention, and Disposal**
 
@@ -529,8 +611,6 @@ DI-9: RAM shall not retain document-section version checkpoints for release 1.0;
 DI-10: RAM shall rely on the host Project Pulse database backup, recovery, and disposal policies for physical retention and disposal of persisted RAM data, except where RAM-specific business rules require stronger logical retention for audit.
 
 # **External Interface Requirements**
-
-_\[This section provides information to ensure that the system will communicate properly with users and with external hardware or software elements.\]_
 
 ## **User Interfaces**
 
@@ -558,7 +638,7 @@ SI-2: Project Pulse host platform
 
 SI-2.1: RAM shall obtain the authenticated user's identity and role (course admin, instructor, student) from the host platform's Single Sign-On session and shall not implement its own login (per CO-4, SEC-1).
 
-SI-2.2: RAM shall read Course, course section, team, and membership data from the host platform's existing data model rather than maintaining its own copy (per CO-3; AS-8).
+SI-2.2: RAM shall read Course, course section, team, and membership data from the host platform's existing data model rather than maintaining its own copy (per DE-1; AS-8).
 
 SI-2.3: RAM shall persist its requirements graph — artifacts, links, documents, document sections, locks, comment threads, and comments — in the existing Project Pulse relational database (per CO-3).
 
@@ -608,7 +688,7 @@ USE-4: A new student shall be able to open a document section, edit and save con
 
 ## **Performance**
 
-PER-1: While up to 100 students are editing concurrently, RAM shall propagate collaborator presence and lock-state events (join, disconnect, lock acquire/release) within 1 second for 95% of events. (Realized by FR-PERF-1.)
+PER-1: While up to 100 users are editing concurrently, RAM shall propagate collaborator presence and lock-state events (join, disconnect, lock acquire/release) within 1 second for 95% of events. (Realized by FR-PERF-1.)
 
 PER-2: RAM shall autosave an actively edited authoring destination at least every 10 seconds and persist its latest content immediately when the student navigates away. (Realized by FR-SAVE-1, FR-SAVE-2.)
 
