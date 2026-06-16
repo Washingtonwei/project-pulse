@@ -54,6 +54,7 @@ A requirement artifact may represent:
   - an external interface requirement
   - a constraint
   - a data requirement
+  - an operating environment
 - a non-requirement concept:
   - a glossary term
   - a stakeholder
@@ -130,14 +131,14 @@ The link type is one of the values defined by artifact link type — covering de
 
 ## **Artifact Link Type**
 
-An enumeration defining the allowed semantic relationships between requirement artifacts. Each value is read source → target:
+An enumeration defining the allowed semantic relationships between requirement artifacts. Each value is read source → target; the permitted source → target artifact-type combinations are defined authoritatively by the link-type compatibility matrix under BR-8 in [business-rules.md](business-rules.md), and the descriptions below are illustrative:
 
 - DERIVES_FROM — the source (lower-level) artifact is derived from a higher-level target (e.g., functional requirement → use case → feature → objective).
 - REALIZES — the source artifact realizes or implements a more abstract target (e.g., implementation → design → functional requirement / use case / feature / objective).
 - REFERENCES — the source artifact makes a general reference to the target, with no more specific relationship.
-- IMPACTS — the source (a change, quality attribute, or risk) affects the target requirement or artifact; a cross-cutting link used for impact analysis.
-- MITIGATES — the source (a control or requirement) mitigates the target risk or threat.
-- MOTIVATES — the source stakeholder motivates the target requirement.
+- IMPACTS — the source (a cross-cutting or constraining artifact) affects the target requirement or artifact; used for impact analysis.
+- MITIGATES — the source artifact mitigates the target risk.
+- MOTIVATES — the source expresses a need or driver that motivates the target requirement.
 
 ## **Graph-First Model**
 
@@ -259,6 +260,10 @@ Note: the area-prefixed form `FR-<AREA>-<n>` (e.g., `FR-SAVE-1`, `FR-LOCK-1`) is
 ## **Constraint**
 
 A requirement artifact describing a condition or restriction imposed on the system's design, implementation, or operation that limits the solution space. Constraints commonly originate from regulations, organizational policy, mandated technologies, or hardware limits.
+
+## **Operating Environment**
+
+A requirement artifact describing a characteristic of the hardware, software, network, or platform environment in which the system must operate — the browsers, runtime platforms, servers, and external services it must run within and interoperate with. In RAM, operating-environment requirements are authored in the Software Requirements Specification's Operating Environment section (`OE-*`).
 
 ## **Quality Attribute**
 
@@ -392,7 +397,7 @@ Single Sign-On. An authentication mechanism that allows a user to access multipl
 
 ## **LLM**
 
-Large Language Model. A class of machine-learning models trained on broad text corpora to generate, complete, or analyze natural-language content. RAM integrates with an external LLM service (e.g., OpenAI) to power its assistants — the Socratic elicitation, critique, tutor, client role-play, structuring, and drafting roles that provide AI-assisted requirement guidance. All calls are routed through the server-side AI proxy.
+Large Language Model. A class of machine-learning models trained on broad text corpora to generate, complete, or analyze natural-language content. RAM integrates with an external LLM service (e.g., OpenAI) to power its Socratic assistants, which provide AI-assisted requirement guidance. All calls are routed through the server-side AI proxy.
 
 ## **WCAG**
 

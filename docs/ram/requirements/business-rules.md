@@ -42,7 +42,7 @@ These business rules apply to the RAM module within the Project Pulse platform. 
 - Tier 1 — Business/Vision: Business Problem, Business Opportunity, Business Objective, Vision Statement, Success Metric
 - Tier 2 — Feature: Feature
 - Tier 3 — Behavioral: use case, User Story (and a use case's Preconditions and Postconditions)
-- Tier 4 — Detailed/system: Functional Requirement, Quality Attribute, External Interface Requirement, Constraint, Data Requirement
+- Tier 4 — Detailed/system: Functional Requirement, Quality Attribute, External Interface Requirement, Constraint, Data Requirement, Operating Environment
 - Cross-cutting: Stakeholder, Risk, Assumption, Dependency, Business Rule, glossary term
 
 A lower tier number is a higher level of abstraction (Tier 1 is the highest). The permitted source → target combinations per link type are:
@@ -56,7 +56,7 @@ A lower tier number is a higher level of abstraction (Tier 1 is the highest). Th
 | MITIGATES | Functional Requirement, Quality Attribute, Constraint, Business Rule, use case, or Feature → a Risk | Target must be a Risk (any category — business, technical, or security/safety). |
 | MOTIVATES | Stakeholder, Business Problem, or Business Opportunity → any requirement artifact | Source expresses a need or driver that motivates the target. |
 
-The artifact types named here are the canonical `RequirementArtifactType` set reconciled in OI-15 (glossary ↔ the SRS's Business Domain Model enum); Stakeholder and Dependency are tracked artifact types. User stories are a deferred type (see the SRS's Business Domain Model); a User Story, when present, is a Tier 3 behavioral artifact.
+The artifact types named here are the canonical `RequirementArtifactType` set (glossary ↔ the SRS's Business Domain Model enum); Stakeholder and Dependency are tracked artifact types. User stories are a deferred type (see the SRS's Business Domain Model); a User Story, when present, is a Tier 3 behavioral artifact.
 
 # **Editing and Locking**
 

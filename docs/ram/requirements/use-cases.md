@@ -1033,7 +1033,7 @@ The artifact's type is set by the document section it is created in; the student
 
 Placement:
 - MVP: the artifact is created in the document section the student is currently viewing; that section determines its placement and artifact type.
-- Future (requirements graph view): when the student adds an artifact directly in the graph — which shows all artifacts independent of document sections — there is no section context, so she selects the destination section, or the system places it by artifact type (see OI-15 for the type→section placement map).
+- Future (requirements graph view): when the student adds an artifact directly in the graph — which shows all artifacts independent of document sections — there is no section context, so she selects the destination section, or the system places it by artifact type (the artifact type → authoring-home map in the SRS's [Business Domain Model](software-requirements-specification.md#business-domain-model)).
 
 Duplication detection rules: Advisory only — the system warns when an artifact of the same type has similar content (fuzzy match) but does not block creation; the student decides whether to proceed, revise, or open the existing artifact.
 
@@ -1909,7 +1909,7 @@ File names include document type and team identifier.
 **Associated Information:**
 
 - The teaching context is the curriculum: it encodes how requirements are taught and graded.
-- Used by the elicitation, critique, tutor, client role-play, structuring, and drafting assistants.
+- Used by all of the course section's assistants.
 - Realized by FR-AI-6.
 
 **Related Use Cases:** UC-AI-2: Elicit requirements with the elicitation assistant; UC-AI-5: Request a critique from the critique assistant; UC-AI-6: Ask an assistant to explain a concept (Tutor Mode); UC-AI-3: Practice a client interview with a role-playing client assistant; UC-CFG-2: Enable or disable AI assistants for a course section; UC-CFG-3: Configure the assistant instructions for a course section.
@@ -1938,14 +1938,14 @@ File names include document type and team identifier.
 1. The instructor indicates to change the AI assistant settings for a course section she teaches.
 2. The system displays each AI assistant and its current enabled/disabled state for the course section.
 3. The instructor enables or disables one or more assistants.
-5. The system saves the updated settings and applies them.
-6. The system informs the instructor that the settings have been updated.
-7. Use case ends.
+4. The system saves the updated settings and applies them.
+5. The system informs the instructor that the settings have been updated.
+6. Use case ends.
 
 **Extensions:**
 
 - **4a. A student is mid-session with an assistant that is being disabled**
-  - 4a1. The system applies the change on the student's next assistant request and  goes to step 5 of the normal flow.
+  - 4a1. The system applies the change on the student's next assistant request and goes to step 5 of the normal flow.
 
 **Priority:** High
 **Frequency of Use:** Occasional; at course setup and around graded exercises.
@@ -1990,7 +1990,7 @@ File names include document type and team identifier.
 **Business Rules:** BR-4 — Only an instructor assigned to the course section may view or edit its assistant instructions. Assistant instructions are authored per assistant and govern assistant behavior, while the teaching context governs the standards the assistant enforces.
 **Associated Information:**
 - Assistant instructions are the per-assistant behavioral layer; the teaching context (UC-CFG-1) is the shared standards layer the instructions reference.
-- Applies to the elicitation, critique, tutor, client role-play, structuring, and drafting assistants.
+- Applies to every assistant in the course section.
 - Realized by FR-AI-16.
 
 **Related Use Cases:** UC-CFG-1: Configure the teaching context for a course section; UC-CFG-2: Enable or disable AI assistants for a course section.

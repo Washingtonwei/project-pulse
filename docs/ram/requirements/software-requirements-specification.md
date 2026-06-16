@@ -305,11 +305,11 @@ Authorship metadata (FR-HIS-4) is in scope for the initial release and is relied
 
 **FR-NOT-1 (Event-Driven):** When the system raises a review-workflow notification — a requirement document submitted for review, returned for revision, or accepted — it shall deliver it by email to the designated recipients through the Gmail SMTP integration. _(Supports UC-REV-1, UC-REV-2; honors DE-3.)_
 
-**FR-NOT-2 (Ubiquitous):** The system shall not raise persistent or email notifications for routine authoring changes (creating, editing, or deleting glossary terms, requirement artifacts, artifact links, document sections, and use cases); such changes are propagated to connected collaborators in real time per FR-COL-1..4 instead.
+**FR-NOT-2 (Ubiquitous):** The system shall not raise persistent or email notifications for routine authoring changes (creating, editing, or deleting glossary terms, requirement artifacts, artifact links, document sections, use cases, and comments); such changes are propagated to connected collaborators in real time per FR-COL-1..4 instead.
 
 # **Business Rules**
 
-The Business Rules document is available here: [business-rules.md](business-rules.md). That catalog defines the `BR-*` identifiers cited by the Business Rules fields in the Use Cases document (access and ownership, identity and uniqueness, editing and locking, deletion integrity, review and submission, AI assistants, and project source material).
+The Business Rules document is available here: [business-rules.md](business-rules.md). That catalog defines the `BR-*` identifiers cited by the Business Rules fields in the Use Cases document.
 
 # **Data Requirements**
 
@@ -554,7 +554,7 @@ direction TB
 **Notes.**
 
 - The built-in templates that provision a team's documents and sections (UC-TPL-1) are the _provisioning_ layer and are not shown in this domain diagram; the MVP ships fixed, built-in templates.
-- `RequirementArtifactType` is the authoritative artifact taxonomy and is reconciled one-to-one with the glossary's requirement artifact list (OI-15). `OTHER` is an implementation fallback, not a domain concept. A single `RISK` type is the umbrella over business/adoption, technical/feasibility, and security/safety risks (the earlier `BUSINESS_RISK`/`RISK` pair was collapsed into `RISK`); `DEPENDENCY` is a tracked artifact.
+- `RequirementArtifactType` is the authoritative artifact taxonomy and is reconciled one-to-one with the glossary's requirement artifact list. `OTHER` is an implementation fallback, not a domain concept. A single `RISK` type is the umbrella over business/adoption, technical/feasibility, and security/safety risks (the earlier `BUSINESS_RISK`/`RISK` pair was collapsed into `RISK`); `DEPENDENCY` is a tracked artifact.
 - User stories are a **deferred** concept: the `USER_STORY` artifact type and the `USER_STORIES` `DocumentType` are retained so a future, optional User Stories document can be enabled without a schema change, but no User Stories document, template, or use case ships in the MVP.
 
 **Artifact type → authoring home.** Each artifact type is authored in a specific document section, which determines where it appears in a document. In the MVP the student authors an artifact in the document section she is in, which fixes its type (UC-ART-3); the map below is the canonical placement (and the basis for the future requirements-graph "add by type" path):
@@ -668,7 +668,7 @@ No hardware interfaces have been identified.
 
 CI-1: RAM shall send review-workflow email notifications — when a requirement document is submitted for review, returned for revision, or accepted — to the designated recipients through the host platform's Gmail SMTP integration (per CO-7, DE-3, FR-NOT-1; supports UC-REV-1, UC-REV-2).
 
-CI-2: RAM shall not send email for routine authoring changes (creating, editing, or deleting glossary terms, requirement artifacts, artifact links, document sections, and use cases); such changes propagate to connected teammates in real time over the collaboration channel instead (per FR-NOT-2, FR-COL-1..4).
+CI-2: RAM shall not send email for the routine authoring changes covered by FR-NOT-2; such changes propagate to connected teammates in real time over the collaboration channel instead (per FR-COL-1..4).
 
 CI-3: RAM shall communicate with the external LLM service over HTTPS (per OE-5, SEC-4).
 
