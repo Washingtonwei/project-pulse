@@ -31,7 +31,7 @@ The five files under `requirements/` are intentionally ordered and describe the 
 
 ## Editing these docs
 
-**The authoring conventions are not repeated here** — they live in [`CLAUDE.md`](CLAUDE.md) (heading numbering, anchor slugs, TOC format, `UC-`/`FR-`/`BR-` ID schemes, glossary term formatting, cross-document coherence). Read that before editing.
+**The authoring conventions are not repeated here** — they live in [`CLAUDE.md`](CLAUDE.md) (unnumbered headings, no TOC, anchor slugs, `UC-`/`FR-`/`BR-` ID schemes, glossary term formatting, cross-document coherence). Read that before editing.
 
 The workflow:
 
@@ -39,6 +39,6 @@ The workflow:
 edit a doc  →  run /build  →  review the report  →  fix flagged issues  →  commit
 ```
 
-`/build` (defined in [`../../.claude/commands/build.md`](../../.claude/commands/build.md)) treats the docs as artifacts that must "compile": it auto-fixes mechanical issues (heading numbering, stray `{#slug}` anchors, TOC regeneration, straight quotes) and reports semantic issues for your review (undefined glossary terms, dangling FR/BR references, ReqLint writing issues, cross-doc terminology drift). It is run from [Claude Code](https://claude.com/claude-code).
+`/build` (defined in [`../../.claude/commands/build.md`](../../.claude/commands/build.md)) treats the docs as artifacts that must "compile": it auto-fixes mechanical issues (strips heading-number prefixes, removes stray `{#slug}` anchors and any stale TOC, normalizes smart quotes to straight) and reports semantic issues for your review (undefined glossary terms, dangling FR/BR references, ReqLint writing issues, cross-doc terminology drift). It is run from [Claude Code](https://claude.com/claude-code).
 
 To take a use case from spec to code, run `/design <UC-ID>` ([`../../.claude/commands/design.md`](../../.claude/commands/design.md)) to produce its design-of-record (the area's `design/` doc), then `/implement <UC-ID>` ([`../../.claude/commands/implement.md`](../../.claude/commands/implement.md)) to build and test it. Both record the result back into `traceability.md`.

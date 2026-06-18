@@ -134,7 +134,7 @@ Good design before implementation is the point of these docs — pick the UML vi
 
 - **Diagrams are Mermaid** (` ```mermaid ` fenced blocks), never base64-embedded images — diffable and renders in Typora/GitHub. (Same rule as the core docs; see [`../CLAUDE.md`](../CLAUDE.md).)
 - **Vocabulary follows the glossary.** Use the defined terms (`document section`, `course section`, `requirement artifact`, `artifact link`, …) in prose, identifiers, and UI strings — never a synonym. Never write a bare "section"; qualify it as *course section* or *document section*. See [`../CLAUDE.md`](../CLAUDE.md) for the full vocabulary rules.
-- **These docs are not section-numbered specs.** They don't follow the `# **N. Title**` numbering / TOC scheme of the five core docs, and **`/build` does not process them** — `/build` only handles the five `requirements/` docs and verifies `../traceability.md`. Keep design docs plainly structured with the skeletons above.
+- **`/build` does not process these docs.** It only handles the five `requirements/` docs and verifies `../traceability.md`; design docs get no mechanical anchor/heading treatment. Keep them plainly structured with the skeletons above. (Like the core docs, they carry no section numbers and no TOC — but that's just the house style here, not something `/build` enforces.)
 
 # After writing a design doc
 

@@ -108,7 +108,7 @@ Most of the engineering value is in the **per-assistant context builder** — pu
 
 - **Prompt caching.** Teaching Context, Assistant Instructions, and templates are large and *stable per course section* — ideal cache candidates. Caching them across calls is a big cost/latency win and painful to retrofit.
 - **Structured outputs.** Use tool calling / JSON mode for the router and for any "list of findings/proposals" output, so it's unit-testable.
-- **Observability.** Log prompts, responses, and token usage from day one (debugging, cost control, and the audit trail POST-1 records).
+- **Observability.** Log prompts, responses, and token usage from day one (debugging, cost control, and the per-session conversation record the assistant use cases call for in their postconditions — e.g. UC-AI-9).
 - **Graceful degradation** (FR-AI-13). When the LLM service is down, AI features go unavailable and the rest of RAM keeps working.
 
 ## 9. Suggested build sequence (de-risks a first-time integration)
@@ -133,7 +133,9 @@ The spec supports any order — each assistant is an independently-invocable use
 | Assistant (configured role) | `Assistant` glossary term; the assistants list in `vision-and-scope.md` |
 | The specialized assistants | UC-AI-1..UC-AI-8 |
 | Project assistant (router) | UC-AI-9; FR-AI-18, FR-AI-19 |
+| Whole-project (cross-document) review | UC-AI-10; FR-AI-21, FR-AI-22, FR-AI-23; `product/cross-document-review-criteria.md` |
 | Per-assistant behavior config | `Assistant Instructions`; UC-CFG-3 |
+| Cross-document review criteria config | `Cross-Document Review Criteria` glossary term; UC-CFG-4; FR-AI-22 |
 | Enable/disable per course section | FR-AI-7; UC-CFG-2 |
 | Shared standards | `Teaching Context`; UC-CFG-1 |
 | Never-author-without-accept | FR-AI-3, FR-AI-8; UC-AI-8 |
