@@ -30,7 +30,7 @@ This Software Requirements Specification describes the external behavior and qua
 - **Use Cases** ([use-cases.md](use-cases.md)) — the behavioral specification: each user-initiated workflow as a use case, which is itself a high-level functional requirement.
 - **Business Rules** ([business-rules.md](business-rules.md)) — the cross-cutting policies, constraints, and access rules (`BR-*`) that the use cases and this SRS enforce.
 - **Software Requirements Specification** (this document) — the integrating specification: it orients the reader (the Overall Description section), then specifies the non-use-case functional requirements, the data model, external interfaces, and quality attributes, citing the documents above rather than repeating them.
-- **Architectural Design** ([../design/architectural-design.md](../design/architectural-design.md)) — sits below this SRS and specifies the design-level concerns it does not own: software architecture and deployment.
+- **Architectural Design** ([../design/architectural-design.md](../design/architectural-design.md)) — sits below this SRS as the RAM module's design-of-record (the RAM component view and cross-cutting subsystems); it cites the **platform architecture-of-record** ([../../pulse-core/design/architectural-design.md](../../pulse-core/design/architectural-design.md)) for the host software architecture, conventions, and deployment that RAM inherits.
 - **Traceability** ([../traceability.md](../traceability.md)) — the spec→code map: one row per use case linking it to the requirements and design it realizes and the code and tests that implement it.
 
 ```mermaid
@@ -67,7 +67,8 @@ The arrows read "is referenced by": the Project Glossary, Vision and Scope, Use 
 - Vision and Scope: [vision-and-scope.md](vision-and-scope.md)
 - Use Cases: [use-cases.md](use-cases.md)
 - Business Rules: [business-rules.md](business-rules.md)
-- Architectural Design: [../design/architectural-design.md](../design/architectural-design.md)
+- Architectural Design (RAM module): [../design/architectural-design.md](../design/architectural-design.md)
+- Architectural Design (platform architecture-of-record): [../../pulse-core/design/architectural-design.md](../../pulse-core/design/architectural-design.md)
 - User Interface Wireframe/Prototypes: URL (N/A)
 - API Document: [RAM API](https://app.swaggerhub.com/apis/Washingtonwei/RAM/1.0.0)
 
@@ -77,7 +78,7 @@ This section orients the reader to RAM's context, users, environment, and the co
 
 ## **Product Perspective**
 
-RAM is a module within the Project Pulse platform, reusing the host's single-page application, REST API, relational database, authentication, and notification services rather than introducing a parallel system. The system context and container views are in the Architectural Design document ([System Context Diagram](../design/architectural-design.md#system-context-diagram), [Container Diagram](../design/architectural-design.md#container-diagram)); the product positioning and competitive alternatives are in Vision and Scope ([Product Perspective](vision-and-scope.md#product-perspective)).
+RAM is a module within the Project Pulse platform, reusing the host's single-page application, REST API, relational database, authentication, and notification services rather than introducing a parallel system. The system context and container views are in the platform architecture-of-record ([System Context Diagram](../../pulse-core/design/architectural-design.md#system-context-diagram), [Container Diagram](../../pulse-core/design/architectural-design.md#container-diagram)), which the RAM Architectural Design document cites; the product positioning and competitive alternatives are in Vision and Scope ([Product Perspective](vision-and-scope.md#product-perspective)).
 
 ## **User Classes and Characteristics**
 
@@ -749,4 +750,4 @@ RAM introduces no additional requirements beyond those specified elsewhere; the 
 - Regulatory and compliance: FERPA handling of student educational records — CO-5 and SEC-3 (Security).
 - Security and access control: institutional SSO and role-based access — FR-SEC-1..3 (Security and Authorization Requirements) and the Security quality attributes.
 - Authorship and audit trail: creator/editor identity and timestamps on every authored item — FR-HIS-4 (Authorship Metadata and Document Versioning Requirements); logical (soft) deletion that retains items for audit — BR-12.
-- Installation, configuration, and startup/shutdown: RAM follows the host Project Pulse application (see the Architectural Design document, [../design/architectural-design.md](../design/architectural-design.md)).
+- Installation, configuration, and startup/shutdown: RAM follows the host Project Pulse application (see the platform Deployment section, [../../pulse-core/design/architectural-design.md](../../pulse-core/design/architectural-design.md#deployment)).

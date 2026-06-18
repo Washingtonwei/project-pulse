@@ -1,72 +1,87 @@
 # Architectural Design
 
-> Scope: the host architecture RAM is constrained to — the system context and container views — and how RAM is deployed.
-> See: ../requirements/software-requirements-specification.md (which owns RAM's operating environment, constraints, and assumptions/dependencies, and references this doc for architecture and deployment), ../requirements/vision-and-scope.md
+> Scope: RAM's place in the platform — the RAM **component view** and the **cross-cutting subsystems** every RAM area builds on. The platform-wide C4 context/container views and the platform conventions are owned by [`../../pulse-core/design/architectural-design.md`](../../pulse-core/design/architectural-design.md) and cited here, not redrawn.
+> See: ../../pulse-core/design/architectural-design.md (platform architecture-of-record), ../requirements/software-requirements-specification.md (which owns RAM's operating environment, constraints, and assumptions/dependencies), ../requirements/vision-and-scope.md
 
-This is a **cross-cutting** design doc, not a per-UC-area one. It is the design-of-record for how the RAM module sits inside the Project Pulse host platform — the system context and container views and how RAM is deployed. The operating environment, design and implementation constraints, and architecture-level assumptions and dependencies that frame this architecture are requirements-level concerns and are specified in the SRS's Overall Description ([../requirements/software-requirements-specification.md](../requirements/software-requirements-specification.md#overall-description)); this doc cites them by their stable IDs (`OE-*`, `CO-*`, `AS-*`, `DE-*`). The per-area design docs (`doc.md`, `art.md`, …) cite the views here (especially the **Container Diagram**) rather than redrawing them.
+This is a **cross-cutting** design doc, not a per-UC-area one. It is the design-of-record for how the RAM module sits inside the Project Pulse host platform — the RAM component view and the cross-cutting subsystems every RAM area builds on. The platform-wide context and container views, the platform conventions, and the deployment pipeline are owned by the platform architecture-of-record ([`../../pulse-core/design/architectural-design.md`](../../pulse-core/design/architectural-design.md)) and cited here. The operating environment, design and implementation constraints, and architecture-level assumptions and dependencies that frame this architecture are requirements-level concerns specified in the SRS's Overall Description ([../requirements/software-requirements-specification.md](../requirements/software-requirements-specification.md#overall-description)); this doc cites them by their stable IDs (`OE-*`, `CO-*`, `AS-*`, `DE-*`). The cross-area domain model is owned by the SRS's Business Domain Model and cited, not redrawn, here. The per-area design docs (`doc.md`, `art.md`, …) cite the platform **Container** diagram (in pulse-core) and the RAM **Component** diagram here rather than redrawing them.
 
-The C4 diagrams depict architecture RAM is **given** (a module inside a fixed host, per `CO-1` / `OE-4`), not architecture decided here.
+The architecture RAM is **given** (a module inside a fixed host, per `CO-1` / `OE-4`) is not decided here — the platform context and container views live in the platform architecture-of-record and are cited below; this doc draws only the RAM-specific component view and cross-cutting subsystems.
 
-## System Context Diagram
+## Platform context
 
-```mermaid
-C4Context
-    title System Context Diagram for Project Pulse
+RAM runs inside the Project Pulse platform, so its host architecture — the C4 **System Context** and **Container** views (SPA, REST API, relational DB, plus the Gmail and LLM integrations) — is the platform's, not RAM's. It is owned by the platform architecture-of-record, [`../../pulse-core/design/architectural-design.md`](../../pulse-core/design/architectural-design.md#system-context-diagram); RAM cites it rather than redrawing it.
 
-    Person(instructor, "Instructor", "Senior design course instructor")
-    Person(student, "Senior Design Student", "Enrolled in the course")
+What RAM contributes to each shared container:
 
-    System(pulse, "Project Pulse", "Hosts WARs, peer evaluations, and the RAM requirements module")
+- **SPA** — the requirements authoring views (documents, document editor, use cases, glossary; graph, ReqLint, and AI panels as they ship).
+- **REST API** — the `ram/*` bounded contexts (see the Component Diagram below) plus an AI proxy to the external LLM service.
+- **Database** — the requirement artifacts, artifact links, requirement documents, document sections, and comment threads.
 
-    System_Ext(gmail, "Gmail", "Email system")
-    System_Ext(llm, "LLM Service", "AI-assisted requirement review")
+## Component Diagram
 
-    Rel_R(instructor, pulse, "Manages courses;<br/>reviews requirements")
-    Rel_R(student, pulse, "Submits work;<br/>authors requirements")
-    Rel_R(pulse, gmail, "Sends emails using")
-    Rel_D(gmail, student, "Sends emails to")
-    Rel_D(pulse, llm, "Requests AI review")
-
-    UpdateLayoutConfig($c4ShapeInRow="2", $c4BoundaryInRow="1")
-```
-
-The Level 1: Context Diagram for the Project Pulse system provides a high-level overview of its interactions with users and external systems. Project Pulse is the central platform for senior-design course delivery: instructors create courses, author Weekly Activity Report (WAR) and peer evaluation templates, and review submissions, while students submit WARs, complete peer evaluations, and view scores and feedback. The Requirements Authoring & Management (RAM) module runs inside this same platform, where students and instructors author, link, and validate requirements as a connected graph of atomic artifacts. Project Pulse integrates with two external systems: the Gmail system, which delivers automated email notifications (reminders, updates) to students and instructors — the context diagram shows the student notification path as representative — and an external LLM service (e.g., OpenAI), which the RAM module calls for AI-assisted requirement review. This diagram highlights the instructor and student as primary users, the central functionality of Project Pulse including the RAM module, and the platform's reliance on Gmail for communication and the LLM service for AI assistance, offering a clear picture of the system's operational scope and interactions.
-
-## Container Diagram
+This Level 3 view zooms into the **REST API Application** to show the RAM module's internal structure: one component per DDD bounded context, sitting on the shared platform packages. Each maps to a package under `backend/src/main/java/team/projectpulse/ram/` — a Level-2 area doc designs the inside of one of these boxes, this diagram fixes the boxes and how they relate.
 
 ```mermaid
-C4Container
-    title Container Diagram for Project Pulse
+C4Component
+    title Component Diagram — RAM components inside the REST API Application
 
-    Person(student, "Senior Design Student", "Enrolled in the course")
+    Container(spa, "SPA", "Vue.js", "RAM authoring views (Documents, Document Editor, Use Cases, Glossary)")
 
-    Container_Boundary(pulse, "Project Pulse") {
-        Container(spa, "SPA", "Vue.js", "Course-management UI + RAM authoring views (graph, editor, ReqLint, AI panel)")
-        Container(api, "REST API Application", "Java / Spring Boot", "Course-management & RAM APIs (graph, ReqLint, AI proxy)")
-        ContainerDb(db, "Database", "Relational DB", "WARs, peer evals, and RAM artifacts/links/documents")
+    Container_Boundary(api, "REST API Application (Spring Boot)") {
+        Component(doc, "document", "Controller / Service / Repository", "Requirement documents & document sections, section-level pessimistic locking, document templates")
+        Component(req, "requirement", "Controller / Service / Repository", "Requirement artifacts, artifact links & tracing, key-prefix sequences")
+        Component(uc, "usecase", "Controller / Service / Repository", "Use case artifacts: main steps, extensions, locking")
+        Component(glo, "glossary", "Controller / Service", "Glossary terms")
+        Component(col, "collaboration", "Controller / Service / Repository", "Comment threads & comments")
+        Component(shared, "Shared platform packages", "system · security · user", "Result / StatusCode / ExceptionHandlerAdvice, JWT auth + AuthorizationManagers, JPA auditing (authorship), EmailService")
     }
 
-    System_Ext(gmail, "Gmail", "Email system")
-    System_Ext(llm, "LLM Service", "AI-assisted requirement review")
+    ContainerDb(db, "Database", "Relational DB", "RAM artifacts, links, documents, sections, comments")
+    System_Ext(llm, "LLM Service", "AI-assisted review (planned)")
 
-    Rel_R(student, spa, "Uses", "HTTPS")
-    Rel_D(spa, api, "API calls", "JSON/HTTPS")
-    Rel_D(api, db, "Reads & writes", "JDBC")
-    Rel_R(api, gmail, "Sends email", "SMTP")
-    Rel_R(api, llm, "Requests AI review", "HTTPS")
+    Rel_D(spa, doc, "JSON/HTTPS")
+    Rel_D(spa, req, "JSON/HTTPS")
+    Rel_D(spa, uc, "JSON/HTTPS")
+    Rel_D(spa, glo, "JSON/HTTPS")
+    Rel_D(spa, col, "JSON/HTTPS")
+    Rel(doc, shared, "builds on")
+    Rel(req, shared, "builds on")
+    Rel(uc, shared, "builds on")
+    Rel(glo, shared, "builds on")
+    Rel(col, shared, "builds on")
+    Rel_D(doc, db, "JDBC")
+    Rel_D(req, db, "JDBC")
+    Rel_D(uc, db, "JDBC")
+    Rel_D(glo, db, "JDBC")
+    Rel_D(col, db, "JDBC")
+    Rel(shared, llm, "AI proxy (planned)", "HTTPS")
 ```
 
-The Level 2: Container Diagram for the Project Pulse system provides a detailed view of its internal architecture, illustrating how the system components interact. The system is composed of three key containers — the **SPA (Single Page Application)**, the **REST API Application**, and the **Database** — supported by integration with the **Gmail System** for email communication and an external **LLM Service** (e.g., OpenAI) for AI-assisted requirement review. The **SPA**, built with Vue.js, is delivered to users' browsers and provides the interface for both the course-management workflows (submitting WARs and peer evaluations) and the RAM module's requirements authoring views: graph navigation, document editing, the ReqLint validation sidebar, and the AI assistant panel. The **REST API Application**, implemented using Java and Spring Boot, delivers the SPA, processes REST API calls, and manages interactions with the **Database**; for the RAM module it exposes endpoints for the requirements graph, ReqLint validation, and an AI proxy to the LLM service. The **Database**, a relational database, stores course-management data (WARs and peer evaluation submissions) alongside the RAM module's requirement artifacts, links, documents, and document sections, with CRUD operations executed through the REST API. The REST API integrates with the **Gmail System** over SMTP to send automated notifications and with the external **LLM Service** to support AI-assisted review. The steps below trace the WAR submission flow as a representative example:
+The five RAM components are the bounded contexts that exist today; the areas still specified but not yet packaged (validation/ReqLint, AI assistants, export/import) will add their own components beside these as they are built — see Cross-Cutting Subsystems below. On the **SPA** side the layering mirrors the rest of Project Pulse: RAM pages (`frontend/src/pages/ram/`) call a per-domain API client (`frontend/src/apis/ram/`) over the shared Axios instance that attaches the Bearer token and unwraps the `Result` envelope; that layering is a platform convention (next section), not redrawn per area.
 
-1. Visit the Project Pulse Website: The Senior Design student begins by accessing the Project Pulse system through their browser at the URL https://projectpulse.team.
-2. Deliver the SPA to the student's Browser: The REST API Application (built using Java and Spring Boot) serves the Single Page Application (SPA, built with Vue.js) to the student's browser. This provides the user interface that students interact with.
-3. Submit WARs and Peer Evaluations: The student uses the SPA to complete and submit Weekly Activity Reports (WARs) and peer evaluations through the interface.
-4. Make REST API Calls to the Backend: The SPA communicates with the REST API Application by making REST API calls to process and handle the submissions from the student. These calls allow the backend to manage the application's logic and facilitate data processing.
-5. CRUD Operations with the Database: The REST API Application performs CRUD (Create, Read, Update, Delete) operations on the Database, which is a relational database. The database securely stores the submitted WARs and peer evaluations.
-6. Send Emails via SMTP: The REST API Application interacts with the Gmail system using SMTP to send automated email notifications (e.g., reminders, submission confirmations) to the student or instructor, as necessary.
-7. Receive Emails: Finally, the student (or instructor) receives email notifications generated by the Gmail system, completing the interaction loop.
+## Architectural Conventions
 
-This sequence of actions outlines how the Project Pulse system components collaborate to facilitate functionality for the student while ensuring efficient data management and communication. RAM-specific flows (graph navigation, document editing, ReqLint validation, and AI-assisted review) follow the same SPA → REST API → Database path, with the REST API additionally proxying requests to the external LLM service.
+RAM **inherits the Project Pulse platform conventions rather than defining its own** — they are platform-wide facts that predate RAM (a module inside a fixed host, per `CO-1` / `OE-4`). In brief: REST endpoints under `/api/v1` returning the `Result` envelope (`flag`/`code`/`message`/`data`) with errors via a global `ExceptionHandlerAdvice`; one DDD bounded context per package owning its full vertical slice (entity → repository → service → controller → DTO + `Converter<S,T>`, no Lombok); JWT auth via URL rules in `SecurityConfiguration` plus `AuthorizationManager` beans for ownership/membership, role hierarchy `admin > instructor > student`; relational persistence with schema delivered as Flyway migrations (dev `ddl-auto: create` + `DataInitializer`, prod Flyway only).
+
+The **canonical statement of these conventions is the platform architecture-of-record, [`../../pulse-core/design/architectural-design.md`](../../pulse-core/design/architectural-design.md#architectural-conventions)** (its Architectural Conventions section) — this doc deliberately does **not** restate the full normative list, only enough to orient a reader of the exported design. RAM code follows them verbatim; a Level-2 area doc records only where it *deviates*.
+
+## Cross-Cutting Subsystems
+
+Each RAM area builds on a small set of **shared subsystems** rather than reinventing them; a Level-2 area design should *plug into* the relevant row, not redesign it. The FR families are specified in the SRS's Non-Use Case Functional Requirements; "owner" is the package that provides the machine. Build status is the per-subsystem view of what `../traceability.md` tracks per use case.
+
+| Subsystem | FR family | Owner | Status | How an area plugs in |
+|---|---|---|---|---|
+| Section locking | `FR-LOCK-*` | `ram/document` (`DocumentSectionLock`), `ram/usecase` (`UseCaseLock`) | ✅ built | Acquire/release a lock on the authoring destination before edit (UC-DOC-2 / UC-DOC-6) |
+| Document templates | `FR-TPL-*` | `ram/document/template` (`DocumentTemplateRegistry`) | ✅ built | Provision a document's sections from its `DocumentType` template |
+| Collaboration | `FR-COL-*` | `ram/collaboration` | ✅ threads built; real-time presence/broadcast planned (UC-COL-1) | Attach comment threads to an artifact / destination |
+| Glossary | `FR-GLO-*` | `ram/glossary` | ✅ built | Terminology lookups and invariants |
+| Authorship & history | `FR-HIS-*` | `system` (JPA auditing, `PeerEvaluationUserAuditorAware`) | ✅ built (platform) | Inherited via JPA auditing — no per-area work |
+| Notifications | `FR-NOT-*` | `system` (`EmailService`, `WeeklyReminderScheduler`) | ✅ built (platform) | Call `EmailService`; Gmail over SMTP |
+| Security / RBAC | `FR-SEC-*` | `security` (`AuthorizationManager` beans) | ✅ built (platform) | Add a URL rule + an ownership/membership manager |
+| Autosave | `FR-SAVE-*` | `ram/document` (section save) + client-side debounce | ◑ server persistence built | Persist edits through the document-section save endpoint |
+| Validation (ReqLint) | `FR-VAL-*` | — (planned) | ⬜ specified, not built | Deterministic structural checks (UC-VAL-1) |
+| AI assistants | `FR-AI-*` | — (LLM proxy, planned) | ⬜ specified, not built | Proxy to the external LLM service |
+| Export / Import | `FR-EXP-*` / `FR-IMP-*` | — (planned) | ⬜ specified, not built | — |
 
 ## Operating Environment, Constraints, Assumptions, and Dependencies
 
@@ -74,4 +89,4 @@ RAM's operating environment (`OE-*`), design and implementation constraints (`CO
 
 ## Deployment
 
-RAM is a module within the existing Project Pulse application (CO-1, INT-1), so it is deployed, operated, and maintained as part of Project Pulse rather than as a separate system — the same Vue.js single-page application, Spring Boot REST API, and relational database, through the same pipeline and environments. The target deployment environment and operational specifics — Microsoft Azure App Service, GitHub Actions CI/CD, the external OpenAI LLM integration, and load testing for peak usage — are given in Vision and Scope's Deployment Considerations and are not repeated here; the runtime integrations RAM relies on are specified in the SRS's Operating Environment and External Interface Requirements sections. Schema changes for the requirements graph are delivered as versioned database migrations applied during deployment.
+RAM ships as part of Project Pulse (`CO-1`, `INT-1`) — the same Vue.js SPA, Spring Boot REST API, and relational database, through the same pipeline and environments — so deployment is platform-owned: see the platform [Deployment](../../pulse-core/design/architectural-design.md#deployment) section. RAM's only delta is that schema changes for the requirements graph ship as versioned Flyway migrations applied during deployment, like the rest of the platform. The runtime integrations RAM relies on (the LLM service) are specified in the SRS's Operating Environment and External Interface Requirements sections.

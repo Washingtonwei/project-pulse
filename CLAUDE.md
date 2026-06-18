@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Project Pulse is a web application for managing senior design / capstone course projects. Students submit weekly activity reports and peer evaluations; instructors monitor progress via dashboards. It also includes a Requirements Authoring & Management (RAM) module that lets student teams define software requirements before coding — project glossary, vision and scope, use cases, business rules, software requirements specifications, and traceability.
 
-RAM functionality is built **spec-first**: its requirements live as Markdown under `docs/ram/` and drive implementation through the `/feature` workflow. See **Spec-driven RAM development** below before adding or changing RAM features.
+RAM functionality is built **spec-first**: its requirements live as Markdown under `docs/ram/` and drive implementation through the `/design` → `/implement` workflow. See **Spec-driven RAM development** below before adding or changing RAM features.
 
 ## Starting the Project
 
@@ -80,13 +80,15 @@ npm run cy:open      # Cypress E2E tests
 
 ## Architecture
 
+> **Canonical architecture-of-record:** [`docs/pulse-core/design/architectural-design.md`](docs/pulse-core/design/architectural-design.md) — the platform's C4 context/container/component views, the binding conventions, the cross-cutting subsystems, and deployment. When the architecture changes, update *that* doc; the summary below is just orientation for working in the code. RAM's module-level view is [`docs/ram/design/architectural-design.md`](docs/ram/design/architectural-design.md), which cites the platform doc.
+
 ### Monorepo Layout
 - `backend/` — Spring Boot 4.0 Maven project (Java 21)
 - `frontend/` — Vue 3 + Vite + TypeScript SPA
 - `docker-compose.yml` — MySQL 8, Mailpit, Prometheus, Grafana, Zipkin
 
 ### Deployment
-The CI pipeline (`azure-webapps-deploy.yml`) builds the Vue frontend, copies the dist into `backend/src/main/resources/static/`, then builds the Spring Boot jar and deploys as a Docker container to Azure. In production, the Spring Boot app serves both the API and the SPA. `WebConfig` forwards non-API routes to `index.html` for SPA routing.
+One Azure deployment for the whole platform (frontend bundled into the Spring Boot jar, served alongside the API). Canonical detail — pipeline stages, environments, SPA serving — is in the architecture-of-record's [Deployment](docs/pulse-core/design/architectural-design.md#deployment) section; see also **CI** at the end of this file.
 
 ### Backend Architecture
 
@@ -100,15 +102,7 @@ The CI pipeline (`azure-webapps-deploy.yml`) builds the Vue frontend, copies the
 
 **RAM domain** (`ram/`): Requirements Authoring & Management — originally a separate project, merged into Project Pulse to reuse the existing course/section/team/student infrastructure. Sub-packages: `document/` (requirement documents with section-level pessimistic locking), `requirement/` (artifacts, traceability links), `usecase/`, `glossary/`, `collaboration/` (comment threads)
 
-**Patterns:**
-- All API endpoints are prefixed with `/api/v1` (configured via `api.endpoint.base-url` in `application.yml`)
-- All controller methods return `Result` objects (never raw entities)
-- Bidirectional DTO conversion using Spring `Converter<S,T>` implementations (not MapStruct/Lombok)
-- No Lombok — all entities use explicit getters/setters/constructors
-- Role hierarchy: `admin > instructor > student`
-- Authorization uses both URL-level rules in `SecurityFilterChain` and custom `AuthorizationManager` beans for ownership/membership checks
-- Database migrations via Flyway (`backend/src/main/resources/db/migration/`)
-- Dev profile uses `ddl-auto: create` with `DataInitializer`; prod uses Flyway only
+**Patterns:** the binding conventions every package follows — `/api/v1` endpoints returning the `Result` envelope, DDD vertical slice with `Converter<S,T>` DTOs (no Lombok/MapStruct), JWT + `AuthorizationManager` auth (`admin > instructor > student`), Flyway migrations — are stated normatively in the architecture-of-record's [Architectural Conventions](docs/pulse-core/design/architectural-design.md#architectural-conventions). Follow them; don't restate them here.
 
 **Spring profiles:** `dev` (default, local MySQL + Mailpit), `staging`, `prod` (Azure Key Vault for secrets)
 
@@ -149,7 +143,7 @@ The RAM module is developed **spec-first**: its requirements are authored as Mar
 - `docs/ram/product/` — RAM product material: shipped default content the product seeds at runtime (e.g., the default cross-document review criteria + critique-assistant system prompt).
 - `docs/ram/CLAUDE.md` — authoring rules for these docs (anchor slugs, ID schemes, cross-doc consistency); it governs edits anywhere under `docs/ram/`.
 
-(A second, non-RAM requirement set is scaffolded as a placeholder under `docs/pulse-core/` and will be authored later with the same shape.)
+(A second, non-RAM module — the platform core — lives under `docs/pulse-core/`. Its **architecture-of-record** is authored: [`docs/pulse-core/design/architectural-design.md`](docs/pulse-core/design/architectural-design.md), the canonical platform architecture both modules inherit. Its **requirements** specs exist in Google Docs and are pending conversion into `docs/pulse-core/requirements/` with the same shape as `docs/ram/`.)
 
 **Functional requirements.** A **use case is itself a high-level functional requirement** (the SRS's Use Cases section) — its "The system ..." steps + Associated Information are its detailed spec. The SRS's **Non-Use Case Functional Requirements** section holds only the non-use-case, system-level behaviors, with IDs in `FR-<AREA>-<n>` format (parallel to `UC-<AREA>-<n>`; `docs/ram/CLAUDE.md` enumerates the area codes). **Business rules** (`BR-*`, in `business-rules.md`) are an append-only sequence cited by use cases and the SRS. FR/BR/UC IDs are identifier spaces independent of heading position — never renumber them.
 
@@ -158,14 +152,15 @@ The RAM module is developed **spec-first**: its requirements are authored as Mar
 A RAM feature begins as a use case. The loop:
 
 1. A use case is added or changed in `docs/ram/requirements/use-cases.md` (follow `docs/ram/CLAUDE.md`; run `/build` to resync anchors and cross-references).
-2. Run **`/feature <UC-ID>`** (`.claude/commands/feature.md`) to drive it through plan → design (write/update the area's `docs/ram/design/` doc) → code → test.
-3. The work is recorded back into `docs/ram/traceability.md`.
+2. Run **`/design <UC-ID>`** (`.claude/commands/design.md`) to turn it into an approved **design-of-record** — the area's `docs/ram/design/` doc (diagrams + non-obvious decisions). Design is a separately-reviewed stage that **stops before code**.
+3. Run **`/implement <UC-ID>`** (`.claude/commands/implement.md`) to build from that design — plan → code → test.
+4. The work is recorded back into `docs/ram/traceability.md` (`/design` marks the row `📐 Designed`; `/implement` flips it to the built state).
 
 Treat the use case as the contract:
 - The **use case** gives actors, trigger, main success scenario, extensions, and pre/postconditions — *what to build and the flows to test*. Its system-subject steps plus their **Associated Information** are themselves the detailed functional requirement (a use case is a high-level FR); the cross-cutting **non-use-case FRs** (`FR-LOCK-*`, `FR-SAVE-*`, …) it cites are the additional atomic "shall" statements it must honor. Together they are the *acceptance criteria* — don't restate the use-case flow as a new FR, and don't invent missing detail silently.
 - **Citation is at the use-case level.** Traceability is one row per UC and tests are tagged to the UC — there is no finer (per-step) handle, so the UC's tests must cover the whole main flow **and every extension**, and a use case must stay small enough that "UC-X passes" is a meaningful statement. The extensions carry the edge-case requirements.
 - The **glossary** fixes vocabulary — use the defined term in code identifiers and UI text, never a synonym.
-- **The spec is authoritative but not infallible.** When a step is ambiguous, an assumption breaks against the existing code, or requirements contradict — ask a clarifying question or challenge the spec; don't silently comply or silently invent. Fix the spec and re-derive rather than diverging quietly in code. `/feature` builds this in.
+- **The spec is authoritative but not infallible.** When a step is ambiguous, an assumption breaks against the existing code, or requirements contradict — ask a clarifying question or challenge the spec; don't silently comply or silently invent. Fix the spec and re-derive rather than diverging quietly in code. `/design` and `/implement` build this in.
 
 Cross-cutting behavior is already specified, and some is already built — reuse it, don't reinvent per feature:
 - **Locking** (`FR-LOCK-*`): section-level pessimistic locking already exists in `ram/document/`. See UC-DOC-2 / UC-DOC-6.

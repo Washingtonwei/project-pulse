@@ -2,7 +2,7 @@
 
 This directory holds the **specification for the Requirements Authoring & Management (RAM) module** of Project Pulse — a graph-first, model-driven requirements IDE for software engineering and senior design courses at TCU.
 
-RAM is a **module inside the Project Pulse codebase**, not a separate project. This `docs/ram/` tree is its spec→design→trace chain; the code that implements it lives in `backend/` and `frontend/`. For how the spec drives the code (the `/feature` workflow), see the **Spec-driven RAM development** section of the repo-root [`CLAUDE.md`](../../CLAUDE.md).
+RAM is a **module inside the Project Pulse codebase**, not a separate project. This `docs/ram/` tree is its spec→design→trace chain; the code that implements it lives in `backend/` and `frontend/`. For how the spec drives the code (the `/design` → `/implement` workflow), see the **Spec-driven RAM development** section of the repo-root [`CLAUDE.md`](../../CLAUDE.md).
 
 ## Layout
 
@@ -17,7 +17,7 @@ docs/ram/
 │   └── OPEN-ISSUES.md                          # working backlog (OI-n, P0–P3)
 ├── design/                                    # design docs (below the SRS)
 │   ├── README.md                              # design-doc conventions
-│   └── architectural-design.md                # host architecture, constraints, deployment (cross-cutting)
+│   └── architectural-design.md                # RAM module architecture: component view + subsystems (cites pulse-core)
 ├── traceability.md                            # spec→code matrix: one row per use case
 ├── guides/                                    # supporting build guidance (not spec docs)
 │   └── ai-implementation-notes.md
@@ -41,4 +41,4 @@ edit a doc  →  run /build  →  review the report  →  fix flagged issues  �
 
 `/build` (defined in [`../../.claude/commands/build.md`](../../.claude/commands/build.md)) treats the docs as artifacts that must "compile": it auto-fixes mechanical issues (heading numbering, stray `{#slug}` anchors, TOC regeneration, straight quotes) and reports semantic issues for your review (undefined glossary terms, dangling FR/BR references, ReqLint writing issues, cross-doc terminology drift). It is run from [Claude Code](https://claude.com/claude-code).
 
-To implement a use case end to end, run `/feature <UC-ID>` ([`../../.claude/commands/feature.md`](../../.claude/commands/feature.md)) — it drives the use case through plan → design → code → test and records the result back into `traceability.md`.
+To take a use case from spec to code, run `/design <UC-ID>` ([`../../.claude/commands/design.md`](../../.claude/commands/design.md)) to produce its design-of-record (the area's `design/` doc), then `/implement <UC-ID>` ([`../../.claude/commands/implement.md`](../../.claude/commands/implement.md)) to build and test it. Both record the result back into `traceability.md`.

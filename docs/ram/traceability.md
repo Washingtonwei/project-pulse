@@ -2,7 +2,7 @@
 
 The map from **spec → code**. Each use case in `requirements/use-cases.md` gets one row linking it to the cross-cutting functional requirements it depends on and the actual frontend/backend/test artifacts that implement it. This is how Claude (and you) find the right code from a requirement, and — via the **Status** column — see at a glance **which use cases are implemented and which are not**. Note: in this project a **use case is itself a (high-level) functional requirement**, and its "The system …" steps + Associated Information are its detailed functional spec (the SRS's Use Cases section); the SRS's Non-Use Case Functional Requirements "shall" statements capture only the system-level behaviors.
 
-> Update the relevant row at the end of every `/feature` run (Phase 5).
+> `/design` sets a use case's row to `📐 Designed` when its design-of-record is written; `/implement` fills the code columns and flips the status at the end of its run (Phase 5).
 
 ## How to use it
 
@@ -10,14 +10,14 @@ The map from **spec → code**. Each use case in `requirements/use-cases.md` get
 - **FR IDs** — the SRS's non-use-case, system-level functional requirements this use case **depends on / builds upon** (e.g. locking, autosave, validation, real-time collaboration, export, AI). The use case's own "The system …" steps are its primary acceptance criteria; this column points to the reusable cross-cutting subsystems behind it. `—` means the use case is self-contained (its steps are the whole spec). The most universal behaviors — authorship metadata (`FR-HIS-4`) and RBAC (`FR-SEC-*`) — apply to nearly every row and are omitted here to reduce noise.
 - **Frontend / Backend / Tests** — concrete artifacts (`file_path` or component/class names) once built; `—` until then.
 - **Status** — implementation state, from the legend below.
-- When a use case is added to `requirements/use-cases.md`, add its row here (start at `❌ Not started`). When `/feature` finishes it, flip the status and fill the code columns.
+- When a use case is added to `requirements/use-cases.md`, add its row here (start at `❌ Not started`). `/design` advances it to `📐 Designed`; when `/implement` finishes it, flip the status and fill the code columns.
 
 ## Status legend
 
 | Symbol | Meaning |
 |--------|---------|
 | ❌ Not started | No code yet. |
-| 🔵 Planned | Spec is ready and an implementation plan exists; not yet coded. |
+| 📐 Designed | Design-of-record exists — the area's `design/<area>.md` is written and approved (`/design`); not yet coded. |
 | 🟡 In progress | Partially implemented. |
 | ✅ Implemented | Code complete and automated tests pass. |
 | 🔎 Needs verification | Built, but not yet confirmed against the use case flow (or tests incomplete). |
