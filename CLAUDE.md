@@ -8,6 +8,8 @@ Project Pulse is a web application for managing senior design / capstone course 
 
 RAM functionality is built **spec-first**: its requirements live as Markdown under `docs/ram/` and drive implementation through the `/design` → `/implement` workflow. See **Spec-driven RAM development** below before adding or changing RAM features.
 
+The overarching development methodology these workflows instantiate — spec-driven and agent-assisted, with a *breadth-complete, depth-shallow* architecture validated by a thin vertical slice before fanning out per use case — is written up in [`docs/methodology.md`](docs/methodology.md).
+
 ## Starting the Project
 
 All three services must be running for local development. Run them in this order:

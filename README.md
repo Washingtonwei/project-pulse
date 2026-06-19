@@ -84,6 +84,10 @@ Spring Boot, Vue.js, MySQL, Docker, Microsoft Azure, etc.
 
 ## Documentation
 
+### Development Methodology
+
+🔗 [Spec-Driven, Agent-Assisted Development](docs/methodology.md) — the methodology this project is built with (spec-first requirements, a breadth-complete architecture proven by a thin vertical slice, then per-use-case design and implementation with an AI coding agent).
+
 ### Project Use Cases
 
 🔗 [Use Cases](docs/ram/requirements/use-cases.md)
@@ -94,7 +98,7 @@ Spring Boot, Vue.js, MySQL, Docker, Microsoft Azure, etc.
 
 ### UML Class Diagram
 
-🔗 [UML Class Diagram](docs/ram/requirements/software-requirements-specification.md#71-business-domain-model)
+🔗 [UML Class Diagram](docs/ram/requirements/software-requirements-specification.md#business-domain-model)
 
 ## Getting Started
 
