@@ -13,9 +13,9 @@ RAM runs inside the Project Pulse platform, so its host architecture — the C4 
 
 What RAM contributes to each shared container:
 
-- **SPA** — the requirements authoring views (documents, document editor, use cases, glossary; graph, ReqLint, and AI panels as they ship).
-- **REST API** — the `ram/*` bounded contexts (see the Component Diagram below) plus an AI proxy to the external LLM service.
-- **Database** — the requirement artifacts, artifact links, requirement documents, document sections, and comment threads.
+- **SPA** — the requirements authoring views: documents and the document editor, use cases, glossary, graph and traceability, ReqLint validation, collaboration, review and submission, export, and the AI panels.
+- **REST API** — the `ram/*` bounded contexts (see the Component Diagram below), including the `ai` component that proxies to the external LLM service.
+- **Database** — the requirement artifacts, artifact links, requirement documents, document sections, comment threads, and AI configuration.
 
 ## Component Diagram
 
@@ -25,39 +25,52 @@ This Level 3 view zooms into the **REST API Application** to show the RAM module
 C4Component
     title Component Diagram — RAM components inside the REST API Application
 
-    Container(spa, "SPA", "Vue.js", "RAM authoring views (Documents, Document Editor, Use Cases, Glossary)")
+    Container(spa, "SPA", "Vue.js", "RAM authoring views: Documents, Document Editor, Use Cases, Glossary, graph & traceability, ReqLint, Collaboration, Review, Export, AI panels")
 
     Container_Boundary(api, "REST API Application (Spring Boot)") {
-        Component(doc, "document", "Controller / Service / Repository", "Requirement documents & document sections, section-level pessimistic locking, document templates")
+        Component(doc, "document", "Controller / Service / Repository", "Requirement documents & document sections, templates/provisioning, section-level pessimistic locking, autosave")
         Component(req, "requirement", "Controller / Service / Repository", "Requirement artifacts, artifact links & tracing, key-prefix sequences")
         Component(uc, "usecase", "Controller / Service / Repository", "Use case artifacts: main steps, extensions, locking")
-        Component(glo, "glossary", "Controller / Service", "Glossary terms")
-        Component(col, "collaboration", "Controller / Service / Repository", "Comment threads & comments")
+        Component(glo, "glossary", "Controller / Service", "Glossary terms & terminology invariants")
+        Component(val, "validation", "Controller / Service", "ReqLint structural & consistency checks")
+        Component(col, "collaboration", "Controller / Service / Repository", "Comment threads & real-time presence/broadcast")
+        Component(rev, "review", "Controller / Service / Repository", "Review & submission workflow")
+        Component(exp, "export", "Controller / Service", "Export formatting & project-source-material import")
+        Component(ai, "ai", "Controller / Service", "AI configuration, AI assistants & LLM proxy")
         Component(shared, "Shared platform packages", "system · security · user", "Result / StatusCode / ExceptionHandlerAdvice, JWT auth + AuthorizationManagers, JPA auditing (authorship), EmailService")
     }
 
-    ContainerDb(db, "Database", "Relational DB", "RAM artifacts, links, documents, sections, comments")
-    System_Ext(llm, "LLM Service", "AI-assisted review (planned)")
+    ContainerDb(db, "Database", "Relational DB", "RAM artifacts, links, documents, sections, comments, AI config")
+    System_Ext(llm, "LLM Service", "AI-assisted requirement review")
 
     Rel_D(spa, doc, "JSON/HTTPS")
     Rel_D(spa, req, "JSON/HTTPS")
     Rel_D(spa, uc, "JSON/HTTPS")
     Rel_D(spa, glo, "JSON/HTTPS")
+    Rel_D(spa, val, "JSON/HTTPS")
     Rel_D(spa, col, "JSON/HTTPS")
+    Rel_D(spa, rev, "JSON/HTTPS")
+    Rel_D(spa, exp, "JSON/HTTPS")
+    Rel_D(spa, ai, "JSON/HTTPS")
     Rel(doc, shared, "builds on")
     Rel(req, shared, "builds on")
     Rel(uc, shared, "builds on")
     Rel(glo, shared, "builds on")
+    Rel(val, shared, "builds on")
     Rel(col, shared, "builds on")
+    Rel(rev, shared, "builds on")
+    Rel(exp, shared, "builds on")
+    Rel(ai, shared, "builds on")
     Rel_D(doc, db, "JDBC")
     Rel_D(req, db, "JDBC")
     Rel_D(uc, db, "JDBC")
-    Rel_D(glo, db, "JDBC")
     Rel_D(col, db, "JDBC")
-    Rel(shared, llm, "AI proxy (planned)", "HTTPS")
+    Rel_D(rev, db, "JDBC")
+    Rel_D(ai, db, "JDBC")
+    Rel_R(ai, llm, "AI proxy", "HTTPS")
 ```
 
-The five RAM components are the bounded contexts that exist today; the areas still specified but not yet packaged (validation/ReqLint, AI assistants, export/import) will add their own components beside these as they are built — see Cross-Cutting Subsystems below. On the **SPA** side the layering mirrors the rest of Project Pulse: RAM pages (`frontend/src/pages/ram/`) call a per-domain API client (`frontend/src/apis/ram/`) over the shared Axios instance that attaches the Bearer token and unwraps the `Result` envelope; that layering is a platform convention (next section), not redrawn per area.
+These are the RAM module's bounded contexts — each maps to a package under `ram/` and is the subject of a Level-2 area design doc that designs the inside of one box. The boundaries for areas not yet designed are **provisional**: they are drawn here from the use-case areas so the map is complete, but the first `/design` of an area validates a boundary against the code and **may revise this diagram** (splitting, merging, or re-homing a component, or moving a subsystem owner), recording the change as part of that run. The `ai` component is the only one that reaches outside the platform: it proxies to the external LLM service for AI-assisted review. On the **SPA** side the layering mirrors the rest of Project Pulse: RAM pages (`frontend/src/pages/ram/`) call a per-domain API client (`frontend/src/apis/ram/`) over the shared Axios instance that attaches the Bearer token and unwraps the `Result` envelope; that layering is a platform convention (next section), not redrawn per area. The build status of each component and subsystem is not tracked here — that is `../traceability.md`'s job, per use case.
 
 ## Architectural Conventions
 
@@ -67,21 +80,21 @@ The **canonical statement of these conventions is the platform architecture-of-r
 
 ## Cross-Cutting Subsystems
 
-Each RAM area builds on a small set of **shared subsystems** rather than reinventing them; a Level-2 area design should *plug into* the relevant row, not redesign it. The FR families are specified in the SRS's Non-Use Case Functional Requirements; "owner" is the package that provides the machine. Build status is the per-subsystem view of what `../traceability.md` tracks per use case.
+Each RAM area builds on a small set of **shared subsystems** rather than reinventing them; a Level-2 area design should *plug into* the relevant row, not redesign it. The FR families are specified in the SRS's Non-Use Case Functional Requirements; "owner" is the package that provides the machine. (Per-use-case build status lives in `../traceability.md`, not here.)
 
-| Subsystem | FR family | Owner | Status | How an area plugs in |
-|---|---|---|---|---|
-| Section locking | `FR-LOCK-*` | `ram/document` (`DocumentSectionLock`), `ram/usecase` (`UseCaseLock`) | ✅ built | Acquire/release a lock on the authoring destination before edit (UC-DOC-2 / UC-DOC-6) |
-| Document templates | `FR-TPL-*` | `ram/document/template` (`DocumentTemplateRegistry`) | ✅ built | Provision a document's sections from its `DocumentType` template |
-| Collaboration | `FR-COL-*` | `ram/collaboration` | ✅ threads built; real-time presence/broadcast planned (UC-COL-1) | Attach comment threads to an artifact / destination |
-| Glossary | `FR-GLO-*` | `ram/glossary` | ✅ built | Terminology lookups and invariants |
-| Authorship & history | `FR-HIS-*` | `system` (JPA auditing, `PeerEvaluationUserAuditorAware`) | ✅ built (platform) | Inherited via JPA auditing — no per-area work |
-| Notifications | `FR-NOT-*` | `system` (`EmailService`, `WeeklyReminderScheduler`) | ✅ built (platform) | Call `EmailService`; Gmail over SMTP |
-| Security / RBAC | `FR-SEC-*` | `security` (`AuthorizationManager` beans) | ✅ built (platform) | Add a URL rule + an ownership/membership manager |
-| Autosave | `FR-SAVE-*` | `ram/document` (section save) + client-side debounce | ◑ server persistence built | Persist edits through the document-section save endpoint |
-| Validation (ReqLint) | `FR-VAL-*` | — (planned) | ⬜ specified, not built | Deterministic structural checks (UC-VAL-1) |
-| AI assistants | `FR-AI-*` | — (LLM proxy, planned) | ⬜ specified, not built | Proxy to the external LLM service |
-| Export / Import | `FR-EXP-*` / `FR-IMP-*` | — (planned) | ⬜ specified, not built | — |
+| Subsystem | FR family | Owner | How an area plugs in |
+|---|---|---|---|
+| Section locking | `FR-LOCK-*` | `ram/document` (`DocumentSectionLock`), `ram/usecase` (`UseCaseLock`) | Acquire/release a lock on the authoring destination before edit (UC-DOC-2 / UC-DOC-6) |
+| Document templates | `FR-TPL-*` | `ram/document/template` (`DocumentTemplateRegistry`) | Provision a document's sections from its `DocumentType` template |
+| Collaboration | `FR-COL-*` | `ram/collaboration` | Attach comment threads to an artifact / destination; real-time presence/broadcast (UC-COL-1) |
+| Glossary | `FR-GLO-*` | `ram/glossary` | Terminology lookups and invariants |
+| Authorship & history | `FR-HIS-*` | `system` (JPA auditing, `PeerEvaluationUserAuditorAware`) | Inherited via JPA auditing — no per-area work |
+| Notifications | `FR-NOT-*` | `system` (`EmailService`, `WeeklyReminderScheduler`) | Call `EmailService`; Gmail over SMTP |
+| Security / RBAC | `FR-SEC-*` | `security` (`AuthorizationManager` beans) | Add a URL rule + an ownership/membership manager |
+| Autosave | `FR-SAVE-*` | `ram/document` (section save) + client-side debounce | Persist edits through the document-section save endpoint |
+| Validation (ReqLint) | `FR-VAL-*` | `ram/validation` | Deterministic structural checks (UC-VAL-1) |
+| AI assistants | `FR-AI-*` | `ram/ai` (LLM proxy) | Proxy to the external LLM service |
+| Export / Import | `FR-EXP-*` / `FR-IMP-*` | `ram/export` | Export formatting; project-source-material import |
 
 ## Operating Environment, Constraints, Assumptions, and Dependencies
 
