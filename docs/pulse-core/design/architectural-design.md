@@ -146,6 +146,41 @@ Shared machinery every module reuses rather than reimplements — owned by the c
 | Time & profiles | `system` (`DevClockConfig` / `StagingClockConfig` / `ProdClockConfig`) | Profile-scoped clocks for testable time |
 | Dev seed data | `system` (`DataInitializer`) | `dev`-profile fixtures (the dev credentials) |
 
+## **Security & Compliance**
+
+> Security is Quality Goal #1: the platform holds student educational records regulated under **FERPA**. This is the consolidated security view — authentication, authorization, data protection, threat boundary — recording both the **controls in place** and the **known gaps** a production deployment must close. Mechanics live in `security/` and `user/`; this explains the design, it doesn't restate every rule.
+
+### *Trust boundary*
+
+Single-tenant: one deployment serves one institution. The trust boundary is the Azure Web App — the Vue SPA and REST API are one origin (SPA served from the API jar), so there's no cross-origin trust in production. TLS terminates at the Azure edge; the app trusts the platform for transport encryption (it does not enforce HTTPS itself).
+
+### *Authentication*
+
+- **Login:** HTTP Basic (email + password) → server issues a JWT (`AuthController` / `JwtProvider`). Passwords hashed with **BCrypt (strength 12)**.
+- **Tokens:** self-issued JWTs, **RSA-2048** signature, **2-hour** expiry, claims `sub`, `userId`, space-delimited `authorities`. Stateless OAuth2 resource server (`SessionCreationPolicy.STATELESS`).
+- **Provisioning:** invitation flow (`user/userinvitation`) plus self-registration; password reset via a one-time token valid **5 minutes**.
+- **Known gaps:** no token **refresh** or **revocation/blocklist** — a token is valid for its full 2h (a leaked token can't be revoked; logout is client-side only). The RSA key regenerates per startup (KD-4). **`POST /students` and `POST /instructors` are `permitAll()` — open self-registration, including instructor accounts** (which grant cross-section visibility of student data); for production FERPA this should be invitation- or approval-gated.
+
+### *Authorization*
+
+- **Role hierarchy** `admin > instructor > student` (`RoleHierarchyImpl`); method security enabled (`@EnableMethodSecurity`).
+- **Two layers:** coarse URL rules in `SecurityConfiguration` (`hasAuthority`, `.authenticated()`) **plus** fine-grained `.access(…AuthorizationManager)` enforcing **ownership** (the user created the resource) or **membership** (the user belongs to the same course/section/team). The logic lives in per-domain `*SecurityService` classes; the `*AuthorizationManager` is a thin URL-to-logic wrapper.
+- **Effect:** a student reaches only their own team's data — all RAM artifacts are gated by `teamMembership`/`teamOwnership`; an instructor only their assigned sections. This is the architectural realization of least privilege (QS-1).
+
+### *Data protection & FERPA*
+
+- **Records handled:** WARs (student contributions), peer evaluations (sensitive peer judgments), scores/feedback, requirements artifacts, identity (names/emails).
+- **Least privilege:** the ownership/membership model above — the primary FERPA control.
+- **Accountability:** JPA auditing (`PeerEvaluationUserAuditorAware`) stamps created/modified-by + timestamps.
+- **Secrets:** `staging`/`prod` load secrets from **Azure Key Vault**; none in source.
+- **Encryption:** in transit via Azure-edge TLS; at rest via Azure-managed database encryption — both platform-provided, not app-configured.
+- **Known gaps (FERPA obligations not yet designed):** no **retention / deletion / end-of-course purge** policy and no student data **access/correction** workflow (structural cascade deletes exist but are not a retention policy); no documented audit-log retention or data-minimization review. **Wide-open CORS** (`allowedOrigins("*")`) — low risk given bearer-token (non-cookie) auth and same-origin prod serving, but should be allowlisted to the SPA origin. No **rate limiting** on auth endpoints (brute-force exposure; `/users/exists/{email}` also enables email enumeration).
+
+### *Threat model (scope)*
+
+- **In scope (addressed):** cross-team / cross-section data access (AuthorizationManagers), credential theft (BCrypt-12, short-lived JWT), unauthorized role escalation (role hierarchy + ownership).
+- **Out of scope / accepted at current scale:** DDoS and rate-limiting, multi-tenant isolation (single-tenant by design), advanced persistent threats — revisited if scale or deployment model changes.
+
 ## **Key Decisions**
 
 > The architecturally significant decisions and their rationale (context → decision → consequences, including the alternative rejected). Status is *Accepted* unless noted.
