@@ -2,7 +2,7 @@
 
 # **Use Cases**
 
-# **Version \<1.0\>**
+# **Version 1.0**
 
 # **Revision History**
 
@@ -562,7 +562,7 @@ No two teams can have the same name. The team name must be unique. The course ad
 
 **Preconditions:**
 - PRE-1. Teams are created.
-- PRE-2. students have set up their accounts.
+- PRE-2. Students have set up their accounts.
 - PRE-3. The course admin is logged into the system.
 
 **Postconditions:**
@@ -605,9 +605,9 @@ No two teams can have the same name. The team name must be unique. The course ad
 
 **Preconditions:**
 - PRE-1. Teams are created.
-- PRE-2. students have set up their accounts.
+- PRE-2. Students have set up their accounts.
 - PRE-3. The course admin is logged into the system.
-- PRE-4. students have been assigned to teams.
+- PRE-4. Students have been assigned to teams.
 
 **Postconditions:**
 - POST-1. The student is removed from a team.
@@ -922,11 +922,11 @@ Details:
 
 **Preconditions:**
 - PRE-1. Teams are created.
-- PRE-2. instructors have set up their accounts.
+- PRE-2. Instructors have set up their accounts.
 - PRE-3. The course admin is logged into the system.
 
 **Postconditions:**
-- POST-1. instructors are associated with teams.
+- POST-1. Instructors are associated with teams.
 
 **Main Success Scenario:**
 1. The course admin indicates to assign instructors to teams.
@@ -965,9 +965,9 @@ Details:
 
 **Preconditions:**
 - PRE-1. Teams are created.
-- PRE-2. instructors have set up their accounts.
+- PRE-2. Instructors have set up their accounts.
 - PRE-3. The course admin is logged into the system.
-- PRE-4. instructors have been assigned to teams.
+- PRE-4. Instructors have been assigned to teams.
 
 **Postconditions:**
 - POST-1. The instructor is removed from a team.
