@@ -1,4 +1,4 @@
-# RAM Design Docs
+# **RAM Design Docs**
 
 This directory holds the **design docs for the RAM module** — how the code realizes the spec. Where `requirements/` says *what* the system does, design says *how*; design sits **below the SRS** in the spec→design→trace chain.
 
@@ -25,14 +25,14 @@ A design doc is the **design of record** for what it covers. The Level-2 docs ar
 
 ---
 
-# Level 1 — Architectural design
+# **Level 1 — Architectural design**
 
 [`architectural-design.md`](architectural-design.md) is the design-of-record for how the RAM **module** sits inside the platform — not architecture decided per feature, and not the platform architecture itself. The platform-wide architecture (C4 context/container views, the binding conventions, the deployment pipeline) is owned by the **platform** architecture-of-record, [`../../pulse-core/design/architectural-design.md`](../../pulse-core/design/architectural-design.md); RAM's doc **cites** it. RAM's doc holds:
 
 - the **RAM component view** — the `ram/*` bounded-context components inside the REST API container (the one C4 view that is RAM-specific);
 - a short **platform-context** recap — what RAM contributes to each shared container (SPA views, `ram/*` APIs + AI proxy, the requirements-graph tables) — citing the platform Container diagram, not redrawing it;
 - the **platform conventions** every RAM area inherits — the `Result` envelope, the DDD vertical-slice + `Converter` DTO pattern, JWT/`AuthorizationManager` auth, Flyway migrations — **cited, not restated**: the canonical statement is the platform architecture-of-record's [Architectural Conventions](../../pulse-core/design/architectural-design.md#architectural-conventions);
-- the **cross-cutting subsystems** an area plugs into rather than reinvents (locking, templates, collaboration, glossary, authorship, notifications, security, autosave, and the planned validation/AI/export), each tied to its `FR-*` family, owner package, and build status.
+- the **cross-cutting subsystems** an area plugs into rather than reinvents (locking, templates, collaboration, glossary, authorship, notifications, security, autosave, validation, AI, export), each tied to its `FR-*` family and owner package. (Per-use-case build status is not tracked there — it lives in `../traceability.md`.)
 
 The split is **A vs. B**: *platform-given* facts (the context/container views, conventions, tech stack, deployment pipeline) are owned by the pulse-core architecture-of-record and **cited** with a one-line recap; *RAM-specific* structure (the component view, the cross-cutting-subsystems map) is **drawn here**. Don't grow a second normative copy of the platform conventions — or a second copy of the platform C4 views — in this doc.
 
@@ -44,7 +44,7 @@ The **cross-area shared model** is **owned by the SRS's Business Domain Model** 
 
 ---
 
-# Level 2 — Detailed design (one doc per UC area)
+# **Level 2 — Detailed design (one doc per UC area)**
 
 Each Level-2 doc covers exactly one UC area and is named after that area's lowercase code, so it maps unambiguously to the `UC-<AREA>-<n>` / `FR-<AREA>-<n>` IDs it realizes. The areas (in document order, matching `requirements/use-cases.md`):
 
@@ -64,13 +64,13 @@ Each Level-2 doc covers exactly one UC area and is named after that area's lower
 
 Add a doc only when its area is first designed; this directory grows as `/design` runs. If a new UC area is introduced in `requirements/use-cases.md`, add the matching row above and a same-named design doc when it's implemented.
 
-## The cardinal rule: cite, don't restate
+## **The cardinal rule: cite, don't restate**
 
 A design doc **cites** the use cases and functional requirements it realizes (`UC-<AREA>-<n>`, `FR-<AREA>-<n>`) and links back to them — it never copies their text. The requirement lives in `requirements/`; duplicating it here just creates a second copy to drift. If you find yourself re-describing *what* the system shall do, stop and link to the UC/FR instead, then describe only the *how*.
 
 The same rule applies upward to Level 1: **cite the SRS for the shared model; design only the delta.** Don't redraw the shared entity graph in a Level-2 doc — link to the SRS's Business Domain Model and the platform Container Diagram in [`../../pulse-core/design/architectural-design.md`](../../pulse-core/design/architectural-design.md), then design only the implementation-level delta this area adds (JPA mapping, columns, migration names, the bits below SRS granularity). Two area docs each re-drawing the artifact ER means three copies (SRS + both) to keep in sync.
 
-## What a design doc contains
+## **What a design doc contains**
 
 A design doc is **structured by concern, not by use case.** An area accumulates several use cases over time (`UC-DOC-2`, then `-5`, then `-6`), each designed by its own `/design` run — but the doc must not become a per-UC changelog (`## UC-DOC-2 design`, `## UC-DOC-5 design`, … stacked up). Keep the skeleton below and let the two axes grow differently:
 
@@ -118,7 +118,7 @@ Which existing subsystems this leans on — locking (FR-LOCK-*), collaboration
 ## Open questions / risks
 ```
 
-## Which diagram for what
+## **Which diagram for what**
 
 Good design before implementation is the point of these docs — pick the UML view that fits the concern, and use more than one when the area warrants it. All diagrams are Mermaid (see Conventions).
 
@@ -130,12 +130,12 @@ Good design before implementation is the point of these docs — pick the UML vi
 
 ---
 
-# Conventions (both levels)
+# **Conventions (both levels)**
 
 - **Diagrams are Mermaid** (` ```mermaid ` fenced blocks), never base64-embedded images — diffable and renders in Typora/GitHub. (Same rule as the core docs; see [`../CLAUDE.md`](../CLAUDE.md).)
 - **Vocabulary follows the glossary.** Use the defined terms (`document section`, `course section`, `requirement artifact`, `artifact link`, …) in prose, identifiers, and UI strings — never a synonym. Never write a bare "section"; qualify it as *course section* or *document section*. See [`../CLAUDE.md`](../CLAUDE.md) for the full vocabulary rules.
 - **`/build` does not process these docs.** It only handles the five `requirements/` docs and verifies `../traceability.md`; design docs get no mechanical anchor/heading treatment. Keep them plainly structured with the skeletons above. (Like the core docs, they carry no section numbers and no TOC — but that's just the house style here, not something `/build` enforces.)
 
-# After writing a design doc
+# **After writing a design doc**
 
 Record the work in [`../traceability.md`](../traceability.md): `/design` sets the use case's row to `📐 Designed` (the design-of-record now exists at `design/<area>.md`), and `/implement` later fills the frontend/backend/test artifacts and flips the status (its Phase 5). That row, not this README, is the live index of which areas are designed and built.

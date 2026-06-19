@@ -1,4 +1,4 @@
-# Architectural Design — Project Pulse Platform
+# **Architectural Design — Project Pulse Platform**
 
 > **Design-of-record for the Project Pulse platform** — the host both the core features (weekly activity reports, peer evaluations, courses/course sections/teams) and the RAM module run on.
 >
@@ -12,7 +12,7 @@ Project Pulse was built **core-first**: the weekly-activity-report, peer-evaluat
 
 This doc is the platform's **architecture-of-record**: the structure, conventions, and deployment every module inherits. It is **not** named after a use-case area and does not change when one feature is added — it changes when the host architecture does. The C4 context and container views below are platform-wide; the RAM doc cites them rather than redrawing them.
 
-## System Context Diagram
+## **System Context Diagram**
 
 ```mermaid
 C4Context
@@ -37,7 +37,7 @@ C4Context
 
 The Level 1: Context Diagram for the Project Pulse system provides a high-level overview of its interactions with users and external systems. Project Pulse is the central platform for senior-design course delivery: instructors create courses, author Weekly Activity Report (WAR) and peer evaluation templates, and review submissions, while students submit WARs, complete peer evaluations, and view scores and feedback. The Requirements Authoring & Management (RAM) module runs inside this same platform, where students and instructors author, link, and validate requirements as a connected graph of atomic artifacts. Project Pulse integrates with two external systems: the Gmail system, which delivers automated email notifications (reminders, updates) to students and instructors — the context diagram shows the student notification path as representative — and an external LLM service (e.g., OpenAI), which the RAM module calls for AI-assisted requirement review. This diagram highlights the instructor and student as primary users, the central functionality of Project Pulse including the RAM module, and the platform's reliance on Gmail for communication and the LLM service for AI assistance, offering a clear picture of the system's operational scope and interactions.
 
-## Container Diagram
+## **Container Diagram**
 
 ```mermaid
 C4Container
@@ -73,7 +73,7 @@ The Level 2: Container Diagram for the Project Pulse system provides a detailed 
 
 This sequence of actions outlines how the Project Pulse system components collaborate to facilitate functionality for the student while ensuring efficient data management and communication. RAM-specific flows (graph navigation, document editing, ReqLint validation, and AI-assisted review) follow the same SPA → REST API → Database path, with the REST API additionally proxying requests to the external LLM service.
 
-## Component Diagram
+## **Component Diagram**
 
 This Level 3 view zooms into the **REST API Application** to show the core platform's internal structure: one component per DDD bounded context, on top of the shared cross-cutting packages. Each maps to a package under `backend/src/main/java/team/projectpulse/`. RAM adds its own components (`ram/*`) beside these on the same shared base — see the RAM doc's [Component Diagram](../../ram/design/architectural-design.md#component-diagram).
 
@@ -111,7 +111,7 @@ C4Component
 
 On the **SPA** side the layering is uniform across the app: feature pages call a per-domain API client (`frontend/src/apis/<feature>/`) over a shared Axios instance that attaches the JWT Bearer token, unwraps the `Result` envelope, and redirects to login on `401`. Pinia stores (`token`, `userInfo`, …) hold cross-cutting state; the router enforces `requiresAuth` / role guards.
 
-## Architectural Conventions
+## **Architectural Conventions**
 
 These are the **canonical** platform conventions — the normative source the RAM doc and the root [`CLAUDE.md`](../../../CLAUDE.md) point to. Every module follows them.
 
@@ -121,7 +121,7 @@ These are the **canonical** platform conventions — the normative source the RA
 - **Persistence & migrations** — relational DB via JPA. Schema is delivered as **Flyway** migrations (`backend/src/main/resources/db/migration/`). The `dev` profile uses `ddl-auto: create` + `DataInitializer` seed data; `staging`/`prod` use Flyway only (`prod` pulls secrets from Azure Key Vault).
 - **SPA serving** — in production the Spring Boot app serves both the API and the built SPA from `static/`; `WebConfig` forwards non-API routes to `index.html` for client-side routing.
 
-## Cross-Cutting Platform Subsystems
+## **Cross-Cutting Platform Subsystems**
 
 Shared machinery every module reuses rather than reimplements — owned by the cross-cutting packages, not any one domain.
 
@@ -135,12 +135,12 @@ Shared machinery every module reuses rather than reimplements — owned by the c
 | Time & profiles | `system` (`DevClockConfig` / `StagingClockConfig` / `ProdClockConfig`) | Profile-scoped clocks for testable time |
 | Dev seed data | `system` (`DataInitializer`) | `dev`-profile fixtures (the dev credentials) |
 
-## Technology Stack
+## **Technology Stack**
 
 - **Backend** — Java 21, Spring Boot 4.0, Maven; Spring Security, Spring Data JPA, Flyway.
 - **Frontend** — Vue 3 + Vite + TypeScript SPA; Element Plus, SCSS, Pinia, Chart.js (vue-chartjs), TipTap (rich text, used by RAM); Cypress for E2E.
 - **Data & infra** — relational DB (MySQL 8 in dev via Docker Compose, alongside Mailpit, Prometheus, Grafana, Zipkin).
 
-## Deployment
+## **Deployment**
 
 The whole platform deploys as one unit, RAM included. The CI pipeline (`azure-webapps-deploy.yml`, on push to `main`) builds the Vue frontend, copies the `dist` into `backend/src/main/resources/static/`, builds the Spring Boot jar, packages a Docker image, pushes it to GHCR, and deploys to an Azure Web App staging slot. PR checks (`maven-build.yml`) run `mvn package` (backend build + tests) on PRs to `main`. In production the single Spring Boot container serves both the REST API and the SPA. Schema changes ship as versioned Flyway migrations applied at deploy time.

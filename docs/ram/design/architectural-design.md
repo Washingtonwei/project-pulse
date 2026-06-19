@@ -1,4 +1,4 @@
-# Architectural Design
+# **Architectural Design**
 
 > Scope: RAM's place in the platform — the RAM **component view** and the **cross-cutting subsystems** every RAM area builds on. The platform-wide C4 context/container views and the platform conventions are owned by [`../../pulse-core/design/architectural-design.md`](../../pulse-core/design/architectural-design.md) and cited here, not redrawn.
 > See: ../../pulse-core/design/architectural-design.md (platform architecture-of-record), ../requirements/software-requirements-specification.md (which owns RAM's operating environment, constraints, and assumptions/dependencies), ../requirements/vision-and-scope.md
@@ -7,7 +7,7 @@ This is a **cross-cutting** design doc, not a per-UC-area one. It is the design-
 
 The architecture RAM is **given** (a module inside a fixed host, per `CO-1` / `OE-4`) is not decided here — the platform context and container views live in the platform architecture-of-record and are cited below; this doc draws only the RAM-specific component view and cross-cutting subsystems.
 
-## Platform context
+## **Platform context**
 
 RAM runs inside the Project Pulse platform, so its host architecture — the C4 **System Context** and **Container** views (SPA, REST API, relational DB, plus the Gmail and LLM integrations) — is the platform's, not RAM's. It is owned by the platform architecture-of-record, [`../../pulse-core/design/architectural-design.md`](../../pulse-core/design/architectural-design.md#system-context-diagram); RAM cites it rather than redrawing it.
 
@@ -17,7 +17,7 @@ What RAM contributes to each shared container:
 - **REST API** — the `ram/*` bounded contexts (see the Component Diagram below), including the `ai` component that proxies to the external LLM service.
 - **Database** — the requirement artifacts, artifact links, requirement documents, document sections, comment threads, and AI configuration.
 
-## Component Diagram
+## **Component Diagram**
 
 This Level 3 view zooms into the **REST API Application** to show the RAM module's internal structure: one component per DDD bounded context, sitting on the shared platform packages. Each maps to a package under `backend/src/main/java/team/projectpulse/ram/` — a Level-2 area doc designs the inside of one of these boxes, this diagram fixes the boxes and how they relate.
 
@@ -72,13 +72,13 @@ C4Component
 
 These are the RAM module's bounded contexts — each maps to a package under `ram/` and is the subject of a Level-2 area design doc that designs the inside of one box. The boundaries for areas not yet designed are **provisional**: they are drawn here from the use-case areas so the map is complete, but the first `/design` of an area validates a boundary against the code and **may revise this diagram** (splitting, merging, or re-homing a component, or moving a subsystem owner), recording the change as part of that run. The `ai` component is the only one that reaches outside the platform: it proxies to the external LLM service for AI-assisted review. On the **SPA** side the layering mirrors the rest of Project Pulse: RAM pages (`frontend/src/pages/ram/`) call a per-domain API client (`frontend/src/apis/ram/`) over the shared Axios instance that attaches the Bearer token and unwraps the `Result` envelope; that layering is a platform convention (next section), not redrawn per area. The build status of each component and subsystem is not tracked here — that is `../traceability.md`'s job, per use case.
 
-## Architectural Conventions
+## **Architectural Conventions**
 
 RAM **inherits the Project Pulse platform conventions rather than defining its own** — they are platform-wide facts that predate RAM (a module inside a fixed host, per `CO-1` / `OE-4`). In brief: REST endpoints under `/api/v1` returning the `Result` envelope (`flag`/`code`/`message`/`data`) with errors via a global `ExceptionHandlerAdvice`; one DDD bounded context per package owning its full vertical slice (entity → repository → service → controller → DTO + `Converter<S,T>`, no Lombok); JWT auth via URL rules in `SecurityConfiguration` plus `AuthorizationManager` beans for ownership/membership, role hierarchy `admin > instructor > student`; relational persistence with schema delivered as Flyway migrations (dev `ddl-auto: create` + `DataInitializer`, prod Flyway only).
 
 The **canonical statement of these conventions is the platform architecture-of-record, [`../../pulse-core/design/architectural-design.md`](../../pulse-core/design/architectural-design.md#architectural-conventions)** (its Architectural Conventions section) — this doc deliberately does **not** restate the full normative list, only enough to orient a reader of the exported design. RAM code follows them verbatim; a Level-2 area doc records only where it *deviates*.
 
-## Cross-Cutting Subsystems
+## **Cross-Cutting Subsystems**
 
 Each RAM area builds on a small set of **shared subsystems** rather than reinventing them; a Level-2 area design should *plug into* the relevant row, not redesign it. The FR families are specified in the SRS's Non-Use Case Functional Requirements; "owner" is the package that provides the machine. (Per-use-case build status lives in `../traceability.md`, not here.)
 
@@ -96,10 +96,10 @@ Each RAM area builds on a small set of **shared subsystems** rather than reinven
 | AI assistants | `FR-AI-*` | `ram/ai` (LLM proxy) | Proxy to the external LLM service |
 | Export / Import | `FR-EXP-*` / `FR-IMP-*` | `ram/export` | Export formatting; project-source-material import |
 
-## Operating Environment, Constraints, Assumptions, and Dependencies
+## **Operating Environment, Constraints, Assumptions, and Dependencies**
 
 RAM's operating environment (`OE-*`), design and implementation constraints (`CO-*`), and architecture-level assumptions and dependencies (`AS-6`…, `DE-*`) are requirements-level concerns owned by the SRS — see its Overall Description ([Operating Environment](../requirements/software-requirements-specification.md#operating-environment), [Design and Implementation Constraints](../requirements/software-requirements-specification.md#design-and-implementation-constraints), [Assumptions and Dependencies](../requirements/software-requirements-specification.md#assumptions-and-dependencies)). The architecture in this doc realizes them; it does not redefine them.
 
-## Deployment
+## **Deployment**
 
 RAM ships as part of Project Pulse (`CO-1`, `INT-1`) — the same Vue.js SPA, Spring Boot REST API, and relational database, through the same pipeline and environments — so deployment is platform-owned: see the platform [Deployment](../../pulse-core/design/architectural-design.md#deployment) section. RAM's only delta is that schema changes for the requirements graph ship as versioned Flyway migrations applied during deployment, like the rest of the platform. The runtime integrations RAM relies on (the LLM service) are specified in the SRS's Operating Environment and External Interface Requirements sections.
