@@ -304,6 +304,50 @@ Single-tenant: one deployment serves one institution. The trust boundary is the 
 - **Frontend** — Vue 3 + Vite + TypeScript SPA; Element Plus, SCSS, Pinia, Chart.js (vue-chartjs), TipTap (rich text, used by RAM); Cypress for E2E.
 - **Data & infra** — relational DB (MySQL 8 in dev via Docker Compose, alongside Mailpit, Prometheus, Grafana, Zipkin).
 
+## **Runtime & Scaling**
+
+> The physical runtime topology and the scaling posture. The logical structure is in the C4 views above; this is where the system actually runs, and why it is currently single-instance.
+
+```mermaid
+flowchart LR
+    browser["Student / Instructor<br/>Browser"]
+    subgraph azure["Azure"]
+        subgraph webapp["Azure Web App (single instance)"]
+            slot["Production slot<br/>1 container: Spring Boot jar<br/>(REST API + bundled Vue SPA)"]
+            staging["Staging slot<br/>(deploy target)"]
+        end
+        db[("Azure Database<br/>for MySQL")]
+    end
+    gmail["Gmail<br/>(SMTP)"]
+    llm["LLM Service<br/>(HTTPS)"]
+
+    browser -->|HTTPS| slot
+    slot -->|JDBC| db
+    slot -->|SMTP| gmail
+    slot -->|HTTPS| llm
+    staging -. swap .-> slot
+```
+
+### *Topology*
+
+- One **Azure Web App** runs a **single container** — the Spring Boot jar serving both the REST API and the bundled Vue SPA (KD-1). It talks to one **Azure Database for MySQL** over JDBC, **Gmail** over SMTP, and the external **LLM** over HTTPS. Releases deploy to a **staging slot** and swap into production (see [Deployment](#deployment)).
+
+### *Statefulness*
+
+- The app is largely **stateless**: JWT auth with no server session (`STATELESS`), authoring locks persisted in the DB (not memory), and no application cache. The only per-instance in-memory state is the **RSA signing keypair** (generated at startup, KD-4).
+
+### *Scaling model & path to multi-instance*
+
+- Today the platform scales **vertically only** — one instance (Quality Goal #4; the accepted Scalability trade-off). It is close to horizontally scalable, but three things block it today:
+  1. **Per-startup RSA key (KD-4):** each instance signs with its own key, so instances can't verify each other's tokens. *Fix:* externalize/persist the keypair (or a shared JWKS).
+  2. **Scheduled jobs duplicate:** `WeeklyReminderScheduler` (`@Scheduled` cron) fires on every instance, so N instances send N reminder emails. *Fix:* single-execution coordination (ShedLock / leader election / a dedicated scheduler instance).
+  3. **Otherwise stateless:** beyond (1)–(2) there is no sticky-session or in-memory-cache barrier — DB-backed locks and stateless auth already support multiple instances.
+- Until those are addressed, run a single instance (tracked in Risks & Technical Debt).
+
+### *Availability*
+
+- Single instance ⇒ a single point of failure, with brief downtime on restart/deploy (mitigated by the staging-slot swap). External-dependency failures degrade gracefully (LLM down ⇒ authoring continues, QS-5; email is best-effort).
+
 ## **Deployment**
 
 The whole platform deploys as one unit, RAM included. The CI pipeline (`azure-webapps-deploy.yml`, on push to `main`) builds the Vue frontend, copies the `dist` into `backend/src/main/resources/static/`, builds the Spring Boot jar, packages a Docker image, pushes it to GHCR, and deploys to an Azure Web App staging slot. PR checks (`maven-build.yml`) run `mvn package` (backend build + tests) on PRs to `main`. In production the single Spring Boot container serves both the REST API and the SPA. Schema changes ship as versioned Flyway migrations applied at deploy time.
