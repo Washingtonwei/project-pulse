@@ -82,7 +82,7 @@ npm run cy:open      # Cypress E2E tests
 
 ## Architecture
 
-> **Canonical architecture-of-record:** [`docs/pulse-core/design/architectural-design.md`](docs/pulse-core/design/architectural-design.md) — the platform's C4 context/container/component views, the binding conventions, the cross-cutting subsystems, and deployment. When the architecture changes, update *that* doc; the summary below is just orientation for working in the code. RAM's module-level view is [`docs/ram/design/architectural-design.md`](docs/ram/design/architectural-design.md), which cites the platform doc.
+> **Canonical architecture-of-record:** [`docs/pulse-core/design/architectural-design.md`](docs/pulse-core/design/architectural-design.md) — the platform's C4 context/container/component views, the binding conventions, the cross-cutting subsystems, and deployment. When the architecture changes, update *that* doc; the summary below is just orientation for working in the code. RAM's module-level view is [`docs/ram/design/architectural-design.md`](docs/ram/design/architectural-design.md), which cites the platform doc. The architecture-of-record follows the **arc42** template (with **C4** for the context/building-block views); the requirements specs follow **Wiegers & Beatty** — see [`docs/methodology.md`](docs/methodology.md).
 
 ### Monorepo Layout
 - `backend/` — Spring Boot 4.0 Maven project (Java 21)

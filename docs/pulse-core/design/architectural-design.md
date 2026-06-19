@@ -27,7 +27,7 @@ The platform's functional requirements live in the **requirements specs**, not h
 | 1 | **Security & privacy (FERPA)** | The platform holds student educational records (WARs, peer evaluations, scores, requirements). Unauthorized disclosure is the top risk and a regulatory (FERPA) constraint. | JWT auth (RSA keypair); URL-level rules in `SecurityConfiguration` **plus** fine-grained `AuthorizationManager` beans enforcing ownership/membership (a student sees only their team's data; an instructor only their assigned course sections); role hierarchy `admin > instructor > student`; JPA auditing stamps created/modified-by for accountability; `prod` secrets in Azure Key Vault; single-tenant deployment boundary. |
 | 2 | **Maintainability & extensibility** | The codebase is extended continuously — RAM was merged in, senior-design students will extend it, and features are added spec-first via `/design`→`/implement`. New code must stay safe and consistent. | DDD one-bounded-context-per-package vertical slices isolate change; uniform conventions (the `Result` envelope, `Converter<S,T>` DTOs, no Lombok/MapStruct, `/api/v1`) make every slice look alike so a contributor pattern-matches; cross-cutting machinery is centralized in `system`/`security`/`user` so features don't reinvent it; Flyway makes schema change auditable. |
 | 3 | **Usability / low friction** | Non-expert students must submit WARs and peer evaluations and author requirements quickly — friction directly reduces the frequent participation the platform exists to encourage. | SPA (Vue) for a responsive single-page UX; the uniform `Result` envelope + shared Axios instance give consistent client-side error handling and transparent auth/`401` redirect; RAM autosave + section-level locking prevent lost work and edit collisions; `WeeklyReminderScheduler` emails nudge timely submission. |
-| 4 | **Reliability & low operational burden** | A single instructor runs a course section with no dev/ops team; the system must deploy and run simply and behave predictably. | One deployable unit (SPA bundled into the Spring Boot jar → one container → one Azure Web App) with nothing to orchestrate; staging slot for safe deploys; Flyway migrations applied at deploy for predictable schema; profile-scoped clocks for testable time; Testcontainers integration tests + `maven-build` PR checks guard regressions; Prometheus/Grafana/Zipkin for monitoring (local dev today; production telemetry is a gap — TD-9). **Accepted trade-off:** the single-instance simplicity (and the per-startup RSA key) caps horizontal scaling — deliberately traded for low ops at the current scale. |
+| 4 | **Reliability & low operational burden** | A single instructor runs a course section with no dev/ops team; the system must deploy and run simply and behave predictably. | One deployable unit (SPA bundled into the Spring Boot jar → one container → one Azure Web App) with nothing to orchestrate; staging slot for safe deploys; Flyway migrations applied at deploy for predictable schema; profile-scoped clocks for testable time; Testcontainers integration tests + `maven-build` PR checks guard regressions; Prometheus/Grafana/Zipkin for monitoring (local dev today; production telemetry is a gap — [TD-9](#risks-and-technical-debt)). **Accepted trade-off:** the single-instance simplicity (and the per-startup RSA key) caps horizontal scaling — deliberately traded for low ops at the current scale. |
 
 ### *Stakeholders*
 
@@ -85,7 +85,7 @@ The platform's strategy in a few load-bearing moves — each elaborated in [Arch
 - **DDD vertical slices + uniform conventions** (the `Result` envelope, `Converter` DTOs, no Lombok — KD-5) — for maintainability and a low learning curve (Quality Goal #2).
 - **RAM as a module on the shared platform** (KD-2) — reuse identity, RBAC, the org model, and email rather than build a second system.
 - **One relational store** for both modules (KD-3) — a single backup/migration/compliance surface.
-- **Stateless, self-issued JWT + fine-grained `AuthorizationManager`s** — least-privilege access to regulated data (Quality Goal #1).
+- **Stateless, self-issued JWT** (KD-4) **+ fine-grained `AuthorizationManager`s** — least-privilege access to regulated data (Quality Goal #1).
 - **Documented per arc42 + C4** — a recognized structure for teaching and review.
 
 ## **Building Block View**
@@ -169,7 +169,7 @@ sequenceDiagram
     participant API as REST API
     participant DB
     U->>SPA: enter email + password
-    SPA->>API: POST /users/login (HTTP Basic)
+    SPA->>API: POST /api/v1/users/login (HTTP Basic)
     API->>DB: load user, verify BCrypt-12 hash
     API-->>SPA: Result { token: JWT (RSA-2048, 2h) }
     SPA->>SPA: store token (Pinia), set Bearer header
@@ -250,7 +250,7 @@ These are the **canonical** platform conventions — the normative source the RA
 - **Domain structure** — Domain-Driven Design: one bounded context per package, each owning its full vertical slice (entity → repository → service → controller → DTOs → `Converter<S,T>` → a `*SecurityService` or `*Specs` for dynamic queries). **No Lombok** — explicit getters/setters/constructors. **No MapStruct** — bidirectional DTO conversion via Spring `Converter<S,T>` beans.
 - **Authorization** — JWT-based auth (RSA key pair generated at startup); URL-level rules in `SecurityConfiguration`'s filter chain **plus** fine-grained `AuthorizationManager` beans for ownership/membership checks. Role hierarchy `admin > instructor > student`.
 - **Persistence & migrations** — relational DB via JPA. Schema is delivered as **Flyway** migrations (`backend/src/main/resources/db/migration/`). The `dev` profile uses `ddl-auto: create` + `DataInitializer` seed data; `staging`/`prod` use Flyway only (`prod` pulls secrets from Azure Key Vault).
-- **SPA serving** — in production the Spring Boot app serves both the API and the built SPA from `static/`; `WebConfig` forwards non-API routes to `index.html` for client-side routing.
+- **SPA serving** — in production the Spring Boot app serves both the API and the built SPA from `static/`; `WebConfig` forwards non-API UI routes (registered for one-, two-, and three-segment paths) to `index.html` for client-side routing.
 
 ### *Cross-cutting subsystems*
 
@@ -319,7 +319,7 @@ Single-tenant: one deployment serves one institution. The trust boundary is the 
 #### **Transactions & consistency**
 
 - The **transaction boundary is the service method** — services are `@Service @Transactional`, so a controller call commits or rolls back as a unit.
-- **Concurrency:** core entities rely on transactional consistency without row versioning. RAM, which has concurrent multi-author editing, adds **optimistic locking** (`@Version`) on its mutable aggregates (`RequirementDocument`, `DocumentSection`, `UseCase`, `ArtifactKeySequence`) to prevent lost updates — and above that, the **pessimistic section-level locks** (`DocumentSectionLock`/`UseCaseLock`) that serialize human editing (KD-6). The `@Version` on `ArtifactKeySequence` keeps per-team key generation (`UC-1`, `FR-1`, …) collision-free under concurrency.
+- **Concurrency:** core entities rely on transactional consistency without row versioning. RAM, which has concurrent multi-author editing, adds **optimistic locking** (`@Version`) on its mutable content aggregates (`RequirementDocument`, `DocumentSection`, `UseCase`, `ArtifactKeySequence`) to prevent lost updates — and above that, the **pessimistic section-level locks** (`DocumentSectionLock`/`UseCaseLock`, whose own rows are likewise `@Version`-guarded) that serialize human editing (KD-6). The `@Version` on `ArtifactKeySequence` keeps per-team key generation (`UC-1`, `FR-1`, …) collision-free under concurrency.
 
 #### **Schema management**
 
@@ -355,7 +355,7 @@ Single-tenant: one deployment serves one institution. The trust boundary is the 
 
 #### **Known gaps / operational risks**
 
-- **CRITICAL (P0) — `/actuator/**` is publicly exposed and unauthenticated.** It falls outside the `/api/v1` security rules and hits `anyRequest().permitAll()`; the exposed set includes `env`/`configprops` (`show-values: always`) and `heapdump`, so **environment variables, resolved secrets (DB credentials, Key-Vault values), and full memory dumps are reachable without authentication in production**. Must be locked down — secure `/actuator/**` (admin-only), drop `env`/`heapdump`/`configprops` from web exposure, or bind management to a private port. See [Security & Compliance](#security--compliance).
+- **CRITICAL ([TD-1](#risks-and-technical-debt), P0) — `/actuator/**` is publicly exposed and unauthenticated.** It falls outside the `/api/v1` security rules and hits `anyRequest().permitAll()`; the exposed set includes `env`/`configprops` (`show-values: always`) and `heapdump`, so **environment variables, resolved secrets (DB credentials, Key-Vault values), and full memory dumps are reachable without authentication in production**. Must be locked down — secure `/actuator/**` (admin-only), drop `env`/`heapdump`/`configprops` from web exposure, or bind management to a private port. See [Security & Compliance](#security--compliance).
 - **No production observability backend** — Prometheus/Grafana/Zipkin run only in local dev (`docker-compose`); production telemetry is **not collected** anywhere yet. A prod path (e.g. Azure Monitor / Application Insights / Managed Grafana scraping Actuator) is an open item.
 - No **alerting** rules or **SLOs**, and no centralized log aggregation. The tracing-sampling property also carries a contradictory comment to clean up.
 
