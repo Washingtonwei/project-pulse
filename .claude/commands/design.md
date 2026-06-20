@@ -64,7 +64,7 @@ Write or update the area's Level-2 design doc under `docs/design/<area>.md` (the
 
 ## Phase 4 — Record the design
 
-Update the use case's row in `docs/traceability.md`: set **Status** to `📐 Designed` (the design-of-record exists at `design/<area>.md`; not yet coded), and make sure the `FR IDs` column lists the cross-cutting FRs the design depends on. Leave the Frontend / Backend / Tests columns as `—` — `/implement` fills those when it builds.
+Update the use case's row in `docs/traceability.md`: set **Status** to `📐 Designed` (the design-of-record exists at `design/<area>.md`; not yet coded), fill the **Design** column with that doc (`design/<area>.md`, optionally anchored to the use case's subsection), and make sure the `FR IDs` column lists the cross-cutting FRs the design depends on. Leave the Frontend / Backend / Tests columns as `—` — `/implement` fills those when it builds.
 
 If designing revealed the use case or an FR is wrong, incomplete, or contradictory, say so and propose the doc edit (follow `docs/CLAUDE.md`; run `/build` after) before handing off. The spec and the design are meant to agree.
 

@@ -88,6 +88,10 @@ Spring Boot, Vue.js, MySQL, Docker, Microsoft Azure, etc.
 
 🔗 [Spec-Driven, Agent-Assisted Development](docs/methodology.md) — the methodology this project is built with (spec-first requirements, a breadth-complete architecture proven by a thin vertical slice, then per-use-case design and implementation with an AI coding agent).
 
+### Architecture
+
+🔗 [Architectural Design](docs/design/architectural-design.md) — the single whole-product architecture-of-record (arc42 + C4): context/container views, component views for the platform core and RAM, binding conventions, cross-cutting subsystems, and deployment.
+
 ### Project Use Cases
 
 🔗 [Use Cases](docs/requirements/use-cases.md)
