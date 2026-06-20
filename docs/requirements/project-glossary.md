@@ -347,7 +347,7 @@ Input materials the client provides to seed a project — typically a pitch slid
 
 ## **Team**
 
-A group of users (students or instructors) collaborating on a single project. In the senior design course a team usually consists of 5–6 students working with a real external client through the full project lifecycle, and is commonly staffed with two instructors — a TCU instructor and the client (see BR-21).
+A group of users (students or instructors) collaborating on a single project. In the senior design course a team usually consists of 5–6 students working with a real external client through the full project lifecycle, and is assigned a single instructor — its TCU instructor (see BR-21).
 
 Teams are the ownership boundary for requirement artifacts and documents.
 

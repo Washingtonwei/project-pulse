@@ -167,7 +167,7 @@ These requirements describe system-level functions that support or enable the us
 
 **FR-LOCK-3 (Event-Driven):** When a student stops interacting with an authoring destination, the system shall release the lock for that authoring destination.
 
-**FR-LOCK-4 (State-Driven Timeout):** While an authoring destination lock has been held without activity for longer than a configurable timeout (default 60 seconds), the system shall automatically release the lock.
+**FR-LOCK-4 (State-Driven Timeout):** While an authoring destination lock has been held for longer than a configurable interval since it was acquired (default 15 minutes), the system shall automatically release the lock.
 
 **FR-LOCK-5 (Event-Driven):** When a lock is acquired or released, the system shall broadcast the updated lock state to all team members viewing the document.
 
@@ -309,6 +309,8 @@ Authorship metadata (FR-HIS-4) is in scope for the initial release and is relied
 
 **FR-NOT-2 (Ubiquitous):** The system shall not raise persistent or email notifications for routine authoring changes (creating, editing, or deleting glossary terms, requirement artifacts, artifact links, document sections, use cases, and comments); such changes are propagated to connected collaborators in real time per FR-COL-1..4 instead.
 
+**FR-NOT-3 (Event-Driven):** On a course section's configured weekly due day for weekly activity reports or peer evaluations, the system shall email each student in that course section a submission reminder listing the item(s) due that day and their due times, delivered through the Gmail SMTP integration. The reminder job runs only for course sections eligible for reminders in the current week and may be disabled by configuration. _(Supports BO-9, BO-10.)_
+
 # **Business Rules**
 
 The Business Rules document is available here: [business-rules.md](business-rules.md). That catalog defines the `BR-*` identifiers cited by the Business Rules fields in the Use Cases document.
@@ -322,9 +324,9 @@ RAM persists requirements as a team-scoped graph of typed requirement artifacts 
 **Ownership and documents**
 
 - **Team** — the ownership boundary for all requirements content (per BR-1); a team owns its documents, artifacts, and links.
-- **RequirementDocument** — a document of a given `DocumentType`, with a `documentKey`, `title`, and a `status` (`DRAFT` → `SUBMITTED` → `RETURNED`) that drives the review-and-submission workflow (BR-13, UC-REV-\*).
+- **RequirementDocument** — a document of a given `DocumentType`, with a `documentKey`, `title`, and a `status` (`DRAFT` → `SUBMITTED` → `RETURNED` or `ACCEPTED`) that drives the review-and-submission workflow (BR-13, BR-14, UC-REV-\*): a submitted document is either returned for revision (`RETURNED`, editable again) or accepted (`ACCEPTED`, final and read-only).
 - **DocumentSection** — a section of a document, identified by its `sectionKey` (the section key), with a `title`, a `type` (`RICH_TEXT` narrative or a `LIST` of artifacts), authored `content`, and template `guidance`.
-- **DocumentSectionLock** — the exclusive edit lock held on a document section while a student edits it (`lockedAt`, `expiresAt` for the inactivity timeout, `reason`), realizing FR-LOCK\* and BR-9 / BR-10 for document-section authoring destinations.
+- **DocumentSectionLock** — the exclusive edit lock held on a document section while a student edits it (`lockedAt`, `expiresAt` for the lock-expiry timeout, `reason`), realizing FR-LOCK\* and BR-9 / BR-10 for document-section authoring destinations.
 
 **The requirements graph**
 
@@ -336,7 +338,7 @@ RAM persists requirements as a team-scoped graph of typed requirement artifacts 
 **Use-case structure**
 
 - **UseCase** — the structured behavioral spec (`trigger`, plus its flows below), paired **1:1 with a RequirementArtifact** of type `USE_CASE` so a use case participates in the graph (links, traceability) like any other artifact while keeping its detailed behavioral fields.
-- **UseCaseLock** — the exclusive edit lock held on a use case while a student edits it (`lockedAt`, `expiresAt` for the inactivity timeout, `reason`), realizing FR-LOCK\* and BR-9 / BR-10 for use-case authoring destinations.
+- **UseCaseLock** — the exclusive edit lock held on a use case while a student edits it (`lockedAt`, `expiresAt` for the lock-expiry timeout, `reason`), realizing FR-LOCK\* and BR-9 / BR-10 for use-case authoring destinations.
 - **UseCaseMainStep**, **UseCaseExtension**, **UseCaseExtensionStep** — the ordered decomposition of a use case's normal flow and its alternative/exception extensions and their steps. Preconditions and postconditions are represented as associated `RequirementArtifact` nodes of type `PRECONDITION` and `POSTCONDITION`, so they remain part of the requirements graph.
 
 **Collaboration**
@@ -461,6 +463,7 @@ direction TB
         DRAFT
         SUBMITTED
         RETURNED
+        ACCEPTED
     }
 
     class RequirementArtifactType {

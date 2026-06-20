@@ -69,7 +69,7 @@ The note below is **not** the catalog. It records scope context only: a few host
 **Provided by the Project Pulse host platform** (infrastructure used but not yet specified as use cases):
 - The course admin creates a course (course sections are created in the Course Section area below)
 - The course admin transfers teams or students between course sections
-- The course admin selects built-in templates for a team (hardcoded for the MVP; document regeneration is specified as UC-TPL-1)
+- The course admin selects built-in templates for a team (hardcoded for the MVP; document creation is specified as UC-TPL-1)
 
 **Deferred or on hold** (not yet specified as use cases):
 - Instructor Dashboard, Feedback, and Grading:
@@ -121,6 +121,510 @@ The note below is **not** the catalog. It records scope context only: a few host
 **Associated Information:**
 - Details:  Rubric name (must be unique): E.g., Peer Eval Rubric v1 Several criteria: each criterion has a name, a description, and a max score (must be positive and can be a decimal number). For example: Criterion 1: Criterion: Quality of work Description: How do you rate the quality of this teammate's work? (1-10)  Max score: 10 Criterion 2: Criterion: Productivity Description: How productive is this teammate? (1-10)  Max score: 10 Criterion 3: Criterion: Initiative Description: How proactive is this teammate? (1-10)  Max score: 10 Criterion 4: Criterion: Courtesy Description: Does this teammate treat others with respect? (1-10)  Max score: 10 Criterion 5: Criterion: Open-mindedness Description: How well does this teammate handle criticism of their work? (1-10)  Max score: 10 Criterion 6: Criterion: Engagement in meetings Description: How is this teammate's performance during meetings? (1-10) Max score: 10 The course admin shall be able to cancel the use case at any time prior to submitting it.
 
+**Assumptions:**
+**Open Issues:**
+
+### **UC-RUB-2: The Course Admin finds rubrics**
+
+**UC ID and Name:** UC-RUB-2: Find rubrics
+**Created By:**
+**Date Created:**
+**Primary Actor:** course admin
+**Secondary Actors:**
+**Trigger:** The course admin indicates to find rubrics.
+**Description:** The course admin wants to find the rubrics defined in her course so that she can review, edit, delete, or assign one.
+
+**Preconditions:**
+- PRE-1. The course admin is logged into the system.
+
+**Postconditions:**
+- POST-1. A list of matching rubrics in the course admin's course is returned and displayed. It is possible that the list is empty.
+
+**Main Success Scenario:**
+1. The course admin indicates to find rubrics.
+2. The system asks the course admin to enter search values according to the "Search criteria" defined in the Associated Information of this use case.
+3. The course admin enters one or more search values and confirms that she has finished entering.
+4. The system finds all rubrics in the course admin's course that match the provided search criteria.
+5. The system displays the matching rubrics according to the "Search results display strategy" and the "Sort criteria" defined in the Associated Information of this use case.
+6. Use case ends.
+
+**Extensions:**
+- **4a. No matching rubrics are found:**
+  - 4a1. The system alerts the course admin that no matching rubrics are found.
+  - 4a2. The course admin either chooses to UC-RUB-1: Create a rubric, or terminates the use case, or returns to step 2 of the normal flow.
+
+**Priority:** High
+**Frequency of Use:** Occasional; mostly at course setup and around evaluation milestones.
+**Business Rules:** BR-2 — rubrics are scoped to the course admin's course.
+
+**Associated Information:**
+
+Search criteria:
+
+| Search property name | Data type | Validation rule | Security/access concerns | Reference to glossary |
+| ---- | ---- | ---- | ---- | ---- |
+| rubric name | String | Optional | Course-scoped to the course admin's course |  |
+
+Search results display strategy (specify which properties to display for each matching rubric): rubric name, criteria
+
+Sort criteria: rubric name in ascending order
+
+**Related Use Cases:** UC-RUB-1: Create a rubric.
+**Assumptions:**
+**Open Issues:**
+
+### **UC-RUB-3: The Course Admin views a rubric**
+
+**UC ID and Name:** UC-RUB-3: View a rubric
+**Created By:**
+**Date Created:**
+**Primary Actor:** course admin
+**Secondary Actors:**
+**Trigger:** The course admin indicates to view the details of a rubric.
+**Description:** The course admin wants to view the details of a rubric, including its criteria, so that she can decide what to do next.
+
+**Preconditions:**
+- PRE-1. The course admin is logged into the system.
+- PRE-2. The rubric belongs to the course admin's course.
+
+**Postconditions:**
+- POST-1. The details of the specified rubric are displayed to the course admin.
+
+**Main Success Scenario:**
+1. The course admin finds a list of rubrics through UC-RUB-2: Find rubrics.
+2. The course admin chooses to view the details of one specific rubric.
+3. The system retrieves and displays the details of this rubric according to the "Details" defined in the Associated Information of this use case.
+4. Use case ends.
+
+**Extensions:**
+**Priority:** High
+**Frequency of Use:** Occasional.
+**Business Rules:** BR-2 — a course admin may view only rubrics in her own course.
+
+**Associated Information:**
+
+Details:
+
+| Property name | Data type | Editability | Security/access concerns | Reference to glossary |
+| ---- | ---- | ---- | ---- | ---- |
+| rubric name | String |  |  |  |
+| criteria (each: criterion name, description, max score) |  |  |  |  |
+
+**Related Use Cases:** UC-RUB-2: Find rubrics; UC-RUB-4: Edit a rubric.
+**Assumptions:**
+**Open Issues:**
+
+### **UC-RUB-4: The Course Admin edits a rubric**
+
+**UC ID and Name:** UC-RUB-4: Edit a rubric
+**Created By:**
+**Date Created:**
+**Primary Actor:** course admin
+**Secondary Actors:**
+**Trigger:** The course admin indicates to edit a rubric.
+**Description:** The course admin wants to edit a rubric (for example, rename it) so that it stays accurate for peer assessment.
+
+**Preconditions:**
+- PRE-1. The course admin is logged into the system.
+- PRE-2. The rubric belongs to the course admin's course.
+
+**Postconditions:**
+- POST-1. The updated rubric is stored in the system.
+
+**Main Success Scenario:**
+1. The course admin selects a rubric to edit (found through UC-RUB-2: Find rubrics).
+2. The system displays the current details of the rubric for editing according to the "Details" defined in the Associated Information of this use case.
+3. The course admin changes the details and confirms that she has finished.
+4. The system validates the course admin's inputs.
+5. The system saves the updated rubric and informs the course admin that the rubric has been updated.
+6. Use case ends.
+
+**Extensions:**
+- **4a. Input validation rule violation:**
+  - 4a1. The system alerts the course admin that an input validation rule is violated and displays the nature and location of the error.
+  - 4a2. The course admin corrects the mistake and returns to step 4 of the normal flow.
+
+**Priority:** Medium
+**Frequency of Use:** Rare; rubrics are stable once defined.
+**Business Rules:** BR-2 — only a course admin may edit a rubric in her own course. To change a rubric's criteria membership, see UC-RUB-6 and UC-RUB-7.
+
+**Associated Information:**
+
+Details:
+
+| Property name | Data type | Editability | Security/access concerns | Reference to glossary |
+| ---- | ---- | ---- | ---- | ---- |
+| rubric name | String | Editable; must be unique |  |  |
+
+**Related Use Cases:** UC-RUB-2: Find rubrics; UC-RUB-6: Add a criterion to a rubric; UC-RUB-7: Remove a criterion from a rubric.
+**Assumptions:**
+**Open Issues:**
+
+### **UC-RUB-5: The Course Admin deletes a rubric**
+
+**UC ID and Name:** UC-RUB-5: Delete a rubric
+**Created By:**
+**Date Created:**
+**Primary Actor:** course admin
+**Secondary Actors:**
+**Trigger:** The course admin indicates to delete a rubric.
+**Description:** The course admin wants to delete a rubric that is no longer needed.
+
+**Preconditions:**
+- PRE-1. The course admin is logged into the system.
+- PRE-2. The rubric belongs to the course admin's course.
+
+**Postconditions:**
+- POST-1. The rubric is removed from the system.
+
+**Main Success Scenario:**
+1. The course admin selects a rubric to delete (found through UC-RUB-2: Find rubrics).
+2. The system asks the course admin to confirm the deletion.
+3. The course admin confirms the deletion.
+4. The system deletes the rubric and informs the course admin that the rubric has been deleted.
+5. Use case ends.
+
+**Extensions:**
+- **3a. The course admin cancels the deletion:**
+  - 3a1. The system keeps the rubric and the use case ends.
+
+**Priority:** Medium
+**Frequency of Use:** Rare.
+**Business Rules:** BR-2 — only a course admin may delete a rubric in her own course.
+
+**Associated Information:**
+
+**Related Use Cases:** UC-RUB-2: Find rubrics.
+**Assumptions:**
+**Open Issues:**
+
+### **UC-RUB-6: The Course Admin adds a criterion to a rubric**
+
+**UC ID and Name:** UC-RUB-6: Add a criterion to a rubric
+**Created By:**
+**Date Created:**
+**Primary Actor:** course admin
+**Secondary Actors:**
+**Trigger:** The course admin indicates to add a criterion to a rubric.
+**Description:** The course admin wants to add an existing criterion to a rubric so that the rubric assesses that dimension of peer performance.
+
+**Preconditions:**
+- PRE-1. The course admin is logged into the system.
+- PRE-2. Both the rubric and the criterion belong to the course admin's course.
+
+**Postconditions:**
+- POST-1. The criterion is part of the rubric's criteria.
+
+**Main Success Scenario:**
+1. The course admin selects a rubric (found through UC-RUB-2: Find rubrics).
+2. The course admin selects a criterion to add (found through UC-RUB-9: Find criteria).
+3. The system adds the criterion to the rubric and confirms that the criterion has been added.
+4. Use case ends.
+
+**Extensions:**
+- **3a. The criterion is already part of the rubric:**
+  - 3a1. The system leaves the rubric unchanged and informs the course admin; the use case ends.
+
+**Priority:** Medium
+**Frequency of Use:** At rubric setup and occasional revision.
+**Business Rules:** BR-2 — the rubric and criterion must be in the course admin's own course.
+
+**Associated Information:**
+
+**Related Use Cases:** UC-RUB-7: Remove a criterion from a rubric; UC-RUB-9: Find criteria; UC-RUB-11: Create a criterion.
+**Assumptions:**
+**Open Issues:**
+
+### **UC-RUB-7: The Course Admin removes a criterion from a rubric**
+
+**UC ID and Name:** UC-RUB-7: Remove a criterion from a rubric
+**Created By:**
+**Date Created:**
+**Primary Actor:** course admin
+**Secondary Actors:**
+**Trigger:** The course admin indicates to remove a criterion from a rubric.
+**Description:** The course admin wants to remove a criterion from a rubric so that the rubric no longer assesses that dimension.
+
+**Preconditions:**
+- PRE-1. The course admin is logged into the system.
+- PRE-2. The rubric belongs to the course admin's course and currently includes the criterion.
+
+**Postconditions:**
+- POST-1. The criterion is no longer part of the rubric's criteria. The criterion itself continues to exist in the course.
+
+**Main Success Scenario:**
+1. The course admin selects a rubric (found through UC-RUB-2: Find rubrics).
+2. The course admin selects one of the rubric's criteria to remove.
+3. The system removes the criterion from the rubric and confirms that the criterion has been removed.
+4. Use case ends.
+
+**Extensions:**
+**Priority:** Medium
+**Frequency of Use:** At rubric setup and occasional revision.
+**Business Rules:** BR-2 — only a course admin may modify a rubric in her own course.
+
+**Associated Information:**
+
+**Related Use Cases:** UC-RUB-6: Add a criterion to a rubric.
+**Assumptions:**
+**Open Issues:**
+
+### **UC-RUB-8: The Course Admin assigns a rubric to a course section**
+
+**UC ID and Name:** UC-RUB-8: Assign a rubric to a course section
+**Created By:**
+**Date Created:**
+**Primary Actor:** course admin
+**Secondary Actors:**
+**Trigger:** The course admin indicates to assign a rubric to a course section.
+**Description:** The course admin wants to set the rubric a course section uses so that the section's students evaluate their peers with that rubric.
+
+**Preconditions:**
+- PRE-1. The course admin is logged into the system.
+- PRE-2. Both the course section and the rubric belong to the course admin's course.
+
+**Postconditions:**
+- POST-1. The course section's rubric is set to the chosen rubric; peer evaluations in that course section use it.
+
+**Main Success Scenario:**
+1. The course admin selects a course section (found through UC-SEC-1: Find course sections).
+2. The course admin selects a rubric to assign (found through UC-RUB-2: Find rubrics).
+3. The system assigns the rubric to the course section and confirms that the rubric has been assigned.
+4. Use case ends.
+
+**Extensions:**
+**Priority:** High
+**Frequency of Use:** Once per course section at setup; rarely changed.
+**Business Rules:** BR-2 — the course section and rubric must be in the course admin's own course.
+
+**Associated Information:**
+- A course section uses one rubric at a time; assigning a new rubric replaces the previous assignment. The currently assigned rubric is shown when viewing the course section (UC-SEC-2).
+
+**Related Use Cases:** UC-SEC-1: Find course sections; UC-SEC-2: View a course section; UC-RUB-2: Find rubrics.
+**Assumptions:**
+**Open Issues:**
+
+### **UC-RUB-9: The Course Admin finds criteria**
+
+**UC ID and Name:** UC-RUB-9: Find criteria
+**Created By:**
+**Date Created:**
+**Primary Actor:** course admin
+**Secondary Actors:**
+**Trigger:** The course admin indicates to find criteria.
+**Description:** The course admin wants to find the peer evaluation criteria defined in her course so that she can review, edit, delete, or add one to a rubric.
+
+**Preconditions:**
+- PRE-1. The course admin is logged into the system.
+
+**Postconditions:**
+- POST-1. A list of matching criteria in the course admin's course is returned and displayed. It is possible that the list is empty.
+
+**Main Success Scenario:**
+1. The course admin indicates to find criteria.
+2. The system asks the course admin to enter search values according to the "Search criteria" defined in the Associated Information of this use case.
+3. The course admin enters one or more search values and confirms that she has finished entering.
+4. The system finds all criteria in the course admin's course that match the provided search criteria.
+5. The system displays the matching criteria according to the "Search results display strategy" and the "Sort criteria" defined in the Associated Information of this use case.
+6. Use case ends.
+
+**Extensions:**
+- **4a. No matching criteria are found:**
+  - 4a1. The system alerts the course admin that no matching criteria are found.
+  - 4a2. The course admin either chooses to UC-RUB-11: Create a criterion, or terminates the use case, or returns to step 2 of the normal flow.
+
+**Priority:** High
+**Frequency of Use:** Occasional; mostly at course setup and rubric revision.
+**Business Rules:** BR-2 — criteria are scoped to the course admin's course.
+
+**Associated Information:**
+
+Search criteria:
+
+| Search property name | Data type | Validation rule | Security/access concerns | Reference to glossary |
+| ---- | ---- | ---- | ---- | ---- |
+| criterion name | String | Optional | Course-scoped to the course admin's course |  |
+
+Search results display strategy (specify which properties to display for each matching criterion): criterion name, description, max score
+
+Sort criteria: criterion name in ascending order
+
+**Related Use Cases:** UC-RUB-11: Create a criterion.
+**Assumptions:**
+**Open Issues:**
+
+### **UC-RUB-10: The Course Admin views a criterion**
+
+**UC ID and Name:** UC-RUB-10: View a criterion
+**Created By:**
+**Date Created:**
+**Primary Actor:** course admin
+**Secondary Actors:**
+**Trigger:** The course admin indicates to view the details of a criterion.
+**Description:** The course admin wants to view the details of a peer evaluation criterion so that she can decide what to do next.
+
+**Preconditions:**
+- PRE-1. The course admin is logged into the system.
+- PRE-2. The criterion belongs to the course admin's course.
+
+**Postconditions:**
+- POST-1. The details of the specified criterion are displayed to the course admin.
+
+**Main Success Scenario:**
+1. The course admin finds a list of criteria through UC-RUB-9: Find criteria.
+2. The course admin chooses to view the details of one specific criterion.
+3. The system retrieves and displays the details of this criterion according to the "Details" defined in the Associated Information of this use case.
+4. Use case ends.
+
+**Extensions:**
+**Priority:** Medium
+**Frequency of Use:** Occasional.
+**Business Rules:** BR-2 — a course admin may view only criteria in her own course.
+
+**Associated Information:**
+
+Details:
+
+| Property name | Data type | Editability | Security/access concerns | Reference to glossary |
+| ---- | ---- | ---- | ---- | ---- |
+| criterion name | String |  |  |  |
+| description | String |  |  |  |
+| max score | Decimal |  |  |  |
+
+**Related Use Cases:** UC-RUB-9: Find criteria; UC-RUB-12: Edit a criterion.
+**Assumptions:**
+**Open Issues:**
+
+### **UC-RUB-11: The Course Admin creates a criterion**
+
+**UC ID and Name:** UC-RUB-11: Create a criterion
+**Created By:**
+**Date Created:**
+**Primary Actor:** course admin
+**Secondary Actors:**
+**Trigger:** The course admin indicates to create a new criterion.
+**Description:** The course admin wants to create a new peer evaluation criterion so that it can be added to one or more rubrics.
+
+**Preconditions:**
+- PRE-1. The course admin is logged into the system.
+
+**Postconditions:**
+- POST-1. The new criterion is stored in the course admin's course.
+
+**Main Success Scenario:**
+1. The course admin indicates to create a new criterion.
+2. The system asks the course admin to enter the details of this new criterion according to the "Details" defined in the Associated Information of this use case.
+3. The course admin enters the details and confirms that she has finished.
+4. The system validates the course admin's inputs.
+5. The system saves the new criterion and informs the course admin that the criterion has been created.
+6. Use case ends.
+
+**Extensions:**
+- **4a. Input validation rule violation:**
+  - 4a1. The system alerts the course admin that an input validation rule is violated and displays the nature and location of the error.
+  - 4a2. The course admin corrects the mistake and returns to step 4 of the normal flow.
+
+**Priority:** High
+**Frequency of Use:** Occasional; mostly at course setup.
+**Business Rules:** BR-2 — criteria are created within the course admin's own course.
+
+**Associated Information:**
+
+Details:
+
+| Property name | Data type | Validation rule | Security/access concerns | Reference to glossary |
+| ---- | ---- | ---- | ---- | ---- |
+| criterion name | String | Required |  |  |
+| description | String | Required |  |  |
+| max score | Decimal | Required; must be positive (may be a decimal) |  |  |
+
+**Related Use Cases:** UC-RUB-6: Add a criterion to a rubric.
+**Assumptions:**
+**Open Issues:**
+
+### **UC-RUB-12: The Course Admin edits a criterion**
+
+**UC ID and Name:** UC-RUB-12: Edit a criterion
+**Created By:**
+**Date Created:**
+**Primary Actor:** course admin
+**Secondary Actors:**
+**Trigger:** The course admin indicates to edit a criterion.
+**Description:** The course admin wants to edit a peer evaluation criterion (its name, description, or max score) so that it stays accurate.
+
+**Preconditions:**
+- PRE-1. The course admin is logged into the system.
+- PRE-2. The criterion belongs to the course admin's course.
+
+**Postconditions:**
+- POST-1. The updated criterion is stored in the system.
+
+**Main Success Scenario:**
+1. The course admin selects a criterion to edit (found through UC-RUB-9: Find criteria).
+2. The system displays the current details of the criterion for editing.
+3. The course admin changes the details and confirms that she has finished.
+4. The system validates the course admin's inputs.
+5. The system saves the updated criterion and informs the course admin that the criterion has been updated.
+6. Use case ends.
+
+**Extensions:**
+- **4a. Input validation rule violation:**
+  - 4a1. The system alerts the course admin that an input validation rule is violated and displays the nature and location of the error.
+  - 4a2. The course admin corrects the mistake and returns to step 4 of the normal flow.
+
+**Priority:** Medium
+**Frequency of Use:** Rare.
+**Business Rules:** BR-2 — only a course admin may edit a criterion in her own course.
+
+**Associated Information:**
+
+Details:
+
+| Property name | Data type | Editability | Security/access concerns | Reference to glossary |
+| ---- | ---- | ---- | ---- | ---- |
+| criterion name | String | Editable |  |  |
+| description | String | Editable |  |  |
+| max score | Decimal | Editable; must be positive |  |  |
+
+**Related Use Cases:** UC-RUB-9: Find criteria.
+**Assumptions:**
+**Open Issues:**
+
+### **UC-RUB-13: The Course Admin deletes a criterion**
+
+**UC ID and Name:** UC-RUB-13: Delete a criterion
+**Created By:**
+**Date Created:**
+**Primary Actor:** course admin
+**Secondary Actors:**
+**Trigger:** The course admin indicates to delete a criterion.
+**Description:** The course admin wants to delete a peer evaluation criterion that is no longer needed.
+
+**Preconditions:**
+- PRE-1. The course admin is logged into the system.
+- PRE-2. The criterion belongs to the course admin's course.
+
+**Postconditions:**
+- POST-1. The criterion is removed from the system.
+
+**Main Success Scenario:**
+1. The course admin selects a criterion to delete (found through UC-RUB-9: Find criteria).
+2. The system asks the course admin to confirm the deletion.
+3. The course admin confirms the deletion.
+4. The system deletes the criterion and informs the course admin that the criterion has been deleted.
+5. Use case ends.
+
+**Extensions:**
+- **3a. The course admin cancels the deletion:**
+  - 3a1. The system keeps the criterion and the use case ends.
+
+**Priority:** Medium
+**Frequency of Use:** Rare.
+**Business Rules:** BR-2 — only a course admin may delete a criterion in her own course.
+
+**Associated Information:**
+
+**Related Use Cases:** UC-RUB-9: Find criteria; UC-RUB-7: Remove a criterion from a rubric.
 **Assumptions:**
 **Open Issues:**
 
@@ -1780,9 +2284,9 @@ Details of a peer evaluation: The instructor may choose to see more details of o
 
 ## **Templates and Provisioning**
 
-### **UC-TPL-1: The Course Admin regenerates team documents from built-in templates**
+### **UC-TPL-1: The Course Admin creates team documents from built-in templates**
 
-**UC ID and Name:** UC-TPL-1: Regenerate team documents from built-in templates
+**UC ID and Name:** UC-TPL-1: Create team documents from built-in templates
 **Created By:**
 **Date Created:**
 **Primary Actor:** course admin
@@ -1810,15 +2314,15 @@ Details of a peer evaluation: The instructor may choose to see more details of o
 
 **Extensions:**
 - **3a. One or more documents already exist for the team**
-  - 3a1. The system alerts the course admin that the team already has requirement documents and that regenerating them is destructive (existing content would be reset to the template state).
-  - 3a2. The course admin either creates only the missing documents, confirms regeneration of the existing documents (an explicit, destructive confirmation), or terminates the use case.
+  - 3a1. The system informs the course admin that the team already has requirement documents of those types; an existing document cannot be regenerated or overwritten, so only the missing document types can be created.
+  - 3a2. The course admin either creates only the missing documents (the types not yet created) or terminates the use case.
 - **4a. No built-in templates are configured for the team**
   - 4a1. The system alerts the course admin that no templates are available for the team and that no documents can be created.
   - 4a2. The course admin terminates the use case.
 
 **Priority:** High
 **Frequency of Use:** Once per team, at team setup; rarely repeated.
-**Business Rules:** BR-3 — Only a course admin may create or regenerate a team's requirement documents. Regenerating documents that already contain authored content is destructive and requires explicit confirmation.
+**Business Rules:** BR-3 — Only a course admin may create a team's requirement documents, and each document type is created at most once per team (an existing document cannot be regenerated or overwritten).
 **Associated Information:**
 
 Details:
@@ -2295,7 +2799,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Associated Information:**
 
 Details:
-- The set of document sections, their order, and the rules for each section of a section-based document (Vision and Scope, SRS) are defined by that document's built-in Template (see UC-TPL-1: Regenerate team documents from built-in templates). This use case edits one document section at a time within that template-defined structure.
+- The set of document sections, their order, and the rules for each section of a section-based document (Vision and Scope, SRS) are defined by that document's built-in Template (see UC-TPL-1: Create team documents from built-in templates). This use case edits one document section at a time within that template-defined structure.
 
 Notification: None — routine authoring changes are not notified (FR-NOT-2); saved changes propagate to connected teammates in real time (UC-COL-1).
 
@@ -3438,7 +3942,7 @@ Notification: Notify the course section's instructor on submission, delivered by
 
 **Postconditions:**
 - POST-1. The instructor's feedback is stored in the system.
-- POST-2. The document is either marked as reviewed or returned for revision (unlocked) and made editable for students again.
+- POST-2. The document is either accepted (status ACCEPTED, kept read-only) or returned for revision (status RETURNED, unlocked and made editable for students again).
 - POST-3. The team is notified of the review outcome.
 
 **Main Success Scenario:**
@@ -3452,8 +3956,8 @@ Notification: Notify the course section's instructor on submission, delivered by
 
 **Extensions:**
 - **4a. The instructor accepts the document**
-  - 4a1. The instructor marks the document as reviewed and accepted instead of returning it.
-  - 4a2. The system keeps the document locked for review, records the acceptance, notifies the team, and the use case ends.
+  - 4a1. The instructor marks the document as accepted instead of returning it.
+  - 4a2. The system sets the document status to ACCEPTED, keeps it read-only (it is not returned for editing), records the acceptance, notifies the team, and the use case ends.
 
 **Priority:** High
 **Frequency of Use:** Around each project review milestone.

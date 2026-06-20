@@ -27,7 +27,7 @@ These business rules apply across Project Pulse. The requirements-authoring rule
 
 - **BR-1:** A student may view, create, edit, or delete requirement content only within a team she belongs to; she may not access another team's requirements graph, documents, or project source material. (This is the default "Security/access concerns" rule cited by the authoring use cases.)
 - **BR-2:** The system enforces role-based access control across the course admin, instructor, and student roles; each operation is permitted only for the roles authorized for it. A course admin is also an instructor of her course and holds every instructor capability in addition to her course-ownership privileges.
-- **BR-3:** Only a course admin may create or regenerate a team's requirement documents. Regenerating documents that already contain authored content is destructive and requires an explicit, separate confirmation.
+- **BR-3:** Only a course admin may create a team's requirement documents, and each document type is created at most once per team — an existing document cannot be regenerated or overwritten.
 - **BR-4:** Only an instructor assigned to a course section may view or edit that course section's teaching context, per-assistant assistant instructions, and cross-document review criteria, and may enable or disable its AI assistants.
 
 # **Identity and Uniqueness**
@@ -61,7 +61,7 @@ The artifact types named here are the canonical `RequirementArtifactType` set (g
 # **Editing and Locking**
 
 - **BR-9:** Editing a document section or a use case requires an exclusive lock on that authoring destination, held by the editing student; at most one student may hold a given lock at a time.
-- **BR-10:** An edit lock held without activity longer than a configurable timeout (default 60 seconds) is released automatically.
+- **BR-10:** An edit lock expires a configurable interval after it is acquired (default 15 minutes) and is then released automatically, freeing the authoring destination for another student; an expired lock is cleared the next time the destination is read or a lock on it is requested.
 - **BR-11:** Real-time collaboration shall not overwrite or corrupt content already saved by another collaborator.
 
 # **Deletion Integrity**
@@ -90,7 +90,7 @@ The artifact types named here are the canonical `RequirementArtifactType` set (g
 
 # **Teams and Instructor Assignment**
 
-- **BR-21:** Every team must be assigned at least one instructor; an instructor may be assigned to multiple teams. A team commonly has two instructors — a TCU instructor and the client.
+- **BR-21:** Each team is assigned a single instructor — its TCU instructor; an instructor may be assigned to multiple teams.
 
 # **Weekly Activity Report and Peer Evaluation**
 
