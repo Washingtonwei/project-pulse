@@ -153,7 +153,7 @@ Use cases are grouped by **area** — a short code that mirrors a backend bounde
 
 A feature begins as a use case. The loop:
 
-1. A use case is added or changed in `docs/requirements/use-cases.md` (follow `docs/CLAUDE.md`; run `/build` to resync anchors and cross-references).
+1. A use case is added or changed in `docs/requirements/use-cases.md` (follow `docs/CLAUDE.md`; run `/spec-build` to resync anchors and cross-references).
 2. Run **`/design <UC-ID>`** (`.claude/commands/design.md`) to turn it into an approved **design-of-record** — the area's `docs/design/<area>.md` doc (diagrams + non-obvious decisions). Design is a separately-reviewed stage that **stops before code**.
 3. Run **`/implement <UC-ID>`** (`.claude/commands/implement.md`) to build from that design — plan → code → test.
 4. The work is recorded back into `docs/traceability.md` (`/design` marks the row `📐 Designed`; `/implement` flips it to the built state).
@@ -173,9 +173,9 @@ When implementing, **extend the existing RAM packages** (`ram/document`, `ram/re
 
 ### Editing the docs
 
-When editing anything under `docs/`, the rules in `docs/CLAUDE.md` apply (anchor slugs, FR/BR/UC ID schemes, cross-doc terminology). Run **`/build`** to verify and resync.
+When editing anything under `docs/`, the rules in `docs/CLAUDE.md` apply (anchor slugs, FR/BR/UC ID schemes, cross-doc terminology). Run **`/spec-build`** to verify and resync.
 
-To catch drift between the specs and the **code** (not just within the docs), run **`/sync-check`** (`.claude/commands/sync-check.md`) — the periodic spec↔code conformance audit that complements `/build` (docs-internal consistency). It reads the business rules / use cases / FRs, checks them against the actual services, controllers, and enums, and records any new divergence as an `OI-n` in `docs/requirements/OPEN-ISSUES.md`. Run it after a batch of code or spec changes, or on a schedule.
+To catch drift between the specs and the **code** (not just within the docs), run **`/sync-check`** (`.claude/commands/sync-check.md`) — the periodic spec↔code conformance audit that complements `/spec-build` (docs-internal consistency). It reads the business rules / use cases / FRs, checks them against the actual services, controllers, and enums, and records any new divergence as an `OI-n` in `docs/requirements/OPEN-ISSUES.md`. Run it after a batch of code or spec changes, or on a schedule.
 
 ## CI
 

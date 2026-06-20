@@ -29,6 +29,6 @@ docs/
 - **Reading the spec:** glossary → vision & scope → use cases → business rules → SRS (the order above).
 - **Understanding the architecture:** [`design/architectural-design.md`](design/architectural-design.md) (arc42 + C4).
 - **The method behind it all:** [`methodology.md`](methodology.md).
-- **Authoring or editing these docs:** the conventions (anchors, ID schemes, terminology, cross-doc coherence) live in [`CLAUDE.md`](CLAUDE.md). Run `/build` to verify and resync after structural edits.
+- **Authoring or editing these docs:** the conventions (anchors, ID schemes, terminology, cross-doc coherence) live in [`CLAUDE.md`](CLAUDE.md). Run `/spec-build` to verify and resync after structural edits.
 
 The repo-root [`CLAUDE.md`](../CLAUDE.md) governs the codebase as a whole and explains how this spec drives the code (its **Spec-driven development** section).

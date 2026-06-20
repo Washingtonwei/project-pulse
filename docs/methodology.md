@@ -100,7 +100,7 @@ The methodology is tool-agnostic, but Project Pulse instantiates it with **[Clau
 - **`CLAUDE.md`** (root and per-subtree) — the conventions, the binding architecture-of-record pointer, and the authoring rules, read by both humans and the agent on every session. This is how the contract stays enforced rather than aspirational.
 - **`/design`** — Phase C step 1 (use case → design-of-record; may revise the module architecture).
 - **`/implement`** — Phase C step 2 (design → code + tests).
-- **`/build`** — mechanically verifies and resyncs cross-document consistency (anchors, ID resolution, UC↔traceability coupling, terminology).
+- **`/spec-build`** — mechanically verifies and resyncs cross-document consistency (anchors, ID resolution, UC↔traceability coupling, terminology).
 
 The running case study is the **RAM (Requirements Authoring & Management) module** — itself a tool for *authoring* requirements — developed spec-first inside the larger Project Pulse platform. (A pleasing reflexivity for a paper: a spec-driven methodology, applied to build a requirements-authoring tool, documented by its own specs.)
 
@@ -135,7 +135,7 @@ Guardrails to design into the assignment: insist on the approval gates (no `/imp
 - RQ3. Does the challenge loop catch spec defects earlier, and what classes of defect does it surface?
 - RQ4. (Education) How does the methodology affect students' requirements quality, architectural decomposition, and ability to critically review AI-generated code?
 
-**Evaluation strategies to consider:** a longitudinal **case study** on Project Pulse/RAM (defect-escape, rework, traceability completeness, spec/code divergence over time); a **controlled or quasi-experimental student study** in the Fall 2026 cohort (methodology vs. control, with rubric-scored specs and reviews); **artifact-quality metrics** (atomicity/testability of requirements, traceability matrix completeness, consistency-check pass rates from `/build`).
+**Evaluation strategies to consider:** a longitudinal **case study** on Project Pulse/RAM (defect-escape, rework, traceability completeness, spec/code divergence over time); a **controlled or quasi-experimental student study** in the Fall 2026 cohort (methodology vs. control, with rubric-scored specs and reviews); **artifact-quality metrics** (atomicity/testability of requirements, traceability matrix completeness, consistency-check pass rates from `/spec-build`).
 
 **Positioning vs. prior art (to be written honestly):** relate to model-driven development, behavior-driven development and executable specifications, requirements traceability research, and the recent wave of agentic / "spec-driven" AI development tooling — and state precisely what is novel here (the specific *discipline* and the human-agent *division of labor with a challenge loop*, not merely "use a spec").
 

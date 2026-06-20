@@ -1,12 +1,12 @@
 # /sync-check — Spec ↔ Code conformance audit
 
-Detect **drift between the requirements docs and the actual codebase** — where built code diverges from the spec, where the spec is unimplemented, and where code exists that no spec describes. This is the periodic companion to `/build`.
+Detect **drift between the requirements docs and the actual codebase** — where built code diverges from the spec, where the spec is unimplemented, and where code exists that no spec describes. This is the periodic companion to `/spec-build`.
 
-**`/build` vs `/sync-check` — two different jobs, don't conflate them:**
-- **`/build`** = *do the docs agree with each other?* Intra-doc consistency (anchors, slugs, FR/BR refs, UC↔traceability). Mechanical, deterministic, cheap, **auto-fixes**. Run it freely after doc edits.
+**`/spec-build` vs `/sync-check` — two different jobs, don't conflate them:**
+- **`/spec-build`** = *do the docs agree with each other?* Intra-doc consistency (anchors, slugs, FR/BR refs, UC↔traceability). Mechanical, deterministic, cheap, **auto-fixes**. Run it freely after doc edits.
 - **`/sync-check`** (this) = *do the docs agree with the code?* Spec↔code conformance. Mostly **semantic** (read code, judge whether a rule is enforced), expensive, somewhat non-deterministic, and **report-mostly** — every finding needs a human fix-code-vs-amend-doc decision, so it never edits code and never "auto-fixes" a divergence. Its only write is appending **draft `OI-n`** items to `docs/requirements/OPEN-ISSUES.md`.
 
-**Run `/build` first** (or assume it passes) — `/sync-check` relies on the docs being internally consistent and the traceability matrix being current. This command **reuses**, does not duplicate, `/build`'s UC↔traceability coverage check.
+**Run `/spec-build` first** (or assume it passes) — `/sync-check` relies on the docs being internally consistent and the traceability matrix being current. This command **reuses**, does not duplicate, `/spec-build`'s UC↔traceability coverage check.
 
 ---
 
@@ -31,7 +31,7 @@ Default to changed-since-last-run; drift only appears where code or specs change
 
 Report each as PASS / FINDING with evidence.
 
-- **A1 — UC ↔ traceability coverage.** Reuse `/build`'s check (one row per `UC-<AREA>-<n>`, no orphan rows). Don't duplicate the logic — if `/build` was just run, cite it; otherwise run the same comparison.
+- **A1 — UC ↔ traceability coverage.** Reuse `/spec-build`'s check (one row per `UC-<AREA>-<n>`, no orphan rows). Don't duplicate the logic — if `/spec-build` was just run, cite it; otherwise run the same comparison.
 - **A2 — Endpoint ↔ spec coverage (catches *built-but-unspecified*).** Enumerate every controller mapping: `grep` for `@GetMapping|@PostMapping|@PutMapping|@PatchMapping|@DeleteMapping` under `backend/src/main/java`. For each endpoint, confirm it maps to a UC (via `traceability.md`) or a documented FR. Flag endpoints with **no** spec home that aren't already a known OI (this is how OI-34 rubric/criterion would surface). Likewise scan `frontend/src/apis/**` for client calls with no backing UC.
 - **A3 — Enum ↔ domain-model sync.** Compare each backend enum to the SRS Business Domain Model lists and glossary: `DocumentStatus`, `RequirementArtifactType`, `ArtifactLinkType`, `Priority`, `SectionType`, `CommentThreadStatus`, `ExtensionKind`/`ExtensionExit`. Flag any value in the enum but not the spec (or vice-versa) — e.g. a missing `ACCEPTED` status (OI-37), or enum/taxonomy drift (OI-15/OI-22). Keep `frontend/src/apis/ram/types.ts` in lockstep with the backend enums.
 - **A4 — Traceability honesty.** For every row marked ✅ Implemented, verify the cited backend class and test files actually exist (Glob). Flag ✅ rows whose cited artifacts are missing, and `—` cells where code clearly exists.
