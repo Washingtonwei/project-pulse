@@ -637,7 +637,7 @@ No two teams can have the same name. The team name must be unique. The course ad
 5. Use case ends.
 
 **Extensions:**
-- **5a. The course admin finds an wrong team member removal:**
+- **5a. The course admin finds a wrong team member removal:**
   - 5a1. The course admin corrects the wrong removal and returns to step 4 of the normal flow.
 
 **Priority:** Low
@@ -734,7 +734,7 @@ No two teams can have the same name. The team name must be unique. The course ad
 **Business Rules:**
 
 **Associated Information:**
-- Email format: emails shall be separated by semicolon and the system shall ignore spaces in between. E.g., Good: john.doe@tcu.edu; f.smith@tcu.edu; tim.johnson@tcu.edu; lily.p.lee@tcu.edu Good: john.doe@tcu.edu;f.smith@tcu.edu Bad: john.doe@tcu.edu; f.smith@tcu.edu; Bad: john.doe@tcu.edu f.smith@tcu.edu Default email message: *Subject: Welcome to The Peer Evaluation Tool - Complete Your Registration Hello, [Name of the course admin] has invited you to join The Peer Evaluation Tool. To complete your registration, please use the link below: [Registration link] If you have any questions or need assistance, feel free to contact [course admin's email] or our team directly. Please note: This email is not monitored, so do not reply directly to this message. Best regards, Peer Evaluation Tool Team*  The invitation link shall be unique for each student. The course admin shall be able to cancel the use case at any time prior to submitting it.
+- Email format: emails shall be separated by semicolon and the system shall ignore spaces in between. E.g., Good: john.doe@tcu.edu; f.smith@tcu.edu; tim.johnson@tcu.edu; lily.p.lee@tcu.edu Good: john.doe@tcu.edu;f.smith@tcu.edu Bad: john.doe@tcu.edu; f.smith@tcu.edu; Bad: john.doe@tcu.edu f.smith@tcu.edu Default email message: *Subject: Welcome to Project Pulse - Complete Your Registration Hello, [Name of the course admin] has invited you to join Project Pulse. To complete your registration, please use the link below: [Registration link] If you have any questions or need assistance, feel free to contact [course admin's email] or our team directly. Please note: This email is not monitored, so do not reply directly to this message. Best regards, Project Pulse Team*  The invitation link shall be unique for each student. The course admin shall be able to cancel the use case at any time prior to submitting it.
 
 **Assumptions:**
 **Open Issues:**
@@ -922,7 +922,7 @@ Details:
 **Business Rules:**
 
 **Associated Information:**
-- Email format: emails shall be separated by semicolon and the system shall ignore spaces in between. E.g., Good: john.doe@tcu.edu; f.smith@tcu.edu; tim.johnson@tcu.edu; lily.p.lee@tcu.edu Good: john.doe@tcu.edu;f.smith@tcu.edu Bad: john.doe@tcu.edu; f.smith@tcu.edu; Bad: john.doe@tcu.edu f.smith@tcu.edu Default email message: *Subject: Welcome to The Peer Evaluation Tool - Complete Your Registration Hello, [Name of the course admin] has invited you to join The Peer Evaluation Tool. To complete your registration, please use the link below: [Registration link] If you have any questions or need assistance, feel free to contact [course admin's email] or our team directly. Please note: This email is not monitored, so do not reply directly to this message. Best regards, Peer Evaluation Tool Team*  The invitation link shall be unique for each instructor. The course admin shall be able to cancel the use case at any time prior to submitting it.
+- Email format: emails shall be separated by semicolon and the system shall ignore spaces in between. E.g., Good: john.doe@tcu.edu; f.smith@tcu.edu; tim.johnson@tcu.edu; lily.p.lee@tcu.edu Good: john.doe@tcu.edu;f.smith@tcu.edu Bad: john.doe@tcu.edu; f.smith@tcu.edu; Bad: john.doe@tcu.edu f.smith@tcu.edu Default email message: *Subject: Welcome to Project Pulse - Complete Your Registration Hello, [Name of the course admin] has invited you to join Project Pulse. To complete your registration, please use the link below: [Registration link] If you have any questions or need assistance, feel free to contact [course admin's email] or our team directly. Please note: This email is not monitored, so do not reply directly to this message. Best regards, Project Pulse Team*  The invitation link shall be unique for each instructor. The course admin shall be able to cancel the use case at any time prior to submitting it.
 
 **Assumptions:**
 **Open Issues:**
@@ -956,7 +956,7 @@ Details:
 8. Use case ends.
 
 **Extensions:**
-- **4a. The course admin finds an wrong team assignment:**
+- **4a. The course admin finds a wrong team assignment:**
   - 4a1. The course admin removes an instructor from a team, reassign her to a new team, and returns to step 4 of the normal flow.
 
 **Priority:** High
@@ -967,7 +967,7 @@ Details:
 - Notification: The system notifies the instructors about their team assignment. The course admin shall be able to cancel the process at any time prior to submitting it.
 
 **Related Use Cases:**
-**Assumptions:** The instructor must be assigned to the course section of the team first. TODO
+**Assumptions:** The instructor must be assigned to the course section of the team first.
 **Open Issues:**
 
 ### **UC-INS-3: The Course Admin removes an instructor from a team**
@@ -997,7 +997,7 @@ Details:
 5. Use case ends.
 
 **Extensions:**
-- **5a. The course admin finds an wrong team member removal:**
+- **5a. The course admin finds a wrong team member removal:**
   - 5a1. The course admin corrects the wrong removal and returns to step 4 of the normal flow.
 
 **Priority:** Low
@@ -1109,7 +1109,7 @@ Supervised teams shall be organized by section names.
 **Assumptions:**
 **Open Issues:**
 
-### **UC-INS-6: The Course Admin deactivate an instructor**
+### **UC-INS-6: The Course Admin deactivates an instructor**
 
 **UC ID and Name:** UC-INS-6: Deactivate an instructor
 **Created By:**
@@ -1124,7 +1124,7 @@ Supervised teams shall be organized by section names.
 - PRE-2. There exists at least one instructor in the system.
 
 **Postconditions:**
-- POST-1. The insturctor's account is deactivated.
+- POST-1. The instructor's account is deactivated.
 
 **Main Success Scenario:**
 1. The course admin indicates to deactivate an instructor.
@@ -1147,7 +1147,7 @@ Supervised teams shall be organized by section names.
 **Assumptions:**
 **Open Issues:**
 
-### **UC-INS-7: The Course Admin reactivate an instructor**
+### **UC-INS-7: The Course Admin reactivates an instructor**
 
 **UC ID and Name:** UC-INS-7: Reactivate an instructor
 **Created By:**
@@ -1162,7 +1162,7 @@ Supervised teams shall be organized by section names.
 - PRE-2. There exists at least one deactivated instructor in the system.
 
 **Postconditions:**
-- POST-1. The Insturctor's account is reactivated.
+- POST-1. The instructor's account is reactivated.
 
 **Main Success Scenario:**
 1. The course admin indicates to reactivate a deactivated instructor.
@@ -1357,8 +1357,8 @@ The student shall be able to cancel the use case at any time prior to submitting
 1. The student indicates to manage activities in a WAR.
 2. The system asks the student to select an active week.
 3. The student specifies the active week (cannot select a future active week).
-4. The system displays the activities already added by this student in the WAR and asks the student to select operations: Add a new activity (step 6-10) Edit an existing activity (step 11-16) Delete an existing activity (step 17-20) The student selects one out of the three operations.
-5. Based on the student's selection in step 5, the flow goes through either step 6-10, or step 11-16, or step 17-20.
+4. The system displays the activities already added by this student in the WAR and asks the student to select operations: Add a new activity (steps 6-11) Edit an existing activity (steps 12-17) Delete an existing activity (steps 18-21) The student selects one out of the three operations.
+5. Based on the student's selection in step 4, the flow goes through either steps 6-11, or steps 12-17, or steps 18-21.
 6. The student selects to add a new activity to this WAR.
 7. See the "Details" defined in the Associated Information of this use case.
 8. The student enters the details of the activity and confirms that she has finished.
@@ -1383,7 +1383,7 @@ The student shall be able to cancel the use case at any time prior to submitting
   - 8a2. The student corrects the mistake and returns to step 8 of the normal flow.
 - **13a. Input validation rule violation:**
   - 13a1. The system alerts the student that an input validation rule is violated and displays the nature and location of the error.
-  - 13a2. The student corrects the mistake and returns to step 8 of the normal flow.
+  - 13a2. The student corrects the mistake and returns to step 13 of the normal flow.
 
 **Priority:** High
 **Frequency of Use:** Approximately 35-40 users, average of 3 usages per week.
@@ -1422,8 +1422,8 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 **Extensions:**
 - **4a. Input validation rule violation:**
-  - 4b1. The system alerts the user that an input validation rule is violated and displays the nature and location of the error.
-  - 4b2. The user corrects the mistake and returns to step 4 of the normal flow.
+  - 4a1. The system alerts the user that an input validation rule is violated and displays the nature and location of the error.
+  - 4a2. The user corrects the mistake and returns to step 4 of the normal flow.
 - **5a. No data is returned:**
   - 5a1. The system alerts the user that no data is available in the generated report.
   - 5a2. The user either chooses to return to step 3 of the normal flow or chooses to terminate the use case.
@@ -1485,8 +1485,8 @@ Report generating algorithm: N/A
 
 **Extensions:**
 - **6a. Input validation rule violation:**
-  - 6b1. The system alerts the instructor that an input validation rule is violated and displays the nature and location of the error.
-  - 6b2. The instructor corrects the mistake and returns to step 6 of the normal flow.
+  - 6a1. The system alerts the instructor that an input validation rule is violated and displays the nature and location of the error.
+  - 6a2. The instructor corrects the mistake and returns to step 6 of the normal flow.
 - **7a. No data is returned:**
   - 7a1. The system alerts the instructor that no data is available in the generated report.
   - 7a2. The instructor either chooses to return to step 5 of the normal flow or chooses to terminate the use case.
@@ -1552,7 +1552,7 @@ Report generating algorithm: N/A
 4. The student evaluates each team member (self included) and confirms that she has finished.
 5. The system validates the student's inputs according to the "Details" defined in the Associated Information of this use case.
 6. The system displays the details of the peer evaluation and asks the student to confirm the evaluation and submission.
-7. Peer evaluations can be edited after submission.
+7. The system notes that a submitted peer evaluation remains editable; the student may re-submit it later to update it (BR-23).
 8. The student either confirms the evaluation and submission (continues the normal flow) or chooses to modify the details (return to step 3).
 9. The system saves the peer evaluation and informs the student that this peer evaluation has been submitted.
 10. Use case ends.
@@ -1612,8 +1612,8 @@ Private comments are for the instructor only. Public comments will be sent to th
 
 **Extensions:**
 - **4a. Input validation rule violation:**
-  - 4b1. The system alerts the student that an input validation rule is violated and displays the nature and location of the error.
-  - 4b2. The student corrects the mistake and returns to step 4 of the normal flow.
+  - 4a1. The system alerts the student that an input validation rule is violated and displays the nature and location of the error.
+  - 4a2. The student corrects the mistake and returns to step 4 of the normal flow.
 - **5a. No data is returned:**
   - 5a1. The system alerts the student that no data is available in the generated report.
   - 5a2. The student either chooses to return to step 3 of the normal flow or chooses to terminate the use case.
@@ -1671,8 +1671,8 @@ Report generating algorithm: For each individual criterion score (e.g., Quality 
 
 **Extensions:**
 - **4a. Input validation rule violation:**
-  - 4b1. The system alerts the instructor that an input validation rule is violated and displays the nature and location of the error.
-  - 4b2. The instructor corrects the mistake and returns to step 4 of the normal flow.
+  - 4a1. The system alerts the instructor that an input validation rule is violated and displays the nature and location of the error.
+  - 4a2. The instructor corrects the mistake and returns to step 4 of the normal flow.
 - **5a. No data is returned:**
   - 5a1. The system alerts the instructor that no data is available in the generated report.
   - 5a2. The instructor either chooses to return to step 3 of the normal flow or chooses to terminate the use case.
@@ -1743,8 +1743,8 @@ Details of a peer evaluation: The instructor may choose to see more details of o
 
 **Extensions:**
 - **6a. Input validation rule violation:**
-  - 6b1. The system alerts the instructor that an input validation rule is violated and displays the nature and location of the error.
-  - 6b2. The instructor corrects the mistake and returns to step 6 of the normal flow.
+  - 6a1. The system alerts the instructor that an input validation rule is violated and displays the nature and location of the error.
+  - 6a2. The instructor corrects the mistake and returns to step 6 of the normal flow.
 - **7a. No data is returned:**
   - 7a1. The system alerts the instructor that no data is available in the generated report.
   - 7a2. The instructor either chooses to return to step 5 of the normal flow or chooses to terminate the use case.
@@ -1862,7 +1862,7 @@ Details:
   - 2b1. The student re-sorts the search result according to the "Sort criteria" defined in the Associated Information of this use case and returns to step 2 of the normal flow.
 
 **Priority:** High
-**Frequency of Use:**
+**Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
 **Business Rules:** BR-1, BR-2 (team-scoped access control).
 **Associated Information:**
 - Search results display strategy (specify which properties to display for each matching glossary term): Term, Definition
@@ -1908,7 +1908,7 @@ Details:
   - 5b1. The student re-sorts the search result according to the "Sort criteria" defined in the Associated Information of this use case and returns to step 5 of the normal flow.
 
 **Priority:** High
-**Frequency of Use:**
+**Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
 **Business Rules:** BR-1, BR-2 (team-scoped access control).
 **Associated Information:**
 
@@ -1963,7 +1963,7 @@ Sort criteria: ASC by term
 **Extensions:**
 
 **Priority:** High
-**Frequency of Use:**
+**Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
 **Business Rules:** BR-1, BR-2 (team-scoped access control).
 **Associated Information:**
 
@@ -2140,7 +2140,7 @@ The student shall be able to cancel the use case at any time prior to submitting
   - 4b2. The student corrects the mistake and returns to step 4 of the normal flow.
 
 **Priority:** High
-**Frequency of Use:**
+**Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
 **Business Rules:** BR-1, BR-2 (team-scoped access control); BR-6 (a glossary term name is unique within the team's Glossary).
 **Associated Information:**
 
@@ -2192,7 +2192,7 @@ The student shall be able to cancel the use case at any time prior to submitting
   - 4a3. use case terminates.
 
 **Priority:** High
-**Frequency of Use:**
+**Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
 **Business Rules:** BR-1, BR-2 (team-scoped access control); BR-12 (a referenced term cannot be deleted; deletion is logical).
 **Associated Information:**
 
@@ -2242,7 +2242,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Extensions:**
 
 **Priority:** High
-**Frequency of Use:**
+**Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
 **Business Rules:** BR-1, BR-2 (team-scoped access control).
 **Associated Information:**
 **Related Use Cases:**
@@ -2336,7 +2336,7 @@ The student shall be able to cancel the use case at any time prior to submitting
   - 2b1. The student re-sorts the search results according to the "Sort criteria" defined in the Associated Information of this use case and returns to step 2 of the normal flow.
 
 **Priority:** High
-**Frequency of Use:**
+**Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
 **Business Rules:** BR-1, BR-2 (team-scoped access control).
 **Associated Information:**
 - Search results display strategy (specify which properties to display for each matching use case): UC ID and Name, Primary Actor, Priority
@@ -3617,7 +3617,7 @@ File names include document type and team identifier.
 **Primary Actor:** instructor
 **Secondary Actors:**
 **Trigger:** The instructor indicates to change which AI assistants are available for a course section she teaches.
-**Description:** The instructor wants to enable or disable AI assistants — individually, per assistant — for the students in a course section she teaches, so that she controls whether and when each kind of AI help is permitted (for example, disabling the drafting assistant during a graded elicitation exercise while leaving the tutor assistant on). This setting governs the availability of the student-facing AI use cases (UC-AI-2, UC-AI-3, UC-AI-4, UC-AI-5, UC-AI-6, UC-AI-7, UC-AI-9) for that course section's teams.
+**Description:** The instructor wants to enable or disable AI assistants — individually, per assistant — for the students in a course section she teaches, so that she controls whether and when each kind of AI help is permitted (for example, disabling the drafting assistant during a graded elicitation exercise while leaving the tutor assistant on). This setting governs the availability of the student-facing AI use cases (UC-AI-2, UC-AI-3, UC-AI-4, UC-AI-5, UC-AI-6, UC-AI-7, UC-AI-9, UC-AI-10) for that course section's teams.
 
 **Preconditions:**
 - PRE-1. The instructor is logged into the system.

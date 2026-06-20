@@ -201,7 +201,7 @@ RAM's AI assistance is delivered through Socratic assistants whose primary purpo
 
 **FR-AI-1 (Event-Driven):** When a student requests elicitation help, the system shall transmit to the elicitation assistant the context for the session's scope — for a session targeting a document section or use case, that target's context and the applicable template context; for a project-wide session, the project's current requirements coverage — together with the course section's teaching context, and shall return coaching for the student's own elicitation — candidate questions to put to the client (in plain, non-technical language), suggested follow-ups, and checks that help the student verify the client's answers — rather than finished requirement content.
 
-**FR-AI-2 (Optional):** Where AI assistance is enabled, the critique assistant shall return at least one finding for clarity, consistency, completeness, or testability, each accompanied by an instructive rationale.
+**FR-AI-2 (Optional):** Where AI assistance is enabled, the critique assistant shall return its findings (possibly none) for clarity, consistency, completeness, or testability, each accompanied by an instructive rationale.
 
 **FR-AI-3 (Ubiquitous):** The system shall not modify student-authored content with assistant-generated text without an explicit confirmation action by the student.
 
