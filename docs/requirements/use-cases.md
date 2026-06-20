@@ -1382,6 +1382,82 @@ Details:
 **Assumptions:**
 **Open Issues:**
 
+### **UC-STU-5: The Course Admin/Instructor deactivates a student**
+
+**UC ID and Name:** UC-STU-5: Deactivate a student
+**Created By:**
+**Date Created:**
+**Primary Actor:** course admin / instructor
+**Secondary Actors:** student
+**Trigger:** The course admin or instructor indicates to deactivate a student.
+**Description:** The course admin or instructor wants to deactivate a student — for example, when a student withdraws from the course section — so that the student no longer has access to the system while her submitted work is retained.
+
+**Preconditions:**
+- PRE-1. The course admin or instructor is logged into the system.
+- PRE-2. There exists at least one active student in the system.
+
+**Postconditions:**
+- POST-1. The student's account is deactivated.
+
+**Main Success Scenario:**
+1. The course admin or instructor indicates to deactivate a student.
+2. The course admin or instructor views the details of this student through UC-STU-3: View a student.
+3. The course admin or instructor chooses to deactivate this student.
+4. The system alerts the course admin or instructor of the consequences of this deactivation defined in the Associated Information of this use case, warns about the deactivation, and asks for confirmation.
+5. The course admin or instructor confirms the deactivation.
+6. The system deactivates the student and alerts the course admin or instructor that this student has been deactivated.
+7. Use case ends.
+
+**Extensions:**
+**Priority:** Low
+**Frequency of Use:** Rare. Occurs occasionally when a student withdraws from a course section.
+**Business Rules:**
+
+**Associated Information:**
+- Consequence of the deactivation: The student will no longer be able to log in or submit weekly activity reports and peer evaluations, but the student's account and her previously submitted work are kept in the system. Deactivation will NOT remove the student from the system, and the account can be reactivated in the future (UC-STU-6: Reactivate a student). This is distinct from deletion (UC-STU-4: Delete a student), which is a physical, unrecoverable delete. The course admin or instructor shall be able to cancel the use case at any time prior to submitting it.
+
+**Related Use Cases:** UC-STU-4: Delete a student; UC-STU-6: Reactivate a student
+**Assumptions:**
+**Open Issues:**
+
+### **UC-STU-6: The Course Admin/Instructor reactivates a student**
+
+**UC ID and Name:** UC-STU-6: Reactivate a student
+**Created By:**
+**Date Created:**
+**Primary Actor:** course admin / instructor
+**Secondary Actors:** student
+**Trigger:** The course admin or instructor indicates to reactivate a deactivated student.
+**Description:** The course admin or instructor wants to reactivate a deactivated student, so that the student regains access to the system.
+
+**Preconditions:**
+- PRE-1. The course admin or instructor is logged into the system.
+- PRE-2. There exists at least one deactivated student in the system.
+
+**Postconditions:**
+- POST-1. The student's account is reactivated.
+
+**Main Success Scenario:**
+1. The course admin or instructor indicates to reactivate a deactivated student.
+2. The course admin or instructor views the details of this student through UC-STU-3: View a student.
+3. The course admin or instructor chooses to reactivate this student.
+4. The system asks for confirmation.
+5. The course admin or instructor confirms the reactivation.
+6. The system reactivates the student and notifies this student that her account has been reactivated.
+7. Use case ends.
+
+**Extensions:**
+**Priority:** Low
+**Frequency of Use:** Rare. Occurs occasionally when a previously withdrawn student returns to a course section.
+**Business Rules:**
+
+**Associated Information:**
+- The course admin or instructor shall be able to cancel the use case at any time prior to submitting it.
+
+**Related Use Cases:** UC-STU-4: Delete a student; UC-STU-5: Deactivate a student
+**Assumptions:**
+**Open Issues:**
+
 ## **Instructor**
 
 ### **UC-INS-1: The Course Admin invites instructors to register an account**
@@ -2056,7 +2132,7 @@ Report generating algorithm: N/A
 4. The student evaluates each team member (self included) and confirms that she has finished.
 5. The system validates the student's inputs according to the "Details" defined in the Associated Information of this use case.
 6. The system displays the details of the peer evaluation and asks the student to confirm the evaluation and submission.
-7. The system notes that a submitted peer evaluation remains editable; the student may re-submit it later to update it (BR-23).
+7. The system notes that a submitted peer evaluation remains editable while its submission window is open; the student may re-submit it to update it until the window closes (BR-23, BR-24).
 8. The student either confirms the evaluation and submission (continues the normal flow) or chooses to modify the details (return to step 3).
 9. The system saves the peer evaluation and informs the student that this peer evaluation has been submitted.
 10. Use case ends.
@@ -3245,7 +3321,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 ### **UC-ART-4: The Student creates a requirement artifact from document content (or "promote selection to artifact")**
 
 **UC ID and Name:** UC-ART-4: Create a requirement artifact from document content (promote selection)
-**Status:** Tabled — future release.
+**Status:** Tabled — future release
 
 The student selects text within a requirement document and promotes it to a structured requirement artifact of a chosen type, enabling traceability, navigation, and consistent reuse across documents.
 
@@ -3720,6 +3796,15 @@ The student shall be able to cancel the use case at any time prior to submitting
 7. Use case ends.
 
 **Extensions:**
+- **2a. ReqLint validation cannot be completed**
+  - 2a1. The system is unable to finish the validation run (for example, a processing error in the ReqLint engine).
+  - 2a2. The system informs the student that validation did not complete and that no results are available, and invites the student to run it again; the student returns to step 1.
+- **3a. The document has no validation issues**
+  - 3a1. The document-level ReqLint checks produce no errors, warnings, or info findings.
+  - 3a2. The system reports that the document passed validation and displays an empty issue list — a clean result is a successful outcome, distinct from validation never having been run. Use case ends.
+- **6a. The student corrects an issue and re-runs validation**
+  - 6a1. From the highlighted location, the student edits the affected document section or use case to resolve the finding (UC-DOC-2: Edit a document section, or UC-DOC-6: Edit a use case).
+  - 6a2. The student re-runs ReqLint and returns to step 1; the system regenerates the issue list, which reflects the correction.
 
 **Priority:** High
 **Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
@@ -3744,6 +3829,7 @@ Details (Examples of Document-Level Checks):
 *Post-MVP — this real-time collaborative-editing session is deferred beyond the initial release (see the SRS Real-Time Collaboration Requirements). In the MVP, teammates author the same document through per-section locking (UC-DOC-2, UC-DOC-6) and coordinate via comment threads (UC-COL-2, UC-COL-3).*
 
 **UC ID and Name:** UC-COL-1: Collaboratively edit a requirement document
+**Status:** Deferred — post-MVP
 **Created By:**
 **Date Created:**
 **Primary Actor:** student

@@ -95,6 +95,6 @@ The artifact types named here are the canonical `RequirementArtifactType` set (g
 # **Weekly Activity Report and Peer Evaluation**
 
 - **BR-22:** Active weeks vary by semester: in the fall semester the active weeks are usually weeks 5 through 15 (winter holidays are inactive weeks), and in the spring semester they are weeks 1 through 15. A student may submit a peer evaluation only during active weeks, but may submit a weekly activity report outside active weeks.
-- **BR-23:** A submitted peer evaluation remains editable by its evaluator — re-submitting updates the existing evaluation in place; the system applies no separate finalize or completion lock.
-- **BR-24:** A student may submit a peer evaluation only for the previous week, and has one week to complete it. A student who fails to complete a peer evaluation in that window cannot make it up.
+- **BR-23:** A peer evaluation remains editable by its evaluator while its submission window is open — re-submitting updates the existing evaluation in place. The system applies no separate finalize or completion action; the close of the submission window (BR-24) is itself the lock that makes the evaluation read-only.
+- **BR-24:** A student may submit a peer evaluation only for the previous week, and has that one week to complete it; both the initial submission and any later edits must occur within this window. A student who fails to complete a peer evaluation in that window cannot make it up, and an evaluation can no longer be changed once its window has closed.
 - **BR-25:** For a peer evaluation, a student may see only her own rubric criterion scores, public comments, and overall grade.
