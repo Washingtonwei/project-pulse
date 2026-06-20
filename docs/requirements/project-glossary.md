@@ -427,10 +427,6 @@ Independent, Negotiable, Valuable, Estimable, Small, Testable. A set of criteria
 
 The classification of requirements artifacts popularized by Karl Wiegers and Joy Beatty (e.g., business requirements, user requirements, functional requirements, quality attributes, constraints, business rules) and reflected in RAM's built-in templates. The teaching context references these categories so that assistant feedback aligns with the structure students are taught and graded against.
 
-## **SSO**
-
-Single Sign-On. An authentication mechanism that allows a user to access multiple applications with a single set of credentials. RAM relies on the host platform's (Project Pulse) institutional SSO provider for authentication.
-
 ## **LLM**
 
 Large Language Model. A class of machine-learning models trained on broad text corpora to generate, complete, or analyze natural-language content. RAM integrates with an external LLM service (e.g., OpenAI) to power its Socratic assistants, which provide AI-assisted requirement guidance. All calls are routed through the server-side AI proxy.

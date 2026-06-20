@@ -3237,6 +3237,8 @@ Details (Examples of Document-Level Checks):
 
 ### **UC-COL-1: The Student collaboratively edits a requirement document**
 
+*Post-MVP — this real-time collaborative-editing session is deferred beyond the initial release (see the SRS Real-Time Collaboration Requirements). In the MVP, teammates author the same document through per-section locking (UC-DOC-2, UC-DOC-6) and coordinate via comment threads (UC-COL-2, UC-COL-3).*
+
 **UC ID and Name:** UC-COL-1: Collaboratively edit a requirement document
 **Created By:**
 **Date Created:**

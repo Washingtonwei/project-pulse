@@ -103,7 +103,7 @@ CO-2: The client shall be implemented in Vue.js and the backend in Java using th
 
 CO-3: Requirement artifacts, links, documents, and document sections shall be persisted in the existing Project Pulse relational database.
 
-CO-4: User authentication shall be delegated to the host platform's institutional Single Sign-On (SSO); RAM shall not implement a separate login mechanism.
+CO-4: User authentication shall be delegated to the host platform's authentication mechanism (the existing Project Pulse JWT-based login); RAM shall not implement a separate login mechanism.
 
 CO-5: RAM shall comply with FERPA when storing and transmitting student educational records.
 
@@ -121,7 +121,7 @@ AS-7: The external LLM service (e.g., OpenAI) remains available and its API cont
 
 AS-8: Project Pulse's existing course, course section, team, and user data is accurate and current; RAM reuses this data rather than maintaining its own copy.
 
-DE-1: RAM depends on Project Pulse for authentication and Single Sign-On, the course/course section/team data model, and the course admin, instructor, and student roles.
+DE-1: RAM depends on Project Pulse for authentication, the course/course section/team data model, and the course admin, instructor, and student roles.
 
 DE-2: AI-assisted requirement review depends on the external LLM service; if it is unavailable, the AI features are unavailable while the rest of RAM continues to operate.
 
@@ -172,6 +172,8 @@ These requirements describe system-level functions that support or enable the us
 **FR-LOCK-5 (Event-Driven):** When a lock is acquired or released, the system shall broadcast the updated lock state to all team members viewing the document.
 
 ### *Real-Time Collaboration Requirements*
+
+*Post-MVP. Real-time collaboration — live collaborator presence and broadcast — is deferred beyond the initial release; the `FR-COL-*` requirements below (and the related PER-1 and ROB-3 targets) are retained as future scope. The MVP collaboration model is comment threads (UC-COL-2, UC-COL-3) over pessimistic section-level locking (`FR-LOCK-*`); concurrent authoring is serialized by locks rather than merged live.*
 
 **FR-COL-1 (State-Driven):** While multiple students are connected to the same document, the system shall display the presence of each connected collaborator and the current lock state of each document section and use case.
 
@@ -277,7 +279,7 @@ Authorship metadata (FR-HIS-4) is in scope for the initial release and is relied
 
 ### *Security and Authorization Requirements*
 
-**FR-SEC-1 (Ubiquitous):** The system shall authenticate users via institutional SSO before granting access to protected resources.
+**FR-SEC-1 (Ubiquitous):** The system shall authenticate users via the host platform's authentication mechanism before granting access to protected resources.
 
 **FR-SEC-2 (Ubiquitous):** The system shall enforce role-based access control (student, instructor, course admin).
 
@@ -297,7 +299,7 @@ Authorship metadata (FR-HIS-4) is in scope for the initial release and is relied
 
 ### *Performance and Reliability Requirements*
 
-**FR-PERF-1 (State-Driven):** While up to 100 users are actively editing concurrently, the system shall propagate collaborator presence events (join, disconnect) within 1 second for 95% of events.
+**FR-PERF-1 (State-Driven):** While up to 100 users are actively editing concurrently, the system shall propagate collaborator presence events (join, disconnect) within 1 second for 95% of events. _(Post-MVP — depends on the deferred real-time collaboration; see the Real-Time Collaboration Requirements section.)_
 
 **FR-PERF-2 (Ubiquitous):** The system shall remain available at least 99% of the academic term.
 
@@ -636,7 +638,7 @@ SI-1.5: While the LLM service is unavailable or a request times out, the AI prox
 
 SI-2: Project Pulse host platform
 
-SI-2.1: RAM shall obtain the authenticated user's identity and role (course admin, instructor, student) from the host platform's Single Sign-On session and shall not implement its own login (per CO-4, SEC-1).
+SI-2.1: RAM shall obtain the authenticated user's identity and role (course admin, instructor, student) from the host platform's authenticated session and shall not implement its own login (per CO-4, SEC-1).
 
 SI-2.2: RAM shall read Course, course section, team, and membership data from the host platform's existing data model rather than maintaining its own copy (per DE-1; AS-8).
 
@@ -688,7 +690,7 @@ USE-4: A new student shall be able to open a document section, edit and save con
 
 ## **Performance**
 
-PER-1: While up to 100 users are editing concurrently, RAM shall propagate collaborator presence and lock-state events (join, disconnect, lock acquire/release) within 1 second for 95% of events. (Realized by FR-PERF-1.)
+PER-1: While up to 100 users are editing concurrently, RAM shall propagate collaborator presence and lock-state events (join, disconnect, lock acquire/release) within 1 second for 95% of events. (Realized by FR-PERF-1.) _(Post-MVP — depends on the deferred real-time collaboration; see the Real-Time Collaboration Requirements section.)_
 
 PER-2: RAM shall autosave an actively edited authoring destination at least every 10 seconds and persist its latest content immediately when the student navigates away. (Realized by FR-SAVE-1, FR-SAVE-2.)
 
@@ -698,7 +700,7 @@ PER-4: RAM shall present an AI assistant response, or a clear "working" / timeou
 
 ## **Security**
 
-SEC-1: RAM shall authenticate every user through the host platform's institutional Single Sign-On before granting access to any protected resource, per CO-4 and FR-SEC-1.
+SEC-1: RAM shall authenticate every user through the host platform's authentication mechanism before granting access to any protected resource, per CO-4 and FR-SEC-1.
 
 SEC-2: RAM shall enforce role-based access control across the course admin, instructor, and student roles, and shall restrict each student to her own team's requirements graph, documents, and project source material, per BR-1, BR-2, and FR-SEC-2.
 
@@ -724,7 +726,7 @@ ROB-1: In the event of a browser crash, disconnection, or power failure, RAM sha
 
 ROB-2: When an autosave fails, RAM shall notify the student and retry in the background without interrupting editing. (Realized by FR-SAVE-4.)
 
-ROB-3: RAM shall ensure that real-time collaborative updates never overwrite or corrupt content already saved by another collaborator, per FR-COL-4 and BR-11.
+ROB-3: RAM shall ensure that real-time collaborative updates never overwrite or corrupt content already saved by another collaborator, per FR-COL-4 and BR-11. _(Post-MVP — applies to the deferred real-time collaboration; in the MVP, section-level locking prevents concurrent overwrites.)_
 
 ## **Scalability and Interoperability**
 
@@ -747,6 +749,6 @@ N/A for release 1.0. RAM targets TCU software-engineering courses and ships in U
 RAM introduces no additional requirements beyond those specified elsewhere; the cross-cutting concerns that would otherwise appear here are referenced rather than restated:
 
 - Regulatory and compliance: FERPA handling of student educational records — CO-5 and SEC-3 (Security).
-- Security and access control: institutional SSO and role-based access — FR-SEC-1..3 (Security and Authorization Requirements) and the Security quality attributes.
+- Security and access control: host-platform authentication and role-based access — FR-SEC-1..3 (Security and Authorization Requirements) and the Security quality attributes.
 - Authorship and audit trail: creator/editor identity and timestamps on every authored item — FR-HIS-4 (Authorship Metadata and Document Versioning Requirements); logical (soft) deletion that retains items for audit — BR-12.
 - Installation, configuration, and startup/shutdown: RAM follows the host Project Pulse application (see the [Deployment View](../design/architectural-design.md#deployment-view)).

@@ -396,7 +396,7 @@ Combined with ReqLint, the assistant layer improves learning outcomes, trains cl
 
 ### *Collaboration and Document Workflow*
 
-Student teams can collaborate in real time through presence indicators, document-section-level editing, and commenting. The tool supports submission-and-review workflows that allow students to submit drafts, receive instructor feedback, and revise their work iteratively.
+Student teams collaborate through document-section-level editing and commenting. The tool supports submission-and-review workflows that allow students to submit drafts, receive instructor feedback, and revise their work iteratively. Real-time collaboration — live presence indicators and concurrent co-editing — is **post-MVP**; the initial release coordinates teammates through per-section pessimistic locking and comment threads (UC-COL-2, UC-COL-3) rather than live presence (UC-COL-1).
 
 Document version history — checkpointing each save, viewing prior versions, and restoring them — is a **post-MVP** capability; the initial release keeps only authorship metadata (the creator/editor and timestamps recorded on every authored item).
 

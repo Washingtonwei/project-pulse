@@ -102,6 +102,7 @@ C4Container
         Container(spa, "SPA", "Vue.js", "Course-management UI + RAM authoring views (graph, editor, ReqLint, AI panel)")
         Container(api, "REST API Application", "Java / Spring Boot", "Course-management & RAM APIs (graph, ReqLint, AI proxy)")
         ContainerDb(db, "Database", "Relational DB", "WARs, peer evals, and RAM artifacts/links/documents")
+        ContainerDb(blob, "Blob Storage", "Azure Blob Storage", "Uploaded project source material (PDF/PPTX)")
     }
 
     System_Ext(gmail, "Gmail", "Email system")
@@ -110,11 +111,12 @@ C4Container
     Rel_R(student, spa, "Uses", "HTTPS")
     Rel_D(spa, api, "API calls", "JSON/HTTPS")
     Rel_D(api, db, "Reads & writes", "JDBC")
+    Rel_D(api, blob, "Stores & reads files", "HTTPS")
     Rel_R(api, gmail, "Sends email", "SMTP")
     Rel_R(api, llm, "Requests AI review", "HTTPS")
 ```
 
-The Level 2: Container Diagram for the Project Pulse system provides a detailed view of its internal architecture, illustrating how the system components interact. The system is composed of three key containers — the **SPA (Single Page Application)**, the **REST API Application**, and the **Database** — supported by integration with the **Gmail System** for email communication and an external **LLM Service** (e.g., OpenAI) for AI-assisted requirement review. The **SPA**, built with Vue.js, is delivered to users' browsers and provides the interface for both the course-management workflows (submitting WARs and peer evaluations) and the RAM module's requirements authoring views: graph navigation, document editing, the ReqLint validation sidebar, and the AI assistant panel. The **REST API Application**, implemented using Java and Spring Boot, delivers the SPA, processes REST API calls, and manages interactions with the **Database**; for the RAM module it exposes endpoints for the requirements graph, ReqLint validation, and an AI proxy to the LLM service. The **Database**, a relational database, stores course-management data (WARs and peer evaluation submissions) alongside the RAM module's requirement artifacts, links, documents, and document sections, with CRUD operations executed through the REST API. The REST API integrates with the **Gmail System** over SMTP to send automated notifications and with the external **LLM Service** to support AI-assisted review.
+The Level 2: Container Diagram for the Project Pulse system provides a detailed view of its internal architecture, illustrating how the system components interact. The system is composed of three key containers — the **SPA (Single Page Application)**, the **REST API Application**, and the **Database** — supported by integration with the **Gmail System** for email communication and an external **LLM Service** (e.g., OpenAI) for AI-assisted requirement review. The **SPA**, built with Vue.js, is delivered to users' browsers and provides the interface for both the course-management workflows (submitting WARs and peer evaluations) and the RAM module's requirements authoring views: graph navigation, document editing, the ReqLint validation sidebar, and the AI assistant panel. The **REST API Application**, implemented using Java and Spring Boot, delivers the SPA, processes REST API calls, and manages interactions with the **Database**; for the RAM module it exposes endpoints for the requirements graph, ReqLint validation, and an AI proxy to the LLM service. The **Database**, a relational database, stores course-management data (WARs and peer evaluation submissions) alongside the RAM module's requirement artifacts, links, documents, and document sections, with CRUD operations executed through the REST API. **Azure Blob Storage** holds one kind of data the relational database deliberately does not — the large binary files of uploaded **project source material** (PDF/PowerPoint); the database keeps only a reference to each blob plus the server-side-extracted text (see the Data architecture section). The REST API integrates with the **Gmail System** over SMTP to send automated notifications and with the external **LLM Service** to support AI-assisted review.
 
 ### *Components*
 
@@ -170,14 +172,15 @@ C4Component
         Component(uc, "usecase", "Controller / Service / Repository", "Use case artifacts: main steps, extensions, locking")
         Component(glo, "glossary", "Controller / Service", "Glossary terms & terminology invariants")
         Component(val, "validation", "Controller / Service", "ReqLint structural & consistency checks")
-        Component(col, "collaboration", "Controller / Service / Repository", "Comment threads & real-time presence/broadcast")
+        Component(col, "collaboration", "Controller / Service / Repository", "Comment threads (built); real-time presence/broadcast is a deferred future layer")
         Component(rev, "review", "Controller / Service / Repository", "Review & submission workflow")
-        Component(exp, "export", "Controller / Service", "Export formatting & project-source-material import")
+        Component(exp, "export", "Controller / Service", "Export rendering (PDF/DOCX/Markdown); project-source-material upload, storage & text extraction")
         Component(ai, "ai", "Controller / Service", "AI configuration, AI assistants & LLM proxy")
         Component(shared, "Shared platform packages", "system · security · user", "Result / StatusCode / ExceptionHandlerAdvice, JWT auth + AuthorizationManagers, JPA auditing (authorship), EmailService")
     }
 
     ContainerDb(db, "Database", "Relational DB", "RAM artifacts, links, documents, sections, comments, AI config")
+    ContainerDb(blob, "Blob Storage", "Azure Blob Storage", "Uploaded project source material")
     System_Ext(llm, "LLM Service", "AI-assisted requirement review")
 
     Rel_D(spa, doc, "JSON/HTTPS")
@@ -203,11 +206,13 @@ C4Component
     Rel_D(uc, db, "JDBC")
     Rel_D(col, db, "JDBC")
     Rel_D(rev, db, "JDBC")
+    Rel_D(exp, db, "JDBC")
+    Rel_R(exp, blob, "Stores & reads files", "HTTPS")
     Rel_D(ai, db, "JDBC")
     Rel_R(ai, llm, "AI proxy", "HTTPS")
 ```
 
-These are the RAM module's bounded contexts — each maps to a package under `ram/` and is the subject of a Level-2 area design doc that designs the inside of one box. The boundaries for areas not yet designed are **provisional**: they are drawn here from the use-case areas so the map is complete, but the first `/design` of an area validates a boundary against the code and **may revise this diagram** (splitting, merging, or re-homing a component, or moving a subsystem owner), recording the change as part of that run. The `ai` component is the only one that reaches outside the platform: it proxies to the external LLM service for AI-assisted review. On the **SPA** side the layering mirrors the rest of Project Pulse: RAM pages (`frontend/src/pages/ram/`) call a per-domain API client (`frontend/src/apis/ram/`) over the shared Axios instance that attaches the Bearer token and unwraps the `Result` envelope; that layering is a platform convention (see [Crosscutting Concepts](#crosscutting-concepts)), not redrawn per area. The build status of each component and subsystem is not tracked here — that is [`../traceability.md`](../traceability.md)'s job, per use case.
+These are the RAM module's bounded contexts — each maps to a package under `ram/` and is the subject of a Level-2 area design doc that designs the inside of one box. The boundaries for areas not yet designed are **provisional**: they are drawn here from the use-case areas so the map is complete, but the first `/design` of an area validates a boundary against the code and **may revise this diagram** (splitting, merging, or re-homing a component, or moving a subsystem owner), recording the change as part of that run. The `ai` component is the only one that reaches a third-party service: it proxies to the external LLM service for AI-assisted review. The `exp` component reaches the platform's own **Azure Blob Storage** to store and read uploaded project source material (see [Data architecture](#data-architecture)); every other component persists only through the relational database. On the **SPA** side the layering mirrors the rest of Project Pulse: RAM pages (`frontend/src/pages/ram/`) call a per-domain API client (`frontend/src/apis/ram/`) over the shared Axios instance that attaches the Bearer token and unwraps the `Result` envelope; that layering is a platform convention (see [Crosscutting Concepts](#crosscutting-concepts)), not redrawn per area. The build status of each component and subsystem is not tracked here — that is [`../traceability.md`](../traceability.md)'s job, per use case.
 
 ## **Runtime View**
 
@@ -256,12 +261,14 @@ flowchart LR
             staging["Staging slot<br/>(deploy target)"]
         end
         db[("Azure Database<br/>for MySQL")]
+        blob[("Azure Blob Storage<br/>(project source files)")]
     end
     gmail["Gmail<br/>(SMTP)"]
     llm["LLM Service<br/>(HTTPS)"]
 
     browser -->|HTTPS| slot
     slot -->|JDBC| db
+    slot -->|Blob SDK / HTTPS| blob
     slot -->|SMTP| gmail
     slot -->|HTTPS| llm
     staging -. swap .-> slot
@@ -269,7 +276,7 @@ flowchart LR
 
 ### *Topology*
 
-- One **Azure Web App** runs a **single container** — the Spring Boot jar serving both the REST API and the bundled Vue SPA (KD-1). It talks to one **Azure Database for MySQL** over JDBC, **Gmail** over SMTP, and the external **LLM** over HTTPS. Releases deploy to a **staging slot** and swap into production (pipeline below).
+- One **Azure Web App** runs a **single container** — the Spring Boot jar serving both the REST API and the bundled Vue SPA (KD-1). It talks to one **Azure Database for MySQL** over JDBC, **Azure Blob Storage** (uploaded project source material) over HTTPS, **Gmail** over SMTP, and the external **LLM** over HTTPS. Releases deploy to a **staging slot** and swap into production (pipeline below).
 
 ### *Build & release pipeline*
 
@@ -327,7 +334,7 @@ Beyond the platform-wide machinery above, each **RAM** area builds on a small se
 |---|---|---|---|
 | Section locking | `FR-LOCK-*` | `ram/document` (`DocumentSectionLock`), `ram/usecase` (`UseCaseLock`) | Acquire/release a lock on the authoring destination before edit (UC-DOC-2 / UC-DOC-6) |
 | Document templates | `FR-TPL-*` | `ram/document/template` (`DocumentTemplateRegistry`) | Provision a document's sections from its `DocumentType` template |
-| Collaboration | `FR-COL-*` | `ram/collaboration` | Attach comment threads to an artifact / destination; real-time presence/broadcast (UC-COL-1) |
+| Collaboration | `FR-COL-*` | `ram/collaboration` | Attach comment threads to an artifact / destination (the built collaboration model). Real-time presence/broadcast (UC-COL-1, `FR-COL-*`, PER-1) is **deferred** — a future layer, not in the current design (see KD-6) |
 | Glossary | `FR-GLO-*` | `ram/glossary` | Terminology lookups and invariants |
 | Authorship & history | `FR-HIS-*` | `system` (JPA auditing, `PeerEvaluationUserAuditorAware`) | Inherited via JPA auditing — no per-area work |
 | Notifications | `FR-NOT-*` | `system` (`EmailService`, `WeeklyReminderScheduler`) | Call `EmailService`; Gmail over SMTP |
@@ -335,7 +342,7 @@ Beyond the platform-wide machinery above, each **RAM** area builds on a small se
 | Autosave | `FR-SAVE-*` | `ram/document` (section save) + client-side debounce | Persist edits through the document-section save endpoint |
 | Validation (ReqLint) | `FR-VAL-*` | `ram/validation` | Deterministic structural checks (UC-VAL-1) |
 | AI assistants | `FR-AI-*` | `ram/ai` (LLM proxy) | Proxy to the external LLM service |
-| Export / Import | `FR-EXP-*` / `FR-IMP-*` | `ram/export` | Export formatting; project-source-material import |
+| Export / Import | `FR-EXP-*` / `FR-IMP-*` | `ram/export` | Export rendering to PDF/DOCX/Markdown preserving template structure (UC-EXP-1/2); project-source-material upload (PDF/PPTX, allowlisted, ≤ 25 MB), storage, and server-side text extraction for AI context (UC-AI-1). Binary storage & extraction: see [Data architecture](#data-architecture) |
 
 ### *Security & Compliance*
 
@@ -350,7 +357,7 @@ Single-tenant: one deployment serves one institution. The trust boundary is the 
 - **Login:** HTTP Basic (email + password) → server issues a JWT (`AuthController` / `JwtProvider`). Passwords hashed with **BCrypt (strength 12)**.
 - **Tokens:** self-issued JWTs, **RSA-2048** signature, **2-hour** expiry, claims `sub`, `userId`, space-delimited `authorities`. Stateless OAuth2 resource server (`SessionCreationPolicy.STATELESS`).
 - **Provisioning:** invitation flow (`user/userinvitation`) plus self-registration; password reset via a one-time token valid **5 minutes**.
-- **Known gaps:** no token **refresh** or **revocation/blocklist** — a token is valid for its full 2h (a leaked token can't be revoked; logout is client-side only). The RSA key regenerates per startup (KD-4). **`POST /students` and `POST /instructors` are `permitAll()` — open self-registration, including instructor accounts** (which grant cross-section visibility of student data); for production FERPA this should be invitation- or approval-gated.
+- **Known gaps:** no token **refresh** or **revocation/blocklist** — a token is valid for its full 2h (a leaked token can't be revoked; logout is client-side only). The RSA key regenerates per startup (KD-4). **`POST /students` and `POST /instructors` are `permitAll()` at the security-filter level, but registration is gated in the service layer**: both paths call `validateUserInvitation`, which rejects any registration lacking a course-admin-issued, single-use invitation whose email, token, role, course, and section all match (invitations are created via UC-STU-1 / UC-INS-1). So account creation is **not** open self-registration — a stranger cannot self-provision, and an instructor account requires an *instructor* invitation. The residual concern is defense-in-depth: the only gate is service-layer (there is no filter-chain authorization rule), and the endpoint is unauthenticated and unthrottled (rate limiting is [TD-6](#risks-and-technical-debt)).
 
 #### **Authorization**
 
@@ -378,7 +385,7 @@ Single-tenant: one deployment serves one institution. The trust boundary is the 
 
 #### **Store & schema**
 
-- One relational store: a single **MySQL 8** schema shared by both modules (KD-2, KD-3). Core tables (WARs, evaluations, courses/sections/teams, users) and RAM tables (documents, artifacts, links, comments) live side by side — one backup, one migration history, one FERPA surface.
+- One relational store: a single **MySQL 8** schema shared by both modules (KD-2, KD-3). Core tables (WARs, evaluations, courses/sections/teams, users) and RAM tables (documents, artifacts, links, comments) live side by side — one backup, one migration history, one FERPA surface. The one store kept *outside* MySQL is **uploaded project source material**, whose large binaries live in Azure Blob Storage (see [Binary content & file storage](#binary-content--file-storage)).
 - ORM is **JPA/Hibernate**; entities use IDENTITY-generated primary keys (`@GeneratedValue(strategy = IDENTITY)`), no Lombok.
 
 #### **Domain & aggregate model**
@@ -395,6 +402,16 @@ Single-tenant: one deployment serves one institution. The trust boundary is the 
 #### **Schema management**
 
 - Schema ships as **Flyway** migrations (`db/migration/V*.sql`) in `staging`/`prod` (`ddl-auto: none`); `dev` uses `ddl-auto: create` + `DataInitializer` seed data (the *Architectural conventions* above). Schema changes are versioned migrations applied at deploy time.
+
+#### **Binary content & file storage**
+
+- Beyond the relational graph, RAM accepts **uploaded files** — a team's *project source material* (PDF/PPTX, allowlisted file types, ≤ 25 MB per file) imported as input for the AI assistants (FR-IMP-1/2, SI-4, UC-AI-1). For each accepted upload the module stores **the file's bytes** and the **server-side-extracted text** used as assistant context.
+- **Storage location:** the large binary files live in **Azure Blob Storage**; MySQL holds only a **reference** (blob path/URL + metadata) and the **server-side-extracted text**. Large media don't belong in the relational store — keeping bytes out of MySQL keeps the DB small and backups/migrations fast. The cost is a **second managed store**: the FERPA surface now spans MySQL **and** the Blob container (both Azure-managed and encrypted at rest, under the one single-tenant trust boundary). The `export` component writes and reads file bytes through the Blob SDK over HTTPS and persists the reference + text over JDBC.
+- **Text extraction** runs **server-side** (a parsing step, e.g. Apache Tika / PDFBox + Apache POI) and reports incomplete extraction for image-only or scanned files (FR-IMP-2). The browser never parses files; uploads are multipart to the REST API, which streams the bytes to Blob Storage and persists the reference + extracted text in MySQL.
+
+#### **Document export**
+
+- Export (UC-EXP-1/2, FR-EXP-1/2, SI-3) renders a document — or a **bundle** of all of a team's documents — to **PDF, DOCX, or Markdown** from the stored section content, preserving the template-defined structure (table of contents, heading hierarchy, numbering, formatting). Rendering is a **server-side** step in the `export` component; the specific rendering toolchain/library is an open decision settled at `/design` of the EXP area. Export reads existing data only — it adds no persistent state.
 
 #### **Retention**
 
@@ -447,12 +464,12 @@ Single-tenant: one deployment serves one institution. The trust boundary is the 
 **KD-3 — Relational DB for the requirements graph.** *Accepted.*
 - **Context:** RAM's data is a graph (artifacts + typed links + traceability), which hints at a graph DB — but the platform already runs MySQL with relational tooling/ops.
 - **Decision:** Store the graph relationally (artifacts as rows, links as an edge table) in the existing DB.
-- **Consequences:** One datastore, one backup/migration/FERPA surface, reuses JPA + conventions. *Rejected* Neo4j/graph DB — a second datastore and new ops, unjustified at typical per-team graph size. *Trade-off:* deep traversals are SQL joins / recursive queries, not native graph ops.
+- **Consequences:** The requirements graph is one relational datastore — one backup/migration/FERPA surface — and reuses JPA + conventions. *Rejected* Neo4j/graph DB — a second datastore and new ops, unjustified at typical per-team graph size. *Trade-off:* deep traversals are SQL joins / recursive queries, not native graph ops. (The graph is wholly relational; the lone exception to the single-store picture is uploaded project source material, whose large binaries live in Azure Blob Storage — see [Data architecture](#data-architecture).)
 
 **KD-4 — Self-issued, stateless JWT (RSA keypair generated at startup).** *Accepted; key handling incidental — revisit.*
 - **Context:** Wanted stateless auth (no server-side session store); no external identity provider in scope.
 - **Decision:** Self-issue and verify JWTs rather than use sessions or an external IdP. The current implementation generates the RSA keypair at application startup.
-- **Consequences:** No session store; simple. *Rejected* external IdP/SSO (integration cost) and sessions (server state). **Known limitation (incidental, not by design):** because the keypair is generated per startup and not persisted, every restart/redeploy invalidates all live tokens (users re-login) and a second instance can't verify the first's tokens — effectively capping the app at one instance. Externalizing/persisting the keys would lift this. (Drives the Scalability "accepted" trade-off and QS-6; revisit when multi-instance is needed.)
+- **Consequences:** No session store; simple. *Rejected* external IdP / institutional SSO — beyond integration cost, institutional SSO onboarding is impractical at this scale (the institution's IT will not provision a relying-party integration for a course tool), so the platform authenticates users itself; the SRS's auth requirements (FR-SEC-1, SI-2.1, CO-4) accordingly delegate to *this* mechanism, not to an external IdP. *Rejected* sessions (server state). **Known limitation (incidental, not by design):** because the keypair is generated per startup and not persisted, every restart/redeploy invalidates all live tokens (users re-login) and a second instance can't verify the first's tokens — effectively capping the app at one instance. Externalizing/persisting the keys would lift this. (Drives the Scalability "accepted" trade-off and QS-6; revisit when multi-instance is needed.)
 
 **KD-5 — No Lombok / no MapStruct (pedagogical).** *Accepted.*
 - **Context:** The codebase is read and extended by students learning Spring/Java; annotation-processor "magic" can obscure what the code actually does.
@@ -462,7 +479,7 @@ Single-tenant: one deployment serves one institution. The trust boundary is the 
 **KD-6 — Pessimistic section-level locking for collaborative editing.** *Accepted.*
 - **Context:** Teammates edit the same requirement document concurrently; lost updates on authored content are unacceptable, and a predictable model beats complex merge.
 - **Decision:** Lock at document-section (and use-case) granularity — one editor holds a section; others are blocked.
-- **Consequences:** No lost updates, simple mental model, fine-grained enough for parallel work on different sections. *Rejected* optimistic concurrency / OT / CRDT real-time co-editing — far more complex; real-time presence/broadcast (UC-COL-1) is specified as a *future layer on top*, not a replacement. *Trade-off:* two people can't edit the same section at once.
+- **Consequences:** No lost updates, simple mental model, fine-grained enough for parallel work on different sections. *Rejected* optimistic concurrency / OT / CRDT real-time co-editing — far more complex; real-time presence/broadcast (UC-COL-1) is **deferred** (not in the current release) and would be a *future layer on top*, not a replacement — until then there is no real-time push channel in the topology, and the related targets (PER-1 presence-propagation, ROB-3) are out of scope. *Trade-off:* two people can't edit the same section at once.
 
 ## **Quality Requirements**
 
@@ -472,7 +489,7 @@ Single-tenant: one deployment serves one institution. The trust boundary is the 
 
 - **Security** *(High)* — confidentiality of student records; authorization correctness; auditability → QS-1, QS-2
 - **Maintainability** *(High)* — modifiability (add a bounded context), convention consistency, testability → QS-3
-- **Usability** *(High)* — low-friction submission, error clarity, no lost work → QS-4
+- **Usability** *(High)* — low-friction submission, error clarity, no lost work → QS-4. **Accessibility** (WCAG 2.1 AA — keyboard operability, contrast, screen-reader support; required by the SRS's USE-1/UI-2, addressing risk RI-6) is **in scope but not yet architecturally addressed** — deferred, tracked as [TD-11](#risks-and-technical-debt); it is not yet a committed quality goal with a measurable scenario.
 - **Reliability** *(High)* — availability under external-dependency failure, data integrity, predictable deploys → QS-5, QS-6
 - **Performance efficiency** *(Medium)* — responsive interactions at course scale → QS-7
 - **Scalability / portability** *(Low — accepted)* — single-instance topology; horizontal scaling out of scope at current scale (see KD-4 for the JWT-key limitation that currently enforces it)
@@ -484,10 +501,10 @@ Single-tenant: one deployment serves one institution. The trust boundary is the 
 | QS-1 | Security | An authenticated student requests another team's WAR/peer-eval via the API · normal op | Denied at the `AuthorizationManager` | 100% of cross-team/owner-mismatch attempts return `403`; no record fields leak; attempt is auditable |
 | QS-2 | Security | An unauthenticated client calls a protected `/api/v1` endpoint · normal op | Rejected before controller logic | `401` returned; no business logic executes; covered by integration tests |
 | QS-3 | Maintainability *(change)* | A contributor adds a new bounded context · development | Added as a vertical slice using standard conventions, no edits to existing slices | Zero changes to other bounded-context packages; new endpoints return the `Result` envelope and pass convention checks; delivered in ≤ `TBD` person-days 🔢 |
-| QS-4 | Usability | A student is mid-edit in a RAM document section · normal op | Edits autosave; the section is locked against collisions | No lost edits on navigate/refresh; a second editor is blocked with a clear message; autosave within `TBD` s 🔢 |
-| QS-5 | Reliability *(availability)* | The LLM service times out or is down · degraded | AI features degrade gracefully; authoring/saving unaffected | Authoring + save unaffected; AI request fails within `TBD` s 🔢 and offers retry; no data loss |
-| QS-6 | Reliability | A new release is deployed · deploy-time | Schema migrates; one container serves API + SPA | Flyway migrations apply cleanly; staging-slot smoke check passes before swap; **note:** new RSA key invalidates live JWTs → users re-login (see KD-4) |
-| QS-7 | Performance | A student loads a team's requirements graph at course scale (~`TBD` users, ~`TBD` artifacts) · normal op | Page responds within target | p95 API response < `TBD` ms at `TBD` artifacts 🔢 |
+| QS-4 | Usability | A student is mid-edit in a RAM document section · normal op | Edits autosave; the section is locked against collisions | Autosave at least every 10 s and immediately on navigate-away (PER-2); ≤ 10 s of edits lost on crash/disconnect (ROB-1); a second editor is blocked with a clear message |
+| QS-5 | Reliability *(availability)* | The LLM service times out or is down · degraded | AI features degrade gracefully; authoring/saving unaffected | Authoring + save unaffected; AI shows a response or a clear working/timeout indication within 15 s (PER-4) and offers retry; no data loss |
+| QS-6 | Reliability | A new release is deployed · deploy-time | Schema migrates; one container serves API + SPA | Flyway migrations apply cleanly; staging-slot smoke check passes before swap; overall availability ≥ 99% per academic term excluding scheduled maintenance (AVL-1/FR-PERF-2); **note:** new RSA key invalidates live JWTs → users re-login (see KD-4) |
+| QS-7 | Performance | A student loads a team's requirements graph and runs ReqLint at course scale (~75 total users, ≤ 100 concurrent editors — SCA-1; ~`TBD` artifacts) · normal op | Page and validation respond within target | ReqLint returns within 3 s for 95% of runs on a single document (PER-3); p95 graph-load API response < `TBD` ms at `TBD` artifacts 🔢 |
 
 ## **Risks and Technical Debt**
 
@@ -497,13 +514,14 @@ Single-tenant: one deployment serves one institution. The trust boundary is the 
 |---|---|---|---|---|---|
 | TD-1 | **P0** | Debt (config) | `/actuator/**` is public & unauthenticated; `env`/`configprops` (`show-values: always`) + `heapdump` leak secrets (DB creds, Key-Vault values) and memory/PII in production | Secure `/actuator/**` (admin-only) + trim the web-exposed set, or bind management to a private port | Observability, Security |
 | TD-2 | P1 | Debt (FERPA) | No retention / deletion / end-of-course purge, and no student data access/correction workflow for education records | Define a retention schedule + deletion/anonymization + data-subject workflows | Security, Data |
-| TD-3 | P1 | Debt (security) | Open self-registration of instructor accounts (`POST /instructors` is `permitAll`) → cross-section student-data access | Invitation- or approval-gate account creation | Security |
+| TD-3 | P3 | Debt (security, defense-in-depth) | Registration endpoints (`POST /students`, `/instructors`) are `permitAll` at the filter; account creation is gated **only** in the service layer by `validateUserInvitation` (course-admin-issued single-use invitation matching email/token/role/course/section). Not open registration — but the sole gate is service-layer and the endpoint is unauthenticated/unthrottled | Add a filter-chain rule and/or rate limiting (TD-6); keep the invitation gate | Security |
 | TD-4 | P2 | Debt (security) | No JWT revocation/refresh; a leaked token is valid its full 2-hour life (logout is client-side only) | Short-lived access + refresh tokens, or a revocation list / token version | Security |
 | TD-5 | P2 | Debt (security) | Wildcard CORS (`allowedOrigins("*")`) — low risk given bearer (non-cookie) auth, but not best practice | Allowlist the SPA origin per profile | Security |
 | TD-6 | P2 | Debt (security) | No rate limiting on auth endpoints; `/users/exists/{email}` enables email enumeration | Add throttling/rate limits; restrict the exists endpoint | Security |
 | TD-7 | P2 | Debt (scaling) | Per-startup RSA key: redeploy forces re-login and blocks multi-instance token verification | Externalize/persist the keypair (shared JWKS) | KD-4, Deployment |
 | TD-8 | P2 | Debt (scaling) | `@Scheduled` reminder job fires on every instance → duplicate emails if scaled out | Single-execution coordination (ShedLock / leader election / dedicated scheduler) | Deployment |
 | TD-9 | P2 | Debt (ops) | No production observability backend — the Prometheus/Grafana/Zipkin stack is dev-only | Wire prod telemetry (Azure Monitor / App Insights / Managed Grafana) | Observability |
+| TD-11 | P2 | Debt (accessibility) | No accessibility architecture: WCAG 2.1 AA (keyboard operability, contrast, screen-reader support) is required by USE-1/UI-2 (risk RI-6) but is not reflected in component choices or verified anywhere | Set an accessibility baseline (component-library a11y audit, keyboard-nav + focus management) and add automated checks (e.g. axe) to CI; verify against WCAG 2.1 AA | Quality Requirements; SRS USE-1/UI-2 |
 | RISK-1 | P2 | Risk | Single instance = single point of failure; downtime on failure/restart | Move to multi-instance once TD-7/TD-8 clear; rely on staging-slot swap meanwhile | Deployment |
 | RISK-2 | P3 | Risk | External LLM dependency (availability, cost, latency, vendor change) | Timeouts + graceful degradation (QS-5); a provider abstraction | Runtime, QS-5 |
 | TD-10 | P3 | Debt (ops) | No alerting/SLOs and no centralized log aggregation | Define SLOs + alerts + ship logs to an aggregator | Observability |

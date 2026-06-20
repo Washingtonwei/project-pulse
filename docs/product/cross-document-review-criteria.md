@@ -31,7 +31,7 @@ Review across **seven dimensions**. For each finding, capture *where*, *what*, *
 - Every **Vision feature / BO / RI / AS** has downstream realization (a use case and/or an FR). A feature with no UC/FR is a gap.
 - **Quality attributes** are specified and measurable (not empty, not someone else's example).
 - The **data model** exists and is concrete (entities, fields, relationships) — not an external link or a stub.
-- **External interfaces** that the system depends on (LLM, email, SSO, export) are actually described.
+- **External interfaces** that the system depends on (LLM, email, export) are actually described.
 
 ### D2 — Coverage & traceability (across documents)
 - **Every use case cites FRs that exist**, and (where a traceability matrix exists) has **exactly one** matrix row.
