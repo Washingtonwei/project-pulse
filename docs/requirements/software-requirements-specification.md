@@ -30,7 +30,7 @@ This Software Requirements Specification describes the external behavior and qua
 - **Use Cases** ([use-cases.md](use-cases.md)) — the behavioral specification: each user-initiated workflow as a use case, which is itself a high-level functional requirement.
 - **Business Rules** ([business-rules.md](business-rules.md)) — the cross-cutting policies, constraints, and access rules (`BR-*`) that the use cases and this SRS enforce.
 - **Software Requirements Specification** (this document) — the integrating specification: it orients the reader (the Overall Description section), then specifies the non-use-case functional requirements, the data model, external interfaces, and quality attributes, citing the documents above rather than repeating them.
-- **Architectural Design** ([../ram/design/architectural-design.md](../ram/design/architectural-design.md)) — sits below this SRS as the RAM module's design-of-record (the RAM component view and cross-cutting subsystems); it cites the **platform architecture-of-record** ([../pulse-core/design/architectural-design.md](../pulse-core/design/architectural-design.md)) for the host software architecture, conventions, and deployment that RAM inherits.
+- **Architectural Design** ([../design/architectural-design.md](../design/architectural-design.md)) — the single arc42/C4 architecture-of-record, sitting below this SRS: the host software architecture, conventions, and deployment that RAM inherits, plus the core and RAM component views and cross-cutting subsystems.
 - **Traceability** ([../traceability.md](../traceability.md)) — the spec→code map: one row per use case linking it to the requirements and design it realizes and the code and tests that implement it.
 
 ```mermaid
@@ -67,8 +67,7 @@ The arrows read "is referenced by": the Project Glossary, Vision and Scope, Use 
 - Vision and Scope: [vision-and-scope.md](vision-and-scope.md)
 - Use Cases: [use-cases.md](use-cases.md)
 - Business Rules: [business-rules.md](business-rules.md)
-- Architectural Design (RAM module): [../ram/design/architectural-design.md](../ram/design/architectural-design.md)
-- Architectural Design (platform architecture-of-record): [../pulse-core/design/architectural-design.md](../pulse-core/design/architectural-design.md)
+- Architectural Design (architecture-of-record): [../design/architectural-design.md](../design/architectural-design.md)
 - User Interface Wireframe/Prototypes: URL (N/A)
 - API Document: [RAM API](https://app.swaggerhub.com/apis/Washingtonwei/RAM/1.0.0)
 
@@ -78,7 +77,7 @@ This section orients the reader to RAM's context, users, environment, and the co
 
 ## **Product Perspective**
 
-RAM is a module within the Project Pulse platform, reusing the host's single-page application, REST API, relational database, authentication, and notification services rather than introducing a parallel system. The system context and container views are in the platform architecture-of-record ([Context and Scope](../pulse-core/design/architectural-design.md#context-and-scope), [Containers](../pulse-core/design/architectural-design.md#containers)), which the RAM Architectural Design document cites; the product positioning and competitive alternatives are in Vision and Scope ([Product Perspective](vision-and-scope.md#product-perspective)).
+RAM is a module within the Project Pulse platform, reusing the host's single-page application, REST API, relational database, authentication, and notification services rather than introducing a parallel system. The system context and container views are in the architecture-of-record ([Context and Scope](../design/architectural-design.md#context-and-scope), [Containers](../design/architectural-design.md#containers)); the product positioning and competitive alternatives are in Vision and Scope ([Product Perspective](vision-and-scope.md#product-perspective)).
 
 ## **User Classes and Characteristics**
 
@@ -583,7 +582,7 @@ direction TB
 
 ## **Data Dictionary**
 
-The Business Domain Model above names the system's entities, their fields, and their enumerations. Field-level definitions — data type, length, format, required/optional, and allowed values — are maintained with the database schema in the design docs ([../ram/design/](../ram/design/)), not restated here, so that a single source defines each field and the SRS does not drift from the implementation. Format-bearing fields that are themselves requirements (the `artifactKey`, `sectionKey`, and `documentKey` schemes and the document/comment status values) are specified where they are introduced: artifact key, section key, and the artifact-key uniqueness and stability rules in the Project Glossary and Business Rules (BR-5, BR-12), and the `DRAFT` → `SUBMITTED` → `RETURNED` status values in the Business Domain Model above.
+The Business Domain Model above names the system's entities, their fields, and their enumerations. Field-level definitions — data type, length, format, required/optional, and allowed values — are maintained with the database schema in the design docs ([../design/](../design/)), not restated here, so that a single source defines each field and the SRS does not drift from the implementation. Format-bearing fields that are themselves requirements (the `artifactKey`, `sectionKey`, and `documentKey` schemes and the document/comment status values) are specified where they are introduced: artifact key, section key, and the artifact-key uniqueness and stability rules in the Project Glossary and Business Rules (BR-5, BR-12), and the `DRAFT` → `SUBMITTED` → `RETURNED` status values in the Business Domain Model above.
 
 ## **Reports**
 
@@ -750,4 +749,4 @@ RAM introduces no additional requirements beyond those specified elsewhere; the 
 - Regulatory and compliance: FERPA handling of student educational records — CO-5 and SEC-3 (Security).
 - Security and access control: institutional SSO and role-based access — FR-SEC-1..3 (Security and Authorization Requirements) and the Security quality attributes.
 - Authorship and audit trail: creator/editor identity and timestamps on every authored item — FR-HIS-4 (Authorship Metadata and Document Versioning Requirements); logical (soft) deletion that retains items for audit — BR-12.
-- Installation, configuration, and startup/shutdown: RAM follows the host Project Pulse application (see the platform [Deployment View](../pulse-core/design/architectural-design.md#deployment-view)).
+- Installation, configuration, and startup/shutdown: RAM follows the host Project Pulse application (see the [Deployment View](../design/architectural-design.md#deployment-view)).

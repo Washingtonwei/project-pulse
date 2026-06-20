@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Project Pulse is a web application for managing senior design / capstone course projects. Students submit weekly activity reports and peer evaluations; instructors monitor progress via dashboards. It also includes a Requirements Authoring & Management (RAM) module that lets student teams define software requirements before coding — project glossary, vision and scope, use cases, business rules, software requirements specifications, and traceability.
 
-RAM functionality is built **spec-first**: its requirements live as Markdown under `docs/ram/` and drive implementation through the `/design` → `/implement` workflow. See **Spec-driven RAM development** below before adding or changing RAM features.
+RAM functionality is built **spec-first**: its requirements live as Markdown under `docs/requirements/` and drive implementation through the `/design` → `/implement` workflow. See **Spec-driven development** below before adding or changing RAM features.
 
 The overarching development methodology these workflows instantiate — spec-driven and agent-assisted, with a *breadth-complete, depth-shallow* architecture validated by a thin vertical slice before fanning out per use case — is written up in [`docs/methodology.md`](docs/methodology.md).
 
@@ -82,7 +82,7 @@ npm run cy:open      # Cypress E2E tests
 
 ## Architecture
 
-> **Canonical architecture-of-record:** [`docs/pulse-core/design/architectural-design.md`](docs/pulse-core/design/architectural-design.md) — the platform's C4 context/container/component views, the binding conventions, the cross-cutting subsystems, and deployment. When the architecture changes, update *that* doc; the summary below is just orientation for working in the code. RAM's module-level view is [`docs/ram/design/architectural-design.md`](docs/ram/design/architectural-design.md), which cites the platform doc. The architecture-of-record follows the **arc42** template (with **C4** for the context/building-block views); the requirements specs follow **Wiegers & Beatty** — see [`docs/methodology.md`](docs/methodology.md).
+> **Canonical architecture-of-record:** [`docs/design/architectural-design.md`](docs/design/architectural-design.md) — the single whole-product architecture: the C4 context/container views, the core and RAM component views, the binding conventions, the cross-cutting subsystems, and deployment. When the architecture changes, update *that* doc; the summary below is just orientation for working in the code. The architecture-of-record follows the **arc42** template (with **C4** for the context/building-block views); the requirements specs follow **Wiegers & Beatty** — see [`docs/methodology.md`](docs/methodology.md).
 
 ### Monorepo Layout
 - `backend/` — Spring Boot 4.0 Maven project (Java 21)
@@ -90,7 +90,7 @@ npm run cy:open      # Cypress E2E tests
 - `docker-compose.yml` — MySQL 8, Mailpit, Prometheus, Grafana, Zipkin
 
 ### Deployment
-One Azure deployment for the whole platform (frontend bundled into the Spring Boot jar, served alongside the API). Canonical detail — pipeline stages, environments, SPA serving — is in the architecture-of-record's [Deployment](docs/pulse-core/design/architectural-design.md#deployment) section; see also **CI** at the end of this file.
+One Azure deployment for the whole platform (frontend bundled into the Spring Boot jar, served alongside the API). Canonical detail — pipeline stages, environments, SPA serving — is in the architecture-of-record's [Deployment](docs/design/architectural-design.md#deployment-view) section; see also **CI** at the end of this file.
 
 ### Backend Architecture
 
@@ -104,7 +104,7 @@ One Azure deployment for the whole platform (frontend bundled into the Spring Bo
 
 **RAM domain** (`ram/`): Requirements Authoring & Management — originally a separate project, merged into Project Pulse to reuse the existing course/section/team/student infrastructure. Sub-packages: `document/` (requirement documents with section-level pessimistic locking), `requirement/` (artifacts, traceability links), `usecase/`, `glossary/`, `collaboration/` (comment threads)
 
-**Patterns:** the binding conventions every package follows — `/api/v1` endpoints returning the `Result` envelope, DDD vertical slice with `Converter<S,T>` DTOs (no Lombok/MapStruct), JWT + `AuthorizationManager` auth (`admin > instructor > student`), Flyway migrations — are stated normatively in the architecture-of-record's [Architectural Conventions](docs/pulse-core/design/architectural-design.md#architectural-conventions). Follow them; don't restate them here.
+**Patterns:** the binding conventions every package follows — `/api/v1` endpoints returning the `Result` envelope, DDD vertical slice with `Converter<S,T>` DTOs (no Lombok/MapStruct), JWT + `AuthorizationManager` auth (`admin > instructor > student`), Flyway migrations — are stated normatively in the architecture-of-record's [Architectural Conventions](docs/design/architectural-design.md#architectural-conventions). Follow them; don't restate them here.
 
 **Spring profiles:** `dev` (default, local MySQL + Mailpit), `staging`, `prod` (Azure Key Vault for secrets)
 
@@ -124,39 +124,39 @@ One Azure deployment for the whole platform (frontend bundled into the Spring Bo
 
 Both types live under `backend/src/test/java/team/projectpulse/`.
 
-## Spec-driven RAM development
+## Spec-driven development
 
-The RAM module is developed **spec-first**: its requirements are authored as Markdown and are the contract the code implements. Don't design RAM features ad hoc — start from the spec, build from it, and trace the work back.
+Project Pulse is developed **spec-first**: its requirements are authored as Markdown and are the contract the code implements. This is the standing method for new work and applies most actively to the RAM module (built spec-first from the start). Don't design features ad hoc — start from the spec, build from it, and trace the work back.
 
 ### The spec is the source of truth
 
-`docs/` is organized **area-first** — each module gets a self-contained subtree holding its full spec→design chain. RAM lives under `docs/ram/`:
+`docs/` is organized **doctype-first** — one spec set for the whole product (platform core + RAM), grouped by document type, not by module:
 
-- `docs/ram/requirements/` — the spec (what):
+- `docs/requirements/` — the spec (what):
    1. `project-glossary.md` — domain vocabulary; canonical term definitions.
    2. `vision-and-scope.md` — business objectives (BO-*), risks (RI-*), assumptions (AS-*), features.
-   3. `use-cases.md` — behavioral specs as use cases with area-prefixed IDs (`UC-GLO-1`, `UC-DOC-5`, `UC-AI-3`), grouped by area.
+   3. `use-cases.md` — behavioral specs as use cases with area-prefixed IDs (`UC-WAR-1`, `UC-GLO-1`, `UC-DOC-5`), grouped by area.
    4. `business-rules.md` — cross-cutting policies, constraints, and access rules (BR-*).
-   5. `software-requirements-specification.md` — architecture, functional requirements (FR-*), quality attributes.
-- `docs/ram/design/` — design docs generated from the spec, one per UC area. They sit *below* the SRS (component/class design, sequence diagrams, API contracts, DB schema) and cite the UC/FRs they realize without restating them.
-- `docs/ram/traceability.md` — the spec→code map: one row per use case → FR IDs → design doc → frontend/backend modules → tests → status.
-- `docs/ram/requirements/OPEN-ISSUES.md` — the working backlog (`OI-n`, P0–P3) of gaps still needed to make the spec implementation-ready.
-- `docs/ram/guides/` — supporting build guidance that isn't itself a spec doc (e.g., AI implementation notes).
-- `docs/ram/product/` — RAM product material: shipped default content the product seeds at runtime (e.g., the default cross-document review criteria + critique-assistant system prompt).
-- `docs/ram/CLAUDE.md` — authoring rules for these docs (anchor slugs, ID schemes, cross-doc consistency); it governs edits anywhere under `docs/ram/`.
+   5. `software-requirements-specification.md` — functional requirements (FR-*), domain model, quality attributes.
+   - `OPEN-ISSUES.md` — the working backlog (`OI-n`, P0–P3) of gaps still needed to make the spec implementation-ready.
+- `docs/design/` — `architectural-design.md` (the one arc42/C4 architecture-of-record for the whole product) plus per-UC-area design docs generated from the spec. The area docs sit *below* the SRS (component/class design, sequence diagrams, API contracts, DB schema) and cite the UC/FRs they realize without restating them.
+- `docs/traceability.md` — the spec→code map: one row per use case → FR IDs → design doc → frontend/backend modules → tests → status.
+- `docs/guides/` — supporting build guidance that isn't itself a spec doc (e.g., AI implementation notes).
+- `docs/product/` — product material: shipped default content the product seeds at runtime (e.g., the default cross-document review criteria + critique-assistant system prompt).
+- `docs/CLAUDE.md` — authoring rules for these docs (anchor slugs, ID schemes, cross-doc consistency); it governs edits anywhere under `docs/`.
 
-(A second, non-RAM module — the platform core — lives under `docs/pulse-core/`. Its **architecture-of-record** is authored: [`docs/pulse-core/design/architectural-design.md`](docs/pulse-core/design/architectural-design.md), the canonical platform architecture both modules inherit. Its **requirements** specs exist in Google Docs and are pending conversion into `docs/pulse-core/requirements/` with the same shape as `docs/ram/`.)
+Use cases are grouped by **area** — a short code that mirrors a backend bounded context: platform-core areas `RUB`/`SEC`/`TEA`/`STU`/`INS`/`ACC`/`WAR`/`EVA`, then RAM areas `TPL`/`GLO`/`DOC`/`ART`/`LNK`/`VAL`/`COL`/`REV`/`EXP`/`CFG`/`AI` (`docs/CLAUDE.md` enumerates them). The platform core was built before this spec set existed, so its use cases are documented retrospectively; RAM use cases drive new implementation.
 
-**Functional requirements.** A **use case is itself a high-level functional requirement** (the SRS's Use Cases section) — its "The system ..." steps + Associated Information are its detailed spec. The SRS's **Non-Use Case Functional Requirements** section holds only the non-use-case, system-level behaviors, with IDs in `FR-<AREA>-<n>` format (parallel to `UC-<AREA>-<n>`; `docs/ram/CLAUDE.md` enumerates the area codes). **Business rules** (`BR-*`, in `business-rules.md`) are an append-only sequence cited by use cases and the SRS. FR/BR/UC IDs are identifier spaces independent of heading position — never renumber them.
+**Functional requirements.** A **use case is itself a high-level functional requirement** (the SRS's Use Cases section) — its "The system ..." steps + Associated Information are its detailed spec. The SRS's **Non-Use Case Functional Requirements** section holds only the non-use-case, system-level behaviors, with IDs in `FR-<AREA>-<n>` format (parallel to `UC-<AREA>-<n>`; `docs/CLAUDE.md` enumerates the area codes). **Business rules** (`BR-*`, in `business-rules.md`) are an append-only sequence cited by use cases and the SRS. FR/BR/UC IDs are identifier spaces independent of heading position — never renumber them.
 
 ### Spec-driven feature workflow
 
-A RAM feature begins as a use case. The loop:
+A feature begins as a use case. The loop:
 
-1. A use case is added or changed in `docs/ram/requirements/use-cases.md` (follow `docs/ram/CLAUDE.md`; run `/build` to resync anchors and cross-references).
-2. Run **`/design <UC-ID>`** (`.claude/commands/design.md`) to turn it into an approved **design-of-record** — the area's `docs/ram/design/` doc (diagrams + non-obvious decisions). Design is a separately-reviewed stage that **stops before code**.
+1. A use case is added or changed in `docs/requirements/use-cases.md` (follow `docs/CLAUDE.md`; run `/build` to resync anchors and cross-references).
+2. Run **`/design <UC-ID>`** (`.claude/commands/design.md`) to turn it into an approved **design-of-record** — the area's `docs/design/<area>.md` doc (diagrams + non-obvious decisions). Design is a separately-reviewed stage that **stops before code**.
 3. Run **`/implement <UC-ID>`** (`.claude/commands/implement.md`) to build from that design — plan → code → test.
-4. The work is recorded back into `docs/ram/traceability.md` (`/design` marks the row `📐 Designed`; `/implement` flips it to the built state).
+4. The work is recorded back into `docs/traceability.md` (`/design` marks the row `📐 Designed`; `/implement` flips it to the built state).
 
 Treat the use case as the contract:
 - The **use case** gives actors, trigger, main success scenario, extensions, and pre/postconditions — *what to build and the flows to test*. Its system-subject steps plus their **Associated Information** are themselves the detailed functional requirement (a use case is a high-level FR); the cross-cutting **non-use-case FRs** (`FR-LOCK-*`, `FR-SAVE-*`, …) it cites are the additional atomic "shall" statements it must honor. Together they are the *acceptance criteria* — don't restate the use-case flow as a new FR, and don't invent missing detail silently.
@@ -169,11 +169,11 @@ Cross-cutting behavior is already specified, and some is already built — reuse
 - **Collaboration** (`FR-COL-*`): comment threads exist in `ram/collaboration/`; real-time presence/broadcast is specified in UC-COL-1 (not yet built).
 - **Validation** (`FR-VAL-*`, ReqLint): deterministic structural checks. See UC-VAL-1.
 
-When implementing, **extend the existing RAM packages** (`ram/document`, `ram/requirement`, `ram/usecase`, `ram/glossary`, `ram/collaboration`) and the shared course/section/team/auth/email infrastructure — RAM is a module inside this codebase, not a separate system, so don't fork or duplicate the architecture "for RAM." Then map the use case back into `docs/ram/traceability.md` (frontend `apis/` + views + stores, backend `ram/*` controller/service/repository/entity, tests).
+When implementing, **extend the existing RAM packages** (`ram/document`, `ram/requirement`, `ram/usecase`, `ram/glossary`, `ram/collaboration`) and the shared course/section/team/auth/email infrastructure — RAM is a module inside this codebase, not a separate system, so don't fork or duplicate the architecture "for RAM." Then map the use case back into `docs/traceability.md` (frontend `apis/` + views + stores, backend `ram/*` controller/service/repository/entity, tests).
 
 ### Editing the docs
 
-When editing anything under `docs/ram/`, the rules in `docs/ram/CLAUDE.md` apply (anchor slugs, FR/BR/UC ID schemes, cross-doc terminology). Run **`/build`** to verify and resync. The placeholder `docs/pulse-core/` module will carry its own nested `CLAUDE.md` once authored.
+When editing anything under `docs/`, the rules in `docs/CLAUDE.md` apply (anchor slugs, FR/BR/UC ID schemes, cross-doc terminology). Run **`/build`** to verify and resync.
 
 ## CI
 

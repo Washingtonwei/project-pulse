@@ -33,7 +33,7 @@ The methodology here is the middle path tuned specifically for a **human + codin
 
 ## The artifacts — a spec→design→trace chain
 
-The methodology is realized as a layered set of documents. The shape (illustrated by the RAM module under `docs/ram/`):
+The methodology is realized as a layered set of documents. The shape (realized in this repo under `docs/`, doctype-first — one spec set for the whole product):
 
 - **Requirements (`requirements/`)** — the *what*, authored by humans:
   - `project-glossary.md` — canonical domain vocabulary. Fixes the words used everywhere else (and in code identifiers and UI text). No synonyms.
@@ -42,7 +42,7 @@ The methodology is realized as a layered set of documents. The shape (illustrate
   - `business-rules.md` — cross-cutting policies/constraints (`BR-*`), cited by use cases and the SRS.
   - `software-requirements-specification.md` — non-use-case functional requirements (`FR-*`), domain model, quality attributes, constraints, operating environment.
 - **Design (`design/`)** — the *how*, generated from the spec, in **two levels**:
-  - **Level 1 — architecture-of-record.** The breadth-complete, depth-shallow map. Here it is itself two tiers: a **platform** architecture both modules inherit (`docs/pulse-core/design/architectural-design.md`) and a **module** architecture that cites it (`docs/ram/design/architectural-design.md`). Component boundaries for not-yet-designed areas are explicitly **provisional**.
+  - **Level 1 — architecture-of-record.** The breadth-complete, depth-shallow map: a single arc42/C4 architecture-of-record for the whole product (`docs/design/architectural-design.md`) — the platform context/container views and conventions both the core and the RAM module inherit, plus each module's component view. Component boundaries for not-yet-designed areas are explicitly **provisional**.
   - **Level 2 — design-of-record, one per use-case area.** Component/class design, sequence diagrams, API contracts, schema deltas. Cites the use cases/FRs it realizes; never restates them. Lean: diagrams + non-obvious decisions + pointers to real files.
 - **Traceability (`traceability.md`)** — the spec→code map: one row per use case, carrying FR IDs, design doc, frontend/backend modules, tests, and build status.
 

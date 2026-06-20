@@ -1,10 +1,10 @@
-# **RAM Design Docs**
+# **Design Docs**
 
-This directory holds the **design docs for the RAM module** — how the code realizes the spec. Where `requirements/` says *what* the system does, design says *how*; design sits **below the SRS** in the spec→design→trace chain.
+This directory holds the **design docs for Project Pulse** — how the code realizes the spec. Where `requirements/` says *what* the system does, design says *how*; design sits **below the SRS** in the spec→design→trace chain.
 
 Design comes in **two levels**, and a coding agent reads them top-down:
 
-1. **Architectural design** — [`architectural-design.md`](architectural-design.md). How the RAM module sits inside the platform: the RAM component view and the cross-cutting subsystems RAM builds on. The platform-wide picture it cites — C4 context/container views, conventions, deployment — lives one level up in the platform architecture-of-record, [`../../pulse-core/design/architectural-design.md`](../../pulse-core/design/architectural-design.md). **One doc each.** Read both *first*, to orient before touching code.
+1. **Architectural design** — [`architectural-design.md`](architectural-design.md). The product's architecture-of-record (arc42 + C4): the platform context/container views and the binding conventions, the core component view, plus the RAM module's component view and cross-cutting subsystems. **One doc.** Read it *first*, to orient before touching code.
 2. **Detailed design** — one doc per use-case (UC) area (`doc.md`, `art.md`, …). How one area's code realizes its use cases: component/class design, sequence diagrams, the data-model delta. Read the relevant area doc *before extending that area*.
 
 ```
@@ -13,7 +13,7 @@ requirements/use-cases.md  +  software-requirements-specification.md   (what —
         ▼
 ┌──────────────────────────────────────────────────────────┐
 │  design/  (how)                                            │
-│    Level 1  architectural-design.md   — RAM in platform    │
+│    Level 1  architectural-design.md   — product arch       │
 │    Level 2  <area>.md (doc, art, …)   — per-area detail    │
 └──────────────────────────────────────────────────────────┘
         │  recorded in
@@ -21,24 +21,22 @@ requirements/use-cases.md  +  software-requirements-specification.md   (what —
 traceability.md                                              (the spec→code map)
 ```
 
-A design doc is the **design of record** for what it covers. The Level-2 docs are written or updated by `/design` (see [`../../../.claude/commands/design.md`](../../../.claude/commands/design.md)) when an area's use case is designed — before any code — and each is what `/implement` builds from and what the next person reads to understand the existing implementation before extending it.
+A design doc is the **design of record** for what it covers. The Level-2 docs are written or updated by `/design` (see [`../../.claude/commands/design.md`](../../.claude/commands/design.md)) when an area's use case is designed — before any code — and each is what `/implement` builds from and what the next person reads to understand the existing implementation before extending it.
 
 ---
 
 # **Level 1 — Architectural design**
 
-[`architectural-design.md`](architectural-design.md) is the design-of-record for how the RAM **module** sits inside the platform — not architecture decided per feature, and not the platform architecture itself. The platform-wide architecture (C4 context/container views, the binding conventions, the deployment pipeline) is owned by the **platform** architecture-of-record, [`../../pulse-core/design/architectural-design.md`](../../pulse-core/design/architectural-design.md); RAM's doc **cites** it. RAM's doc holds:
+[`architectural-design.md`](architectural-design.md) is the product's **architecture-of-record** — the arc42/C4 design every area inherits or is bounded by, not architecture decided per feature. It holds:
 
-- the **RAM component view** — the `ram/*` bounded-context components inside the REST API container (the one C4 view that is RAM-specific);
-- a short **platform-context** recap — what RAM contributes to each shared container (SPA views, `ram/*` APIs + AI proxy, the requirements-graph tables) — citing the platform Container diagram, not redrawing it;
-- the **platform conventions** every RAM area inherits — the `Result` envelope, the DDD vertical-slice + `Converter` DTO pattern, JWT/`AuthorizationManager` auth, Flyway migrations — **cited, not restated**: the canonical statement is the platform architecture-of-record's [Architectural Conventions](../../pulse-core/design/architectural-design.md#architectural-conventions);
+- the **platform views** — the C4 system-context and container diagrams, and the binding conventions every area follows (the `Result` envelope, the DDD vertical-slice + `Converter` DTO pattern, JWT/`AuthorizationManager` auth, Flyway migrations), alongside runtime, deployment, cross-cutting concerns, decisions, and risks;
+- the **core component view** — the `activity`/`evaluation`/`rubric`/org/people bounded contexts inside the REST API container;
+- the **RAM component view** — the `ram/*` bounded-context components on the same shared base;
 - the **cross-cutting subsystems** an area plugs into rather than reinvents (locking, templates, collaboration, glossary, authorship, notifications, security, autosave, validation, AI, export), each tied to its `FR-*` family and owner package. (Per-use-case build status is not tracked there — it lives in `../traceability.md`.)
-
-The split is **A vs. B**: *platform-given* facts (the context/container views, conventions, tech stack, deployment pipeline) are owned by the pulse-core architecture-of-record and **cited** with a one-line recap; *RAM-specific* structure (the component view, the cross-cutting-subsystems map) is **drawn here**. Don't grow a second normative copy of the platform conventions — or a second copy of the platform C4 views — in this doc.
 
 The requirements-level frame around this architecture — operating environment (`OE-*`), design/implementation constraints (`CO-*`), and architecture-level assumptions/dependencies (`AS-*` / `DE-*`) — is **owned by the SRS** ([Overall Description](../requirements/software-requirements-specification.md#overall-description)). `architectural-design.md` cites those IDs and realizes them; it does not redefine them.
 
-It is **not** named after a UC area and is **not** produced by a single `/design` run — it changes when the RAM module's shape or the host architecture does, not when one area gains a use case. The Level-2 docs **cite the platform Container diagram (in pulse-core) and the RAM Component diagram here rather than redrawing them**.
+It is **not** named after a UC area and is **not** produced by a single `/design` run — it changes when the architecture does, not when one area gains a use case. The Level-2 docs **cite the Container and Component diagrams here rather than redrawing them**.
 
 The **cross-area shared model** is **owned by the SRS's Business Domain Model** (the requirement-artifact graph underlying ART/LNK/VAL/REV; documents + sections + locking underlying DOC/TPL/COL). It is *referenced* from here and from the per-area docs, *above* the Level-2 docs, so a Level-2 doc never redraws it — it cites it (see the cardinal rule below).
 
@@ -68,7 +66,7 @@ Add a doc only when its area is first designed; this directory grows as `/design
 
 A design doc **cites** the use cases and functional requirements it realizes (`UC-<AREA>-<n>`, `FR-<AREA>-<n>`) and links back to them — it never copies their text. The requirement lives in `requirements/`; duplicating it here just creates a second copy to drift. If you find yourself re-describing *what* the system shall do, stop and link to the UC/FR instead, then describe only the *how*.
 
-The same rule applies upward to Level 1: **cite the SRS for the shared model; design only the delta.** Don't redraw the shared entity graph in a Level-2 doc — link to the SRS's Business Domain Model and the platform Container Diagram in [`../../pulse-core/design/architectural-design.md`](../../pulse-core/design/architectural-design.md), then design only the implementation-level delta this area adds (JPA mapping, columns, migration names, the bits below SRS granularity). Two area docs each re-drawing the artifact ER means three copies (SRS + both) to keep in sync.
+The same rule applies upward to Level 1: **cite the SRS for the shared model; design only the delta.** Don't redraw the shared entity graph in a Level-2 doc — link to the SRS's Business Domain Model and the Container Diagram in [`architectural-design.md`](architectural-design.md), then design only the implementation-level delta this area adds (JPA mapping, columns, migration names, the bits below SRS granularity). Two area docs each re-drawing the artifact ER means three copies (SRS + both) to keep in sync.
 
 ## **What a design doc contains**
 
@@ -87,11 +85,11 @@ Use this skeleton as a *menu*, not a checklist. Drop any section that would only
 
 > Realizes: UC-<AREA>-1, UC-<AREA>-2, …
 > Depends on FRs: FR-<AREA>-n, FR-LOCK-*, … (the cross-cutting subsystems it builds on)
-> See: ../requirements/use-cases.md, ../requirements/software-requirements-specification.md, architectural-design.md (RAM component view + subsystems), ../../pulse-core/design/architectural-design.md (platform Container diagram)
+> See: ../requirements/use-cases.md, ../requirements/software-requirements-specification.md, architectural-design.md (Container & Component diagrams + cross-cutting subsystems)
 
 ## Overview
 One paragraph: what this area does and how it fits the architecture
-(link to the platform Container Diagram in ../../pulse-core/design/architectural-design.md rather than redrawing it).
+(link to the Container Diagram in architectural-design.md rather than redrawing it).
 
 ## Components & classes
 The class diagram and a one-line-per-component pointer to the actual files
@@ -126,7 +124,7 @@ Good design before implementation is the point of these docs — pick the UML vi
 - **Class** — component/structure design: backend controllers/services/repositories/entities and frontend views/stores/api clients, and their relationships. Mark what is reused vs. new.
 - **ER** — DB schema: tables, key fields, relationships, migrations. Tie back to the SRS's Business Domain Model.
 - **State** — lifecycle-heavy areas, where the subtle behavior (and the bugs) live: document-section **lock** states (DOC), **review & submission** states (REV), AI candidate accept/reject (AI). If an area has a state machine, diagram it.
-- **Flowchart / C4** — how the area fits the Project Pulse containers (the platform Container Diagram in [`../../pulse-core/design/architectural-design.md`](../../pulse-core/design/architectural-design.md)), when the architectural placement isn't obvious.
+- **Flowchart / C4** — how the area fits the Project Pulse containers (the Container Diagram in [`architectural-design.md`](architectural-design.md)), when the architectural placement isn't obvious.
 
 ---
 

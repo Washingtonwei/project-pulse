@@ -59,7 +59,7 @@ Before writing any code, student teams use the RAM module to define their softwa
 - **A project glossary** — canonical domain vocabulary shared across the team's documents.
 - **Traceability** — typed links between requirement artifacts so teams can trace how requirements relate to one another.
 
-The requirements specifications themselves are authored as Markdown under [`docs/ram/`](docs/ram/) and drive the module's implementation. See [`docs/ram/README.md`](docs/ram/README.md) for the spec layout.
+The requirements specifications themselves are authored as Markdown under [`docs/requirements/`](docs/requirements/) and drive the module's implementation. See [`docs/README.md`](docs/README.md) for the spec layout.
 
 ## Repository Structure
    ```bash
@@ -67,7 +67,7 @@ The requirements specifications themselves are authored as Markdown under [`docs
     ├── .github/                     # GitHub Actions workflows
     ├── backend/                     # Spring Boot backend (Maven)
     ├── docker/                      # Folder containing configuration files for grafana and prometheus
-    ├── docs/                        # Spec-first requirements docs (e.g. docs/ram/ for the RAM module)
+    ├── docs/                        # Spec-first requirements, design & traceability docs
     ├── frontend/                    # Vue.js frontend (Vite)
     ├── CLAUDE.md                    # Guidance for Claude Code / contributors
     ├── .gitignore                   # Git ignore rules for both frontend and backend
@@ -90,7 +90,7 @@ Spring Boot, Vue.js, MySQL, Docker, Microsoft Azure, etc.
 
 ### Project Use Cases
 
-🔗 [Use Cases](docs/ram/requirements/use-cases.md)
+🔗 [Use Cases](docs/requirements/use-cases.md)
 
 ### API Documentation
 
@@ -98,7 +98,7 @@ Spring Boot, Vue.js, MySQL, Docker, Microsoft Azure, etc.
 
 ### UML Class Diagram
 
-🔗 [UML Class Diagram](docs/ram/requirements/software-requirements-specification.md#business-domain-model)
+🔗 [UML Class Diagram](docs/requirements/software-requirements-specification.md#business-domain-model)
 
 ## Getting Started
 

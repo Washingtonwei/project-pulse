@@ -1,22 +1,20 @@
 # **Architectural Design — Project Pulse Platform**
 
-> **Design-of-record for the Project Pulse platform** — the host that both the core features (weekly activity reports, peer evaluations, courses/course sections/teams) and the RAM module run on.
+> **Design-of-record for the Project Pulse platform** — the host that both the core features (weekly activity reports, peer evaluations, courses/course sections/teams) and the RAM module run on. It is the single architecture-of-record for the whole product: the platform-wide context/container views and conventions **plus** the RAM module's component view and cross-cutting subsystems (folded into the Building Block View and Crosscutting Concepts below).
 >
 > Structure: this document follows the **arc42** template (Starke & Hruschka), using **C4** for the context and building-block views. The section names and order are arc42's; numbering is applied at export.
 >
-> Note: the pulse-core **requirements** specs (Vision & Scope, Project Glossary, Business Rules, Use Cases, SRS) exist in Google Docs and are pending conversion to `docs/pulse-core/requirements/`; this design doc is authored in Markdown and does not wait on that conversion.
->
-> See: [`../README.md`](../README.md), [`../../ram/design/architectural-design.md`](../../ram/design/architectural-design.md) (the RAM module's Level-1 doc, which **cites this one** for the platform context/container views and conventions).
+> See: [`../README.md`](../README.md) (docs overview), [`../requirements/software-requirements-specification.md`](../requirements/software-requirements-specification.md) (the SRS this design realizes), [`../CLAUDE.md`](../CLAUDE.md) (spec-doc authoring conventions).
 
 ## **Introduction and Goals**
 
-Project Pulse was built **core-first**: the weekly-activity-report, peer-evaluation, and course/course-section/team functionality — together with security, the API conventions, and the deployment pipeline — came first as the working application. **RAM was a separate project, merged in later** to reuse this same course/section/team/security/auth infrastructure. So this platform is the host, RAM is a module on top, and **the conventions here belong to the platform** — RAM (and the future core specs) cite them rather than restate them.
+Project Pulse was built **core-first**: the weekly-activity-report, peer-evaluation, and course/course-section/team functionality — together with security, the API conventions, and the deployment pipeline — came first as the working application. **RAM was a separate project, merged in later** to reuse this same course/section/team/security/auth infrastructure. So this platform is the host, RAM is a module on top, and **the conventions here belong to the platform** — the requirements specs cite them rather than restate them.
 
 This doc is the platform's **architecture-of-record**: the structure, conventions, decisions, cross-cutting concerns, runtime/deployment, and known risks every module inherits or is bounded by. It is **not** named after a use-case area and does not change when one feature is added — it changes when the host architecture does.
 
 ### *Requirements Overview*
 
-The platform's functional requirements live in the **requirements specs**, not here: RAM's in [`../../ram/requirements/`](../../ram/requirements/) (a Wiegers/Beatty-style SRS plus use cases, glossary, and business rules); the core's in Google Docs, pending conversion to `docs/pulse-core/requirements/`. This document realizes those requirements and does not restate them. In brief, the platform delivers weekly activity reporting, peer evaluation, instructor dashboards, and course/section/team management, and — through the RAM module — collaborative requirements authoring (documents, use cases, glossary, traceability, validation, and AI-assisted review).
+The platform's functional requirements live in the **requirements specs** under [`../requirements/`](../requirements/) (a Wiegers/Beatty-style SRS plus use cases, glossary, and business rules), not here. This document realizes those requirements and does not restate them. In brief, the platform delivers weekly activity reporting, peer evaluation, instructor dashboards, and course/section/team management, and — through the RAM module — collaborative requirements authoring (documents, use cases, glossary, traceability, validation, and AI-assisted review).
 
 ### *Quality Goals*
 
@@ -46,7 +44,7 @@ Constraints the architecture must honor, gathered from the requirements, the ins
 - **Regulatory** — the system holds student educational records, so **FERPA** governs access, disclosure, and retention (Quality Goal #1).
 - **Organizational** — a single instructor operates a course with **no dedicated dev/ops team**; deployment is **single-tenant** (one institution per deployment).
 - **Platform-given** — RAM is a **module inside a fixed host**: it must reuse the existing course/section/team/auth/email infrastructure and the platform conventions, not fork or duplicate them. The platform was built **core-first**, so those conventions predate and bind RAM.
-- **Process** — requirements are authored as durable specs (RAM in Markdown under `docs/ram/`; pulse-core pending in Google Docs) and drive the design.
+- **Process** — requirements are authored as durable specs (Markdown under `docs/requirements/`) and drive the design.
 - **Technology stack (prescribed):**
   - **Backend** — Java 21, Spring Boot 4.0, Maven; Spring Security, Spring Data JPA, Flyway.
   - **Frontend** — Vue 3 + Vite + TypeScript SPA; Element Plus, SCSS, Pinia, Chart.js (vue-chartjs), TipTap (rich text, used by RAM); Cypress for E2E.
@@ -120,7 +118,7 @@ The Level 2: Container Diagram for the Project Pulse system provides a detailed 
 
 ### *Components*
 
-This view zooms into the **REST API Application** to show the core platform's internal structure: one component per DDD bounded context, on top of the shared cross-cutting packages. Each maps to a package under `backend/src/main/java/team/projectpulse/`. RAM adds its own components (`ram/*`) beside these on the same shared base — see the RAM doc's [Component Diagram](../../ram/design/architectural-design.md#component-diagram).
+This view zooms into the **REST API Application** to show the core platform's internal structure: one component per DDD bounded context, on top of the shared cross-cutting packages. Each maps to a package under `backend/src/main/java/team/projectpulse/`. RAM adds its own components (`ram/*`) beside these on the same shared base — see [RAM components](#ram-components) below.
 
 ```mermaid
 C4Component
@@ -155,6 +153,61 @@ C4Component
 ```
 
 On the **SPA** side the layering is uniform across the app: feature pages call a per-domain API client (`frontend/src/apis/<feature>/`) over a shared Axios instance that attaches the JWT Bearer token, unwraps the `Result` envelope, and redirects to login on `401`. Pinia stores (`token`, `userInfo`, …) hold cross-cutting state; the router enforces `requiresAuth` / role guards.
+
+### *RAM components*
+
+This view zooms into the **REST API Application** to show the **RAM module's** internal structure: one component per DDD bounded context, sitting on the same shared platform packages (`system` · `security` · `user`) the core components build on. Each maps to a package under `backend/src/main/java/team/projectpulse/ram/` — a Level-2 area design doc designs the inside of one of these boxes; this diagram fixes the boxes and how they relate.
+
+```mermaid
+C4Component
+    title Component Diagram — RAM components inside the REST API Application
+
+    Container(spa, "SPA", "Vue.js", "RAM authoring views: Documents, Document Editor, Use Cases, Glossary, graph & traceability, ReqLint, Collaboration, Review, Export, AI panels")
+
+    Container_Boundary(api, "REST API Application (Spring Boot)") {
+        Component(doc, "document", "Controller / Service / Repository", "Requirement documents & document sections, templates/provisioning, section-level pessimistic locking, autosave")
+        Component(req, "requirement", "Controller / Service / Repository", "Requirement artifacts, artifact links & tracing, key-prefix sequences")
+        Component(uc, "usecase", "Controller / Service / Repository", "Use case artifacts: main steps, extensions, locking")
+        Component(glo, "glossary", "Controller / Service", "Glossary terms & terminology invariants")
+        Component(val, "validation", "Controller / Service", "ReqLint structural & consistency checks")
+        Component(col, "collaboration", "Controller / Service / Repository", "Comment threads & real-time presence/broadcast")
+        Component(rev, "review", "Controller / Service / Repository", "Review & submission workflow")
+        Component(exp, "export", "Controller / Service", "Export formatting & project-source-material import")
+        Component(ai, "ai", "Controller / Service", "AI configuration, AI assistants & LLM proxy")
+        Component(shared, "Shared platform packages", "system · security · user", "Result / StatusCode / ExceptionHandlerAdvice, JWT auth + AuthorizationManagers, JPA auditing (authorship), EmailService")
+    }
+
+    ContainerDb(db, "Database", "Relational DB", "RAM artifacts, links, documents, sections, comments, AI config")
+    System_Ext(llm, "LLM Service", "AI-assisted requirement review")
+
+    Rel_D(spa, doc, "JSON/HTTPS")
+    Rel_D(spa, req, "JSON/HTTPS")
+    Rel_D(spa, uc, "JSON/HTTPS")
+    Rel_D(spa, glo, "JSON/HTTPS")
+    Rel_D(spa, val, "JSON/HTTPS")
+    Rel_D(spa, col, "JSON/HTTPS")
+    Rel_D(spa, rev, "JSON/HTTPS")
+    Rel_D(spa, exp, "JSON/HTTPS")
+    Rel_D(spa, ai, "JSON/HTTPS")
+    Rel(doc, shared, "builds on")
+    Rel(req, shared, "builds on")
+    Rel(uc, shared, "builds on")
+    Rel(glo, shared, "builds on")
+    Rel(val, shared, "builds on")
+    Rel(col, shared, "builds on")
+    Rel(rev, shared, "builds on")
+    Rel(exp, shared, "builds on")
+    Rel(ai, shared, "builds on")
+    Rel_D(doc, db, "JDBC")
+    Rel_D(req, db, "JDBC")
+    Rel_D(uc, db, "JDBC")
+    Rel_D(col, db, "JDBC")
+    Rel_D(rev, db, "JDBC")
+    Rel_D(ai, db, "JDBC")
+    Rel_R(ai, llm, "AI proxy", "HTTPS")
+```
+
+These are the RAM module's bounded contexts — each maps to a package under `ram/` and is the subject of a Level-2 area design doc that designs the inside of one box. The boundaries for areas not yet designed are **provisional**: they are drawn here from the use-case areas so the map is complete, but the first `/design` of an area validates a boundary against the code and **may revise this diagram** (splitting, merging, or re-homing a component, or moving a subsystem owner), recording the change as part of that run. The `ai` component is the only one that reaches outside the platform: it proxies to the external LLM service for AI-assisted review. On the **SPA** side the layering mirrors the rest of Project Pulse: RAM pages (`frontend/src/pages/ram/`) call a per-domain API client (`frontend/src/apis/ram/`) over the shared Axios instance that attaches the Bearer token and unwraps the `Result` envelope; that layering is a platform convention (see [Crosscutting Concepts](#crosscutting-concepts)), not redrawn per area. The build status of each component and subsystem is not tracked here — that is [`../traceability.md`](../traceability.md)'s job, per use case.
 
 ## **Runtime View**
 
@@ -244,7 +297,7 @@ Conventions, shared machinery, and platform-wide concerns that cut across all bu
 
 ### *Architectural conventions*
 
-These are the **canonical** platform conventions — the normative source the RAM doc and the root [`CLAUDE.md`](../../../CLAUDE.md) point to. Every module follows them.
+These are the **canonical** platform conventions — the normative source the root [`CLAUDE.md`](../../CLAUDE.md) and the spec-doc [`CLAUDE.md`](../CLAUDE.md) point to. Every module follows them.
 
 - **API shape** — all endpoints under `/api/v1` (`api.endpoint.base-url`); every controller method returns the `Result` envelope (`flag`, `code`, `message`, `data`) — never a raw entity; errors are translated centrally by a global `@RestControllerAdvice` (`ExceptionHandlerAdvice`) into the same envelope with `StatusCode` constants.
 - **Domain structure** — Domain-Driven Design: one bounded context per package, each owning its full vertical slice (entity → repository → service → controller → DTOs → `Converter<S,T>` → a `*SecurityService` or `*Specs` for dynamic queries). **No Lombok** — explicit getters/setters/constructors. **No MapStruct** — bidirectional DTO conversion via Spring `Converter<S,T>` beans.
@@ -265,6 +318,24 @@ Shared machinery every module reuses rather than reimplements — owned by the c
 | Email / notifications | `system` (`EmailService`, `WeeklyReminderScheduler`) | Gmail over SMTP; scheduled reminders |
 | Time & profiles | `system` (`DevClockConfig` / `StagingClockConfig` / `ProdClockConfig`) | Profile-scoped clocks for testable time |
 | Dev seed data | `system` (`DataInitializer`) | `dev`-profile fixtures (the dev credentials) |
+
+### *RAM cross-cutting subsystems*
+
+Beyond the platform-wide machinery above, each **RAM** area builds on a small set of RAM-owned **shared subsystems** rather than reinventing them; a Level-2 area design should *plug into* the relevant row, not redesign it. The FR families are specified in the SRS's Non-Use Case Functional Requirements; "owner" is the package that provides the machine. (Per-use-case build status lives in [`../traceability.md`](../traceability.md), not here.)
+
+| Subsystem | FR family | Owner | How an area plugs in |
+|---|---|---|---|
+| Section locking | `FR-LOCK-*` | `ram/document` (`DocumentSectionLock`), `ram/usecase` (`UseCaseLock`) | Acquire/release a lock on the authoring destination before edit (UC-DOC-2 / UC-DOC-6) |
+| Document templates | `FR-TPL-*` | `ram/document/template` (`DocumentTemplateRegistry`) | Provision a document's sections from its `DocumentType` template |
+| Collaboration | `FR-COL-*` | `ram/collaboration` | Attach comment threads to an artifact / destination; real-time presence/broadcast (UC-COL-1) |
+| Glossary | `FR-GLO-*` | `ram/glossary` | Terminology lookups and invariants |
+| Authorship & history | `FR-HIS-*` | `system` (JPA auditing, `PeerEvaluationUserAuditorAware`) | Inherited via JPA auditing — no per-area work |
+| Notifications | `FR-NOT-*` | `system` (`EmailService`, `WeeklyReminderScheduler`) | Call `EmailService`; Gmail over SMTP |
+| Security / RBAC | `FR-SEC-*` | `security` (`AuthorizationManager` beans) | Add a URL rule + an ownership/membership manager |
+| Autosave | `FR-SAVE-*` | `ram/document` (section save) + client-side debounce | Persist edits through the document-section save endpoint |
+| Validation (ReqLint) | `FR-VAL-*` | `ram/validation` | Deterministic structural checks (UC-VAL-1) |
+| AI assistants | `FR-AI-*` | `ram/ai` (LLM proxy) | Proxy to the external LLM service |
+| Export / Import | `FR-EXP-*` / `FR-IMP-*` | `ram/export` | Export formatting; project-source-material import |
 
 ### *Security & Compliance*
 
@@ -303,7 +374,7 @@ Single-tenant: one deployment serves one institution. The trust boundary is the 
 
 ### *Data architecture*
 
-> The platform's persistence strategy and the decisions behind it — strategy and pointers, not a table-by-table schema (the conceptual model is owned by the requirements specs' domain models; the code owns the physical detail). RAM's requirements-graph persistence is a module-level concern documented in the [RAM architecture doc](../../ram/design/architectural-design.md).
+> The platform's persistence strategy and the decisions behind it — strategy and pointers, not a table-by-table schema (the conceptual model is owned by the requirements specs' domain models; the code owns the physical detail). RAM's requirements-graph persistence is a module-level concern owned by the RAM module (see [RAM components](#ram-components)).
 
 #### **Store & schema**
 
@@ -312,9 +383,9 @@ Single-tenant: one deployment serves one institution. The trust boundary is the 
 
 #### **Domain & aggregate model**
 
-- `Course` is the aggregate root; ownership cascades downward (`Course` → `Criterion`/`Rubric`/`Section` → `Team` → …, `CascadeType.ALL`) — see the domain model in [`backend/CLAUDE.md`](../../../backend/CLAUDE.md) (and the pending pulse-core requirements' domain model). `Activity` and `PeerEvaluation` are independent entities referencing `Student`/`Team`.
+- `Course` is the aggregate root; ownership cascades downward (`Course` → `Criterion`/`Rubric`/`Section` → `Team` → …, `CascadeType.ALL`) — see the domain model in [`backend/CLAUDE.md`](../../backend/CLAUDE.md) and the requirements specs' domain model. `Activity` and `PeerEvaluation` are independent entities referencing `Student`/`Team`.
 - `Student` and `Instructor` extend the abstract `@Entity` `PeerEvaluationUser`, mapped with JPA **single-table inheritance** (the default) — one users table, the shared auth subject for both modules.
-- RAM entities (documents, document sections, requirement artifacts, artifact links, use cases, glossary, comments) are **scoped to a Team**; their physical mapping (the artifact table, the typed edge/link table, per-team key sequences) is the RAM module's data architecture, documented in the [RAM architecture doc](../../ram/design/architectural-design.md).
+- RAM entities (documents, document sections, requirement artifacts, artifact links, use cases, glossary, comments) are **scoped to a Team**; their physical mapping (the artifact table, the typed edge/link table, per-team key sequences) is the RAM module's data architecture (see [RAM components](#ram-components)).
 
 #### **Transactions & consistency**
 
@@ -439,7 +510,7 @@ Single-tenant: one deployment serves one institution. The trust boundary is the 
 
 ## **Glossary**
 
-The domain vocabulary is defined in the project glossaries — RAM's canonical terms in [`../../ram/requirements/project-glossary.md`](../../ram/requirements/project-glossary.md); the pulse-core glossary is pending (Google Docs). Architecture terms used in this document:
+The domain vocabulary is defined in the [project glossary](../requirements/project-glossary.md). Architecture terms used in this document:
 
 - **Architecture-of-record** — the single canonical architecture description this doc *is*; changes only when the host architecture changes, not per feature.
 - **Bounded context / vertical slice** — one DDD domain per package owning its entity → repository → service → controller → DTO/converter stack.
