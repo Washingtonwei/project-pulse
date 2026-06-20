@@ -175,6 +175,8 @@ When implementing, **extend the existing RAM packages** (`ram/document`, `ram/re
 
 When editing anything under `docs/`, the rules in `docs/CLAUDE.md` apply (anchor slugs, FR/BR/UC ID schemes, cross-doc terminology). Run **`/build`** to verify and resync.
 
+To catch drift between the specs and the **code** (not just within the docs), run **`/sync-check`** (`.claude/commands/sync-check.md`) — the periodic spec↔code conformance audit that complements `/build` (docs-internal consistency). It reads the business rules / use cases / FRs, checks them against the actual services, controllers, and enums, and records any new divergence as an `OI-n` in `docs/requirements/OPEN-ISSUES.md`. Run it after a batch of code or spec changes, or on a schedule.
+
 ## CI
 
 - **PR checks:** `maven-build.yml` runs `mvn package` (builds + tests backend) on PRs to `main`
