@@ -1,6 +1,6 @@
 # **Architectural Design — Project Pulse Platform**
 
-> **Design-of-record for the Project Pulse platform** — the one application that comprises both the core features (weekly activity reports, peer evaluations, courses/course sections/teams) and the RAM module. It is the single architecture-of-record for the whole product: the platform-wide context/container views and conventions **plus** the RAM module's component view and cross-cutting subsystems (folded into the Building Block View and Crosscutting Concepts below).
+> **Design-of-record for the Project Pulse platform** — the one application that comprises the foundation and performance-tracking features (weekly activity reports, peer evaluations, courses/course sections/teams) and the RAM module. It is the single architecture-of-record for the whole product: the platform-wide context/container views and conventions **plus** the RAM module's component view and cross-cutting subsystems (folded into the Building Block View and Crosscutting Concepts below).
 >
 > Structure: this document follows the **arc42** template (Starke & Hruschka), using **C4** for the context and building-block views. The section names and order are arc42's; numbering is applied at export.
 >
@@ -8,7 +8,7 @@
 
 ## **Introduction and Goals**
 
-Project Pulse was built **core-first**: the weekly-activity-report, peer-evaluation, and course/course-section/team functionality — together with security, the API conventions, and the deployment pipeline — came first as the working application. **RAM was a separate project, merged in later** to reuse this same course/section/team/security/auth infrastructure. So Project Pulse is the platform, RAM is a module within it, and **the conventions here belong to the platform** — the requirements specs cite them rather than restate them.
+Project Pulse was built **before RAM**: the weekly-activity-report, peer-evaluation, and course/course-section/team functionality — together with security, the API conventions, and the deployment pipeline — came first as the working application. **RAM was a separate project, merged in later** to reuse this same course/section/team/security/auth infrastructure. So Project Pulse is the platform, RAM is a module within it, and **the conventions here belong to the platform** — the requirements specs cite them rather than restate them.
 
 This doc is the platform's **architecture-of-record**: the structure, conventions, decisions, cross-cutting concerns, runtime/deployment, and known risks every module inherits or is bounded by. It is **not** named after a use-case area and does not change when one feature is added — it changes when the platform architecture does.
 
@@ -43,7 +43,7 @@ Constraints the architecture must honor, gathered from the requirements, the ins
 
 - **Regulatory** — the system holds student educational records, so **FERPA** governs access, disclosure, and retention (Quality Goal #1).
 - **Organizational** — a single instructor operates a course with **no dedicated dev/ops team**; deployment is **single-tenant** (one institution per deployment).
-- **Platform-given** — RAM is a **module inside a fixed platform**: it must reuse the existing course/section/team/auth/email infrastructure and the platform conventions, not fork or duplicate them. The platform was built **core-first**, so those conventions predate and bind RAM.
+- **Platform-given** — RAM is a **module inside a fixed platform**: it must reuse the existing course/section/team/auth/email infrastructure and the platform conventions, not fork or duplicate them. The platform was built before RAM, so those conventions predate and bind RAM.
 - **Process** — requirements are authored as durable specs (Markdown under `docs/requirements/`) and drive the design.
 - **Technology stack (prescribed):**
   - **Backend** — Java 21, Spring Boot 4.0, Maven; Spring Security, Spring Data JPA, Flyway.
@@ -88,7 +88,7 @@ The platform's strategy in a few load-bearing moves — each elaborated in [Arch
 
 ## **Building Block View**
 
-The platform's building blocks at two levels: the **containers**, and the **core components** inside the REST API container.
+The platform's building blocks at two levels: the **containers**, and the **components** inside the REST API container.
 
 ### *Containers*
 
@@ -120,11 +120,11 @@ The Level 2: Container Diagram for the Project Pulse system provides a detailed 
 
 ### *Components*
 
-This view zooms into the **REST API Application** to show the core platform's internal structure: one component per DDD bounded context, on top of the shared cross-cutting packages. Each maps to a package under `backend/src/main/java/team/projectpulse/`. RAM adds its own components (`ram/*`) beside these on the same shared base — see [RAM components](#ram-components) below.
+This view zooms into the **REST API Application** to show the platform's internal structure: one component per DDD bounded context, on top of the shared cross-cutting packages. Each maps to a package under `backend/src/main/java/team/projectpulse/`. RAM adds its own components (`ram/*`) beside these on the same shared base — see [RAM components](#ram-components) below.
 
 ```mermaid
 C4Component
-    title Component Diagram — Project Pulse core components inside the REST API Application
+    title Component Diagram — Project Pulse foundation & performance-tracking components inside the REST API Application
 
     Container(spa, "SPA", "Vue.js", "Course management UI: WARs, peer evaluations, dashboards")
 
@@ -158,7 +158,7 @@ On the **SPA** side the layering is uniform across the app: feature pages call a
 
 ### *RAM components*
 
-This view zooms into the **REST API Application** to show the **RAM module's** internal structure: one component per DDD bounded context, sitting on the same shared platform packages (`system` · `security` · `user`) the core components build on. Each maps to a package under `backend/src/main/java/team/projectpulse/ram/` — a Level-2 area design doc designs the inside of one of these boxes; this diagram fixes the boxes and how they relate.
+This view zooms into the **REST API Application** to show the **RAM module's** internal structure: one component per DDD bounded context, sitting on the same shared platform packages (`system` · `security` · `user`) the foundation and performance-tracking components build on. Each maps to a package under `backend/src/main/java/team/projectpulse/ram/` — a Level-2 area design doc designs the inside of one of these boxes; this diagram fixes the boxes and how they relate.
 
 ```mermaid
 C4Component
@@ -386,7 +386,7 @@ Single-tenant: one deployment serves one institution. The trust boundary is the 
 
 #### **Store & schema**
 
-- One relational store: a single **MySQL 8** schema shared by both modules (KD-2, KD-3). Core tables (WARs, evaluations, courses/sections/teams, users) and RAM tables (documents, artifacts, links, comments) live side by side — one backup, one migration history, one FERPA surface. The one store kept *outside* MySQL is **uploaded project source material**, whose large binaries live in Azure Blob Storage (see [Binary content & file storage](#binary-content--file-storage)).
+- One relational store: a single **MySQL 8** schema shared by both modules (KD-2, KD-3). Foundation and performance-tracking tables (WARs, evaluations, courses/sections/teams, users) and RAM tables (documents, artifacts, links, comments) live side by side — one backup, one migration history, one FERPA surface. The one store kept *outside* MySQL is **uploaded project source material**, whose large binaries live in Azure Blob Storage (see [Binary content & file storage](#binary-content--file-storage)).
 - ORM is **JPA/Hibernate**; entities use IDENTITY-generated primary keys (`@GeneratedValue(strategy = IDENTITY)`), no Lombok.
 
 #### **Domain & aggregate model**

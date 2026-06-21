@@ -82,7 +82,7 @@ npm run cy:open      # Cypress E2E tests
 
 ## Architecture
 
-> **Canonical architecture-of-record:** [`docs/design/architectural-design.md`](docs/design/architectural-design.md) — the single whole-product architecture: the C4 context/container views, the core and RAM component views, the binding conventions, the cross-cutting subsystems, and deployment. When the architecture changes, update *that* doc; the summary below is just orientation for working in the code. The architecture-of-record follows the **arc42** template (with **C4** for the context/building-block views); the requirements specs follow **Wiegers & Beatty** — see [`docs/methodology.md`](docs/methodology.md).
+> **Canonical architecture-of-record:** [`docs/design/architectural-design.md`](docs/design/architectural-design.md) — the single whole-product architecture: the C4 context/container views, the foundation/performance-tracking and RAM component views, the binding conventions, the cross-cutting subsystems, and deployment. When the architecture changes, update *that* doc; the summary below is just orientation for working in the code. The architecture-of-record follows the **arc42** template (with **C4** for the context/building-block views); the requirements specs follow **Wiegers & Beatty** — see [`docs/methodology.md`](docs/methodology.md).
 
 ### Monorepo Layout
 - `backend/` — Spring Boot 4.0 Maven project (Java 21)
@@ -130,7 +130,7 @@ Project Pulse is developed **spec-first**: its requirements are authored as Mark
 
 ### The spec is the source of truth
 
-`docs/` is organized **doctype-first** — one spec set for the whole product (Project Pulse core + RAM), grouped by document type, not by module:
+`docs/` is organized **doctype-first** — one spec set for the whole product (the shared foundation, performance tracking, and RAM), grouped by document type, not by module:
 
 - `docs/requirements/` — the spec (what):
    1. `project-glossary.md` — domain vocabulary; canonical term definitions.
@@ -145,7 +145,7 @@ Project Pulse is developed **spec-first**: its requirements are authored as Mark
 - `docs/product/` — product material: shipped default content the product seeds at runtime (e.g., the default cross-document review criteria + critique-assistant system prompt).
 - `docs/CLAUDE.md` — authoring rules for these docs (anchor slugs, ID schemes, cross-doc consistency); it governs edits anywhere under `docs/`.
 
-Use cases are grouped by **area** — a short code that mirrors a backend bounded context: core areas `RUB`/`SEC`/`TEA`/`STU`/`INS`/`ACC`/`WAR`/`EVA`, then RAM areas `TPL`/`GLO`/`DOC`/`ART`/`LNK`/`VAL`/`COL`/`REV`/`EXP`/`CFG`/`AI` (`docs/CLAUDE.md` enumerates them). The Project Pulse core was built before this spec set existed, so its use cases are documented retrospectively; RAM use cases drive new implementation.
+Use cases are grouped by **area** — a short code that mirrors a backend bounded context: the foundation and performance-tracking areas `RUB`/`SEC`/`TEA`/`STU`/`INS`/`ACC`/`WAR`/`EVA`, then RAM areas `TPL`/`GLO`/`DOC`/`ART`/`LNK`/`VAL`/`COL`/`REV`/`EXP`/`CFG`/`AI` (`docs/CLAUDE.md` enumerates them). The foundation and performance-tracking features were built before this spec set existed, so their use cases are documented retrospectively; RAM use cases drive new implementation.
 
 **Functional requirements.** A **use case is itself a high-level functional requirement** (the SRS's Use Cases section) — its "The system ..." steps + Associated Information are its detailed spec. The SRS's **Non-Use Case Functional Requirements** section holds only the non-use-case, system-level behaviors, with IDs in `FR-<AREA>-<n>` format (parallel to `UC-<AREA>-<n>`; `docs/CLAUDE.md` enumerates the area codes). **Business rules** (`BR-*`, in `business-rules.md`) are an append-only sequence cited by use cases and the SRS. FR/BR/UC IDs are identifier spaces independent of heading position — never renumber them.
 

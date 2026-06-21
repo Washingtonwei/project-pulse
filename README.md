@@ -91,7 +91,7 @@ Spring Boot, Vue.js, MySQL, Docker, Microsoft Azure, etc.
 
 ### Architecture
 
-🔗 [Architectural Design](docs/design/architectural-design.md) — the single whole-product architecture-of-record (arc42 + C4): context/container views, component views for the core and RAM, binding conventions, cross-cutting subsystems, and deployment.
+🔗 [Architectural Design](docs/design/architectural-design.md) — the single whole-product architecture-of-record (arc42 + C4): context/container views, component views for the foundation and performance-tracking features and for RAM, binding conventions, cross-cutting subsystems, and deployment.
 
 ### Project Use Cases
 

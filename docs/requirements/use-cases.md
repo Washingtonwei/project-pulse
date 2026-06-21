@@ -62,7 +62,7 @@
 
 # **Use Case List**
 
-The catalog of use cases begins below, grouped by area. Each area is an unnumbered H2 sub-heading and each use case an H3 carrying an area-prefixed ID (`UC-<AREA>-<n>`). The catalog spans both the core areas — Rubric, Course Section, Team, Student, Instructor, Account, Weekly Activity Report, and Peer Evaluation — and the requirements-authoring areas that follow them (Templates and Provisioning, Glossary, Requirement Documents, Requirement Artifacts, Artifact Links and Tracing, Validation, Collaboration, Review and Submission, Export, AI Configuration, and AI Assistants).
+The catalog of use cases begins below, grouped by area. Each area is an unnumbered H2 sub-heading and each use case an H3 carrying an area-prefixed ID (`UC-<AREA>-<n>`). The catalog spans both the foundation and performance-tracking areas — Rubric, Course Section, Team, Student, Instructor, Account, Weekly Activity Report, and Peer Evaluation — and the requirements-authoring areas that follow them (Templates and Provisioning, Glossary, Requirement Documents, Requirement Artifacts, Artifact Links and Tracing, Validation, Collaboration, Review and Submission, Export, AI Configuration, and AI Assistants).
 
 The note below is **not** the catalog. It records scope context only: a few Project Pulse capabilities not yet specified as use cases, and work that is **deferred or on hold**. Anything that has been specified appears as a `UC-<AREA>-<n>` below — not in this note.
 

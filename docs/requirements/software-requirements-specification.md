@@ -30,7 +30,7 @@ This Software Requirements Specification describes the external behavior and qua
 - **Use Cases** ([use-cases.md](use-cases.md)) — the behavioral specification: each user-initiated workflow as a use case, which is itself a high-level functional requirement.
 - **Business Rules** ([business-rules.md](business-rules.md)) — the cross-cutting policies, constraints, and access rules (`BR-*`) that the use cases and this SRS enforce.
 - **Software Requirements Specification** (this document) — the integrating specification: it orients the reader (the Overall Description section), then specifies the non-use-case functional requirements, the data model, external interfaces, and quality attributes, citing the documents above rather than repeating them.
-- **Architectural Design** ([../design/architectural-design.md](../design/architectural-design.md)) — the single arc42/C4 architecture-of-record, sitting below this SRS: the shared software architecture, conventions, and deployment that the RAM module inherits, plus the core and RAM component views and cross-cutting subsystems.
+- **Architectural Design** ([../design/architectural-design.md](../design/architectural-design.md)) — the single arc42/C4 architecture-of-record, sitting below this SRS: the shared software architecture, conventions, and deployment that the RAM module inherits, plus the component views for the foundation and performance-tracking features and for RAM, and cross-cutting subsystems.
 - **Traceability** ([../traceability.md](../traceability.md)) — the spec→code map: one row per use case linking it to the requirements and design it realizes and the code and tests that implement it.
 
 ```mermaid
@@ -762,7 +762,7 @@ SI-1.4: LLM service credentials shall be held server-side and shall never be exp
 
 SI-1.5: While the LLM service is unavailable or a request times out, the AI proxy shall report the condition to the requesting feature so that AI features become unavailable while the rest of Project Pulse continues to operate (per FR-AI-13, AVL-2, PER-4).
 
-SI-2: Project Pulse core services
+SI-2: Project Pulse shared foundation
 
 SI-2.1: The RAM environment shall obtain the authenticated user's identity and role (course admin, instructor, student) from Project Pulse's authenticated session and shall not implement its own login (per CO-4, SEC-1).
 
