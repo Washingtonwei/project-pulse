@@ -113,7 +113,7 @@ CO-7: Email notifications shall be sent through the Gmail SMTP integration.
 
 ## **Assumptions and Dependencies**
 
-Assumptions and dependencies are graph artifacts with team-wide key sequences (`AS-*`, `DE-*`) unique within a team (BR-5); documents are views over one shared graph, so the keys do not restart per document. The business-level assumptions `AS-1`…`AS-5` are in Vision and Scope ([Business Assumptions and Dependencies](vision-and-scope.md#business-assumptions-and-dependencies)); the architecture-level assumptions below continue that same `AS-*` sequence.
+Assumptions and dependencies are graph artifacts with team-wide key sequences (`AS-*`, `DE-*`) unique within a team (BR-5); documents are views over one shared graph, so the keys do not restart per document. There is one `ASSUMPTION` type authored in two homes: the business-level assumptions `AS-1`…`AS-5` and `AS-9` are in Vision and Scope ([Business Assumptions and Dependencies](vision-and-scope.md#business-assumptions-and-dependencies)), and the architecture-level assumptions `AS-6`…`AS-8` below continue that same `AS-*` sequence. The numbers are stable handles, not a reading order, so the sequence is intentionally non-contiguous within each document.
 
 AS-6: Users have a supported web browser and a reliable internet connection.
 
@@ -874,6 +874,6 @@ Project Pulse introduces no additional requirements beyond those specified elsew
 - Security and access control: platform authentication and role-based access — FR-SEC-1..3 (Security and Authorization Requirements) and the Security quality attributes.
 - Authorship and audit trail: creator/editor identity and timestamps on every authored item — FR-HIS-4 (Authorship Metadata and Document Versioning Requirements); logical (soft) deletion that retains items for audit — BR-12.
 - Installation, configuration, and startup/shutdown: Project Pulse is deployed as a single application (see the [Deployment View](../design/architectural-design.md#deployment-view)).
-- Memory and capacity: Project Pulse sets no RAM-specific storage or capacity limit for release 1.0; RAM content persists in the shared Project Pulse relational database and is sized for the cohort in SCA-1 (the per-team artifact-count target is still open — tracked as quality scenario QS-7 in the architecture-of-record).
+- Memory and capacity: Project Pulse sets no RAM-specific storage or capacity limit for release 1.0; RAM content persists in the shared Project Pulse relational database and is sized for the cohort in SCA-1 (the per-team artifact-count design target is ~1,000 artifacts — quality scenario QS-7 in the architecture-of-record).
 - Portability: N/A for release 1.0. Project Pulse is a single hosted web application on a fixed server stack (OE-2, CO-2), reached through a standard web browser (OE-1, OE-3); no requirement to run on multiple operating systems or to be ported to another platform applies.
 - Site adaptation: Project Pulse ships a single application configuration with no per-installation site-adaptation files; per-deployment adaptation is instead realized as per-course-section configuration — a course section's teaching context, per-assistant enablement and assistant instructions, cross-document review criteria, and weekly due days (UC-CFG-\*, FR-AI-7, FR-AI-16, FR-AI-22, FR-AI-23, FR-NOT-3).

@@ -287,7 +287,7 @@ AS-4: LLM APIs (e.g., OpenAI) remain available and cost-effective.
 
 AS-5: Faculty buy-in will be sufficient for pilot use.
 
-AS-9: The system uses technologies the client already knows and can maintain after the product is delivered. *(AS-6 through AS-8 are architecture-level assumptions defined in the Software Requirements Specification; the `AS-*` sequence is shared across both documents.)*
+AS-9: The system uses technologies the client already knows and can maintain after the product is delivered. *(Assumptions are one team-wide `AS-*` sequence authored in two homes; AS-6 through AS-8 are the architecture-level assumptions defined in the Software Requirements Specification. The numbers are stable handles, not a reading order, so this sequence is intentionally non-contiguous.)*
 
 # **Stakeholder Profiles and User Descriptions**
 
@@ -424,7 +424,7 @@ During active weeks, students evaluate their teammates against a rubric of weigh
 
 ### *Administration and Course Management*
 
-The system supports secure authentication, role-based access control, and FERPA-compliant data storage. It provides course, course section, team, student, and instructor management for the whole platform: the course admin (the user who created the Course) sets up its course sections and project teams, manages rosters and document access, invites instructors, configures active weeks, and provisions each team's requirement documents from the built-in templates; instructors configure their course sections' teaching context and AI assistants and run the review-and-feedback workflow. The course admin (the user who created the Course) sets up its course sections and project teams, manages rosters and document access, invites instructors, and provisions each team's requirement documents from the built-in templates; instructors configure their course sections' teaching context and AI assistants and run the review-and-feedback workflow.
+The system supports secure authentication, role-based access control, and FERPA-compliant data storage. It provides course, course section, team, student, and instructor management for the whole platform: the course admin (the user who created the Course) sets up its course sections and project teams, manages rosters and document access, invites instructors, configures active weeks, and provisions each team's requirement documents from the built-in templates; instructors configure their course sections' teaching context and AI assistants and run the review-and-feedback workflow.
 
 **See the Use Cases document for more details.**
 

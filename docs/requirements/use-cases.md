@@ -2579,7 +2579,7 @@ Details:
 
 **Postconditions:**
 - POST-1. The new glossary term is stored in the system.
-- POST-2. The system records collaboration metadata (e.g., last-modified timestamp and editor identity).
+- POST-2. The system records authorship metadata (e.g., last-modified timestamp and editor identity).
 
 **Main Success Scenario:**
 1. The student indicates to create a new glossary term.
@@ -2641,7 +2641,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 **Postconditions:**
 - POST-1. Changes made to the glossary term definition are stored in the system.
-- POST-2. The system records collaboration metadata (e.g., last-modified timestamp and editor identity).
+- POST-2. The system records authorship metadata (e.g., last-modified timestamp and editor identity).
 
 **Main Success Scenario:**
 1. The student indicates to change the definition of an existing glossary term.
@@ -2698,7 +2698,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 **Postconditions:**
 - POST-1. Terminology references across documents remain consistent with the updated Glossary state.
-- POST-2. The system records collaboration metadata (e.g., last-modified timestamp and editor identity).
+- POST-2. The system records authorship metadata (e.g., last-modified timestamp and editor identity).
 
 **Main Success Scenario:**
 1. The student indicates to rename a glossary term.
@@ -2708,7 +2708,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 5. The system displays a preview list of all references that will be updated across the team's requirement documents.
 6. The student confirms the rename operation.
 7. The system updates the glossary term name and updates all references to the term.
-8. The system saves all changes, records collaboration metadata, and informs the student that the rename completed successfully.
+8. The system saves all changes, records authorship metadata, and informs the student that the rename completed successfully.
 9. Use case ends.
 
 **Extensions:**
@@ -2846,7 +2846,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 **Postconditions:**
 - POST-1. The updated document section content is stored in the system.
-- POST-2. The system records collaboration metadata (e.g., last-modified timestamp and editor identity).
+- POST-2. The system records authorship metadata (e.g., last-modified timestamp and editor identity).
 
 **Main Success Scenario:**
 1. The student indicates to edit a section-based requirement document (e.g., Vision and Scope, SRS).
@@ -2857,7 +2857,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 6. The student edits the document section content.
 7. The system performs basic validation on the edited content and displays any warnings or errors.
 8. The student confirms completion of the edit.
-9. The system saves the updated content, updates collaboration metadata, and confirms that the document has been updated.
+9. The system saves the updated content, updates authorship metadata, and confirms that the document has been updated.
 10. The system releases the lock on the document section.
 11. Use case ends.
 
@@ -2996,7 +2996,7 @@ Details:
 
 **Postconditions:**
 - POST-1. The new use case is stored in the system.
-- POST-2. The system records collaboration metadata (e.g., last-modified timestamp and editor identity).
+- POST-2. The system records authorship metadata (e.g., last-modified timestamp and editor identity).
 
 **Main Success Scenario:**
 1. The student indicates to create a new use case in the Use Cases document.
@@ -3065,7 +3065,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 **Postconditions:**
 - POST-1. Changes made to the use case are stored in the system.
-- POST-2. The system records collaboration metadata (e.g., last-modified timestamp and editor identity).
+- POST-2. The system records authorship metadata (e.g., last-modified timestamp and editor identity).
 
 **Main Success Scenario:**
 1. The student indicates to change the details of an existing use case.
@@ -3263,7 +3263,7 @@ Sort criteria: default ascending by Artifact Key; the student may re-sort by Typ
 - POST-1. The new requirement artifact is stored in the system.
 - POST-2. The artifact appears in the requirements graph.
 - POST-3. The artifact appears in the document section it was created in (and in any other document view its type maps to).
-- POST-4. The system records collaboration metadata (e.g., last-modified timestamp and editor identity).
+- POST-4. The system records authorship metadata (e.g., last-modified timestamp and editor identity).
 
 **Main Success Scenario:**
 1. The student, viewing a list-type document section, indicates to add a requirement artifact to it.
@@ -3318,7 +3318,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Assumptions:**
 **Open Issues:**
 
-### **UC-ART-4: The Student creates a requirement artifact from document content (or "promote selection to artifact")**
+### **UC-ART-4: The Student creates a requirement artifact from document content (promote selection)**
 
 **UC ID and Name:** UC-ART-4: Create a requirement artifact from document content (promote selection)
 **Status:** Tabled — future release
@@ -3350,7 +3350,7 @@ This use case may be revisited in future versions if free-text authoring or refa
 
 **Postconditions:**
 - POST-1. Changes made to the requirement artifact are stored in the system.
-- POST-2. The system records collaboration metadata (e.g., last-modified timestamp and editor identity).
+- POST-2. The system records authorship metadata (e.g., last-modified timestamp and editor identity).
 
 **Main Success Scenario:**
 1. The student indicates to change the details of an existing requirement artifact.
@@ -3562,7 +3562,7 @@ Directionality (upstream vs downstream) must be clearly indicated.
 
 **Postconditions:**
 - POST-1. The new artifact link is stored in the system.
-- POST-2. The system records collaboration metadata (e.g., last-modified timestamp and editor identity).
+- POST-2. The system records authorship metadata (e.g., last-modified timestamp and editor identity).
 
 **Main Success Scenario:**
 1. The student indicates to create a requirement artifact link between two requirement artifacts.
@@ -3628,7 +3628,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 **Postconditions:**
 - POST-1. The updated artifact link is stored in the system.
-- POST-2. The system records collaboration metadata (e.g., last-modified timestamp and editor identity).
+- POST-2. The system records authorship metadata (e.g., last-modified timestamp and editor identity).
 
 **Main Success Scenario:**
 1. The student indicates to change the details of an existing link.
