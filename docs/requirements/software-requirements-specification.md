@@ -117,7 +117,7 @@ Assumptions and dependencies are graph artifacts with team-wide key sequences (`
 
 AS-6: Users have a supported web browser and a reliable internet connection.
 
-AS-7: The external LLM service (e.g., OpenAI) remains available and its API contract stays stable for the integration RAM relies on.
+AS-7: The external LLM service remains available and its API contract stays stable for the integration RAM relies on.
 
 AS-8: Project Pulse's course, course section, team, and user data is accurate and current; the RAM environment reads this shared data rather than maintaining its own copy.
 
@@ -151,11 +151,11 @@ These requirements describe system-level functions that support or enable the us
 
 ### *Autosave and Persistence Requirements*
 
-**FR-SAVE-1 (State-Driven):** While a student is actively editing an authoring destination, the system shall automatically save the authoring destination's content at least every 10 seconds.
+**FR-SAVE-1 (State-Driven):** While a student is actively editing an authoring destination, the system shall automatically save the authoring destination's content at the autosave cadence specified in PER-2.
 
 **FR-SAVE-2 (Event-Driven):** When a student leaves an authoring destination or navigates away, the system shall immediately persist the latest content of that authoring destination.
 
-**FR-SAVE-3 (Ubiquitous):** The system shall ensure that no more than 10 seconds of work is lost in the event of a browser crash, disconnection, or power failure.
+**FR-SAVE-3 (Ubiquitous):** The system shall limit the work lost in the event of a browser crash, disconnection, or power failure to the bound specified in ROB-1.
 
 **FR-SAVE-4 (Event-Driven):** When an autosave operation fails, the system shall notify the user and retry in the background without interrupting editing.
 
@@ -201,7 +201,7 @@ These requirements describe system-level functions that support or enable the us
 
 RAM's AI assistance is delivered through Socratic assistants whose primary purpose is educational: to train students to author high-quality requirements rather than to hand them finished text. Where a design choice trades productivity against educational value, educational value governs.
 
-**FR-AI-1 (Event-Driven):** When a student requests elicitation help, the system shall transmit to the elicitation assistant the context for the session's scope — for a session targeting a document section or use case, that target's context and the applicable template context; for a project-wide session, the project's current requirements coverage — together with the course section's teaching context, and shall return coaching for the student's own elicitation — candidate questions to put to the client (in plain, non-technical language), suggested follow-ups, and checks that help the student verify the client's answers — rather than finished requirement content.
+**FR-AI-1 (Event-Driven):** When a student requests elicitation help, the elicitation assistant shall return coaching for the student's own elicitation — candidate questions to put to the client (in plain, non-technical language), suggested follow-ups, and checks that help the student verify the client's answers — grounded in the session-scoped context assembled per SI-1.2, rather than finished requirement content.
 
 **FR-AI-2 (Optional):** Where AI assistance is enabled, the critique assistant shall return its findings (possibly none) for clarity, consistency, completeness, or testability, each accompanied by an instructive rationale.
 
@@ -229,13 +229,13 @@ RAM's AI assistance is delivered through Socratic assistants whose primary purpo
 
 **FR-AI-14 (Ubiquitous):** Where a team has imported project source material, the system shall make it available to the AI assistants as context for elicitation, critique, and drafting.
 
-**FR-AI-15 (Event-Driven):** When a student requests elicitation help, the elicitation assistant shall perform a gap analysis scoped to the session — for a session targeting a document section or use case, of that target against its template; for a project-wide session with no target selected, of the project's current requirements coverage across its documents and sections against what a complete set requires — and return candidate interview questions for the gaps it identifies.
+**FR-AI-15 (Event-Driven):** When a student requests elicitation help, the elicitation assistant shall perform a gap analysis over the session-scoped context assembled per SI-1.2 — comparing a targeted document section or use case against its template, or a project-wide session's current requirements coverage against what a complete set requires — and return candidate interview questions for the gaps it identifies.
 
 **FR-AI-16 (Ubiquitous):** The system shall include each assistant's instructor-authored assistant instructions in the context provided to that assistant so that the assistant's role, persona, and boundaries reflect the instructor's per-assistant configuration.
 
 **FR-AI-17 (Event-Driven):** When a student excludes the imported project source material for an elicitation session, the system shall ground that session's gap analysis solely on the team's current drafted requirements and shall omit the project source material from the elicitation assistant's context for that session.
 
-**FR-AI-18 (Event-Driven):** When a student asks the project assistant for help, the system shall transmit the project's current requirements coverage, the imported project source material, and the course section's teaching context to the project assistant, and shall return orientation, answers about project status and coverage, navigation to the relevant document or artifact, and recommended next actions, without authoring requirement content.
+**FR-AI-18 (Event-Driven):** When a student asks the project assistant for help, the project assistant shall return orientation, answers about project status and coverage, navigation to the relevant document or artifact, and recommended next actions — grounded in the project's current requirements coverage, the imported project source material, and the course section's teaching context assembled per SI-1.2 — without authoring requirement content.
 
 **FR-AI-19 (Event-Driven):** When the project assistant recommends a specialized assistant or an authoring action, the system shall route the student into the corresponding use case and shall honor that assistant's per-course-section enablement.
 
@@ -251,7 +251,7 @@ RAM's AI assistance is delivered through Socratic assistants whose primary purpo
 
 The initial release ships fixed, built-in templates, and the enforcement requirements (FR-TPL-1, FR-TPL-3) apply to them. Template customization — letting a course admin or instructor author or edit templates (FR-TPL-2) — is **deferred to a future release and is not part of the MVP scope** (see Vision and Scope, [Template Management](vision-and-scope.md#template-management)). FR-TPL-2 is retained here, with its ID, so the intent is not lost.
 
-**FR-TPL-1 (Ubiquitous):** The system shall enforce the structure, required document sections, and metadata defined by the active template (e.g., Wiegers, IEEE, RUP, custom).
+**FR-TPL-1 (Ubiquitous):** The system shall enforce the structure, required document sections, and metadata defined by the active template.
 
 **FR-TPL-2 (Deferred — future release):** When an authorized user (a course admin or instructor) updates a template, the system shall apply the updated structure to new documents but shall not retroactively modify existing documents without that user's approval.
 
@@ -296,12 +296,6 @@ Authorship metadata (FR-HIS-4) is in scope for the initial release and is relied
 **FR-IMP-1 (Event-Driven):** When a student imports client pitch materials, the system shall accept PDF (`.pdf`) and PowerPoint (`.pptx`, `.ppt`) files, reject any file whose type is not on this allowlist or whose size exceeds a configurable per-file size limit (default 25 MB), and store each accepted file as the team's project source material.
 
 **FR-IMP-2 (Event-Driven):** When project source material is imported, the system shall extract its text content for reference and for use as assistant context, and shall report when extraction is incomplete (for example, for image-only or scanned files).
-
-### *Performance and Reliability Requirements*
-
-**FR-PERF-1 (State-Driven):** While up to 100 users are actively editing concurrently, the system shall propagate collaborator presence events (join, disconnect) within 1 second for 95% of events. _(Post-MVP — depends on the deferred real-time collaboration; see the Real-Time Collaboration Requirements section.)_
-
-**FR-PERF-2 (Ubiquitous):** The system shall remain available at least 99% of the academic term.
 
 ### *Notification Requirements*
 
@@ -754,7 +748,7 @@ SI-1: External LLM Service (via the AI proxy)
 
 SI-1.1: RAM shall call the external LLM service only through the REST API's server-side AI proxy; the Vue single-page application shall never call the LLM service directly (per CO-6, SEC-4).
 
-SI-1.2: For each assistant request, the AI proxy shall send the assembled assistant context — the assistant's system prompt, the course section's teaching context and per-assistant assistant instructions, the relevant document and requirements-graph content, and, where enabled, the team's project source material — and shall return the assistant's response to the requesting feature (per FR-AI-6, FR-AI-14, FR-AI-16).
+SI-1.2: For each assistant request, the AI proxy shall send the assembled assistant context — the assistant's system prompt, the course section's teaching context and per-assistant assistant instructions, the document and requirements-graph content relevant to the session's scope (for a session targeting a document section or use case, that target and the applicable template context; for a project-wide session, the project's current requirements coverage across its documents), and, where enabled, the team's project source material — and shall return the assistant's response to the requesting feature (per FR-AI-6, FR-AI-14, FR-AI-16).
 
 SI-1.3: Requests to and responses from the LLM service shall use JSON; an assistant that returns candidate artifacts shall use a structured (tool/JSON) schema so the response is machine-parseable.
 
@@ -818,7 +812,7 @@ USE-4: A new student shall be able to open a document section, edit and save con
 
 ## **Performance**
 
-PER-1: While up to 100 users are editing concurrently, RAM shall propagate collaborator presence and lock-state events (join, disconnect, lock acquire/release) within 1 second for 95% of events. (Realized by FR-PERF-1.) _(Post-MVP — depends on the deferred real-time collaboration; see the Real-Time Collaboration Requirements section.)_
+PER-1: While up to 100 users are editing concurrently, RAM shall propagate collaborator presence and lock-state events (join, disconnect, lock acquire/release) within 1 second for 95% of events. _(Post-MVP — depends on the deferred real-time collaboration; see the Real-Time Collaboration Requirements section.)_
 
 PER-2: RAM shall autosave an actively edited authoring destination at least every 10 seconds and persist its latest content immediately when the student navigates away. (Realized by FR-SAVE-1, FR-SAVE-2.)
 
@@ -844,7 +838,7 @@ SAF-1: RAM is a web-based requirements-authoring tool with no physical actuation
 
 ## **Availability**
 
-AVL-1: Project Pulse shall be available at least 99% of each academic term, excluding scheduled maintenance windows, with availability prioritized near assignment deadlines. (Realized by FR-PERF-2.)
+AVL-1: Project Pulse shall be available at least 99% of each academic term, excluding scheduled maintenance windows, with availability prioritized near assignment deadlines.
 
 AVL-2: While the external LLM service is unavailable, Project Pulse shall keep all non-AI functionality operational and clearly indicate that AI assistance is temporarily unavailable, per FR-AI-13 and DE-2.
 
@@ -874,9 +868,12 @@ N/A for release 1.0. Project Pulse targets TCU software-engineering courses and 
 
 # **Other Requirements**
 
-Project Pulse introduces no additional requirements beyond those specified elsewhere; the cross-cutting concerns that would otherwise appear here are referenced rather than restated:
+Project Pulse introduces no additional requirements beyond those specified elsewhere; the cross-cutting concerns that would otherwise appear here are referenced rather than restated, and the content areas that do not apply are marked so explicitly:
 
 - Regulatory and compliance: FERPA handling of student educational records — CO-5 and SEC-3 (Security).
 - Security and access control: platform authentication and role-based access — FR-SEC-1..3 (Security and Authorization Requirements) and the Security quality attributes.
 - Authorship and audit trail: creator/editor identity and timestamps on every authored item — FR-HIS-4 (Authorship Metadata and Document Versioning Requirements); logical (soft) deletion that retains items for audit — BR-12.
 - Installation, configuration, and startup/shutdown: Project Pulse is deployed as a single application (see the [Deployment View](../design/architectural-design.md#deployment-view)).
+- Memory and capacity: Project Pulse sets no RAM-specific storage or capacity limit for release 1.0; RAM content persists in the shared Project Pulse relational database and is sized for the cohort in SCA-1 (the per-team artifact-count target is still open — tracked as quality scenario QS-7 in the architecture-of-record).
+- Portability: N/A for release 1.0. Project Pulse is a single hosted web application on a fixed server stack (OE-2, CO-2), reached through a standard web browser (OE-1, OE-3); no requirement to run on multiple operating systems or to be ported to another platform applies.
+- Site adaptation: Project Pulse ships a single application configuration with no per-installation site-adaptation files; per-deployment adaptation is instead realized as per-course-section configuration — a course section's teaching context, per-assistant enablement and assistant instructions, cross-document review criteria, and weekly due days (UC-CFG-\*, FR-AI-7, FR-AI-16, FR-AI-22, FR-AI-23, FR-NOT-3).
