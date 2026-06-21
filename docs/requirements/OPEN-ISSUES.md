@@ -4,7 +4,7 @@ Working backlog of everything still needed to get the requirements docs implemen
 
 The doc-readiness phase is essentially done; the **remaining open P2 items are RAM product code/template work**, not doc edits — and **OI-21, OI-22, OI-23 (plus OI-15's tail) all touch the same `SRS.yml` / `DocumentType` / `RequirementArtifactType` surface** and cross-reference each other. Treat them as **one coordinated change set** to do in a single pass when the user is ready to change the product, not four independent sessions.
 
-**Last updated:** 2026-06-20
+**Last updated:** 2026-06-21
 
 ## How to use this file
 
@@ -73,6 +73,8 @@ The doc-readiness phase is essentially done; the **remaining open P2 items are R
 - [x] **OI-13 — Cosmetic housekeeping.** ✅ *2026-06-06 — Replaced all 23 Frequency-of-Use `\*\*\* user` / `\*\*\* per milestone` template placeholders across the use cases with honest qualitative values ("Varies by team and project phase; most frequent during active authoring and near deadlines"; the two review use cases get "Around each project review milestone") — no fabricated per-week numbers. No `\*\*\*` residue remains in `use-cases.md`. The two remaining sub-items are **event-triggered, not open work**: Revision History tables are filled on version finalize (per CLAUDE.md, only when explicitly asked), and the `traceability.md` relocation note + `root-CLAUDE.md` path reference are reconciled if/when the docs are relocated into the project-pulse repo.*
 
 - [x] **OI-18 — Apply the "no special formatting for glossary terms" convention doc-wide.** ✅ *2026-06-07 — Adopted and documented the two-register convention: glossary terms are plain lowercase prose by default, with Title Case reserved for headings, use-case titles, UI/table labels, document titles, code identifiers/enums, and artifact-type controlled labels in taxonomy/placement contexts. Added the convention to `CLAUDE.md` and `README.md`; applied it across the five core requirements docs.*
+
+- [ ] **OI-40 — Backfill exception extensions for 26 use cases with an empty `**Extensions:**` section.** ✍️ *Surfaced 2026-06-21 by a `/spec-build` structural-completeness pass. 26 active use cases carry an `**Extensions:**` header with no content (no alternative/exception flows): `UC-RUB-3/7/8/10`, `UC-SEC-2/5`, `UC-TEA-2/7`, `UC-STU-3/4/5/6`, `UC-INS-5/6/7`, `UC-GLO-3`, `UC-DOC-1/4`, `UC-ART-2`, `UC-LNK-2/5`, `UC-COL-3`, `UC-EXP-1/2`, `UC-CFG-1/3`. Most are simple view/find/delete/toggle CRUD flows for already-built foundation & performance-tracking features (documented retrospectively). Per the methodology a use case's extensions are the **sole** record of its negative/edge behavior and tests tag to the whole UC, so a missing exception flow is an untestable gap (e.g. `UC-EXP-1` "export/format generation fails", `UC-RUB-3` "rubric not found", `UC-STU-4` "delete blocked by a dependency / not found", `UC-LNK-2` "link target invalid or not found"). **Fix:** add the realistic exception extension(s) for each — a small per-UC judgement about its real failure modes, not a mechanical sweep, so confirm each. **Not a code blocker** (the features exist); pure spec completeness, hence P3. `UC-ART-4` (Tabled) and `UC-COL-1` (Deferred) are correctly excluded. This is a docs-internal completeness gap (found by `/spec-build`), not a code↔doc drift item.*
 
 ## Doc ↔ Code Gap Analysis (started 2026-06-20)
 
