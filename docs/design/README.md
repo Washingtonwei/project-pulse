@@ -4,7 +4,7 @@ This directory holds the **design docs for Project Pulse** — how the code real
 
 Design comes in **two levels**, and a coding agent reads them top-down:
 
-1. **Architectural design** — [`architectural-design.md`](architectural-design.md). The product's architecture-of-record (arc42 + C4): the platform context/container views and the binding conventions, the foundation and performance-tracking component view, plus the RAM module's component view and cross-cutting subsystems. **One doc.** Read it *first*, to orient before touching code.
+1. **Architectural design** — [`architectural-design.md`](architectural-design.md). The product's architecture-of-record (arc42 + C4): the platform context/container views and the binding conventions, the shared-foundation and performance-tracking component views, plus the RAM module's component view and cross-cutting subsystems. **One doc.** Read it *first*, to orient before touching code.
 2. **Detailed design** — one doc per use-case (UC) area (`doc.md`, `art.md`, …). How one area's code realizes its use cases: component/class design, sequence diagrams, the data-model delta. Read the relevant area doc *before extending that area*.
 
 ```
@@ -30,7 +30,7 @@ A design doc is the **design of record** for what it covers. The Level-2 docs ar
 [`architectural-design.md`](architectural-design.md) is the product's **architecture-of-record** — the arc42/C4 design every area inherits or is bounded by, not architecture decided per feature. It holds:
 
 - the **platform views** — the C4 system-context and container diagrams, and the binding conventions every area follows (the `Result` envelope, the DDD vertical-slice + `Converter` DTO pattern, JWT/`AuthorizationManager` auth, Flyway migrations), alongside runtime, deployment, cross-cutting concerns, decisions, and risks;
-- the **foundation and performance-tracking component view** — the `activity`/`evaluation`/`rubric`/org/people bounded contexts inside the REST API container;
+- the **shared-foundation and performance-tracking component views** — the `course`/`section`/`team`/`student`/`instructor` (foundation) and `activity`/`evaluation`/`rubric` (performance tracking) bounded contexts inside the REST API container;
 - the **RAM component view** — the `ram/*` bounded-context components on the same shared base;
 - the **cross-cutting subsystems** an area plugs into rather than reinvents (locking, templates, collaboration, glossary, authorship, notifications, security, autosave, validation, AI, export), each tied to its `FR-*` family and owner package. (Per-use-case build status is not tracked there — it lives in `../traceability.md`.)
 

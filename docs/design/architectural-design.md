@@ -88,7 +88,7 @@ The platform's strategy in a few load-bearing moves — each elaborated in [Arch
 
 ## **Building Block View**
 
-The platform's building blocks at two levels: the **containers**, and the **components** inside the REST API container.
+The platform's building blocks at two levels: the **containers**, and the **components** inside the REST API container — the **shared foundation** every feature area builds on, plus the two feature areas on top of it, **performance tracking** and **RAM**.
 
 ### *Containers*
 
@@ -118,13 +118,43 @@ C4Container
 
 The Level 2: Container Diagram for the Project Pulse system provides a detailed view of its internal architecture, illustrating how the system components interact. The system is composed of three key containers — the **SPA (Single Page Application)**, the **REST API Application**, and the **Database** — supported by integration with the **Gmail System** for email communication and an external **LLM Service** (e.g., OpenAI) for AI-assisted requirement review. The **SPA**, built with Vue.js, is delivered to users' browsers and provides the interface for both the course-management workflows (submitting WARs and peer evaluations) and the RAM module's requirements authoring views: graph navigation, document editing, the ReqLint validation sidebar, and the AI assistant panel. The **REST API Application**, implemented using Java and Spring Boot, delivers the SPA, processes REST API calls, and manages interactions with the **Database**; for the RAM module it exposes endpoints for the requirements graph, ReqLint validation, and an AI proxy to the LLM service. The **Database**, a relational database, stores course-management data (WARs and peer evaluation submissions) alongside the RAM module's requirement artifacts, links, documents, and document sections, with CRUD operations executed through the REST API. **Azure Blob Storage** holds one kind of data the relational database deliberately does not — the large binary files of uploaded **project source material** (PDF/PowerPoint); the database keeps only a reference to each blob plus the server-side-extracted text (see the Data architecture section). The REST API integrates with the **Gmail System** over SMTP to send automated notifications and with the external **LLM Service** to support AI-assisted review.
 
-### *Components*
+### *Shared foundation components*
 
-This view zooms into the **REST API Application** to show the platform's internal structure: one component per DDD bounded context, on top of the shared cross-cutting packages. Each maps to a package under `backend/src/main/java/team/projectpulse/`. RAM adds its own components (`ram/*`) beside these on the same shared base — see [RAM components](#ram-components) below.
+This view zooms into the **REST API Application** to show the **shared foundation** — the org/enrollment model and the cross-cutting packages every feature area builds on. Each maps to a package under `backend/src/main/java/team/projectpulse/`. The two feature areas, [performance tracking](#performance-tracking-components) and [RAM](#ram-components), add their own components on top of this base.
 
 ```mermaid
 C4Component
-    title Component Diagram — Project Pulse foundation & performance-tracking components inside the REST API Application
+    title Component Diagram — Project Pulse shared foundation inside the REST API Application
+
+    Container(spa, "SPA", "Vue.js", "Course & team administration UI")
+
+    Container_Boundary(api, "REST API Application (Spring Boot)") {
+        Component(org, "course · section · team", "Controller / Service / Repository", "Courses, course sections, teams — the org/enrollment model")
+        Component(people, "student · instructor", "Controller / Service / Repository", "Course participants & roles")
+        Component(shared, "Shared platform packages", "system · security · user", "Result / StatusCode / ExceptionHandlerAdvice, JWT auth + AuthorizationManagers, JPA auditing, EmailService, clock & profile config")
+    }
+
+    ContainerDb(db, "Database", "Relational DB", "Courses/sections/teams, users")
+    System_Ext(gmail, "Gmail", "Email system")
+
+    Rel_D(spa, org, "JSON/HTTPS")
+    Rel_D(spa, people, "JSON/HTTPS")
+    Rel(org, shared, "builds on")
+    Rel(people, shared, "builds on")
+    Rel_D(org, db, "JDBC")
+    Rel_D(people, db, "JDBC")
+    Rel(shared, gmail, "Sends email", "SMTP")
+```
+
+The shared cross-cutting packages (`system` · `security` · `user`) are the base every feature area builds on; the org/enrollment model (`course` · `section` · `team` · `student` · `instructor`) is the data backbone that performance tracking and RAM both reuse (RAM scopes its requirements content to a `team`).
+
+### *Performance-tracking components*
+
+This view zooms into the **REST API Application** to show the **performance-tracking** feature area — weekly activity reports, peer evaluations, and rubrics — on top of the [shared foundation](#shared-foundation-components). Each maps to a package under `backend/src/main/java/team/projectpulse/`.
+
+```mermaid
+C4Component
+    title Component Diagram — Project Pulse performance-tracking components inside the REST API Application
 
     Container(spa, "SPA", "Vue.js", "Course management UI: WARs, peer evaluations, dashboards")
 
@@ -132,33 +162,27 @@ C4Component
         Component(activity, "activity", "Controller / Service / Repository", "Weekly Activity Reports")
         Component(evaluation, "evaluation", "Controller / Service / Repository", "Peer evaluations")
         Component(rubric, "rubric", "Controller / Service / Repository", "Evaluation rubrics")
-        Component(org, "course · section · team", "Controller / Service / Repository", "Courses, course sections, teams — the org/enrollment model")
-        Component(people, "student · instructor", "Controller / Service / Repository", "Course participants & roles")
-        Component(shared, "Shared platform packages", "system · security · user", "Result / StatusCode / ExceptionHandlerAdvice, JWT auth + AuthorizationManagers, JPA auditing, EmailService, clock & profile config")
+        Component(foundation, "Shared foundation", "org model · system · security · user", "Courses/sections/teams/users, auth, Result envelope, auditing, email — see Shared foundation components")
     }
 
-    ContainerDb(db, "Database", "Relational DB", "WARs, peer evals, courses/sections/teams, users")
-    System_Ext(gmail, "Gmail", "Email system")
+    ContainerDb(db, "Database", "Relational DB", "WARs, peer evals")
 
     Rel_D(spa, activity, "JSON/HTTPS")
     Rel_D(spa, evaluation, "JSON/HTTPS")
-    Rel_D(spa, org, "JSON/HTTPS")
-    Rel(activity, shared, "builds on")
-    Rel(evaluation, shared, "builds on")
-    Rel(rubric, shared, "builds on")
-    Rel(org, shared, "builds on")
-    Rel(people, shared, "builds on")
+    Rel_D(spa, rubric, "JSON/HTTPS")
+    Rel(activity, foundation, "builds on")
+    Rel(evaluation, foundation, "builds on")
+    Rel(rubric, foundation, "builds on")
     Rel_D(activity, db, "JDBC")
     Rel_D(evaluation, db, "JDBC")
-    Rel_D(org, db, "JDBC")
-    Rel(shared, gmail, "Sends email", "SMTP")
+    Rel_D(rubric, db, "JDBC")
 ```
 
 On the **SPA** side the layering is uniform across the app: feature pages call a per-domain API client (`frontend/src/apis/<feature>/`) over a shared Axios instance that attaches the JWT Bearer token, unwraps the `Result` envelope, and redirects to login on `401`. Pinia stores (`token`, `userInfo`, …) hold cross-cutting state; the router enforces `requiresAuth` / role guards.
 
 ### *RAM components*
 
-This view zooms into the **REST API Application** to show the **RAM module's** internal structure: one component per DDD bounded context, sitting on the same shared platform packages (`system` · `security` · `user`) the foundation and performance-tracking components build on. Each maps to a package under `backend/src/main/java/team/projectpulse/ram/` — a Level-2 area design doc designs the inside of one of these boxes; this diagram fixes the boxes and how they relate.
+This view zooms into the **REST API Application** to show the **RAM module's** internal structure: one component per DDD bounded context, sitting on the same [shared foundation](#shared-foundation-components) the performance-tracking components also build on. Each maps to a package under `backend/src/main/java/team/projectpulse/ram/` — a Level-2 area design doc designs the inside of one of these boxes; this diagram fixes the boxes and how they relate.
 
 ```mermaid
 C4Component
@@ -176,7 +200,7 @@ C4Component
         Component(rev, "review", "Controller / Service / Repository", "Review & submission workflow")
         Component(exp, "export", "Controller / Service", "Export rendering (PDF/DOCX/Markdown); project-source-material upload, storage & text extraction")
         Component(ai, "ai", "Controller / Service", "AI configuration, AI assistants & LLM proxy")
-        Component(shared, "Shared platform packages", "system · security · user", "Result / StatusCode / ExceptionHandlerAdvice, JWT auth + AuthorizationManagers, JPA auditing (authorship), EmailService")
+        Component(shared, "Shared foundation", "org model · system · security · user", "Courses/sections/teams/users, auth, Result envelope, JPA auditing (authorship), email — see Shared foundation components")
     }
 
     ContainerDb(db, "Database", "Relational DB", "RAM artifacts, links, documents, sections, comments, AI config")
