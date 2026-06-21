@@ -21,7 +21,7 @@
 
 ## **The Purpose of this Document**
 
-This Software Requirements Specification describes the external behavior and quality attributes of Project Pulse for release 1.0. The behavioral specification spans both capability areas — the weekly activity report and peer evaluation workflows and the Requirements Authoring & Management environment — as use cases ([use-cases.md](use-cases.md)); the non-use-case functional requirements, data model, external interfaces, and quality attributes specified in this document concern chiefly the cross-cutting RAM subsystems (autosave, locking, validation, real-time collaboration, AI orchestration, export, and import). It is the reference against which Project Pulse is built, tested, and maintained, and it aligns students, instructors, and developers on what the system does.
+This Software Requirements Specification describes the external behavior and quality attributes of Project Pulse for release 1.0, across both of its capability areas — the weekly activity report and peer evaluation workflows and the Requirements Authoring & Management (RAM) environment. The behavioral specification for both areas is carried by the use cases ([use-cases.md](use-cases.md)), each of which is itself a high-level functional requirement. The non-use-case functional requirements, data model, external interfaces, and quality attributes in this document specify the system-level behaviors that fall outside any single use case; these are concentrated in the cross-cutting subsystems — authentication and access control, notifications, and the RAM-specific autosave, locking, validation, AI orchestration, export, and import — because the performance-tracking workflows are specified almost entirely as use cases. It is the reference against which Project Pulse is built, tested, and maintained, and it aligns students, instructors, and developers on what the system does.
 
 **How the requirements are organized.** The requirements are not one document but a set of linked documents that describe a single shared model of the system from complementary angles, each the source of truth for its own topic. The SRS is the integrating entry point: it specifies the requirements it owns and links to the others rather than restating them, so each topic is defined once. The documents, in reading order:
 
@@ -73,43 +73,43 @@ The arrows read "is referenced by": the Project Glossary, Vision and Scope, Use 
 
 # **Overall Description**
 
-This section orients the reader to RAM's context, users, environment, and the constraints and assumptions under which it is built. Where another document is the source of truth — the product positioning and stakeholder profiles in Vision and Scope, the architecture views in the Architectural Design document — this section points to it rather than restating it. The operating environment, design and implementation constraints, and architecture-level assumptions and dependencies are specified here because requirements throughout this SRS — in Data Requirements, External Interface Requirements, and Quality Attributes — cite them by ID.
+This section orients the reader to Project Pulse's context, users, environment, and the constraints and assumptions under which it is built. Where another document is the source of truth — the product positioning and stakeholder profiles in Vision and Scope, the architecture views in the Architectural Design document — this section points to it rather than restating it. The operating environment, design and implementation constraints, and architecture-level assumptions and dependencies are specified here because requirements throughout this SRS — in Data Requirements, External Interface Requirements, and Quality Attributes — cite them by ID.
 
 ## **Product Perspective**
 
-RAM is a module within the Project Pulse platform, reusing the host's single-page application, REST API, relational database, authentication, and notification services rather than introducing a parallel system. The system context and container views are in the architecture-of-record ([Context and Scope](../design/architectural-design.md#context-and-scope), [Containers](../design/architectural-design.md#containers)); the product positioning and competitive alternatives are in Vision and Scope ([Product Perspective](vision-and-scope.md#product-perspective)).
+Project Pulse is a single web application that delivers two capability areas over one shared architecture — a Vue.js single-page application, a Java/Spring Boot REST API, and a relational database, with one authentication mechanism and one notification service. The first capability area is the weekly activity report and peer evaluation workflows that track student performance; the second is the Requirements Authoring & Management (RAM) environment, a module within the same application rather than a parallel system, reusing that shared single-page application, REST API, database, authentication, and notifications. The system context and container views are in the architecture-of-record ([Context and Scope](../design/architectural-design.md#context-and-scope), [Containers](../design/architectural-design.md#containers)); the product positioning and competitive alternatives are in Vision and Scope ([Product Perspective](vision-and-scope.md#product-perspective)).
 
 ## **User Classes and Characteristics**
 
-RAM has three user classes — student, instructor, and course admin — profiled in Vision and Scope ([Stakeholder Profiles and User Descriptions](vision-and-scope.md#stakeholder-profiles-and-user-descriptions)). Students are the favored user class: where their needs conflict with another class's, the student's learning outcome governs (consistent with the educational-value priority that drives the AI assistant design).
+Project Pulse has three user classes — student, instructor, and course admin — profiled in Vision and Scope ([Stakeholder Profiles and User Descriptions](vision-and-scope.md#stakeholder-profiles-and-user-descriptions)). Students are the favored user class: where their needs conflict with another class's, the student's learning outcome governs (consistent with the educational-value priority that drives the AI assistant design).
 
 ## **Operating Environment**
 
-OE-1: RAM operates as a module of the Project Pulse web application and shall run in the current released versions of Google Chrome, Mozilla Firefox, Microsoft Edge, and Apple Safari.
+OE-1: Project Pulse shall run in the current released versions of Google Chrome, Mozilla Firefox, Microsoft Edge, and Apple Safari.
 
 OE-2: The Project Pulse server shall run the REST API as a Java/Spring Boot application on a supported Java Virtual Machine, serve the Vue.js single-page application to clients, and persist data in a relational database.
 
 OE-3: Users shall access RAM over HTTPS from the public internet, requiring no client software beyond a web browser.
 
-OE-4: RAM shall be deployed within the existing Project Pulse deployment and coexist with the existing WAR and peer-evaluation functionality, sharing the same single-page application, REST API, and database.
+OE-4: Project Pulse shall be deployed as a single application in which both capability areas — the weekly activity report and peer evaluation workflows and the RAM environment — share one single-page application, one REST API, and one database.
 
-OE-5: RAM shall reach the external LLM service over HTTPS and the Gmail system over SMTP for AI-assisted review and email notifications, respectively.
+OE-5: Project Pulse shall reach the external LLM service over HTTPS and the Gmail system over SMTP for AI-assisted review and email notifications, respectively.
 
 ## **Design and Implementation Constraints**
 
-CO-1: RAM shall be implemented as a module within the existing Project Pulse codebase, reusing its Vue.js single-page application, Java/Spring Boot REST API, and relational database rather than introducing a separate system.
+CO-1: Project Pulse shall be a single application sharing one Vue.js single-page application, one Java/Spring Boot REST API, and one relational database across both capability areas; the RAM environment shall be implemented as a module within that codebase rather than as a separate system.
 
 CO-2: The client shall be implemented in Vue.js and the backend in Java using the Spring Boot framework.
 
-CO-3: Requirement artifacts, links, documents, and document sections shall be persisted in the existing Project Pulse relational database.
+CO-3: Requirement artifacts, links, documents, and document sections shall be persisted in the Project Pulse relational database.
 
-CO-4: User authentication shall be delegated to the host platform's authentication mechanism (the existing Project Pulse JWT-based login); RAM shall not implement a separate login mechanism.
+CO-4: Project Pulse shall provide a single JWT-based authentication mechanism for all users across both capability areas; the RAM environment shall reuse it rather than implementing a separate login.
 
-CO-5: RAM shall comply with FERPA when storing and transmitting student educational records.
+CO-5: Project Pulse shall comply with FERPA when storing and transmitting student educational records.
 
 CO-6: All calls to the external LLM service shall be routed through the REST API's AI proxy so that service credentials remain server-side and are never exposed to the browser.
 
-CO-7: Email notifications shall be sent through the existing Gmail SMTP integration.
+CO-7: Email notifications shall be sent through the Gmail SMTP integration.
 
 ## **Assumptions and Dependencies**
 
@@ -119,13 +119,13 @@ AS-6: Users have a supported web browser and a reliable internet connection.
 
 AS-7: The external LLM service (e.g., OpenAI) remains available and its API contract stays stable for the integration RAM relies on.
 
-AS-8: Project Pulse's existing course, course section, team, and user data is accurate and current; RAM reuses this data rather than maintaining its own copy.
+AS-8: Project Pulse's course, course section, team, and user data is accurate and current; the RAM environment reads this shared data rather than maintaining its own copy.
 
-DE-1: RAM depends on Project Pulse for authentication, the course/course section/team data model, and the course admin, instructor, and student roles.
+DE-1: The RAM environment depends on the rest of Project Pulse for authentication, the course/course section/team data model, and the course admin, instructor, and student roles.
 
-DE-2: AI-assisted requirement review depends on the external LLM service; if it is unavailable, the AI features are unavailable while the rest of RAM continues to operate.
+DE-2: AI-assisted requirement review depends on the external LLM service; if it is unavailable, the AI features are unavailable while the rest of Project Pulse continues to operate.
 
-DE-3: Email notifications depend on the Gmail SMTP integration provided by Project Pulse.
+DE-3: Email notifications depend on the Gmail SMTP integration.
 
 # **Project Glossary**
 
@@ -141,13 +141,13 @@ The Vision and Scope document is available here: [vision-and-scope.md](vision-an
 
 The Use Cases document is available here: [use-cases.md](use-cases.md).
 
-Each **use case is itself a functional requirement**, expressed at a high level: it states a user goal and the system's behavior in achieving it. Within a use case, the individual steps whose subject is "the system" — together with the use case's **Associated Information** (validation rules, duplication rules, search and display strategies, deletion strategies, notifications, and the like) — are the **finer-grained functional requirements** that detail that behavior. The use cases therefore carry the full functional specification for every user-initiated workflow, and those requirements are deliberately **not restated** here; doing so would duplicate the specification and create two copies to keep in sync. The Non-Use Case Functional Requirements section below complements the use cases by capturing the remaining functional behaviors that are _not_ user-initiated workflows (system-driven, event-driven, global, or background). Together, the use cases and the non-use-case functional requirements define the complete set of functional requirements for the RAM tool, including a small number of capabilities deferred to a future release, which are labeled as such.
+Each **use case is itself a functional requirement**, expressed at a high level: it states a user goal and the system's behavior in achieving it. Within a use case, the individual steps whose subject is "the system" — together with the use case's **Associated Information** (validation rules, duplication rules, search and display strategies, deletion strategies, notifications, and the like) — are the **finer-grained functional requirements** that detail that behavior. The use cases therefore carry the full functional specification for every user-initiated workflow, and those requirements are deliberately **not restated** here; doing so would duplicate the specification and create two copies to keep in sync. The Non-Use Case Functional Requirements section below complements the use cases by capturing the remaining functional behaviors that are _not_ user-initiated workflows (system-driven, event-driven, global, or background). Together, the use cases and the non-use-case functional requirements define the complete set of functional requirements for Project Pulse, including a small number of capabilities deferred to a future release, which are labeled as such.
 
 ## **Non-Use Case Functional Requirements**
 
-Not all functional behaviors of the RAM tool are best expressed as use cases. This section captures system-driven, event-driven, global, or background behaviors using structured "shall" statements following principles inspired by the EARS (Easy Approach to Requirements Syntax) format.
+Not all functional behaviors of Project Pulse are best expressed as use cases. This section captures system-driven, event-driven, global, or background behaviors using structured "shall" statements following principles inspired by the EARS (Easy Approach to Requirements Syntax) format.
 
-These requirements describe system-level functions that support or enable the use cases but are not user-initiated workflows.
+These requirements describe system-level functions that support or enable the use cases but are not user-initiated workflows. They span both capability areas: security and authorization (`FR-SEC-*`) and notifications (`FR-NOT-*`) are platform-wide, while autosave, locking, validation, real-time collaboration, AI orchestration, templates, terminology invariants, authorship metadata, export, and import are the cross-cutting subsystems of the RAM environment.
 
 ### *Autosave and Persistence Requirements*
 
@@ -225,7 +225,7 @@ RAM's AI assistance is delivered through Socratic assistants whose primary purpo
 
 **FR-AI-12 (Event-Driven):** When a student submits plain-language notes for translation, the structuring assistant shall propose candidate structured requirements, each traceable to its source note and applied only through the acceptance action of FR-AI-8.
 
-**FR-AI-13 (State-Driven):** While the external LLM service is unavailable, the system shall make AI features unavailable and shall keep the rest of RAM operational.
+**FR-AI-13 (State-Driven):** While the external LLM service is unavailable, the system shall make AI features unavailable and shall keep the rest of Project Pulse operational.
 
 **FR-AI-14 (Ubiquitous):** Where a team has imported project source material, the system shall make it available to the AI assistants as context for elicitation, critique, and drafting.
 
@@ -279,7 +279,7 @@ Authorship metadata (FR-HIS-4) is in scope for the initial release and is relied
 
 ### *Security and Authorization Requirements*
 
-**FR-SEC-1 (Ubiquitous):** The system shall authenticate users via the host platform's authentication mechanism before granting access to protected resources.
+**FR-SEC-1 (Ubiquitous):** The system shall authenticate users via its JWT-based authentication mechanism before granting access to protected resources.
 
 **FR-SEC-2 (Ubiquitous):** The system shall enforce role-based access control (student, instructor, course admin).
 
@@ -319,7 +319,130 @@ The Business Rules document is available here: [business-rules.md](business-rule
 
 ## **Business Domain Model**
 
-RAM persists requirements as a team-scoped graph of typed requirement artifacts connected by typed artifact links, surfaced through requirement documents and their document sections — directly realizing the graph-first model described in the Project Glossary and Vision and Scope. The entities fall into four groups: ownership and documents, the requirements graph, use-case structure, and collaboration.
+Project Pulse's domain spans both capability areas, modeled below as two diagrams: the performance-tracking domain (the platform core) and the requirements graph that the RAM environment adds. The two share the course / course section / team / user backbone — RAM scopes its requirements content to those same teams (BR-1) — but are otherwise independent.
+
+### *Performance-tracking domain*
+
+The platform core models course sections and their teams, students, and instructors; the rubrics and criteria used for assessment; each student's weekly activity report; and the peer evaluations students submit about one another. It predates this specification; field-level detail lives with the schema in the design docs ([../design/](../design/)).
+
+```mermaid
+classDiagram
+    class Rubric {
+        Integer rubricId
+        String rubricName
+    }
+    class Criterion {
+        Integer criterionId
+        String criterion
+        String description
+        Double maxScore
+    }
+    class Rating {
+        Integer ratingId
+        Double actualScore
+    }
+    class PeerEvaluation {
+        Integer peerEvaluationId
+        String week
+        Double totalScore
+        String publicComment
+        String privateComment
+    }
+    class Student {
+        Integer id
+        String email
+        String firstName
+        String lastName
+    }
+    class Course {
+        Integer courseId
+        String courseName
+        String courseDescription
+    }
+    class Section {
+        Integer sectionId
+        String sectionName
+        LocalDate startDate
+        LocalDate endDate
+        List~String~ activeWeeks
+        Boolean isActive
+        DayOfWeek warWeeklyDueDay
+        LocalTime warDueTime
+        DayOfWeek peerEvaluationWeeklyDueDay
+        LocalTime peerEvaluationDueTime
+    }
+    class Team {
+        Integer teamId
+        String teamName
+        String description
+        String teamWebsiteUrl
+    }
+    class Instructor {
+        Integer id
+        String email
+        String firstName
+        String lastName
+    }
+    class Activity {
+        Integer activityId
+        String week
+        ActivityCategory category
+        String activity
+        String description
+        Double plannedHours
+        Double actualHours
+        ActivityStatus status
+        String comments
+    }
+
+    class ActivityCategory {
+        <<enumeration>>
+        DEVELOPMENT
+        TESTING
+        BUGFIX
+        COMMUNICATION
+        DOCUMENTATION
+        DESIGN
+        PLANNING
+        LEARNING
+        DEPLOYMENT
+        SUPPORT
+        MISCELLANEOUS
+    }
+
+    class ActivityStatus {
+        <<enumeration>>
+        IN_PROGRESS
+        COMPLETED
+    }
+
+    Rubric "0..*" --> "0..*" Criterion
+    Rating --> "1" Criterion
+    PeerEvaluation -- "1..*" Rating
+    PeerEvaluation --> "1" Student : evaluator
+    PeerEvaluation --> "1" Student : evaluatee
+    Section "1" <--> "0..*" Team
+    Section "1" <--> "0..*" Student
+    Section "0..*" -- "1" Rubric
+    Team "1" <--> "0..*" Student
+    Section "0..*" <--> "0..*" Instructor
+    Team "0..*" <--> "1" Instructor
+    Activity "0..*" --> "1" Student
+    Activity "0..*" --> "1" Team
+    Course "1" <--> "0..*" Section
+    Course --> "1" Instructor : courseAdmin
+    Course "1..*" <--> "0..*" Instructor
+    Course "1" <--> "0..*" Rubric
+    Course "1" <--> "0..*" Criterion
+    Instructor --> "1" Course : defaultCourse
+    Instructor --> "1" Section : defaultSection
+```
+
+Here `Section` is the course section entity — the enrollment unit students join and that groups them into teams — not a document section. There is no standalone weekly-activity-report entity: a student's weekly activity report is her `Activity` rows for a given `week`. A course section's `warWeeklyDueDay` / `peerEvaluationWeeklyDueDay` and the paired due times drive the weekly submission reminders (FR-NOT-3). `ActivityCategory` and `ActivityStatus` are enumerations (shown above); `DayOfWeek`, `LocalDate`, and `LocalTime` are `java.time` types. `Student` and `Instructor` share the platform's user identity fields (id, email, name).
+
+### *RAM requirements graph*
+
+The RAM environment persists requirements as a team-scoped graph of typed requirement artifacts connected by typed artifact links, surfaced through requirement documents and their document sections — directly realizing the graph-first model described in the Project Glossary and Vision and Scope. The entities fall into four groups: ownership and documents, the requirements graph, use-case structure, and collaboration.
 
 **Ownership and documents**
 
@@ -350,7 +473,7 @@ RAM persists requirements as a team-scoped graph of typed requirement artifacts 
 classDiagram
 direction TB
     class Team {
-        -Long id
+        -Integer teamId
     }
 
     class RequirementDocument {
@@ -591,11 +714,11 @@ The Business Domain Model above names the system's entities, their fields, and t
 
 ## **Reports**
 
-Release 1.0 generates no reports. Completeness-metric, progress, and requirement-quality dashboards over a team's requirements graph are a deferred RAM capability (future release); the host Project Pulse platform provides its own instructor monitoring outside RAM's scope. Document export — PDF, DOCX, or Markdown rendered to the template structure — is a formatted document, not a report, and is specified under External Interface Requirements (SI-3, FR-EXP-1, FR-EXP-2).
+The performance-tracking capability generates reports: peer evaluation reports for students and instructors (UC-EVA-2, UC-EVA-3, UC-EVA-4) and weekly activity report summaries for teams and individual students (UC-WAR-2, UC-WAR-3); each is specified by its use case, including its report parameters and generating algorithm. The RAM environment generates no reports in release 1.0 — completeness-metric, progress, and requirement-quality dashboards over a team's requirements graph are a deferred RAM capability (future release). Document export — PDF, DOCX, or Markdown rendered to the template structure — is a formatted document, not a report, and is specified under External Interface Requirements (SI-3, FR-EXP-1, FR-EXP-2).
 
 ## **Data Acquisition, Integrity, Retention, and Disposal**
 
-DI-1: RAM shall acquire user identity, role, course section, team membership, and team ownership data from the host Project Pulse platform rather than maintaining a separate copy (DE-1, SI-2).
+DI-1: RAM shall acquire user identity, role, course section, team membership, and team ownership data from the rest of Project Pulse rather than maintaining a separate copy (DE-1, SI-2).
 
 DI-2: RAM shall persist requirement documents, document sections, requirement artifacts, artifact links, use cases, locks, comment threads, comments, and artifact-key sequences in the Project Pulse relational database (CO-3, SI-2.3).
 
@@ -613,15 +736,15 @@ DI-8: RAM shall use optimistic version fields and exclusive edit locks for docum
 
 DI-9: RAM shall not retain document-section version checkpoints for release 1.0; document version history is deferred to a future release (FR-HIS-1, FR-HIS-2, FR-HIS-3).
 
-DI-10: RAM shall rely on the host Project Pulse database backup, recovery, and disposal policies for physical retention and disposal of persisted RAM data, except where RAM-specific business rules require stronger logical retention for audit.
+DI-10: RAM shall rely on the Project Pulse database backup, recovery, and disposal policies for physical retention and disposal of persisted RAM data, except where RAM-specific business rules require stronger logical retention for audit.
 
 # **External Interface Requirements**
 
 ## **User Interfaces**
 
-UI-1: RAM's user interface shall be delivered as views within the existing Project Pulse Vue.js single-page application, conforming to that application's established layout, navigation, and styling conventions (per CO-1, CO-2, INT-1). Detailed UI design is maintained with the SPA, not in this document.
+UI-1: Project Pulse is delivered as a single Vue.js single-page application; the RAM environment's user interface shall be a set of views within it, conforming to the application's established layout, navigation, and styling conventions (per CO-1, CO-2, INT-1). Detailed UI design is maintained with the SPA, not in this document.
 
-UI-2: RAM shall conform to WCAG 2.1 Level AA for color contrast, keyboard navigation, and screen-reader support (per USE-1; addresses risk RI-6).
+UI-2: Project Pulse shall conform to WCAG 2.1 Level AA for color contrast, keyboard navigation, and screen-reader support (per USE-1; addresses risk RI-6).
 
 UI-3: The requirement-document editor shall present a two-column layout — a document-and-section outline alongside the selected section's editor — with per-section locking; a list section shall provide an "Add Requirement" action for authoring artifacts within it. The Use Cases document editor shall expose equivalent per-use-case locking when a student edits a use case.
 
@@ -637,17 +760,17 @@ SI-1.3: Requests to and responses from the LLM service shall use JSON; an assist
 
 SI-1.4: LLM service credentials shall be held server-side and shall never be exposed to the browser (per CO-6, SEC-4).
 
-SI-1.5: While the LLM service is unavailable or a request times out, the AI proxy shall report the condition to the requesting feature so that AI features become unavailable while the rest of RAM continues to operate (per FR-AI-13, AVL-2, PER-4).
+SI-1.5: While the LLM service is unavailable or a request times out, the AI proxy shall report the condition to the requesting feature so that AI features become unavailable while the rest of Project Pulse continues to operate (per FR-AI-13, AVL-2, PER-4).
 
-SI-2: Project Pulse host platform
+SI-2: Project Pulse platform core
 
-SI-2.1: RAM shall obtain the authenticated user's identity and role (course admin, instructor, student) from the host platform's authenticated session and shall not implement its own login (per CO-4, SEC-1).
+SI-2.1: The RAM environment shall obtain the authenticated user's identity and role (course admin, instructor, student) from Project Pulse's authenticated session and shall not implement its own login (per CO-4, SEC-1).
 
-SI-2.2: RAM shall read Course, course section, team, and membership data from the host platform's existing data model rather than maintaining its own copy (per DE-1; AS-8).
+SI-2.2: The RAM environment shall read course, course section, team, and membership data from Project Pulse's existing data model rather than maintaining its own copy (per DE-1; AS-8).
 
-SI-2.3: RAM shall persist its requirements graph — artifacts, links, documents, document sections, locks, comment threads, and comments — in the existing Project Pulse relational database (per CO-3).
+SI-2.3: The RAM environment shall persist its requirements graph — artifacts, links, documents, document sections, locks, comment threads, and comments — in the Project Pulse relational database (per CO-3).
 
-SI-2.4: RAM shall send email notifications through the host platform's Gmail SMTP integration (per CO-7, DE-3); the triggering conditions and message content are specified in the Communications Interfaces section.
+SI-2.4: The RAM environment shall send email notifications through Project Pulse's Gmail SMTP integration (per CO-7, DE-3); the triggering conditions and message content are specified in the Communications Interfaces section.
 
 SI-3: Document export
 
@@ -671,21 +794,23 @@ No hardware interfaces have been identified.
 
 ## **Communications Interfaces**
 
-CI-1: RAM shall send review-workflow email notifications — when a requirement document is submitted for review, returned for revision, or accepted — to the designated recipients through the host platform's Gmail SMTP integration (per CO-7, DE-3, FR-NOT-1; supports UC-REV-1, UC-REV-2).
+CI-1: RAM shall send review-workflow email notifications — when a requirement document is submitted for review, returned for revision, or accepted — to the designated recipients through Project Pulse's Gmail SMTP integration (per CO-7, DE-3, FR-NOT-1; supports UC-REV-1, UC-REV-2).
 
 CI-2: RAM shall not send email for the routine authoring changes covered by FR-NOT-2; such changes propagate to connected teammates in real time over the collaboration channel instead (per FR-COL-1..4).
 
 CI-3: RAM shall communicate with the external LLM service over HTTPS (per OE-5, SEC-4).
 
-CI-4: RAM shall conduct all browser-to-server communication over HTTPS, reusing the host platform's transport security.
+CI-4: Project Pulse shall conduct all browser-to-server communication over HTTPS.
 
 # **Quality Attributes**
 
+These quality attributes apply to Project Pulse as a whole. Some — accessibility, security, availability, and transport security — are platform-wide; others name behaviors specific to the RAM environment's features (autosave and edit-loss bounds, ReqLint and AI response times, real-time collaboration) and are scoped to RAM accordingly.
+
 ## **Usability**
 
-USE-1: RAM shall follow WCAG 2.1 Level AA guidelines for color contrast, keyboard navigation, and screen-reader support. (Addresses risk RI-6.)
+USE-1: Project Pulse shall follow WCAG 2.1 Level AA guidelines for color contrast, keyboard navigation, and screen-reader support. (Addresses risk RI-6.)
 
-USE-2: RAM shall be fully operable using the keyboard alone for all authoring, navigation, validation, and review actions.
+USE-2: Project Pulse shall be fully operable using the keyboard alone, including all RAM authoring, navigation, validation, and review actions.
 
 USE-3: RAM shall present every ReqLint validation finding and AI critique finding with the specific document location it refers to and an instructive rationale, so that a student can act on it without external help.
 
@@ -703,15 +828,15 @@ PER-4: RAM shall present an AI assistant response, or a clear "working" / timeou
 
 ## **Security**
 
-SEC-1: RAM shall authenticate every user through the host platform's authentication mechanism before granting access to any protected resource, per CO-4 and FR-SEC-1.
+SEC-1: Project Pulse shall authenticate every user through its JWT-based authentication mechanism before granting access to any protected resource, per CO-4 and FR-SEC-1.
 
-SEC-2: RAM shall enforce role-based access control across the course admin, instructor, and student roles, and shall restrict each student to her own team's requirements graph, documents, and project source material, per BR-1, BR-2, and FR-SEC-2.
+SEC-2: Project Pulse shall enforce role-based access control across the course admin, instructor, and student roles, and the RAM environment shall restrict each student to her own team's requirements graph, documents, and project source material, per BR-1, BR-2, and FR-SEC-2.
 
-SEC-3: RAM shall store and transmit student educational records in compliance with FERPA, per CO-5.
+SEC-3: Project Pulse shall store and transmit student educational records in compliance with FERPA, per CO-5.
 
 SEC-4: RAM shall route all calls to the external LLM service through the server-side AI proxy and shall never expose LLM service credentials to the browser, per CO-6.
 
-SEC-5: RAM shall encrypt all traffic between the browser and the server over HTTPS, per OE-3.
+SEC-5: Project Pulse shall encrypt all traffic between the browser and the server over HTTPS, per OE-3.
 
 ## **Safety**
 
@@ -719,9 +844,9 @@ SAF-1: RAM is a web-based requirements-authoring tool with no physical actuation
 
 ## **Availability**
 
-AVL-1: RAM shall be available at least 99% of each academic term, excluding scheduled maintenance windows, with availability prioritized near assignment deadlines. (Realized by FR-PERF-2.)
+AVL-1: Project Pulse shall be available at least 99% of each academic term, excluding scheduled maintenance windows, with availability prioritized near assignment deadlines. (Realized by FR-PERF-2.)
 
-AVL-2: While the external LLM service is unavailable, RAM shall keep all non-AI functionality operational and clearly indicate that AI assistance is temporarily unavailable, per FR-AI-13 and DE-2.
+AVL-2: While the external LLM service is unavailable, Project Pulse shall keep all non-AI functionality operational and clearly indicate that AI assistance is temporarily unavailable, per FR-AI-13 and DE-2.
 
 ## **Robustness**
 
@@ -733,9 +858,9 @@ ROB-3: RAM shall ensure that real-time collaborative updates never overwrite or 
 
 ## **Scalability and Interoperability**
 
-SCA-1: RAM shall sustain its performance and availability targets under peak concurrent load near assignment deadlines for a Senior Design cohort of approximately 70 students (about 75 total users including instructors and course admins), whose peak concurrent editing stays within the 100-concurrent performance envelope specified in PER-1 (cf. risk RI-3).
+SCA-1: Project Pulse shall sustain its performance and availability targets under peak concurrent load near assignment deadlines for a Senior Design cohort of approximately 70 students (about 75 total users including instructors and course admins), whose peak concurrent editing stays within the 100-concurrent performance envelope specified in PER-1 (cf. risk RI-3).
 
-INT-1: RAM shall operate as a module within the existing Project Pulse application, reusing its single-page application, REST API, relational database, authentication, and notification services rather than introducing a parallel system, per CO-1 and OE-4.
+INT-1: Project Pulse shall operate as a single application across both capability areas; the RAM environment shall reuse its single-page application, REST API, relational database, authentication, and notification services rather than introducing a parallel system, per CO-1 and OE-4.
 
 ## **Maintainability**
 
@@ -745,13 +870,13 @@ MNT-1: RAM shall access its requirements graph behind a service layer so that ne
 
 # **Internationalization and Localization Requirements**
 
-N/A for release 1.0. RAM targets TCU software-engineering courses and ships in U.S. English only; no multi-language, multi-currency, or locale-specific formatting requirements apply. (Accessibility is in scope but is a usability requirement — see USE-1 / WCAG 2.1 AA in the Usability section — not an internationalization one.)
+N/A for release 1.0. Project Pulse targets TCU software-engineering courses and ships in U.S. English only; no multi-language, multi-currency, or locale-specific formatting requirements apply. (Accessibility is in scope but is a usability requirement — see USE-1 / WCAG 2.1 AA in the Usability section — not an internationalization one.)
 
 # **Other Requirements**
 
-RAM introduces no additional requirements beyond those specified elsewhere; the cross-cutting concerns that would otherwise appear here are referenced rather than restated:
+Project Pulse introduces no additional requirements beyond those specified elsewhere; the cross-cutting concerns that would otherwise appear here are referenced rather than restated:
 
 - Regulatory and compliance: FERPA handling of student educational records — CO-5 and SEC-3 (Security).
 - Security and access control: host-platform authentication and role-based access — FR-SEC-1..3 (Security and Authorization Requirements) and the Security quality attributes.
 - Authorship and audit trail: creator/editor identity and timestamps on every authored item — FR-HIS-4 (Authorship Metadata and Document Versioning Requirements); logical (soft) deletion that retains items for audit — BR-12.
-- Installation, configuration, and startup/shutdown: RAM follows the host Project Pulse application (see the [Deployment View](../design/architectural-design.md#deployment-view)).
+- Installation, configuration, and startup/shutdown: Project Pulse is deployed as a single application (see the [Deployment View](../design/architectural-design.md#deployment-view)).
