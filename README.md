@@ -69,6 +69,7 @@ The requirements specifications themselves are authored as Markdown under [`docs
     ├── docker/                      # Folder containing configuration files for grafana and prometheus
     ├── docs/                        # Spec-first requirements, design & traceability docs
     ├── frontend/                    # Vue.js frontend (Vite)
+    ├── survey-data/                 # Anonymized course survey responses (research data)
     ├── CLAUDE.md                    # Guidance for Claude Code / contributors
     ├── .gitignore                   # Git ignore rules for both frontend and backend
     ├── Dockerfile                   # Dockerfile for building the Spring Boot application
