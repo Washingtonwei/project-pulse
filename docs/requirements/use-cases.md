@@ -62,11 +62,11 @@
 
 # **Use Case List**
 
-The catalog of use cases begins below, grouped by area. Each area is an unnumbered H2 sub-heading and each use case an H3 carrying an area-prefixed ID (`UC-<AREA>-<n>`). The catalog spans both the platform-core areas — Rubric, Course Section, Team, Student, Instructor, Account, Weekly Activity Report, and Peer Evaluation — and the requirements-authoring areas that follow them (Templates and Provisioning, Glossary, Requirement Documents, Requirement Artifacts, Artifact Links and Tracing, Validation, Collaboration, Review and Submission, Export, AI Configuration, and AI Assistants).
+The catalog of use cases begins below, grouped by area. Each area is an unnumbered H2 sub-heading and each use case an H3 carrying an area-prefixed ID (`UC-<AREA>-<n>`). The catalog spans both the core areas — Rubric, Course Section, Team, Student, Instructor, Account, Weekly Activity Report, and Peer Evaluation — and the requirements-authoring areas that follow them (Templates and Provisioning, Glossary, Requirement Documents, Requirement Artifacts, Artifact Links and Tracing, Validation, Collaboration, Review and Submission, Export, AI Configuration, and AI Assistants).
 
-The note below is **not** the catalog. It records scope context only: a few host-platform capabilities not yet specified as use cases, and work that is **deferred or on hold**. Anything that has been specified appears as a `UC-<AREA>-<n>` below — not in this note.
+The note below is **not** the catalog. It records scope context only: a few Project Pulse capabilities not yet specified as use cases, and work that is **deferred or on hold**. Anything that has been specified appears as a `UC-<AREA>-<n>` below — not in this note.
 
-**Provided by the Project Pulse host platform** (infrastructure used but not yet specified as use cases):
+**Existing Project Pulse capabilities** (used but not yet specified as use cases):
 - The course admin creates a course (course sections are created in the Course Section area below)
 - The course admin transfers teams or students between course sections
 - The course admin selects built-in templates for a team (hardcoded for the MVP; document creation is specified as UC-TPL-1)

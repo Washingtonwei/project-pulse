@@ -353,7 +353,7 @@ Teams are the ownership boundary for requirement artifacts and documents.
 
 ## **Course**
 
-An academic course hosted on the Project Pulse platform (e.g., COSC 40943 Senior Design I). The user who creates a Course becomes its course admin; a Course contains one or more course sections offered across terms.
+An academic course managed in Project Pulse (e.g., COSC 40943 Senior Design I). The user who creates a Course becomes its course admin; a Course contains one or more course sections offered across terms.
 
 ## **Course Section**
 

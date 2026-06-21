@@ -1,6 +1,6 @@
 # Project Pulse — Documentation
 
-This directory holds the **spec→design→trace chain** for Project Pulse — the durable, version-controlled documentation that drives the implementation. It is organized **doctype-first**: one set of docs for the whole product, covering both the platform core (weekly activity reports, peer evaluations, courses/sections/teams) and the RAM (Requirements Authoring & Management) module.
+This directory holds the **spec→design→trace chain** for Project Pulse — the durable, version-controlled documentation that drives the implementation. It is organized **doctype-first**: one set of docs for the whole product, covering both the Project Pulse core (weekly activity reports, peer evaluations, courses/sections/teams) and the RAM (Requirements Authoring & Management) module.
 
 ## Layout
 

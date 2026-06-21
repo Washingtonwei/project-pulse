@@ -30,7 +30,7 @@ This Software Requirements Specification describes the external behavior and qua
 - **Use Cases** ([use-cases.md](use-cases.md)) — the behavioral specification: each user-initiated workflow as a use case, which is itself a high-level functional requirement.
 - **Business Rules** ([business-rules.md](business-rules.md)) — the cross-cutting policies, constraints, and access rules (`BR-*`) that the use cases and this SRS enforce.
 - **Software Requirements Specification** (this document) — the integrating specification: it orients the reader (the Overall Description section), then specifies the non-use-case functional requirements, the data model, external interfaces, and quality attributes, citing the documents above rather than repeating them.
-- **Architectural Design** ([../design/architectural-design.md](../design/architectural-design.md)) — the single arc42/C4 architecture-of-record, sitting below this SRS: the host software architecture, conventions, and deployment that RAM inherits, plus the core and RAM component views and cross-cutting subsystems.
+- **Architectural Design** ([../design/architectural-design.md](../design/architectural-design.md)) — the single arc42/C4 architecture-of-record, sitting below this SRS: the shared software architecture, conventions, and deployment that the RAM module inherits, plus the core and RAM component views and cross-cutting subsystems.
 - **Traceability** ([../traceability.md](../traceability.md)) — the spec→code map: one row per use case linking it to the requirements and design it realizes and the code and tests that implement it.
 
 ```mermaid
@@ -147,7 +147,7 @@ Each **use case is itself a functional requirement**, expressed at a high level:
 
 Not all functional behaviors of Project Pulse are best expressed as use cases. This section captures system-driven, event-driven, global, or background behaviors using structured "shall" statements following principles inspired by the EARS (Easy Approach to Requirements Syntax) format.
 
-These requirements describe system-level functions that support or enable the use cases but are not user-initiated workflows. They span both capability areas: security and authorization (`FR-SEC-*`) and notifications (`FR-NOT-*`) are platform-wide, while autosave, locking, validation, real-time collaboration, AI orchestration, templates, terminology invariants, authorship metadata, export, and import are the cross-cutting subsystems of the RAM environment.
+These requirements describe system-level functions that support or enable the use cases but are not user-initiated workflows. They span both capability areas: security and authorization (`FR-SEC-*`) and notifications (`FR-NOT-*`) are system-wide, while autosave, locking, validation, real-time collaboration, AI orchestration, templates, terminology invariants, authorship metadata, export, and import are the cross-cutting subsystems of the RAM environment.
 
 ### *Autosave and Persistence Requirements*
 
@@ -319,11 +319,11 @@ The Business Rules document is available here: [business-rules.md](business-rule
 
 ## **Business Domain Model**
 
-Project Pulse's domain spans both capability areas, modeled below as two diagrams: the performance-tracking domain (the platform core) and the requirements graph that the RAM environment adds. The two share the course / course section / team / user backbone — RAM scopes its requirements content to those same teams (BR-1) — but are otherwise independent.
+Project Pulse's domain spans both capability areas, modeled below as two diagrams: the performance-tracking domain and the requirements graph that the RAM environment adds. The two share the course / course section / team / user backbone — RAM scopes its requirements content to those same teams (BR-1) — but are otherwise independent.
 
 ### *Performance-tracking domain*
 
-The platform core models course sections and their teams, students, and instructors; the rubrics and criteria used for assessment; each student's weekly activity report; and the peer evaluations students submit about one another. It predates this specification; field-level detail lives with the schema in the design docs ([../design/](../design/)).
+This diagram covers the shared foundation — course sections and their teams, students, and instructors — together with the performance-tracking entities: the rubrics and criteria used for assessment, each student's weekly activity report, and the peer evaluations students submit about one another. It predates this specification; field-level detail lives with the schema in the design docs ([../design/](../design/)).
 
 ```mermaid
 classDiagram
@@ -762,7 +762,7 @@ SI-1.4: LLM service credentials shall be held server-side and shall never be exp
 
 SI-1.5: While the LLM service is unavailable or a request times out, the AI proxy shall report the condition to the requesting feature so that AI features become unavailable while the rest of Project Pulse continues to operate (per FR-AI-13, AVL-2, PER-4).
 
-SI-2: Project Pulse platform core
+SI-2: Project Pulse core services
 
 SI-2.1: The RAM environment shall obtain the authenticated user's identity and role (course admin, instructor, student) from Project Pulse's authenticated session and shall not implement its own login (per CO-4, SEC-1).
 
@@ -804,7 +804,7 @@ CI-4: Project Pulse shall conduct all browser-to-server communication over HTTPS
 
 # **Quality Attributes**
 
-These quality attributes apply to Project Pulse as a whole. Some — accessibility, security, availability, and transport security — are platform-wide; others name behaviors specific to the RAM environment's features (autosave and edit-loss bounds, ReqLint and AI response times, real-time collaboration) and are scoped to RAM accordingly.
+These quality attributes apply to Project Pulse as a whole. Some — accessibility, security, availability, and transport security — are system-wide; others name behaviors specific to the RAM environment's features (autosave and edit-loss bounds, ReqLint and AI response times, real-time collaboration) and are scoped to RAM accordingly.
 
 ## **Usability**
 
@@ -877,6 +877,6 @@ N/A for release 1.0. Project Pulse targets TCU software-engineering courses and 
 Project Pulse introduces no additional requirements beyond those specified elsewhere; the cross-cutting concerns that would otherwise appear here are referenced rather than restated:
 
 - Regulatory and compliance: FERPA handling of student educational records — CO-5 and SEC-3 (Security).
-- Security and access control: host-platform authentication and role-based access — FR-SEC-1..3 (Security and Authorization Requirements) and the Security quality attributes.
+- Security and access control: platform authentication and role-based access — FR-SEC-1..3 (Security and Authorization Requirements) and the Security quality attributes.
 - Authorship and audit trail: creator/editor identity and timestamps on every authored item — FR-HIS-4 (Authorship Metadata and Document Versioning Requirements); logical (soft) deletion that retains items for audit — BR-12.
 - Installation, configuration, and startup/shutdown: Project Pulse is deployed as a single application (see the [Deployment View](../design/architectural-design.md#deployment-view)).

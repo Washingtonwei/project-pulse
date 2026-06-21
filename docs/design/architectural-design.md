@@ -1,6 +1,6 @@
 # **Architectural Design — Project Pulse Platform**
 
-> **Design-of-record for the Project Pulse platform** — the host that both the core features (weekly activity reports, peer evaluations, courses/course sections/teams) and the RAM module run on. It is the single architecture-of-record for the whole product: the platform-wide context/container views and conventions **plus** the RAM module's component view and cross-cutting subsystems (folded into the Building Block View and Crosscutting Concepts below).
+> **Design-of-record for the Project Pulse platform** — the one application that comprises both the core features (weekly activity reports, peer evaluations, courses/course sections/teams) and the RAM module. It is the single architecture-of-record for the whole product: the platform-wide context/container views and conventions **plus** the RAM module's component view and cross-cutting subsystems (folded into the Building Block View and Crosscutting Concepts below).
 >
 > Structure: this document follows the **arc42** template (Starke & Hruschka), using **C4** for the context and building-block views. The section names and order are arc42's; numbering is applied at export.
 >
@@ -8,9 +8,9 @@
 
 ## **Introduction and Goals**
 
-Project Pulse was built **core-first**: the weekly-activity-report, peer-evaluation, and course/course-section/team functionality — together with security, the API conventions, and the deployment pipeline — came first as the working application. **RAM was a separate project, merged in later** to reuse this same course/section/team/security/auth infrastructure. So this platform is the host, RAM is a module on top, and **the conventions here belong to the platform** — the requirements specs cite them rather than restate them.
+Project Pulse was built **core-first**: the weekly-activity-report, peer-evaluation, and course/course-section/team functionality — together with security, the API conventions, and the deployment pipeline — came first as the working application. **RAM was a separate project, merged in later** to reuse this same course/section/team/security/auth infrastructure. So Project Pulse is the platform, RAM is a module within it, and **the conventions here belong to the platform** — the requirements specs cite them rather than restate them.
 
-This doc is the platform's **architecture-of-record**: the structure, conventions, decisions, cross-cutting concerns, runtime/deployment, and known risks every module inherits or is bounded by. It is **not** named after a use-case area and does not change when one feature is added — it changes when the host architecture does.
+This doc is the platform's **architecture-of-record**: the structure, conventions, decisions, cross-cutting concerns, runtime/deployment, and known risks every module inherits or is bounded by. It is **not** named after a use-case area and does not change when one feature is added — it changes when the platform architecture does.
 
 ### *Requirements Overview*
 
@@ -43,7 +43,7 @@ Constraints the architecture must honor, gathered from the requirements, the ins
 
 - **Regulatory** — the system holds student educational records, so **FERPA** governs access, disclosure, and retention (Quality Goal #1).
 - **Organizational** — a single instructor operates a course with **no dedicated dev/ops team**; deployment is **single-tenant** (one institution per deployment).
-- **Platform-given** — RAM is a **module inside a fixed host**: it must reuse the existing course/section/team/auth/email infrastructure and the platform conventions, not fork or duplicate them. The platform was built **core-first**, so those conventions predate and bind RAM.
+- **Platform-given** — RAM is a **module inside a fixed platform**: it must reuse the existing course/section/team/auth/email infrastructure and the platform conventions, not fork or duplicate them. The platform was built **core-first**, so those conventions predate and bind RAM.
 - **Process** — requirements are authored as durable specs (Markdown under `docs/requirements/`) and drive the design.
 - **Technology stack (prescribed):**
   - **Backend** — Java 21, Spring Boot 4.0, Maven; Spring Security, Spring Data JPA, Flyway.
@@ -531,8 +531,8 @@ Single-tenant: one deployment serves one institution. The trust boundary is the 
 
 The domain vocabulary is defined in the [project glossary](../requirements/project-glossary.md). Architecture terms used in this document:
 
-- **Architecture-of-record** — the single canonical architecture description this doc *is*; changes only when the host architecture changes, not per feature.
+- **Architecture-of-record** — the single canonical architecture description this doc *is*; changes only when the platform architecture changes, not per feature.
 - **Bounded context / vertical slice** — one DDD domain per package owning its entity → repository → service → controller → DTO/converter stack.
 - **`Result` envelope** — the standard response wrapper (`flag`/`code`/`message`/`data`) every controller returns.
 - **Ownership vs membership** — the two fine-grained authorization checks: *ownership* = the user created the resource; *membership* = the user belongs to the same course/section/team.
-- **Module / host platform** — RAM is a *module* inside the Project Pulse *host platform*; the platform owns the conventions, RAM cites them.
+- **Module / platform** — RAM is a *module* inside the Project Pulse *platform*; the platform owns the conventions, RAM cites them.
