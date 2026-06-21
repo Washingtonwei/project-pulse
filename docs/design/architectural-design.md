@@ -446,7 +446,7 @@ Single-tenant: one deployment serves one institution. The trust boundary is the 
 
 - **CRITICAL ([TD-1](#risks-and-technical-debt), P0) — `/actuator/**` is publicly exposed and unauthenticated.** It falls outside the `/api/v1` security rules and hits `anyRequest().permitAll()`; the exposed set includes `env`/`configprops` (`show-values: always`) and `heapdump`, so **environment variables, resolved secrets (DB credentials, Key-Vault values), and full memory dumps are reachable without authentication in production**. Must be locked down — secure `/actuator/**` (admin-only), drop `env`/`heapdump`/`configprops` from web exposure, or bind management to a private port. See [Security & Compliance](#security--compliance).
 - **No production observability backend** — Prometheus/Grafana/Zipkin run only in local dev (`docker-compose`); production telemetry is **not collected** anywhere yet. A prod path (e.g. Azure Monitor / Application Insights / Managed Grafana scraping Actuator) is an open item.
-- No **alerting** rules or **SLOs**, and no centralized log aggregation. The tracing-sampling property also carries a contradictory comment to clean up.
+- No **alerting** rules or **SLOs**, and no centralized log aggregation.
 
 ## **Architecture Decisions**
 
