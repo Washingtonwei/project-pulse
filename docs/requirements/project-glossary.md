@@ -31,6 +31,68 @@ The remainder of this document contains terms followed by their definitions. Ter
 
 # **Definitions**
 
+## **Team**
+
+A group of users (students or instructors) collaborating on a single project. In the senior design course a team usually consists of 5–6 students working with a real external client through the full project lifecycle, and is assigned a single instructor — its TCU instructor (see BR-21).
+
+Teams are the ownership boundary for requirement artifacts and documents.
+
+## **Course**
+
+An academic course managed in Project Pulse (e.g., COSC 40943 Senior Design). The user who creates a Course becomes its course admin; a Course contains one or more course sections offered across terms.
+
+## **Course Section**
+
+A specific offering of a Course within an academic term (e.g., Fall 2026, Section 01). A course section enrolls students and instructors and groups students into teams. Distinct from document section, which is a structural division within a requirement document.
+
+## **Course Admin**
+
+A course-scoped owner role in Project Pulse. The user who creates a Course becomes its course admin; different Courses have different course admins. A course admin is also an instructor of her Course and therefore holds every instructor capability; in addition, she invites instructors to the Course, creates course sections and teams, manages instructor and student enrollment, assigns teams, and configures which built-in templates are available to each team. Provisioning a team's requirement documents from those templates is reserved to the course admin (UC-TPL-1, BR-3).
+
+## **Instructor**
+
+A user role that teaches a course section, invited to the Course by its course admin (who is herself also an instructor of the Course). Instructors review and grade student requirement documents, provide inline feedback, and configure AI assistance settings for their course section (when permitted). Team and document provisioning, and template selection, are reserved to the course admin (BR-3).
+
+## **Student**
+
+A user role enrolled in a course section as a member of a team. Students author requirement documents collaboratively with teammates, respond to instructor feedback, and submit work for grading.
+
+## **Academic Year**
+
+The period an educational institution uses to measure study, typically spanning early fall of one year to early summer of the next and divided into semesters. In Project Pulse it frames the schedule over which a course section's weekly activity reports and peer evaluations are collected.
+
+## **Active Week**
+
+A week in which students are required to submit weekly activity reports and peer evaluations. Because a course section spans a winter holiday break, the course admin can mark some weeks inactive so that students need not submit reports during those weeks (see BR-22). A week runs Monday to Sunday; Monday's date may serve as the identifier for the week.
+
+## **TCU Online**
+
+The learning management system used by Texas Christian University. Students upload work and view grades on it; it does not support peer evaluations. It is the external system to which an instructor still manually uploads finalized grades — a step that remains outside the scope of Project Pulse.
+
+## **Weekly Activity Report (WAR)**
+
+A structured weekly overview of a project team's progress, challenges, and next steps that supports communication among team members, instructors, and stakeholders. A weekly activity report consists of multiple activities; for each activity a student records the activity category, the planned activity, a description of the activity, hours planned, actual hours taken, and the activity's status.
+
+## **Peer Evaluation**
+
+A weekly assessment in which members of a team rate each other's contributions, performance, and teamwork against a rubric. Peer evaluations build self-awareness and accountability within the team and help identify strengths and areas for improvement.
+
+### *Public Comments*
+
+Optional comments a student may add when evaluating a teammate that are shared with the evaluatee.
+
+### *Private Comments*
+
+Optional comments a student may add when evaluating a teammate that are sent only to the instructor and are not shared with the evaluatee.
+
+## **Rubric**
+
+A scoring guide used to evaluate performance, work quality, behavior, or contributions against a set of predefined criteria. A peer evaluation is scored against a rubric, which provides a rating scale (for example, 1–10 from poor to excellent) for each criterion — covering aspects such as work quality, productivity, proactiveness, respect for others, response to criticism, and meeting performance.
+
+### *Criterion*
+
+A single standard or aspect of performance, work, or behavior assessed within a rubric. The criteria together define the expectations evaluated each week (for example, clarity, depth of analysis, teamwork, participation, or technical skill).
+
 ## **Requirement Artifact**
 
 The core domain entity representing a traceable requirements engineering concept. Artifacts are modeled explicitly to enable traceability, validation, navigation, and analysis. RAM models requirements as atomic artifacts (e.g., objective, feature, use case, step, functional requirement, glossary term), each with identity, type, and explicit links.
@@ -291,6 +353,8 @@ A requirement artifact describing any person, group, or organization with an int
 
 A requirement artifact stating a condition taken to be true for purposes of planning or specification but not yet verified. Assumptions that turn out to be false may invalidate requirements that depend on them.
 
+An assumption may be business-level (about adoption, environment, or organizational reality — authored in Vision and Scope's Business Assumptions and Dependencies section) or architecture-level (about the technical environment the system relies on, such as supported browsers or the stability of an external API contract — authored in the Software Requirements Specification's Assumptions and Dependencies section). Both are the same artifact type and share one team-wide `AS-*` key sequence across the two authoring homes.
+
 ## **Dependency**
 
 A requirement artifact identifying an external factor outside the project's control that the system relies on (e.g., third-party APIs, infrastructure availability, decisions by other teams). Project success may be affected if a dependency fails or changes.
@@ -344,68 +408,6 @@ Distinct from the two other AI teaching artifacts: the teaching context supplies
 ## **Project Source Material**
 
 Input materials the client provides to seed a project — typically a pitch slide deck and a short brief (PDF) covering background, stakeholders, problem statement, users, objectives, desired functionality, possible solutions, prototypes, and a candidate tech stack. The team imports these into RAM, and the assistants use them as context (for example, the elicitation assistant's gap analysis and interview-question preparation). Project source material is an input the team works from, not authored requirement content; it may become stale after the project starts; it is distinct from requirement documents and requirement artifacts.
-
-## **Team**
-
-A group of users (students or instructors) collaborating on a single project. In the senior design course a team usually consists of 5–6 students working with a real external client through the full project lifecycle, and is assigned a single instructor — its TCU instructor (see BR-21).
-
-Teams are the ownership boundary for requirement artifacts and documents.
-
-## **Course**
-
-An academic course managed in Project Pulse (e.g., COSC 40943 Senior Design I). The user who creates a Course becomes its course admin; a Course contains one or more course sections offered across terms.
-
-## **Course Section**
-
-A specific offering of a Course within an academic term (e.g., Fall 2025, Section 01). A course section enrolls students and instructors and groups students into teams. In the TCU senior design course, a course section is the offering of the two-course senior design sequence that runs across the academic year (typically late August to the following April) and is named in a `YYYY-YYYY` format (e.g., 2024-2025). Distinct from document section, which is a structural division within a requirement document.
-
-## **Course Admin**
-
-A course-scoped owner role in Project Pulse. The user who creates a Course becomes its course admin; different Courses have different course admins. A course admin is also an instructor of her Course and therefore holds every instructor capability; in addition, she invites instructors to the Course, creates course sections and teams, manages instructor and student enrollment, assigns teams, and configures which built-in templates are available to each team. Provisioning a team's requirement documents from those templates is reserved to the course admin (UC-TPL-1, BR-3).
-
-## **Instructor**
-
-A user role that teaches a course section, invited to the Course by its course admin (who is herself also an instructor of the Course). Instructors review and grade student requirement documents, provide inline feedback, and configure AI assistance settings for their course section (when permitted). Team and document provisioning, and template selection, are reserved to the course admin (BR-3).
-
-## **Student**
-
-A user role enrolled in a course section as a member of a team. Students author requirement documents collaboratively with teammates, respond to instructor feedback, and submit work for grading.
-
-## **Academic Year**
-
-The period an educational institution uses to measure study, typically spanning early fall of one year to early summer of the next and divided into semesters. In Project Pulse it frames the schedule over which a course section's weekly activity reports and peer evaluations are collected.
-
-## **Active Week**
-
-A week in which students are required to submit weekly activity reports and peer evaluations. Because a course section spans a winter holiday break, the course admin can mark some weeks inactive so that students need not submit reports during those weeks (see BR-22). A week runs Monday to Sunday; Monday's date may serve as the identifier for the week.
-
-## **TCU Online**
-
-The learning management system used by Texas Christian University. Students upload work and view grades on it; it does not support peer evaluations. It is the external system to which an instructor still manually uploads finalized grades — a step that remains outside the scope of Project Pulse.
-
-## **Weekly Activity Report (WAR)**
-
-A structured weekly overview of a project team's progress, challenges, and next steps that supports communication among team members, instructors, and stakeholders. A weekly activity report consists of multiple activities; for each activity a student records the activity category, the planned activity, a description of the activity, hours planned, actual hours taken, and the activity's status.
-
-## **Peer Evaluation**
-
-A weekly assessment in which members of a team rate each other's contributions, performance, and teamwork against a rubric. Peer evaluations build self-awareness and accountability within the team and help identify strengths and areas for improvement.
-
-### *Public Comments*
-
-Optional comments a student may add when evaluating a teammate that are shared with the evaluatee.
-
-### *Private Comments*
-
-Optional comments a student may add when evaluating a teammate that are sent only to the instructor and are not shared with the evaluatee.
-
-## **Rubric**
-
-A scoring guide used to evaluate performance, work quality, behavior, or contributions against a set of predefined criteria. A peer evaluation is scored against a rubric, which provides a rating scale (for example, 1–10 from poor to excellent) for each criterion — covering aspects such as work quality, productivity, proactiveness, respect for others, response to criticism, and meeting performance.
-
-### *Criterion*
-
-A single standard or aspect of performance, work, or behavior assessed within a rubric. The criteria together define the expectations evaluated each week (for example, clarity, depth of analysis, teamwork, participation, or technical skill).
 
 ## **MVP**
 
