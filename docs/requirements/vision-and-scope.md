@@ -22,7 +22,7 @@ This document defines the purpose, goals, and boundaries of **Project Pulse**, t
 
 The two areas share the same users, the same course / course section / team model, and a single deployment. The remainder of this section describes the need each area addresses: the performance-tracking workflow first, then the requirements-authoring environment that the rest of this document treats in depth.
 
-**Student performance tracking.** In the senior design course, students work in teams with real clients, and contribution naturally varies across a team. Project Pulse's weekly activity reports give each student a structured place to record what they did each week, and its peer evaluations let teammates assess one another against a rubric — together fostering communication, self-awareness, and accountability. These workflows were previously run by hand with shared Google Sheets and Excel spreadsheets uploaded to the university LMS; Project Pulse brings them into one system and automates compilation, scoring, and reporting. This part of the platform is established and in production; the requirements-authoring environment described next is the area this document specifies in depth.
+**Student performance tracking.** In the senior design course, students work in teams with real clients, and contribution naturally varies across a team. Project Pulse's weekly activity reports give each student a structured place to record what they did each week, and its peer evaluations let teammates assess one another against a rubric — together fostering communication, self-awareness, and accountability. These workflows were previously run by hand with shared Google Sheets and Excel spreadsheets uploaded to the university LMS; Project Pulse brings them into one system and automates compilation, scoring, and reporting. This part of the platform is established and in production.
 
 **Requirements authoring.** Traditional requirement authoring tools such as Microsoft Word and Google Docs treat requirements as free-form text embedded in static documents. While familiar, these tools do not enforce structure, terminology consistency, traceability, or writing standards—core principles of effective requirements engineering. As a result, students often produce incomplete, inconsistent, and difficult-to-maintain specifications, and instructors must expend significant effort reviewing and grading long, low-quality documents.
 
@@ -263,9 +263,9 @@ RI-3: Scalability concerns: High usage in large capstone programs may stress inf
 
 RI-4: Over-reliance on AI: Students might depend too heavily on AI-generated content.
 
-RI-5: Browser compatibility: Ensuring smooth performance across many devices.
+RI-5: Cross-browser/device inconsistency: the application may render or behave inconsistently across the supported browsers (Chrome, Safari, Firefox) and the range of student and instructor devices, degrading usability for some users.
 
-RI-6: Accessibility: Must meet WCAG accessibility requirements.
+RI-6: Accessibility shortfall: the application may fail to meet WCAG 2.1 AA accessibility standards, leaving some users unable to use it effectively and exposing the department to accessibility-compliance complaints (addressed by the accessibility quality attributes USE-1 / UI-2 in the Software Requirements Specification).
 
 RI-7: Cloud cost ownership: if the system is deployed on a cloud service provider, the Computer Science Department must budget for the annual cloud fees.
 
@@ -298,6 +298,8 @@ AS-9: The system uses technologies the client already knows and can maintain aft
 | Undergraduate CS Students (Software Engineering & Senior Design) | Clear guidance on writing high-quality requirements; reduced confusion; structured templates; AI feedback; improved grades; fewer errors; professional-grade documents; one place to submit weekly activity reports and peer evaluations without uploading or downloading files | Generally willing to use new tools if easy-to-learn; expect modern UI; may resist if overly rigid; variable motivation | Smart editors, LLM assistance, auto-completeness checking, glossary linking, use case templates, version history, weekly activity report and peer evaluation submission                    | Limited experience with requirements engineering; time pressure; learning curve | Yes              |
 | Software Engineering & Senior Design Instructors                 | Teach requirements effectively; efficient grading; consistent formatting; Ability to enforce standards; dashboards for progress; reduced manual review; faster peer-evaluation grading and clearer insight into team dynamics                 | Strongly supportive if tool reduces grading burden; expect accuracy and reliability                                    | Template customization, LLM tutoring, example patterns, traceability, dashboards, completeness metrics, requirement quality scoring, WAR review, peer-evaluation report generation | Limited time; large class sizes; need reliable, accurate checks                 | Yes              |
 | Course Admin (course creator)                                    | Efficient course section and team setup; reliable roster and access management; one-click provisioning of each team's documents from built-in templates                | Wants minimal-friction setup; values reliability, correctness, and auditability                                        | Course section / team creation, roster and enrollment management, instructor invitations, template assignment, document provisioning | Owns a single course and is also an Instructor of it; limited time; needs correctness and an audit trail | Yes              |
+| Client (project sponsor)                                         | A clearer, more complete specification of the system they asked the team to build; fewer misunderstandings surfaced late; better interview questions from a better-prepared team; a professional-quality document bundle to review and sign off on | Non-technical; busy; cares about the delivered product, not the tooling; expects the team to drive the conversation | Exported requirement documents for review; the elicitation question lists the team brings to interviews (experienced indirectly, through the team) | Limited availability; little or no requirements-engineering background; does not use the tool directly | No               |
+| CS Department / faculty sponsor                                  | A modernized, reusable senior-design platform that raises requirements quality and reduces grading burden across cohorts; a basis for educational-technology research                | Supportive if costs stay predictable and the tool serves the curriculum; sensitive to recurring cloud spend (RI-7) | Adoption and learning-outcome trends across course sections; cost and maintainability of the deployment | Owns the cloud budget and must fund annual fees (RI-7); relies on Azure infrastructure being available (AS-3); needs the system maintainable after delivery | No               |
 
 ## **User Environment**
 
@@ -322,7 +324,7 @@ AS-9: The system uses technologies the client already knows and can maintain aft
 
 ## **Product Perspective**
 
-**Project Pulse** is a web application for the senior design course, deployed as a single platform (a Vue.js SPA served by a Spring Boot REST API over a shared relational database). It provides course, course section, team, and user management, authentication, and email notifications, and on that foundation delivers two capability areas: the weekly activity report and peer evaluation workflows that track student performance, and the Requirements Authoring & Management (RAM) environment — structured templates, validation, AI-assistant assistance, collaboration, and instructor evaluation tools — for authoring software requirements.
+**Project Pulse** is a web application for the senior design course, deployed as a single platform (a Vue.js SPA served by a Spring Boot REST API over a shared relational database). It provides course, course section, team, and user management, authentication, and email notifications, and on that foundation delivers two capability areas: the weekly activity report and peer evaluation workflows that track student performance, and the Requirements Authoring & Management (RAM) environment — structured templates, validation, AI-assistant guidance, collaboration, and instructor evaluation tools — for authoring software requirements.
 
 ## **Major Features / Scope**
 
@@ -330,7 +332,7 @@ Project Pulse provides a modern environment for running the senior design course
 
 ### *Graph-First Requirements Model*
 
-The tool is not a document editor intended to replicate Google Docs or Microsoft Word. Instead, RAM is model-first: it stores requirements as a connected domain model (a requirements graph) where nodes represent requirement elements (e.g., objectives, features, use case steps, functional requirements, glossary terms) and edges represent relationships (traceability, realization, references). Traditional "documents" are generated and edited as structured views of this underlying model. This enables capabilities that are difficult or impossible in text-first tools, including instant navigation across requirement chains (objective → feature → use case step/extension → functional requirement), "find all references" for glossary terms, safe rename, and change-impact analysis. *(MVP scope: the requirements graph with trace navigation and safe rename ships in the initial release; interactive graph visualization and change-impact analysis are post-MVP — see [Full Requirements Traceability](#full-requirements-traceability).)*
+The tool is not a document editor intended to replicate Google Docs or Microsoft Word. Instead, RAM is model-first: it stores requirements as a connected domain model (a requirements graph) where nodes represent requirement elements (e.g., objectives, features, use case steps, functional requirements, glossary terms) and edges represent relationships (traceability, realization, references). Traditional "documents" are generated and edited as structured views of this underlying model. This enables capabilities that are difficult or impossible in text-first tools, including instant navigation across requirement chains (objective → feature → use case step/extension → functional requirement), "find all references" for glossary terms, safe rename, and change-impact analysis. *(MVP ships trace navigation and safe rename; graph visualization and change-impact analysis are post-MVP — see [MVP Scope](#mvp-scope-initial-classroom-deployment).)*
 
 ### *Template Management*
 
@@ -344,7 +346,7 @@ Course admins or instructors can also create new structured document templates b
 - Writing styles, terminology rules, and validation settings
 - Grading rubrics tied to specific document sections
 
-This enables flexibility across methodologies and supports instructor-specific teaching goals. Template customization by a course admin or instructor is a post-MVP capability; the initial release ships with fixed, built-in templates.
+This enables flexibility across methodologies and supports instructor-specific teaching goals. The initial release ships with fixed, built-in templates; template customization is post-MVP — see [MVP Scope](#mvp-scope-initial-classroom-deployment).
 
 ### *Smart Editing and Validation (ReqLint)*
 
@@ -358,7 +360,7 @@ The tool includes ReqLint, a lightweight rule-based validation engine inspired b
 
 A central and shared glossary is integrated into ReqLint to maintain consistent terminology for actors and domain concepts across all documents. ReqLint ensures students meet template and writing standards before any AI guidance is applied.
 
-Beyond glossary-term suggestion, which the initial release provides, broader smart-editing assistance — auto-suggesting actors, requirement patterns, and cross-document links, and auto-completing requirement types and scenarios — is **post-MVP**; the MVP focuses on deterministic ReqLint validation together with glossary-term suggestion.
+The MVP provides deterministic ReqLint validation together with glossary-term suggestion; broader smart-editing auto-suggestion and auto-complete are post-MVP — see [MVP Scope](#mvp-scope-initial-classroom-deployment).
 
 ### *Full Requirements Traceability*
 
@@ -371,7 +373,7 @@ The tool will support bidirectional traceability across all major requirement ty
 - Business Rules → Use Cases / Functional Requirements
 - Glossary Terms → All Requirements
 
-Interactive traceability-matrix generation, highlighting of missing or incomplete linkages and orphan artifacts, and basic change-impact analysis when upstream or downstream requirements are modified are **post-MVP** capabilities; the initial release supports creating and navigating the typed links themselves (see the Use Cases document, *Artifact Links and Tracing*: UC-LNK-1 through UC-LNK-6). This allows students to practice industry-standard traceability and helps instructors quickly evaluate completeness, coverage, and consistency across all requirement artifacts.
+The initial release supports creating and navigating the typed links themselves (see the Use Cases document, *Artifact Links and Tracing*: UC-LNK-1 through UC-LNK-6); the traceability-matrix view, orphan and missing-link highlighting, and change-impact analysis are post-MVP — see [MVP Scope](#mvp-scope-initial-classroom-deployment). This allows students to practice industry-standard traceability and helps instructors quickly evaluate completeness, coverage, and consistency across all requirement artifacts.
 
 ### *AI-Assisted Guidance and Feedback*
 
@@ -396,15 +398,15 @@ Combined with ReqLint, the assistant layer improves learning outcomes, trains cl
 
 ### *Collaboration and Document Workflow*
 
-Student teams collaborate through document-section-level editing and commenting. The tool supports submission-and-review workflows that allow students to submit drafts, receive instructor feedback, and revise their work iteratively. Real-time collaboration — live presence indicators and concurrent co-editing — is **post-MVP**; the initial release coordinates teammates through per-section pessimistic locking and comment threads (UC-COL-2, UC-COL-3) rather than live presence (UC-COL-1).
+Student teams collaborate through document-section-level editing and commenting. The tool supports submission-and-review workflows that allow students to submit drafts, receive instructor feedback, and revise their work iteratively. The initial release coordinates teammates through per-section pessimistic locking and comment threads (UC-COL-2, UC-COL-3); real-time collaboration — live presence and concurrent co-editing (UC-COL-1) — is post-MVP, see [MVP Scope](#mvp-scope-initial-classroom-deployment).
 
-Document version history — checkpointing each save, viewing prior versions, and restoring them — is a **post-MVP** capability; the initial release keeps only authorship metadata (the creator/editor and timestamps recorded on every authored item).
+The initial release keeps authorship metadata (the creator/editor and timestamps recorded on every authored item); document version history — checkpointing each save, viewing prior versions, and restoring them — is post-MVP, see [MVP Scope](#mvp-scope-initial-classroom-deployment).
 
 ### *Instructor Dashboard, Feedback, and Grading*
 
 Instructors will have access to dashboards summarizing team progress, document completeness, and validation results. Integrated grading tools enable rubric-based evaluation aligned with the selected templates, as well as inline comments and structured feedback. This improves grading consistency and reduces review effort.
 
-**MVP scope:** the initial release provides only the review-and-feedback workflow — an instructor opens a submitted document, leaves inline comments, and either accepts it or returns it for revision (see the Use Cases document, *Review and Submission*: UC-REV-1, UC-REV-2, and commenting UC-COL-2 / UC-COL-3, governed by the business rules in [business-rules.md](business-rules.md)). Progress/completeness dashboards and rubric-based grading are **post-MVP**.
+**MVP scope:** the initial release provides only the review-and-feedback workflow — an instructor opens a submitted document, leaves inline comments, and either accepts it or returns it for revision (see the Use Cases document, *Review and Submission*: UC-REV-1, UC-REV-2, and commenting UC-COL-2 / UC-COL-3, governed by the business rules in [business-rules.md](business-rules.md)). Progress/completeness dashboards and rubric-based grading are post-MVP — see [MVP Scope](#mvp-scope-initial-classroom-deployment).
 
 ### *Project Source Material Import*
 
@@ -428,9 +430,31 @@ The system supports secure authentication, role-based access control, and FERPA-
 
 **See the Use Cases document for more details.**
 
-MVP Scope (Initial Classroom Deployment)
+## **MVP Scope (Initial Classroom Deployment)**
 
-The course-operations and performance-tracking capabilities — course / course section / team / roster management, weekly activity reports, and peer evaluations — are already established and in production. The scope statement below concerns the newer Requirements Authoring & Management (RAM) capability. The initial release of RAM will focus on structured, collaborative authoring of requirements documents (Vision and Scope, Glossary, Use Cases, Business Rules, SRS) using fixed, built-in templates, together with the Socratic AI assistants that coach requirements authoring and client elicitation (the elicitation, critique, tutor, structuring, and client role-play assistants), reached through the project assistant — the project-level conversational front door that orients students and routes them to the right assistant. The MVP will exclude free-form AI generation of finished requirements (the drafting assistant is off by default in course use), template customization, advanced analytics and instructor dashboards, automated/rubric grading, document version history (checkpointing each save, viewing prior versions, and restoring them), the interactive traceability-matrix view, graph visualization, and change-impact analysis (the typed links and trace navigation themselves remain in scope), and broader smart-editing auto-suggestions and auto-complete beyond glossary-term suggestion — these capabilities are deferred to a future release — focusing instead on correctness, traceability, collaboration, coaching, and export quality. In the MVP, instructor support is limited to the review-and-feedback workflow (see [Instructor Dashboard, Feedback, and Grading](#instructor-dashboard-feedback-and-grading)).
+The course-operations and performance-tracking capabilities — course / course section / team / roster management, weekly activity reports, and peer evaluations — are already established and in production. The boundary below concerns the newer Requirements Authoring & Management (RAM) capability and is the single authority for what the initial RAM release includes; the per-feature notes above defer to it. The MVP focuses on correctness, traceability, collaboration, coaching, and export quality.
+
+**In scope (initial RAM release):**
+
+- Structured, collaborative authoring of the requirement documents (Vision and Scope, Glossary, Use Cases, Business Rules, SRS) using fixed, built-in templates.
+- The requirements graph with typed artifact links, trace navigation, and safe rename (see the Use Cases document, *Artifact Links and Tracing*: UC-LNK-1 through UC-LNK-6).
+- Deterministic ReqLint validation together with glossary-term suggestion.
+- The Socratic AI assistants that coach requirements authoring and client elicitation — the elicitation, critique, tutor, structuring, and client role-play assistants — reached through the project assistant, the project-level conversational front door that orients students and routes them to the right assistant.
+- Project source material import as context for the assistants.
+- Teammate coordination through per-section pessimistic locking and comment threads (UC-COL-2, UC-COL-3), and the submission-and-review workflow — an instructor opens a submitted document, leaves inline comments, and accepts it or returns it for revision (UC-REV-1, UC-REV-2).
+- Authorship metadata (creator/editor and timestamps) on every authored item.
+- Export to PDF, Word (DOCX), and Markdown.
+
+**Out of scope (deferred to a future release):**
+
+- Free-form AI generation of finished requirements (the drafting assistant is off by default in course use).
+- Template customization by a course admin or instructor.
+- Broader smart-editing auto-suggestions (actors, requirement patterns, cross-document links) and auto-complete beyond glossary-term suggestion.
+- Interactive traceability-matrix generation, orphan and missing-link highlighting, and change-impact analysis (the typed links and trace navigation themselves remain in scope).
+- Interactive graph visualization.
+- Real-time collaboration — live presence and concurrent co-editing (UC-COL-1).
+- Document version history — checkpointing each save, viewing prior versions, and restoring them (authorship metadata is kept).
+- Advanced analytics and instructor progress/completeness dashboards, and automated/rubric-based grading (the review-and-feedback workflow remains in scope).
 
 ## **Deployment Considerations**
 
