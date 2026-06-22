@@ -77,7 +77,7 @@ This section orients the reader to Project Pulse's context, users, environment, 
 
 ## **Product Perspective**
 
-Project Pulse is a single web application that delivers two capability areas over one shared architecture — a Vue.js single-page application, a Java/Spring Boot REST API, and a relational database, with one authentication mechanism and one notification service. The first capability area is the weekly activity report and peer evaluation workflows that track student performance; the second is the Requirements Authoring & Management (RAM) environment, a module within the same application rather than a parallel system, reusing that shared single-page application, REST API, database, authentication, and notifications. The system context and container views are in the architecture-of-record ([Context and Scope](../design/architectural-design.md#context-and-scope), [Containers](../design/architectural-design.md#containers)); the product positioning and competitive alternatives are in Vision and Scope ([Product Perspective](vision-and-scope.md#product-perspective)).
+Project Pulse is a single web application that delivers two capability areas over one shared architecture — a Vue.js single-page application, a Java/Spring Boot REST API, and a relational database, with one authentication mechanism and one notification service. The first capability area is the weekly activity report and peer evaluation workflows that track student performance; the second is the Requirements Authoring & Management (RAM) environment, a module within the same application rather than a parallel system, reusing that shared architecture. The system context and container views are in the architecture-of-record ([Context and Scope](../design/architectural-design.md#context-and-scope), [Containers](../design/architectural-design.md#containers)); the product positioning and competitive alternatives are in Vision and Scope ([Product Perspective](vision-and-scope.md#product-perspective)).
 
 ## **User Classes and Characteristics**
 
@@ -736,7 +736,7 @@ DI-10: RAM shall rely on the Project Pulse database backup, recovery, and dispos
 
 ## **User Interfaces**
 
-UI-1: Project Pulse is delivered as a single Vue.js single-page application; the RAM environment's user interface shall be a set of views within it, conforming to the application's established layout, navigation, and styling conventions (per CO-1, CO-2, INT-1). Detailed UI design is maintained with the SPA, not in this document.
+UI-1: Project Pulse is delivered as a single Vue.js single-page application; the RAM environment's user interface shall be a set of views within it, conforming to the application's shared layout, navigation, and styling conventions (per CO-1, CO-2, INT-1). Detailed UI design is maintained with the SPA, not in this document.
 
 UI-2: Project Pulse shall conform to WCAG 2.1 Level AA for color contrast, keyboard navigation, and screen-reader support (per USE-1; addresses risk RI-6).
 
@@ -760,7 +760,7 @@ SI-2: Project Pulse shared foundation
 
 SI-2.1: The RAM environment shall obtain the authenticated user's identity and role (course admin, instructor, student) from Project Pulse's authenticated session and shall not implement its own login (per CO-4, SEC-1).
 
-SI-2.2: The RAM environment shall read course, course section, team, and membership data from Project Pulse's existing data model rather than maintaining its own copy (per DE-1; AS-8).
+SI-2.2: The RAM environment shall read course, course section, team, and membership data from Project Pulse's shared data model rather than maintaining its own copy (per DE-1; AS-8).
 
 SI-2.3: The RAM environment shall persist its requirements graph — artifacts, links, documents, document sections, locks, comment threads, and comments — in the Project Pulse relational database (per CO-3).
 

@@ -17,32 +17,18 @@
 
 This document defines the purpose, goals, and boundaries of **Project Pulse**, the web application that supports the Department of Computer Science's senior design / capstone course at Texas Christian University. Project Pulse serves the course end to end through two complementary capability areas:
 
-- **Course operations and student performance tracking** — managing course sections, teams, students, and instructors, and replacing the manual, spreadsheet-based collection of weekly activity reports (WARs) and peer evaluations with an integrated, automated workflow.
-- **Requirements Authoring & Management (RAM)** — a web-based requirements authoring environment that modernizes how software requirements are written, understood, and evaluated, replacing unstructured, document-centric requirement writing with a structured, model-driven approach that reflects professional requirements engineering practices while remaining accessible to students and instructors.
-
-The two areas share the same users, the same course / course section / team model, and a single deployment. The remainder of this section describes the need each area addresses: the performance-tracking workflow first, then the requirements-authoring environment that the rest of this document treats in depth.
-
-**Student performance tracking.** In the senior design course, students work in teams with real clients, and contribution naturally varies across a team. Project Pulse's weekly activity reports give each student a structured place to record what they did each week, and its peer evaluations let teammates assess one another against a rubric — together fostering communication, self-awareness, and accountability. These workflows were previously run by hand with shared Google Sheets and Excel spreadsheets uploaded to the university LMS; Project Pulse brings them into one system and automates compilation, scoring, and reporting. This part of the platform is established and in production.
-
-**Requirements authoring.** Traditional requirement authoring tools such as Microsoft Word and Google Docs treat requirements as free-form text embedded in static documents. While familiar, these tools do not enforce structure, terminology consistency, traceability, or writing standards—core principles of effective requirements engineering. As a result, students often produce incomplete, inconsistent, and difficult-to-maintain specifications, and instructors must expend significant effort reviewing and grading long, low-quality documents.
-
-At the core of the RAM tool is the concept of atomic requirement artifacts. Rather than treating requirements as narrative prose, RAM models each meaningful requirement element as a first-class, uniquely identifiable artifact with a well-defined type and lifecycle. Examples of atomic requirement artifacts include problems, business objectives, product features, use cases, use case steps and extensions, functional requirements, business rules, constraints, risks, and glossary terms. These artifacts are explicitly linked to one another to represent traceability relationships such as refinement, realization, dependency, and reference.
-
-Standard requirement documents—such as Vision and Scope, Glossary, Use Cases, Business Rules, and the Software Requirements Specification (SRS)—are presented in RAM as structured views over a shared set of atomic requirement artifacts, rather than as isolated text files. This abstraction enables capabilities that are difficult or impossible in document-centric tools, including end-to-end traceability across requirement levels, navigation and visualization of requirement relationships, safe refactoring (e.g., renaming a glossary term updates all references), impact analysis, and automated validation of completeness and consistency.
-
-RAM is designed specifically for software engineering, senior design, and capstone courses, where students must learn not only what requirements to write, but how to write them clearly, consistently, and professionally. By enforcing structure, modeling relationships explicitly, and guiding students toward atomic, specification-grade requirements, RAM supports both improved learning outcomes and more efficient, consistent instructor evaluation.
+- **Student Performance Tracking** — when students work together on a team project, individual effort is easy to hide and hard to assess fairly; this area keeps each student's contribution visible by replacing the manual, spreadsheet-based collection of weekly activity reports (WARs) and peer evaluations with an integrated, automated workflow.
+- **Requirements Authoring & Management (RAM)** — students rarely arrive able to write clear, professional requirements, yet weak requirements quietly derail projects and increasingly misdirect AI-assisted coding; RAM is a software requirements authoring environment that modernizes how software requirements are written, understood, and evaluated, replacing old-school, document-centric requirement writing with a structured, model-driven approach that reflects professional requirements engineering practices while remaining accessible to students and instructors. Requirements become a graph-first model of atomic, interlinked artifacts — unlocking end-to-end traceability, real-time quality validation, and Socratic AI assistants that coach students rather than write for them.
 
 This document outlines the business opportunity, major features, stakeholders, and proposed workflows. Detailed behavioral specifications, cross-cutting business rules, and implementation-facing requirements are defined in the Use Cases, Business Rules, and Software Requirements Specification (SRS) documents.
 
 ## **Background**
 
-Requirements are the foundation of all software development efforts, describing what the system must do, how it behaves, and any constraints under which it must operate. Requirements engineering is a core competency in software engineering and is essential for successful senior design and capstone projects.
+The Department of Computer Science at TCU teaches a two-semester Software Engineering / Senior Design sequence — the undergraduate capstone, in which students consolidate what they have learned by building a real system for a real client. Each team is paired with an external client who brings a genuine problem and a project idea, and over the academic year the team carries that project through the full lifecycle: eliciting requirements from the client, writing and validating a specification, designing the system, implementing it, and delivering a working product. For most students this is their first experience of professional software engineering end to end — working with a non-technical stakeholder whose needs are initially vague, and depending on teammates while remaining individually accountable for their own contribution. Two needs run through the whole experience: tracking each student's weekly contribution so that individual effort stays visible within shared team work, and producing professional-grade requirements the team and the client can rely on. Project Pulse is built to support both.
 
-Furthermore, as large language models (LLMs) become increasingly capable of generating code, clear and unambiguous requirements are more important than ever. In AI-aided software engineering, the quality of requirements strongly shapes the quality of AI-generated solutions. Poorly specified requirements lead to misinterpretation, unintended behavior, and incorrect implementations.
+**Team contribution and accountability.** Teamwork and individual accountability are themselves learning outcomes of the course, not merely administrative concerns. When several students share responsibility for one system, individual effort naturally varies, and uneven contribution is easy to hide and hard to assess fairly. To keep contribution visible, the course has long relied on two complementary practices. In a weekly activity report, each student records what they worked on that week — the activities planned and completed, the hours spent, and the status of each — producing a running, individual record of effort. In a peer evaluation, teammates periodically rate one another against a rubric of weighted criteria and add comments, surfacing how the team actually functions from the inside. Together these practices give the instructor the evidence to grade each student's individual contribution fairly and, just as importantly, cultivate the communication, self-awareness, and honest self- and peer-appraisal that professional engineers are expected to practice throughout their careers.
 
-In academic settings, students typically write requirements using Microsoft Word or Google Docs based on instructor-provided templates. While familiar, these general-purpose editors do not enforce structure, terminology consistency, writing standards, validation rules, or traceability—core principles of professional requirements engineering.
-
-The Department of Computer Science at TCU teaches a two-semester Software Engineering / Senior Design sequence in which students must deliver professional-grade requirements for real clients. RAM is designed to support this educational process with structure, intelligence, and explicit modeling of requirements and their relationships.
+**Requirements engineering.** Requirements are the foundation of all software development, describing what a system must do, how it behaves, and the constraints under which it must operate; a project built on unclear or incomplete requirements rarely recovers later in the lifecycle. Eliciting requirements from a real, often non-technical client and writing them clearly, consistently, and professionally is therefore a core competency the senior design course must teach — and one most students have never practiced before. The stakes are only rising. As large language models take on more of the coding, the quality of the requirements increasingly determines the quality of the result: clear, unambiguous requirements yield better AI-assisted implementations, while poorly specified ones lead to misinterpretation, unintended behavior, and incorrect code. Teaching students to write good requirements is thus both a long-standing discipline and an increasingly decisive skill — a worthwhile investment for the course and the department.
 
 ## **Current Process Flows (As-Is Process Flows)**
 
@@ -61,9 +47,7 @@ This process improves team efficiency but is overly manual and time-consuming. S
 - [Business Rules](https://docs.google.com/document/d/1vaoprKQn58N4uE5gLaqLFLWtvsBYralnNWP_7rj4vJY/edit?tab=t.0#bookmark=id.4b3zodpqhb2x)
 - [Software Requirements Specification (SRS)](https://docs.google.com/document/d/1qXZTMvrdkSsjaGD9wQSs7aUFInp-8fyUd4IfaMNct0I/edit?usp=sharing)
 
-While effective to a degree, this traditional process leads to incomplete document sections, inconsistent terminology across documents, low readability, weak traceability, and difficulty maintaining cross-document coherence.
-
-To understand the full requirements of a project, students and instructors must manually open and cross-reference multiple documents. There is limited support for enforcing completeness, validating structure, or understanding how high-level goals map to concrete system behavior.
+While workable, this traditional process leads to incomplete document sections, inconsistent terminology, weak traceability, and poor cross-document coherence: to understand a project's full requirements, students and instructors must manually open and cross-reference multiple documents, with little support for enforcing completeness or validating structure.
 
 ## **References**
 
@@ -84,102 +68,31 @@ Project Pulse addresses two business problems, one for each capability area.
 
 **1. Document-Centric, Not Model-Centric**
 
-Current tools treat requirements as unstructured text rather than as structured, interrelated entities. Business objectives, features, use cases, functional requirements, and glossary terms exist only as prose, with no explicit representation of their relationships. As a result, understanding the system requires manually opening and cross-referencing multiple documents. This results in high cognitive load for understanding the Big Picture. To understand the requirements of a project, users must mentally integrate information spread across multiple documents. There is no unified view of the requirements as a system.
+Current tools treat requirements as unstructured text rather than as structured, interrelated entities, with no explicit representation of how business objectives, features, use cases, functional requirements, and glossary terms relate. Understanding a project means manually opening and cross-referencing multiple documents and mentally integrating them — there is no unified view of the requirements as a system, and the cognitive load of seeing the big picture is high.
 
-**2. No Enforcement of Completeness**
+**2. No Enforcement of Structure or Completeness**
 
-Students frequently leave required document sections blank or omit content they do not understand. Instructors cannot enforce that all necessary components—assumptions, constraints, glossary entries, metadata, risks—are fully completed.
+Generic editors cannot enforce a template, so students drift from standard requirement structures, leave required document sections (assumptions, constraints, glossary entries, metadata, risks) blank, and write narrative prose rather than atomic, specification-grade requirements. Requirement identifiers and metadata are often missing or inconsistent. This undermines clarity, uniformity, and alignment with professional expectations.
 
-**3. Unstructured, Essay-Like Free Text**
+**3. Terminology Drift Across Documents**
 
-Generic document editors encourage narrative writing rather than atomic, specification-grade requirements. Because templates cannot be enforced:
+Without a central, shared project vocabulary, glossary terms, actors, system entities, and data objects diverge across documents, producing inconsistent naming, contradictions between artifacts, and a breakdown of conceptual modeling. Terminology inconsistency remains one of the most common failure points in student requirements.
 
-- Students drift away from standard requirement structures
-- Instructor-defined templates cannot be guaranteed
-- Metadata and requirement identifiers are often missing or inconsistent
+**4. Weak Validation and No Real-Time Quality Feedback**
 
-This directly undermines clarity, uniformity, and alignment with professional expectations.
+Traditional editors cannot perform requirement-specific checks — detecting ambiguity, vague verbs ("handle", "support", "process"), or subjective adjectives ("fast", "user-friendly"); verifying testability and measurable criteria; ensuring required fields are present; or enforcing course-specific writing standards and naming conventions. Noncompliant requirements therefore persist undetected, and because the tool offers no immediate explanation of *why* a requirement is poor or how to rewrite it, students repeat the same mistakes and learn slowly.
 
-**4. Terminology Drift Across Documents**
+**5. Lack of End-to-End Traceability**
 
-Without a central and shared project vocabulary, glossary terms, actors, system entities, and data objects diverge across documents. This leads to:
+Current tools provide no support for linking requirements across levels — business requirements → features → use cases → functional requirements, business rules and glossary terms → the requirements they govern, constraints → design-impacting requirements. The result is incomplete system coverage, functional requirements with no rationale, use cases missing supporting requirements, and poor change-impact analysis — and students never learn traceability, a fundamental industry practice.
 
-- inconsistent naming and definitions
-- contradictions between artifacts
-- breakdown of conceptual modeling
+**6. Poor Integration With AI / LLM Tools**
 
-Terminology inconsistency remains one of the most common failure points in student requirements.
+Students often paste text into ChatGPT, but the integration is unaware of project context, templates, and structure, and disconnected from the project's requirement model, so it cannot enforce writing styles and rules. AI assistance becomes ad hoc rather than systematic or pedagogically aligned.
 
-**5. Weak Validation and Writing Standards/Styles Enforcement**
+**7. Hard for Instructors to Grade Efficiently**
 
-Traditional word editors cannot perform requirement-specific checks, including:
-
-- detecting ambiguity
-- identifying vague verbs ("handle", "support", "process")
-- flagging subjective adjectives ("fast", "user-friendly", "intuitive")
-- verifying testability and measurable criteria
-- ensuring required fields or formats are present
-- enforcing company- or course-specific writing standards/styles. For example, a use case writing style rule might be:
-  - _Use "The \<Primary Actor\> indicates to do . . . " or "The \<Primary Actor\> chooses to do . . . " to describe the trigger of the use case_.
-    - _Positive example: The User indicates to search for products meeting defined search criteria._
-    - _Positive example: The User chooses to search for products meeting defined search criteria._
-- verifying naming conventions
-
-Errors and noncompliant requirements persist undetected until late in the project.
-
-**6. No Real-Time Quality Feedback**
-
-The goal of a senior design or capstone project is for students to learn good industry practices. However, students receive no immediate explanation of why a requirement is poor. They do not learn:
-
-- what makes a requirement ambiguous
-- how to rewrite it to be testable
-- how to use consistent terminology
-- how to meet style/format standards
-
-This leads to repeated mistakes and slow learning curves.
-
-**7. Lack of End-to-End Traceability**
-
-Current tools provide no support for linking:
-
-- business requirements → product features
-- product features → use cases
-- use cases → functional requirements
-- business rules → functional requirements
-- glossary terms → all requirements
-- constraints → design-impacting requirements
-
-Missing traceability leads to:
-
-- incomplete system coverage
-- functional requirements with no rationale
-- use cases missing supporting functional requirements
-- inconsistent domain concepts
-- poor change-impact analysis
-
-This prevents students from learning traceability, a fundamental industry practice, and leads to incomplete or inconsistent specifications.
-
-**8. Poor Integration With AI / LLM Tools**
-
-Students often paste text into ChatGPT, but the integration is:
-
-- unaware of project context
-- unaware of templates or structure
-- unable to enforce writing styles and rules
-- disconnected from the project's requirement model
-
-AI assistance becomes ad hoc rather than systematic or pedagogically aligned.
-
-**9. Hard for Instructors to Grade Efficiently**
-
-Manual review of long, inconsistent documents from multiple senior design teams is:
-
-- slow and cognitively demanding
-- prone to missing incomplete or low-quality requirements
-- difficult to standardize across graders
-- inefficient in large Senior Design cohorts
-
-The lack of structure and automated checks directly increases instructor workload.
+Manually reviewing long, inconsistent documents from many senior design teams is slow and cognitively demanding, prone to missing incomplete or low-quality requirements, hard to standardize across graders, and inefficient in large cohorts. The lack of structure and automated checks directly increases instructor workload.
 
 **Opportunity**
 
@@ -255,7 +168,7 @@ The process is iterative: as authoring reveals gaps, the team returns to elicita
 
 Risks to the success of the system or project — spanning business/adoption, technical/feasibility, and security/safety categories. Each is identified by an `RI-*` key.
 
-RI-1: Adoption Resistance: Students comfortable with Microsoft Word or Google Docs may resist structured tools.
+RI-1: Adoption Resistance: Students comfortable with Microsoft Word or Google Docs may resist structured tools, particularly if the application proves more confusing to use than the previous manual process.
 
 RI-2: LLM reliability: AI suggestions may occasionally conflict with instructor expectations.
 
@@ -271,9 +184,7 @@ RI-7: Cloud cost ownership: if the system is deployed on a cloud service provide
 
 RI-8: Data breach: the students' peer evaluation data may be targeted by attackers (addressed by the security quality attributes in the Software Requirements Specification).
 
-RI-9: Usability regression: the application could prove more confusing to use than the previous manual process (a specific instance of the adoption resistance in RI-1).
-
-RI-10: Narrow applicability: the application might prove too specialized for the TCU senior design course to be reused in other courses.
+RI-9: Narrow applicability: the application might prove too specialized for the TCU senior design course to be reused in other courses.
 
 ## **Business Assumptions and Dependencies**
 
@@ -332,7 +243,7 @@ Project Pulse provides a modern environment for running the senior design course
 
 ### *Graph-First Requirements Model*
 
-The tool is not a document editor intended to replicate Google Docs or Microsoft Word. Instead, RAM is model-first: it stores requirements as a connected domain model (a requirements graph) where nodes represent requirement elements (e.g., objectives, features, use case steps, functional requirements, glossary terms) and edges represent relationships (traceability, realization, references). Traditional "documents" are generated and edited as structured views of this underlying model. This enables capabilities that are difficult or impossible in text-first tools, including instant navigation across requirement chains (objective → feature → use case step/extension → functional requirement), "find all references" for glossary terms, safe rename, and change-impact analysis. *(MVP ships trace navigation and safe rename; graph visualization and change-impact analysis are post-MVP — see [MVP Scope](#mvp-scope-initial-classroom-deployment).)*
+The tool is not a document editor intended to replicate Google Docs or Microsoft Word. Instead, RAM is model-first: it stores requirements as a connected domain model (a requirements graph) where nodes represent atomic requirement artifacts — each meaningful requirement element (e.g., objectives, features, use case steps, functional requirements, glossary terms) modeled as a first-class, uniquely identifiable artifact — and edges represent relationships (traceability, realization, references). Traditional "documents" are generated and edited as structured views of this underlying model. This enables capabilities that are difficult or impossible in text-first tools, including instant navigation across requirement chains (objective → feature → use case step/extension → functional requirement), "find all references" for glossary terms, safe rename, and change-impact analysis. *(MVP ships trace navigation and safe rename; graph visualization and change-impact analysis are post-MVP — see [MVP Scope](#mvp-scope-initial-classroom-deployment).)*
 
 ### *Template Management*
 
@@ -410,7 +321,7 @@ Instructors will have access to dashboards summarizing team progress, document c
 
 ### *Project Source Material Import*
 
-At the start of a project the client provides pitch materials — typically a slide deck and a short brief — describing the background, stakeholders, problem, users, objectives, desired functionality, possible solutions, prototypes, and a candidate tech stack. Students import these into RAM as project source material, the input the team works from. RAM stores the materials, extracts their text, and makes them available as context to the AI assistants — most directly to the elicitation assistant, which uses them in its gap analysis (project-wide across the team's documents and sections for early-phase workshop prep, or focused on a target against its template) to help the team prepare client-interview questions. Because the pitch goes stale as the project evolves, later-authored, verified requirements take precedence over it, and a student can exclude the project source material from an elicitation session entirely. Project source material is a project input, not authored requirement content, and is not itself graded.
+At the start of a project the client provides pitch materials — typically a slide deck and a short brief — describing the background, stakeholders, problem, users, objectives, desired functionality, possible solutions, prototypes, and a candidate tech stack. Students import these into RAM as project source material, the input the team works from. RAM stores the materials, extracts their text, and makes them available as context to the AI assistants — most directly to the elicitation assistant, which uses them in its gap analysis to help the team prepare client-interview questions. Because the pitch goes stale as the project evolves, later-authored, verified requirements take precedence over it, and a student can exclude the project source material from an elicitation session entirely. Project source material is a project input, not authored requirement content, and is not itself graded.
 
 ### *Export and Delivery*
 
@@ -432,7 +343,7 @@ The system supports secure authentication, role-based access control, and FERPA-
 
 ## **MVP Scope (Initial Classroom Deployment)**
 
-The course-operations and performance-tracking capabilities — course / course section / team / roster management, weekly activity reports, and peer evaluations — are already established and in production. The boundary below concerns the newer Requirements Authoring & Management (RAM) capability and is the single authority for what the initial RAM release includes; the per-feature notes above defer to it. The MVP focuses on correctness, traceability, collaboration, coaching, and export quality.
+The boundary below scopes the Requirements Authoring & Management (RAM) release: it is the single authority for what the initial RAM release includes, and the per-feature notes above defer to it. The course-operations and performance-tracking workflows — course / course section / team / roster management, weekly activity reports, and peer evaluations — fall outside this RAM boundary. The MVP focuses on correctness, traceability, collaboration, coaching, and export quality.
 
 **In scope (initial RAM release):**
 
