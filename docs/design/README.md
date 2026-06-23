@@ -44,7 +44,7 @@ The **cross-area shared model** is **owned by the SRS's Business Domain Model** 
 
 # **Level 2 — Detailed design (one doc per UC area)**
 
-Each Level-2 doc covers exactly one UC area and is named after that area's lowercase code, so it maps unambiguously to the `UC-<AREA>-<n>` / `FR-<AREA>-<n>` IDs it realizes. The areas (in document order, matching `requirements/use-cases.md`):
+Each Level-2 doc covers exactly one UC area and is named after that area's lowercase code, so it maps unambiguously to the `UC-<AREA>-<slug>` / `FR-<AREA>-<slug>` IDs it realizes. The areas (in document order, matching `requirements/use-cases.md`):
 
 | File | Area | Scope |
 |------|------|-------|
@@ -64,13 +64,13 @@ Add a doc only when its area is first designed; this directory grows as `/design
 
 ## **The cardinal rule: cite, don't restate**
 
-A design doc **cites** the use cases and functional requirements it realizes (`UC-<AREA>-<n>`, `FR-<AREA>-<n>`) and links back to them — it never copies their text. The requirement lives in `requirements/`; duplicating it here just creates a second copy to drift. If you find yourself re-describing *what* the system shall do, stop and link to the UC/FR instead, then describe only the *how*.
+A design doc **cites** the use cases and functional requirements it realizes (`UC-<AREA>-<slug>`, `FR-<AREA>-<slug>`) and links back to them — it never copies their text. The requirement lives in `requirements/`; duplicating it here just creates a second copy to drift. If you find yourself re-describing *what* the system shall do, stop and link to the UC/FR instead, then describe only the *how*.
 
 The same rule applies upward to Level 1: **cite the SRS for the shared model; design only the delta.** Don't redraw the shared entity graph in a Level-2 doc — link to the SRS's Business Domain Model and the Container Diagram in [`architectural-design.md`](architectural-design.md), then design only the implementation-level delta this area adds (JPA mapping, columns, migration names, the bits below SRS granularity). Two area docs each re-drawing the artifact ER means three copies (SRS + both) to keep in sync.
 
 ## **What a design doc contains**
 
-A design doc is **structured by concern, not by use case.** An area accumulates several use cases over time (`UC-DOC-2`, then `-5`, then `-6`), each designed by its own `/design` run — but the doc must not become a per-UC changelog (`## UC-DOC-2 design`, `## UC-DOC-5 design`, … stacked up). Keep the skeleton below and let the two axes grow differently:
+A design doc is **structured by concern, not by use case.** An area accumulates several use cases over time (`UC-DOC-edit-document`, then `-5`, then `-6`), each designed by its own `/design` run — but the doc must not become a per-UC changelog (`## UC-DOC-edit-document design`, `## UC-DOC-create-use-case design`, … stacked up). Keep the skeleton below and let the two axes grow differently:
 
 - **Area-wide, revised in place** — Overview, Components & classes (one class diagram), Data model (one ER diagram). A new use case edits these (a new service method, a new column) rather than appending a parallel copy. There is **one** class diagram and **one** ER diagram per area, not one per use case.
 - **Per-flow, appended** — Sequence diagrams (one per main success scenario + each non-trivial extension) and API-contract rows. These accumulate as use cases are added.

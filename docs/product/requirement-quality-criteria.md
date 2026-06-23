@@ -6,12 +6,12 @@
 
 The spec's critique assistant has two modes, and this doc is the narrow one:
 
-- **Per-destination critique (UC-AI-5, FR-AI-2 / FR-AI-9)** — reviews the requirements in **one authoring destination** (a document section or a use case) for clarity, ambiguity, consistency, completeness, and testability. **This document.**
-- **Whole-project review (UC-AI-10, FR-AI-21–23)** — reads the team's whole requirement set together and hunts *cross-document* gaps, conflicts, and broken traceability. Covered by its own product doc, [`cross-document-review-criteria.md`](cross-document-review-criteria.md).
+- **Per-destination critique (UC-AI-critique, FR-AI-critique / FR-AI-rationale)** — reviews the requirements in **one authoring destination** (a document section or a use case) for clarity, ambiguity, consistency, completeness, and testability. **This document.**
+- **Whole-project review (UC-AI-whole-project-review, FR-AI-whole-project-review, FR-AI-review-criteria, FR-AI-review-criteria-required)** — reads the team's whole requirement set together and hunts *cross-document* gaps, conflicts, and broken traceability. Covered by its own product doc, [`cross-document-review-criteria.md`](cross-document-review-criteria.md).
 
-The two are complementary: this mode asks *"is each requirement in front of me well-formed?"*; the other asks *"do the documents agree with each other?"* Both complement, and neither replaces, **ReqLint** (UC-VAL-1, FR-VAL-*) — the deterministic, single-document, rule-based checker (missing sections, vague verbs, ID format). The division of labor between ReqLint and this critique is spelled out in Part 3.
+The two are complementary: this mode asks *"is each requirement in front of me well-formed?"*; the other asks *"do the documents agree with each other?"* Both complement, and neither replaces, **ReqLint** (UC-VAL-run-validation, FR-VAL-*) — the deterministic, single-document, rule-based checker (missing sections, vague verbs, ID format). The division of labor between ReqLint and this critique is spelled out in Part 3.
 
-Like UC-AI-5, a critique here is **advisory and read-only**: it neither locks nor modifies the destination. Acting on a finding goes through the normal authoring path — a manual edit (UC-DOC-2 / UC-DOC-6) or an accepted rewrite via UC-AI-8 — never a direct write from the assistant. Every finding must carry an **instructive rationale** (BR-16): the rationale is the lesson.
+Like UC-AI-critique, a critique here is **advisory and read-only**: it neither locks nor modifies the destination. Acting on a finding goes through the normal authoring path — a manual edit (UC-DOC-edit-document / UC-DOC-edit-use-case) or an accepted rewrite via UC-AI-review-proposal — never a direct write from the assistant. Every finding must carry an **instructive rationale** (BR-assistant-socratic): the rationale is the lesson.
 
 ---
 
@@ -45,7 +45,7 @@ Treating the destination's requirements as a small set, check:
 - **Able to be validated** — a reader could confirm the set, taken together, satisfies the destination's purpose.
 
 ### Output discipline (for every critique)
-Follow the shared findings output discipline in [`critique-assistant-build-notes.md`](critique-assistant-build-notes.md). Specific to the per-destination critique: the **category** is the C1/C2 **characteristic** name (e.g. *verifiable*, *singular*); order by severity, then by reading order within the destination; and a proposed rewrite is applied only through UC-AI-8 (BR-17).
+Follow the shared findings output discipline in [`critique-assistant-build-notes.md`](critique-assistant-build-notes.md). Specific to the per-destination critique: the **category** is the C1/C2 **characteristic** name (e.g. *verifiable*, *singular*); order by severity, then by reading order within the destination; and a proposed rewrite is applied only through UC-AI-review-proposal (BR-explicit-acceptance).
 
 ---
 
@@ -136,7 +136,7 @@ Order findings by severity (blocker -> minor).
 
 The §5.2 criteria split cleanly across Project Pulse's two requirement-checking engines. **Run the deterministic checks first (ReqLint), then spend the LLM's reasoning on what's left** — it's faster, cheaper, more reliable, and keeps the critique focused on teaching rather than rediscovering mechanical errors.
 
-| §5.2 characteristic | Deterministic — **ReqLint** (UC-VAL-1, FR-VAL-*) | Judgment — **critique assistant** (UC-AI-5, FR-AI-2/9) |
+| §5.2 characteristic | Deterministic — **ReqLint** (UC-VAL-run-validation, FR-VAL-*) | Judgment — **critique assistant** (UC-AI-critique, FR-AI-critique, FR-AI-rationale) |
 |---|---|---|
 | Conforming | "shall" present, EARS form, ID format, required sections present | use-case structure reads as coherent |
 | Singular | heuristic: flag `and`/`or`-conjoined clauses in one "shall" | genuinely compound intent the heuristic misses |
@@ -146,7 +146,7 @@ The §5.2 criteria split cleanly across Project Pulse's two requirement-checking
 | Necessary / Appropriate / Correct / Feasible | — (not mechanically decidable) | the core of the LLM's value here |
 | Internally consistent / Comprehensible | — | the LLM reads the destination as a whole |
 
-The boundary is the same one the spec already draws: ReqLint is deterministic rule-checking (UC-VAL-1); critique is qualitative assistant feedback that complements it (UC-AI-5, "Distinct from UC-VAL-1"). This table is just the §5.2 mapping of that boundary.
+The boundary is the same one the spec already draws: ReqLint is deterministic rule-checking (UC-VAL-run-validation); critique is qualitative assistant feedback that complements it (UC-AI-critique, "Distinct from UC-VAL-run-validation"). This table is just the §5.2 mapping of that boundary.
 
 ### Build notes
 
@@ -156,7 +156,7 @@ The shared build, enforcement, and output guidance (assistant anatomy, determini
 
 ### Configurability
 
-This rubric ships as a **fixed product default** baked into the critique assistant's system prompt — unlike the whole-project **cross-document review criteria**, which are instructor-tunable per course section (UC-CFG-4, FR-AI-22). The instructor still shapes per-destination critique indirectly, through the course section's **teaching context** (UC-CFG-1) and the critique assistant's **assistant instructions** (UC-CFG-3), which the server prepends to the prompt above. If a future release wants instructor-tunable per-requirement criteria, model it on the cross-document-review-criteria pattern.
+This rubric ships as a **fixed product default** baked into the critique assistant's system prompt — unlike the whole-project **cross-document review criteria**, which are instructor-tunable per course section (UC-CFG-configure-review-criteria, FR-AI-review-criteria). The instructor still shapes per-destination critique indirectly, through the course section's **teaching context** (UC-CFG-configure-teaching-context) and the critique assistant's **assistant instructions** (UC-CFG-configure-assistant-instructions), which the server prepends to the prompt above. If a future release wants instructor-tunable per-requirement criteria, model it on the cross-document-review-criteria pattern.
 
 ### Provenance
 

@@ -112,25 +112,31 @@ The RAM tool will elevate student requirements to professional industry standard
 
 ## **Business Objectives**
 
-BO-1: Improve the quality of student-written requirements through structure, templates, standards, traceability, AI feedback, and consistency checks.
+Each objective carries an area-prefixed `BO-<AREA>-<slug>` identifier — parallel to the `UC-<AREA>-<slug>` and `FR-<AREA>-<slug>` schemes — grouping it by the capability area it serves: `PERF` (performance tracking) or `RAM` (requirements authoring). As with those schemes, the `<slug>` is a name-based handle, unique within its area and independent of reading position, so a new objective is added to its area without disturbing the others.
 
-BO-2: Reduce instructor workload by automating completeness, quality, and formatting validation.
+**Performance tracking.**
 
-BO-3: Ensure cross-document consistency for glossary terms, names, actors, and business rules.
+BO-PERF-faster-grading: Reduce the instructor's time to grade peer evaluations by 50%.
 
-BO-4: Support end-to-end traceability across business, user, and functional levels.
+BO-PERF-submission-rate: Increase students' weekly activity report and peer evaluation submission rate by 20%.
 
-BO-5: Provide an integrated environment that supports learning outcomes in the Software Engineering and Senior Design class.
+BO-PERF-faster-completion: Reduce the time students spend completing their weekly activity reports and peer evaluations by 25%.
 
-BO-6: Enable navigation, visualization, and impact analysis of requirements relationships. *(MVP delivers graph navigation and traceability linking; interactive visualization and change-impact analysis are post-MVP.)*
+**Requirements authoring (RAM).**
 
-BO-7: Create opportunities for research in educational technology, AI-in-the-loop requirements engineering, NLP-based requirement quality analysis, and HCI.
+BO-RAM-requirement-quality: Improve the quality of student-written requirements through structure, templates, standards, traceability, AI feedback, and consistency checks.
 
-BO-8: Reduce the instructor's time to grade peer evaluations by 50%.
+BO-RAM-instructor-workload: Reduce instructor workload by automating completeness, quality, and formatting validation.
 
-BO-9: Increase students' weekly activity report and peer evaluation submission rate by 20%.
+BO-RAM-consistency: Ensure cross-document consistency for glossary terms, names, actors, and business rules.
 
-BO-10: Reduce the time students spend completing their weekly activity reports and peer evaluations by 25%.
+BO-RAM-traceability: Support end-to-end traceability across business, user, and functional levels.
+
+BO-RAM-learning-outcomes: Provide an integrated environment that supports learning outcomes in the Software Engineering and Senior Design class.
+
+BO-RAM-navigation: Enable navigation, visualization, and impact analysis of requirements relationships. *(MVP delivers graph navigation and traceability linking; interactive visualization and change-impact analysis are post-MVP.)*
+
+BO-RAM-research: Create opportunities for research in educational technology, AI-in-the-loop requirements engineering, NLP-based requirement quality analysis, and HCI.
 
 ## **Vision Statement**
 
@@ -166,39 +172,39 @@ The process is iterative: as authoring reveals gaps, the team returns to elicita
 
 ## **Risks**
 
-Risks to the success of the system or project — spanning business/adoption, technical/feasibility, and security/safety categories. Each is identified by an `RI-*` key.
+Risks to the success of the system or project — spanning business/adoption, technical/feasibility, and security/safety categories. Each carries a name-based `RI-<slug>` key: the identifier is the risk's name, not a position, so risks can be added or removed without renumbering.
 
-RI-1: Adoption Resistance: Students comfortable with Microsoft Word or Google Docs may resist structured tools, particularly if the application proves more confusing to use than the previous manual process.
+RI-adoption-resistance: Adoption Resistance: Students comfortable with Microsoft Word or Google Docs may resist structured tools, particularly if the application proves more confusing to use than the previous manual process.
 
-RI-2: LLM reliability: AI suggestions may occasionally conflict with instructor expectations.
+RI-llm-reliability: LLM reliability: AI suggestions may occasionally conflict with instructor expectations.
 
-RI-3: Scalability concerns: High usage in large capstone programs may stress infrastructure.
+RI-scalability: Scalability concerns: High usage in large capstone programs may stress infrastructure.
 
-RI-4: Over-reliance on AI: Students might depend too heavily on AI-generated content.
+RI-over-reliance-on-ai: Over-reliance on AI: Students might depend too heavily on AI-generated content.
 
-RI-5: Cross-browser/device inconsistency: the application may render or behave inconsistently across the supported browsers (Chrome, Safari, Firefox) and the range of student and instructor devices, degrading usability for some users.
+RI-cross-browser: Cross-browser/device inconsistency: the application may render or behave inconsistently across the supported browsers (Chrome, Safari, Firefox) and the range of student and instructor devices, degrading usability for some users.
 
-RI-6: Accessibility shortfall: the application may fail to meet WCAG 2.1 AA accessibility standards, leaving some users unable to use it effectively and exposing the department to accessibility-compliance complaints (addressed by the accessibility quality attributes USE-1 / UI-2 in the Software Requirements Specification).
+RI-accessibility: Accessibility shortfall: the application may fail to meet WCAG 2.1 AA accessibility standards, leaving some users unable to use it effectively and exposing the department to accessibility-compliance complaints (addressed by the accessibility quality attributes USE-wcag-aa / UI-wcag-aa in the Software Requirements Specification).
 
-RI-7: Cloud cost ownership: if the system is deployed on a cloud service provider, the Computer Science Department must budget for the annual cloud fees.
+RI-cloud-cost: Cloud cost ownership: if the system is deployed on a cloud service provider, the Computer Science Department must budget for the annual cloud fees.
 
-RI-8: Data breach: the students' peer evaluation data may be targeted by attackers (addressed by the security quality attributes in the Software Requirements Specification).
+RI-data-breach: Data breach: the students' peer evaluation data may be targeted by attackers (addressed by the security quality attributes in the Software Requirements Specification).
 
-RI-9: Narrow applicability: the application might prove too specialized for the TCU senior design course to be reused in other courses.
+RI-narrow-applicability: Narrow applicability: the application might prove too specialized for the TCU senior design course to be reused in other courses.
 
 ## **Business Assumptions and Dependencies**
 
-AS-1: Students and instructors have stable internet access.
+AS-internet-access: Students and instructors have stable internet access.
 
-AS-2: Courses already require formal documentation.
+AS-formal-docs-required: Courses already require formal documentation.
 
-AS-3: Microsoft Azure infrastructure is available and supported.
+AS-azure-available: Microsoft Azure infrastructure is available and supported.
 
-AS-4: LLM APIs (e.g., OpenAI) remain available and cost-effective.
+AS-llm-cost-effective: LLM APIs (e.g., OpenAI) remain available and cost-effective.
 
-AS-5: Faculty buy-in will be sufficient for pilot use.
+AS-faculty-buy-in: Faculty buy-in will be sufficient for pilot use.
 
-AS-9: The system uses technologies the client already knows and can maintain after the product is delivered. *(Assumptions are one team-wide `AS-*` sequence authored in two homes; AS-6 through AS-8 are the architecture-level assumptions defined in the Software Requirements Specification. The numbers are stable handles, not a reading order, so this sequence is intentionally non-contiguous.)*
+AS-maintainable-stack: The system uses technologies the client already knows and can maintain after the product is delivered. *(Assumptions are one team-wide `AS-*` set authored in two homes; the architecture-level assumptions are defined in the Software Requirements Specification. Each carries a name-based key, so an assumption can be added in either home without renumbering.)*
 
 # **Stakeholder Profiles and User Descriptions**
 
@@ -210,7 +216,7 @@ AS-9: The system uses technologies the client already knows and can maintain aft
 | Software Engineering & Senior Design Instructors                 | Teach requirements effectively; efficient grading; consistent formatting; Ability to enforce standards; dashboards for progress; reduced manual review; faster peer-evaluation grading and clearer insight into team dynamics                 | Strongly supportive if tool reduces grading burden; expect accuracy and reliability                                    | Template customization, LLM tutoring, example patterns, traceability, dashboards, completeness metrics, requirement quality scoring, WAR review, peer-evaluation report generation | Limited time; large class sizes; need reliable, accurate checks                 | Yes              |
 | Course Admin (course creator)                                    | Efficient course section and team setup; reliable roster and access management; one-click provisioning of each team's documents from built-in templates                | Wants minimal-friction setup; values reliability, correctness, and auditability                                        | Course section / team creation, roster and enrollment management, instructor invitations, template assignment, document provisioning | Owns a single course and is also an Instructor of it; limited time; needs correctness and an audit trail | Yes              |
 | Client (project sponsor)                                         | A clearer, more complete specification of the system they asked the team to build; fewer misunderstandings surfaced late; better interview questions from a better-prepared team; a professional-quality document bundle to review and sign off on | Non-technical; busy; cares about the delivered product, not the tooling; expects the team to drive the conversation | Exported requirement documents for review; the elicitation question lists the team brings to interviews (experienced indirectly, through the team) | Limited availability; little or no requirements-engineering background; does not use the tool directly | No               |
-| CS Department / faculty sponsor                                  | A modernized, reusable senior-design platform that raises requirements quality and reduces grading burden across cohorts; a basis for educational-technology research                | Supportive if costs stay predictable and the tool serves the curriculum; sensitive to recurring cloud spend (RI-7) | Adoption and learning-outcome trends across course sections; cost and maintainability of the deployment | Owns the cloud budget and must fund annual fees (RI-7); relies on Azure infrastructure being available (AS-3); needs the system maintainable after delivery | No               |
+| CS Department / faculty sponsor                                  | A modernized, reusable senior-design platform that raises requirements quality and reduces grading burden across cohorts; a basis for educational-technology research                | Supportive if costs stay predictable and the tool serves the curriculum; sensitive to recurring cloud spend (RI-cloud-cost) | Adoption and learning-outcome trends across course sections; cost and maintainability of the deployment | Owns the cloud budget and must fund annual fees (RI-cloud-cost); relies on Azure infrastructure being available (AS-azure-available); needs the system maintainable after delivery | No               |
 
 ## **User Environment**
 
@@ -239,7 +245,19 @@ AS-9: The system uses technologies the client already knows and can maintain aft
 
 ## **Major Features / Scope**
 
-Project Pulse provides a modern environment for running the senior design course — tracking student performance through weekly activity reports and peer evaluations, and authoring, validating, and managing software requirements. The features below describe the major functional capabilities at a high level. Detailed behavioral descriptions, actor interactions, and exception scenarios are defined in the accompanying [Use Cases document](use-cases.md). The requirements-authoring features come first, followed by the performance-tracking and course-management features.
+Project Pulse provides a modern environment for running the senior design course — tracking student performance through weekly activity reports and peer evaluations, and authoring, validating, and managing software requirements. The features below describe the major functional capabilities at a high level. Detailed behavioral descriptions, actor interactions, and exception scenarios are defined in the accompanying [Use Cases document](use-cases.md). The course-management and performance-tracking features come first, followed by the requirements-authoring (RAM) features.
+
+### *Administration and Course Management*
+
+The system supports secure authentication, role-based access control, and FERPA-compliant data storage. It provides course, course section, team, student, and instructor management for the whole platform: the course admin (the user who created the Course) sets up its course sections and project teams, manages rosters and document access, invites instructors, configures active weeks, and provisions each team's requirement documents from the built-in templates; instructors configure their course sections' teaching context and AI assistants and run the review-and-feedback workflow.
+
+### *Weekly Activity Reports*
+
+Each week, students record their work as a weekly activity report — for each activity, its category, the planned activity, a description, hours planned, actual hours taken, and status. Teammates and instructors can review a team's reports, and the system generates a WAR report for a team or for an individual student. This replaces the shared-spreadsheet workflow and fosters communication within the team. (See the Use Cases document, *Weekly Activity Report*: UC-WAR-*.)
+
+### *Peer Evaluations*
+
+During active weeks, students evaluate their teammates against a rubric of weighted criteria, optionally adding public comments (shared with the evaluatee) and private comments (visible only to the instructor). The system aggregates scores and comments, generates a peer-evaluation report for the entire course section and per-student reports, and lets each student view her own results. Submission windows, edit rules, and visibility are governed by the business rules in [business-rules.md](business-rules.md) (BR-active-weeks, BR-evaluation-editable-until-close, BR-evaluation-submission-window, BR-evaluation-visibility). (See the Use Cases document, *Peer Evaluation*: UC-EVA-*.)
 
 ### *Graph-First Requirements Model*
 
@@ -284,7 +302,7 @@ The tool will support bidirectional traceability across all major requirement ty
 - Business Rules → Use Cases / Functional Requirements
 - Glossary Terms → All Requirements
 
-The initial release supports creating and navigating the typed links themselves (see the Use Cases document, *Artifact Links and Tracing*: UC-LNK-1 through UC-LNK-6); the traceability-matrix view, orphan and missing-link highlighting, and change-impact analysis are post-MVP — see [MVP Scope](#mvp-scope-initial-classroom-deployment). This allows students to practice industry-standard traceability and helps instructors quickly evaluate completeness, coverage, and consistency across all requirement artifacts.
+The initial release supports creating and navigating the typed links themselves (see the Use Cases document, *Artifact Links and Tracing*: UC-LNK-*); the traceability-matrix view, orphan and missing-link highlighting, and change-impact analysis are post-MVP — see [MVP Scope](#mvp-scope-initial-classroom-deployment). This allows students to practice industry-standard traceability and helps instructors quickly evaluate completeness, coverage, and consistency across all requirement artifacts.
 
 ### *AI-Assisted Guidance and Feedback*
 
@@ -309,7 +327,7 @@ Combined with ReqLint, the assistant layer improves learning outcomes, trains cl
 
 ### *Collaboration and Document Workflow*
 
-Student teams collaborate through document-section-level editing and commenting. The tool supports submission-and-review workflows that allow students to submit drafts, receive instructor feedback, and revise their work iteratively. The initial release coordinates teammates through per-section pessimistic locking and comment threads (UC-COL-2, UC-COL-3); real-time collaboration — live presence and concurrent co-editing (UC-COL-1) — is post-MVP, see [MVP Scope](#mvp-scope-initial-classroom-deployment).
+Student teams collaborate through document-section-level editing and commenting. The tool supports submission-and-review workflows that allow students to submit drafts, receive instructor feedback, and revise their work iteratively. The initial release coordinates teammates through per-section pessimistic locking and comment threads (UC-COL-add-comment, UC-COL-resolve-comment); real-time collaboration — live presence and concurrent co-editing (UC-COL-collaborative-edit) — is post-MVP, see [MVP Scope](#mvp-scope-initial-classroom-deployment).
 
 The initial release keeps authorship metadata (the creator/editor and timestamps recorded on every authored item); document version history — checkpointing each save, viewing prior versions, and restoring them — is post-MVP, see [MVP Scope](#mvp-scope-initial-classroom-deployment).
 
@@ -317,7 +335,7 @@ The initial release keeps authorship metadata (the creator/editor and timestamps
 
 Instructors will have access to dashboards summarizing team progress, document completeness, and validation results. Integrated grading tools enable rubric-based evaluation aligned with the selected templates, as well as inline comments and structured feedback. This improves grading consistency and reduces review effort.
 
-**MVP scope:** the initial release provides only the review-and-feedback workflow — an instructor opens a submitted document, leaves inline comments, and either accepts it or returns it for revision (see the Use Cases document, *Review and Submission*: UC-REV-1, UC-REV-2, and commenting UC-COL-2 / UC-COL-3, governed by the business rules in [business-rules.md](business-rules.md)). Progress/completeness dashboards and rubric-based grading are post-MVP — see [MVP Scope](#mvp-scope-initial-classroom-deployment).
+**MVP scope:** the initial release provides only the review-and-feedback workflow — an instructor opens a submitted document, leaves inline comments, and either accepts it or returns it for revision (see the Use Cases document, *Review and Submission*: UC-REV-submit-for-review, UC-REV-review-documents, and commenting UC-COL-add-comment / UC-COL-resolve-comment, governed by the business rules in [business-rules.md](business-rules.md)). Progress/completeness dashboards and rubric-based grading are post-MVP — see [MVP Scope](#mvp-scope-initial-classroom-deployment).
 
 ### *Project Source Material Import*
 
@@ -326,18 +344,6 @@ At the start of a project the client provides pitch materials — typically a sl
 ### *Export and Delivery*
 
 Students can export requirement documents to professional-quality PDF, Word (DOCX), or Markdown formats that follow the structure of the chosen template (Markdown prioritizes structure and traceability over visual styling, and supports downstream code generation). Exported documents are suitable for client or stakeholder review in senior design and capstone projects.
-
-### *Weekly Activity Reports*
-
-Each week, students record their work as a weekly activity report — for each activity, its category, the planned activity, a description, hours planned, actual hours taken, and status. Teammates and instructors can review a team's reports, and the system generates a WAR report for a team or for an individual student. This replaces the shared-spreadsheet workflow and fosters communication within the team. (See the Use Cases document, *Weekly Activity Report*: UC-WAR-1 through UC-WAR-3.)
-
-### *Peer Evaluations*
-
-During active weeks, students evaluate their teammates against a rubric of weighted criteria, optionally adding public comments (shared with the evaluatee) and private comments (visible only to the instructor). The system aggregates scores and comments, generates a peer-evaluation report for the entire course section and per-student reports, and lets each student view her own results. Submission windows, edit rules, and visibility are governed by the business rules in [business-rules.md](business-rules.md) (BR-22 through BR-25). (See the Use Cases document, *Peer Evaluation*: UC-EVA-1 through UC-EVA-4.)
-
-### *Administration and Course Management*
-
-The system supports secure authentication, role-based access control, and FERPA-compliant data storage. It provides course, course section, team, student, and instructor management for the whole platform: the course admin (the user who created the Course) sets up its course sections and project teams, manages rosters and document access, invites instructors, configures active weeks, and provisions each team's requirement documents from the built-in templates; instructors configure their course sections' teaching context and AI assistants and run the review-and-feedback workflow.
 
 **See the Use Cases document for more details.**
 
@@ -348,11 +354,11 @@ The boundary below scopes the Requirements Authoring & Management (RAM) release:
 **In scope (initial RAM release):**
 
 - Structured, collaborative authoring of the requirement documents (Vision and Scope, Glossary, Use Cases, Business Rules, SRS) using fixed, built-in templates.
-- The requirements graph with typed artifact links, trace navigation, and safe rename (see the Use Cases document, *Artifact Links and Tracing*: UC-LNK-1 through UC-LNK-6).
+- The requirements graph with typed artifact links, trace navigation, and safe rename (see the Use Cases document, *Artifact Links and Tracing*: UC-LNK-view-links through UC-LNK-trace-requirement).
 - Deterministic ReqLint validation together with glossary-term suggestion.
 - The Socratic AI assistants that coach requirements authoring and client elicitation — the elicitation, critique, tutor, structuring, and client role-play assistants — reached through the project assistant, the project-level conversational front door that orients students and routes them to the right assistant.
 - Project source material import as context for the assistants.
-- Teammate coordination through per-section pessimistic locking and comment threads (UC-COL-2, UC-COL-3), and the submission-and-review workflow — an instructor opens a submitted document, leaves inline comments, and accepts it or returns it for revision (UC-REV-1, UC-REV-2).
+- Teammate coordination through per-section pessimistic locking and comment threads (UC-COL-add-comment, UC-COL-resolve-comment), and the submission-and-review workflow — an instructor opens a submitted document, leaves inline comments, and accepts it or returns it for revision (UC-REV-submit-for-review, UC-REV-review-documents).
 - Authorship metadata (creator/editor and timestamps) on every authored item.
 - Export to PDF, Word (DOCX), and Markdown.
 
@@ -363,7 +369,7 @@ The boundary below scopes the Requirements Authoring & Management (RAM) release:
 - Broader smart-editing auto-suggestions (actors, requirement patterns, cross-document links) and auto-complete beyond glossary-term suggestion.
 - Interactive traceability-matrix generation, orphan and missing-link highlighting, and change-impact analysis (the typed links and trace navigation themselves remain in scope).
 - Interactive graph visualization.
-- Real-time collaboration — live presence and concurrent co-editing (UC-COL-1).
+- Real-time collaboration — live presence and concurrent co-editing (UC-COL-collaborative-edit).
 - Document version history — checkpointing each save, viewing prior versions, and restoring them (authorship metadata is kept).
 - Advanced analytics and instructor progress/completeness dashboards, and automated/rubric-based grading (the review-and-feedback workflow remains in scope).
 

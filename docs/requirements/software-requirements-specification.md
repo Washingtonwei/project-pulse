@@ -56,7 +56,7 @@ The arrows read "is referenced by": the Project Glossary, Vision and Scope, Use 
 
 ## **Document Conventions**
 
-- Identifier schemes are stable, append-only handles, independent of heading position. Non-use-case functional requirements use `FR-<AREA>-<n>` (e.g., `FR-LOCK-2`); use cases use `UC-<AREA>-<n>` ([use-cases.md](use-cases.md)); business rules use `BR-<n>` ([business-rules.md](business-rules.md)). Product-generated artifact keys (e.g., `BO-3`, `RI-1`, `AS-6`, `UC-5`) follow a per-type running sequence, unique within a team, as defined under artifact key in the Project Glossary. SRS-local identifiers label its interface, data, and quality items: the External Interface Requirements codes (`UI-*`, `SI-*`, `CI-*`), the Data Requirements codes (`DI-*`), and the Quality Attributes codes (`USE-*`, `PER-*`, `SEC-*`, `SAF-*`, `AVL-*`, `ROB-*`, `SCA-*`, `INT-*`, `MNT-*`). The operating environment (`OE-*`), design and implementation constraints (`CO-*`), and architecture-level assumptions and dependencies (`AS-*`, continuing the sequence begun in Vision and Scope, and `DE-*`) are defined in the Overall Description section below.
+- Identifier schemes are stable, append-only handles, independent of heading position. Business objectives use `BO-<AREA>-<slug>` ([vision-and-scope.md](vision-and-scope.md)); non-use-case functional requirements use `FR-<AREA>-<slug>` (e.g., `FR-LOCK-exclusive`); use cases use `UC-<AREA>-<slug>` ([use-cases.md](use-cases.md)); business rules use `BR-<slug>` ([business-rules.md](business-rules.md)). Product-generated artifact keys (e.g., `BO-3`, `RI-1`, `AS-6`, `UC-5`) follow a per-type running sequence, unique within a team, as defined under artifact key in the Project Glossary. SRS-local identifiers label its interface, data, and quality items: the External Interface Requirements codes (`UI-*`, `SI-*`, `CI-*`), the Data Requirements codes (`DI-*`), and the Quality Attributes codes (`USE-*`, `PER-*`, `SEC-*`, `SAF-*`, `AVL-*`, `ROB-*`, `SCA-*`, `INT-*`, `MNT-*`). The operating environment (`OE-*`), design and implementation constraints (`CO-*`), and architecture-level assumptions and dependencies (`AS-*`, one team-wide set shared with Vision and Scope, and `DE-*`) are defined in the Overall Description section below.
 - Non-use-case functional requirements are written as EARS-style "shall" statements. A use case is itself a high-level functional requirement, so its steps and Associated Information are its detailed specification and are not restated as separate functional requirements.
 - Markdown is the canonical format and cross-references are live links. Square-bracketed italic passages are template author-guidance, not requirements.
 - This document does not duplicate content owned by another document: each topic has a single source of truth and is referenced here (for example, the Project Glossary, Vision and Scope, Use Cases, and Business Rules documents are linked here rather than copied in).
@@ -85,47 +85,47 @@ Project Pulse has three user classes — student, instructor, and course admin �
 
 ## **Operating Environment**
 
-OE-1: Project Pulse shall run in the current released versions of Google Chrome, Mozilla Firefox, Microsoft Edge, and Apple Safari.
+OE-supported-browsers: Project Pulse shall run in the current released versions of Google Chrome, Mozilla Firefox, Microsoft Edge, and Apple Safari.
 
-OE-2: The Project Pulse server shall run the REST API as a Java/Spring Boot application on a supported Java Virtual Machine, serve the Vue.js single-page application to clients, and persist data in a relational database.
+OE-server-stack: The Project Pulse server shall run the REST API as a Java/Spring Boot application on a supported Java Virtual Machine, serve the Vue.js single-page application to clients, and persist data in a relational database.
 
-OE-3: Users shall access RAM over HTTPS from the public internet, requiring no client software beyond a web browser.
+OE-https-access: Users shall access RAM over HTTPS from the public internet, requiring no client software beyond a web browser.
 
-OE-4: Project Pulse shall be deployed as a single application in which both capability areas — the weekly activity report and peer evaluation workflows and the RAM environment — share one single-page application, one REST API, and one database.
+OE-single-application: Project Pulse shall be deployed as a single application in which both capability areas — the weekly activity report and peer evaluation workflows and the RAM environment — share one single-page application, one REST API, and one database.
 
-OE-5: Project Pulse shall reach the external LLM service over HTTPS and the Gmail system over SMTP for AI-assisted review and email notifications, respectively.
+OE-external-services: Project Pulse shall reach the external LLM service over HTTPS and the Gmail system over SMTP for AI-assisted review and email notifications, respectively.
 
 ## **Design and Implementation Constraints**
 
-CO-1: Project Pulse shall be a single application sharing one Vue.js single-page application, one Java/Spring Boot REST API, and one relational database across both capability areas; the RAM environment shall be implemented as a module within that codebase rather than as a separate system.
+CO-single-application: Project Pulse shall be a single application sharing one Vue.js single-page application, one Java/Spring Boot REST API, and one relational database across both capability areas; the RAM environment shall be implemented as a module within that codebase rather than as a separate system.
 
-CO-2: The client shall be implemented in Vue.js and the backend in Java using the Spring Boot framework.
+CO-vue-spring-stack: The client shall be implemented in Vue.js and the backend in Java using the Spring Boot framework.
 
-CO-3: Requirement artifacts, links, documents, and document sections shall be persisted in the Project Pulse relational database.
+CO-relational-persistence: Requirement artifacts, links, documents, and document sections shall be persisted in the Project Pulse relational database.
 
-CO-4: Project Pulse shall provide a single JWT-based authentication mechanism for all users across both capability areas; the RAM environment shall reuse it rather than implementing a separate login.
+CO-single-auth: Project Pulse shall provide a single JWT-based authentication mechanism for all users across both capability areas; the RAM environment shall reuse it rather than implementing a separate login.
 
-CO-5: Project Pulse shall comply with FERPA when storing and transmitting student educational records.
+CO-ferpa: Project Pulse shall comply with FERPA when storing and transmitting student educational records.
 
-CO-6: All calls to the external LLM service shall be routed through the REST API's AI proxy so that service credentials remain server-side and are never exposed to the browser.
+CO-server-side-llm-proxy: All calls to the external LLM service shall be routed through the REST API's AI proxy so that service credentials remain server-side and are never exposed to the browser.
 
-CO-7: Email notifications shall be sent through the Gmail SMTP integration.
+CO-gmail-smtp: Email notifications shall be sent through the Gmail SMTP integration.
 
 ## **Assumptions and Dependencies**
 
-Assumptions and dependencies are graph artifacts with team-wide key sequences (`AS-*`, `DE-*`) unique within a team (BR-5); documents are views over one shared graph, so the keys do not restart per document. There is one `ASSUMPTION` type authored in two homes: the business-level assumptions `AS-1`…`AS-5` and `AS-9` are in Vision and Scope ([Business Assumptions and Dependencies](vision-and-scope.md#business-assumptions-and-dependencies)), and the architecture-level assumptions `AS-6`…`AS-8` below continue that same `AS-*` sequence. The numbers are stable handles, not a reading order, so the sequence is intentionally non-contiguous within each document.
+Assumptions and dependencies form one team-wide set authored in two homes: the business-level assumptions in Vision and Scope ([Business Assumptions and Dependencies](vision-and-scope.md#business-assumptions-and-dependencies)) and the architecture-level assumptions below. Both share the single `AS-*` namespace and dependencies the `DE-*` namespace, each carrying a name-based key (e.g., `AS-supported-browser`, `DE-llm-service`), so an assumption or dependency can be added in either home without renumbering.
 
-AS-6: Users have a supported web browser and a reliable internet connection.
+AS-supported-browser: Users have a supported web browser and a reliable internet connection.
 
-AS-7: The external LLM service remains available and its API contract stays stable for the integration RAM relies on.
+AS-llm-api-stable: The external LLM service remains available and its API contract stays stable for the integration RAM relies on.
 
-AS-8: Project Pulse's course, course section, team, and user data is accurate and current; the RAM environment reads this shared data rather than maintaining its own copy.
+AS-shared-data-current: Project Pulse's course, course section, team, and user data is accurate and current; the RAM environment reads this shared data rather than maintaining its own copy.
 
-DE-1: The RAM environment depends on the rest of Project Pulse for authentication, the course/course section/team data model, and the course admin, instructor, and student roles.
+DE-shared-foundation: The RAM environment depends on the rest of Project Pulse for authentication, the course/course section/team data model, and the course admin, instructor, and student roles.
 
-DE-2: AI-assisted requirement review depends on the external LLM service; if it is unavailable, the AI features are unavailable while the rest of Project Pulse continues to operate.
+DE-llm-service: AI-assisted requirement review depends on the external LLM service; if it is unavailable, the AI features are unavailable while the rest of Project Pulse continues to operate.
 
-DE-3: Email notifications depend on the Gmail SMTP integration.
+DE-gmail-smtp: Email notifications depend on the Gmail SMTP integration.
 
 # **Project Glossary**
 
@@ -151,159 +151,159 @@ These requirements describe system-level functions that support or enable the us
 
 ### *Autosave and Persistence Requirements*
 
-**FR-SAVE-1 (State-Driven):** While a student is actively editing an authoring destination, the system shall automatically save the authoring destination's content at the autosave cadence specified in PER-2.
+**FR-SAVE-autosave-active (State-Driven):** While a student is actively editing an authoring destination, the system shall automatically save the authoring destination's content at the autosave cadence specified in PER-autosave-cadence.
 
-**FR-SAVE-2 (Event-Driven):** When a student leaves an authoring destination or navigates away, the system shall immediately persist the latest content of that authoring destination.
+**FR-SAVE-on-navigate-away (Event-Driven):** When a student leaves an authoring destination or navigates away, the system shall immediately persist the latest content of that authoring destination.
 
-**FR-SAVE-3 (Ubiquitous):** The system shall limit the work lost in the event of a browser crash, disconnection, or power failure to the bound specified in ROB-1.
+**FR-SAVE-crash-loss-bound (Ubiquitous):** The system shall limit the work lost in the event of a browser crash, disconnection, or power failure to the bound specified in ROB-edit-loss-bound.
 
-**FR-SAVE-4 (Event-Driven):** When an autosave operation fails, the system shall notify the user and retry in the background without interrupting editing.
+**FR-SAVE-failure-retry (Event-Driven):** When an autosave operation fails, the system shall notify the user and retry in the background without interrupting editing.
 
 ### *Authoring Destination Locking Requirements*
 
-**FR-LOCK-1 (Event-Driven):** When a student begins editing an authoring destination, the system shall acquire an exclusive lock for that authoring destination for that student.
+**FR-LOCK-acquire (Event-Driven):** When a student begins editing an authoring destination, the system shall acquire an exclusive lock for that authoring destination for that student.
 
-**FR-LOCK-2 (Ubiquitous):** The system shall prevent other students from modifying an authoring destination that is currently locked.
+**FR-LOCK-exclusive (Ubiquitous):** The system shall prevent other students from modifying an authoring destination that is currently locked.
 
-**FR-LOCK-3 (Event-Driven):** When a student stops interacting with an authoring destination, the system shall release the lock for that authoring destination.
+**FR-LOCK-release (Event-Driven):** When a student stops interacting with an authoring destination, the system shall release the lock for that authoring destination.
 
-**FR-LOCK-4 (State-Driven Timeout):** While an authoring destination lock has been held for longer than a configurable interval since it was acquired (default 15 minutes), the system shall automatically release the lock.
+**FR-LOCK-timeout (State-Driven Timeout):** While an authoring destination lock has been held for longer than a configurable interval since it was acquired (default 15 minutes), the system shall automatically release the lock.
 
-**FR-LOCK-5 (Event-Driven):** When a lock is acquired or released, the system shall broadcast the updated lock state to all team members viewing the document.
+**FR-LOCK-broadcast (Event-Driven):** When a lock is acquired or released, the system shall broadcast the updated lock state to all team members viewing the document.
 
 ### *Real-Time Collaboration Requirements*
 
-*Post-MVP. Real-time collaboration — live collaborator presence and broadcast — is deferred beyond the initial release; the `FR-COL-*` requirements below (and the related PER-1 and ROB-3 targets) are retained as future scope. The MVP collaboration model is comment threads (UC-COL-2, UC-COL-3) over pessimistic section-level locking (`FR-LOCK-*`); concurrent authoring is serialized by locks rather than merged live.*
+*Post-MVP. Real-time collaboration — live collaborator presence and broadcast — is deferred beyond the initial release; the `FR-COL-*` requirements below (and the related PER-collab-latency and ROB-no-overwrite targets) are retained as future scope. The MVP collaboration model is comment threads (UC-COL-add-comment, UC-COL-resolve-comment) over pessimistic section-level locking (`FR-LOCK-*`); concurrent authoring is serialized by locks rather than merged live.*
 
-**FR-COL-1 (State-Driven):** While multiple students are connected to the same document, the system shall display the presence of each connected collaborator and the current lock state of each document section and use case.
+**FR-COL-presence (State-Driven):** While multiple students are connected to the same document, the system shall display the presence of each connected collaborator and the current lock state of each document section and use case.
 
-**FR-COL-2 (Event-Driven):** When a collaborator joins a document, the system shall notify all currently connected users.
+**FR-COL-join (Event-Driven):** When a collaborator joins a document, the system shall notify all currently connected users.
 
-**FR-COL-3 (Event-Driven):** When a collaborator disconnects, the system shall notify all currently connected users within 2 seconds.
+**FR-COL-disconnect (Event-Driven):** When a collaborator disconnects, the system shall notify all currently connected users within 2 seconds.
 
-**FR-COL-4 (Ubiquitous):** The system shall ensure that real-time updates do not overwrite or corrupt content saved by other collaborators.
+**FR-COL-no-overwrite (Ubiquitous):** The system shall ensure that real-time updates do not overwrite or corrupt content saved by other collaborators.
 
 ### *Validation and Consistency Requirements (ReqLint)*
 
-**FR-VAL-1 (Ubiquitous):** The system shall provide a ReqLint validation engine that evaluates a requirement document against the applicable deterministic validation rules and produces a structured list of issues, each classified by severity (ERROR, WARNING, INFO) and tied to the document section or item it concerns. This engine is invoked both on student request (UC-VAL-1) and by the periodic background re-evaluation of FR-VAL-2.
+**FR-VAL-engine (Ubiquitous):** The system shall provide a ReqLint validation engine that evaluates a requirement document against the applicable deterministic validation rules and produces a structured list of issues, each classified by severity (ERROR, WARNING, INFO) and tied to the document section or item it concerns. This engine is invoked both on student request (UC-VAL-run-validation) and by the periodic background re-evaluation of FR-VAL-background-recheck.
 
-**FR-VAL-2 (State-Driven, Optional):** While a student edits a document section, the system shall periodically re-evaluate the document section for ambiguity, missing required fields, or stylistic violations.
+**FR-VAL-background-recheck (State-Driven, Optional):** While a student edits a document section, the system shall periodically re-evaluate the document section for ambiguity, missing required fields, or stylistic violations.
 
-**FR-VAL-3 (Ubiquitous):** The system shall provide unique identifiers for all requirements, document sections, glossary terms, and use cases to support traceability.
+**FR-VAL-unique-ids (Ubiquitous):** The system shall provide unique identifiers for all requirements, document sections, glossary terms, and use cases to support traceability.
 
-**FR-VAL-4 (Event-Driven):** When a glossary term is renamed, the system shall identify and update or flag all references to that term across all documents in the project.
+**FR-VAL-rename-propagation (Event-Driven):** When a glossary term is renamed, the system shall identify and update or flag all references to that term across all documents in the project.
 
-**FR-VAL-5 (Ubiquitous):** The system shall verify the presence of all mandatory document sections defined in the chosen template.
+**FR-VAL-required-sections (Ubiquitous):** The system shall verify the presence of all mandatory document sections defined in the chosen template.
 
-**FR-VAL-6 (Ubiquitous):** The system shall flag ambiguous, unverifiable, or subjective wording based on instructor-defined rules and defaults.
+**FR-VAL-vagueness (Ubiquitous):** The system shall flag ambiguous, unverifiable, or subjective wording based on instructor-defined rules and defaults.
 
 ### *AI/LLM Integration Requirements*
 
 RAM's AI assistance is delivered through Socratic assistants whose primary purpose is educational: to train students to author high-quality requirements rather than to hand them finished text. Where a design choice trades productivity against educational value, educational value governs.
 
-**FR-AI-1 (Event-Driven):** When a student requests elicitation help, the elicitation assistant shall return coaching for the student's own elicitation — candidate questions to put to the client (in plain, non-technical language), suggested follow-ups, and checks that help the student verify the client's answers — grounded in the session-scoped context assembled per SI-1.2, rather than finished requirement content.
+**FR-AI-elicitation-coaching (Event-Driven):** When a student requests elicitation help, the elicitation assistant shall return coaching for the student's own elicitation — candidate questions to put to the client (in plain, non-technical language), suggested follow-ups, and checks that help the student verify the client's answers — grounded in the session-scoped context assembled per SI-llm-context, rather than finished requirement content.
 
-**FR-AI-2 (Optional):** Where AI assistance is enabled, the critique assistant shall return its findings (possibly none) for clarity, consistency, completeness, or testability, each accompanied by an instructive rationale.
+**FR-AI-critique (Optional):** Where AI assistance is enabled, the critique assistant shall return its findings (possibly none) for clarity, consistency, completeness, or testability, each accompanied by an instructive rationale.
 
-**FR-AI-3 (Ubiquitous):** The system shall not modify student-authored content with assistant-generated text without an explicit confirmation action by the student.
+**FR-AI-no-auto-edit (Ubiquitous):** The system shall not modify student-authored content with assistant-generated text without an explicit confirmation action by the student.
 
-**FR-AI-4 (Event-Driven):** When a student requests an explanation for a flagged validation or critique issue, the tutor assistant shall return an explanation describing the rule or weakness involved and a suggested fix.
+**FR-AI-tutor-explain (Event-Driven):** When a student requests an explanation for a flagged validation or critique issue, the tutor assistant shall return an explanation describing the rule or weakness involved and a suggested fix.
 
-**FR-AI-5 (Ubiquitous):** The system shall visually distinguish assistant-generated suggestions from student-authored content until the student accepts them.
+**FR-AI-distinguish-suggestions (Ubiquitous):** The system shall visually distinguish assistant-generated suggestions from student-authored content until the student accepts them.
 
-**FR-AI-6 (Ubiquitous):** The system shall include the course section's teaching context in the context provided to every assistant so that assistant feedback reflects the standards, common mistakes, and thinking order it defines.
+**FR-AI-teaching-context (Ubiquitous):** The system shall include the course section's teaching context in the context provided to every assistant so that assistant feedback reflects the standards, common mistakes, and thinking order it defines.
 
-**FR-AI-7 (State-Driven):** While an instructor has disabled a given assistant for a course section, the system shall make that assistant's corresponding feature unavailable to that course section's students; the drafting assistant shall be disabled by default.
+**FR-AI-enablement (State-Driven):** While an instructor has disabled a given assistant for a course section, the system shall make that assistant's corresponding feature unavailable to that course section's students; the drafting assistant shall be disabled by default.
 
-**FR-AI-8 (Event-Driven):** When an assistant proposes concrete content, the system shall apply it only after an explicit, per-item acceptance by the student, and shall not provide an "accept all" action.
+**FR-AI-explicit-acceptance (Event-Driven):** When an assistant proposes concrete content, the system shall apply it only after an explicit, per-item acceptance by the student, and shall not provide an "accept all" action.
 
-**FR-AI-9 (Ubiquitous):** The system shall accompany every assistant finding or proposal with an instructive rationale phrased for student learning.
+**FR-AI-rationale (Ubiquitous):** The system shall accompany every assistant finding or proposal with an instructive rationale phrased for student learning.
 
-**FR-AI-10 (Event-Driven):** When a student starts a practice client interview, the client role-play assistant shall respond in a non-technical client persona and shall not author requirements on the student's behalf.
+**FR-AI-client-roleplay (Event-Driven):** When a student starts a practice client interview, the client role-play assistant shall respond in a non-technical client persona and shall not author requirements on the student's behalf.
 
-**FR-AI-11 (Event-Driven):** When a student requests a review of planned client questions, the system shall flag technical jargon and suggest plain-language phrasings, each accompanied by a rationale.
+**FR-AI-question-review (Event-Driven):** When a student requests a review of planned client questions, the system shall flag technical jargon and suggest plain-language phrasings, each accompanied by a rationale.
 
-**FR-AI-12 (Event-Driven):** When a student submits plain-language notes for translation, the structuring assistant shall propose candidate structured requirements, each traceable to its source note and applied only through the acceptance action of FR-AI-8.
+**FR-AI-structuring (Event-Driven):** When a student submits plain-language notes for translation, the structuring assistant shall propose candidate structured requirements, each traceable to its source note and applied only through the acceptance action of FR-AI-explicit-acceptance.
 
-**FR-AI-13 (State-Driven):** While the external LLM service is unavailable, the system shall make AI features unavailable and shall keep the rest of Project Pulse operational.
+**FR-AI-degradation (State-Driven):** While the external LLM service is unavailable, the system shall make AI features unavailable and shall keep the rest of Project Pulse operational.
 
-**FR-AI-14 (Ubiquitous):** Where a team has imported project source material, the system shall make it available to the AI assistants as context for elicitation, critique, and drafting.
+**FR-AI-source-material-context (Ubiquitous):** Where a team has imported project source material, the system shall make it available to the AI assistants as context for elicitation, critique, and drafting.
 
-**FR-AI-15 (Event-Driven):** When a student requests elicitation help, the elicitation assistant shall perform a gap analysis over the session-scoped context assembled per SI-1.2 — comparing a targeted document section or use case against its template, or a project-wide session's current requirements coverage against what a complete set requires — and return candidate interview questions for the gaps it identifies.
+**FR-AI-gap-analysis (Event-Driven):** When a student requests elicitation help, the elicitation assistant shall perform a gap analysis over the session-scoped context assembled per SI-llm-context — comparing a targeted document section or use case against its template, or a project-wide session's current requirements coverage against what a complete set requires — and return candidate interview questions for the gaps it identifies.
 
-**FR-AI-16 (Ubiquitous):** The system shall include each assistant's instructor-authored assistant instructions in the context provided to that assistant so that the assistant's role, persona, and boundaries reflect the instructor's per-assistant configuration.
+**FR-AI-assistant-instructions (Ubiquitous):** The system shall include each assistant's instructor-authored assistant instructions in the context provided to that assistant so that the assistant's role, persona, and boundaries reflect the instructor's per-assistant configuration.
 
-**FR-AI-17 (Event-Driven):** When a student excludes the imported project source material for an elicitation session, the system shall ground that session's gap analysis solely on the team's current drafted requirements and shall omit the project source material from the elicitation assistant's context for that session.
+**FR-AI-exclude-source-material (Event-Driven):** When a student excludes the imported project source material for an elicitation session, the system shall ground that session's gap analysis solely on the team's current drafted requirements and shall omit the project source material from the elicitation assistant's context for that session.
 
-**FR-AI-18 (Event-Driven):** When a student asks the project assistant for help, the project assistant shall return orientation, answers about project status and coverage, navigation to the relevant document or artifact, and recommended next actions — grounded in the project's current requirements coverage, the imported project source material, and the course section's teaching context assembled per SI-1.2 — without authoring requirement content.
+**FR-AI-project-assistant (Event-Driven):** When a student asks the project assistant for help, the project assistant shall return orientation, answers about project status and coverage, navigation to the relevant document or artifact, and recommended next actions — grounded in the project's current requirements coverage, the imported project source material, and the course section's teaching context assembled per SI-llm-context — without authoring requirement content.
 
-**FR-AI-19 (Event-Driven):** When the project assistant recommends a specialized assistant or an authoring action, the system shall route the student into the corresponding use case and shall honor that assistant's per-course-section enablement.
+**FR-AI-routing (Event-Driven):** When the project assistant recommends a specialized assistant or an authoring action, the system shall route the student into the corresponding use case and shall honor that assistant's per-course-section enablement.
 
-**FR-AI-20 (Event-Driven):** When the drafting assistant is enabled and a student requests a draft, the system shall return a structural skeleton or clearly-marked candidate requirements derived from the student's prompt, applied only through the acceptance action of FR-AI-8.
+**FR-AI-drafting (Event-Driven):** When the drafting assistant is enabled and a student requests a draft, the system shall return a structural skeleton or clearly-marked candidate requirements derived from the student's prompt, applied only through the acceptance action of FR-AI-explicit-acceptance.
 
-**FR-AI-21 (Event-Driven):** When a student requests a whole-project review, the critique assistant shall evaluate the team's requirement documents together and return cross-document findings — covering completeness gaps, coverage and traceability holes, inconsistencies, and conflicts across the documents — each accompanied by an instructive rationale, and shall author no requirement content.
+**FR-AI-whole-project-review (Event-Driven):** When a student requests a whole-project review, the critique assistant shall evaluate the team's requirement documents together and return cross-document findings — covering completeness gaps, coverage and traceability holes, inconsistencies, and conflicts across the documents — each accompanied by an instructive rationale, and shall author no requirement content.
 
-**FR-AI-22 (Ubiquitous):** The system shall include the course section's cross-document review criteria in the context provided to the critique assistant for a whole-project review, so that the review applies the instructor-configured criteria.
+**FR-AI-review-criteria (Ubiquitous):** The system shall include the course section's cross-document review criteria in the context provided to the critique assistant for a whole-project review, so that the review applies the instructor-configured criteria.
 
-**FR-AI-23 (State-Driven):** While a course section's cross-document review criteria are undefined, the system shall make the whole-project review unavailable to that course section's students.
+**FR-AI-review-criteria-required (State-Driven):** While a course section's cross-document review criteria are undefined, the system shall make the whole-project review unavailable to that course section's students.
 
 ### *Template and Standards Enforcement Requirements*
 
-The initial release ships fixed, built-in templates, and the enforcement requirements (FR-TPL-1, FR-TPL-3) apply to them. Template customization — letting a course admin or instructor author or edit templates (FR-TPL-2) — is **deferred to a future release and is not part of the MVP scope** (see Vision and Scope, [Template Management](vision-and-scope.md#template-management)). FR-TPL-2 is retained here, with its ID, so the intent is not lost.
+The initial release ships fixed, built-in templates, and the enforcement requirements (FR-TPL-enforce-structure, FR-TPL-section-keys) apply to them. Template customization — letting a course admin or instructor author or edit templates (FR-TPL-customize) — is **deferred to a future release and is not part of the MVP scope** (see Vision and Scope, [Template Management](vision-and-scope.md#template-management)). FR-TPL-customize is retained here, with its ID, so the intent is not lost.
 
-**FR-TPL-1 (Ubiquitous):** The system shall enforce the structure, required document sections, and metadata defined by the active template.
+**FR-TPL-enforce-structure (Ubiquitous):** The system shall enforce the structure, required document sections, and metadata defined by the active template.
 
-**FR-TPL-2 (Deferred — future release):** When an authorized user (a course admin or instructor) updates a template, the system shall apply the updated structure to new documents but shall not retroactively modify existing documents without that user's approval.
+**FR-TPL-customize (Deferred — future release):** When an authorized user (a course admin or instructor) updates a template, the system shall apply the updated structure to new documents but shall not retroactively modify existing documents without that user's approval.
 
-**FR-TPL-3 (Ubiquitous):** The system shall apply the numbering and section-key scheme defined by the active template to all document sections within a document.
+**FR-TPL-section-keys (Ubiquitous):** The system shall apply the numbering and section-key scheme defined by the active template to all document sections within a document.
 
 ### *Terminology and Glossary Requirements*
 
-**FR-GLO-1 (Ubiquitous):** The system shall provide a single authoritative definition for each glossary term within a project.
+**FR-GLO-authoritative-definition (Ubiquitous):** The system shall provide a single authoritative definition for each glossary term within a project.
 
-**FR-GLO-2 (Event-Driven):** When a glossary term is created or updated, the system shall ensure that references in documents link to the term.
+**FR-GLO-reference-linking (Event-Driven):** When a glossary term is created or updated, the system shall ensure that references in documents link to the term.
 
-**FR-GLO-3 (State-Driven):** While a student is writing or editing text, the system shall suggest existing glossary terms when there is a match.
+**FR-GLO-term-suggestion (State-Driven):** While a student is writing or editing text, the system shall suggest existing glossary terms when there is a match.
 
 ### *Authorship Metadata and Document Versioning Requirements*
 
-Authorship metadata (FR-HIS-4) is in scope for the initial release and is relied on by the authoring use cases. Document versioning — checkpointing, restoring, and retaining prior versions (FR-HIS-1, FR-HIS-2, FR-HIS-3) — is **deferred to a future release and is not part of the MVP scope** (see Vision and Scope, [Major Features / Scope](vision-and-scope.md#major-features--scope); tracked as OI-4). The three deferred requirements are retained here, with their IDs, so the intent is not lost.
+Authorship metadata (FR-HIS-authorship-metadata) is in scope for the initial release and is relied on by the authoring use cases. Document versioning — checkpointing, restoring, and retaining prior versions (FR-HIS-checkpoint, FR-HIS-restore, FR-HIS-retention) — is **deferred to a future release and is not part of the MVP scope** (see Vision and Scope, [Major Features / Scope](vision-and-scope.md#major-features--scope); tracked as OI-4). The three deferred requirements are retained here, with their IDs, so the intent is not lost.
 
-**FR-HIS-1 (Deferred — future release):** When a document section is saved, the system shall create a version checkpoint containing the user, timestamp, and diff.
+**FR-HIS-checkpoint (Deferred — future release):** When a document section is saved, the system shall create a version checkpoint containing the user, timestamp, and diff.
 
-**FR-HIS-2 (Deferred — future release):** The system shall allow authorized users to restore a previous version of a document section.
+**FR-HIS-restore (Deferred — future release):** The system shall allow authorized users to restore a previous version of a document section.
 
-**FR-HIS-3 (Deferred — future release):** The system shall preserve historical versions for at least one academic term.
+**FR-HIS-retention (Deferred — future release):** The system shall preserve historical versions for at least one academic term.
 
-**FR-HIS-4 (Ubiquitous):** The system shall record, for every authored item (glossary term, requirement artifact, use case, document section, artifact link, and comment), the identity of its creator and creation timestamp and the identity of its last editor and last-modified timestamp. For a use case, this authorship metadata is carried by the use case's paired requirement artifact audit record; the use case's constituent main steps and extensions do not carry separate authorship metadata. _(Cross-cutting; relied on by the authoring use cases — the create, edit, rename, and resolve flows across the glossary, documents, artifacts, links, and comments.)_
+**FR-HIS-authorship-metadata (Ubiquitous):** The system shall record, for every authored item (glossary term, requirement artifact, use case, document section, artifact link, and comment), the identity of its creator and creation timestamp and the identity of its last editor and last-modified timestamp. For a use case, this authorship metadata is carried by the use case's paired requirement artifact audit record; the use case's constituent main steps and extensions do not carry separate authorship metadata. _(Cross-cutting; relied on by the authoring use cases — the create, edit, rename, and resolve flows across the glossary, documents, artifacts, links, and comments.)_
 
 ### *Security and Authorization Requirements*
 
-**FR-SEC-1 (Ubiquitous):** The system shall authenticate users via its JWT-based authentication mechanism before granting access to protected resources.
+**FR-SEC-authentication (Ubiquitous):** The system shall authenticate users via its JWT-based authentication mechanism before granting access to protected resources.
 
-**FR-SEC-2 (Ubiquitous):** The system shall enforce role-based access control (student, instructor, course admin).
+**FR-SEC-authorization (Ubiquitous):** The system shall enforce role-based access control (student, instructor, course admin).
 
-**FR-SEC-3 (Event-Driven):** When an unauthorized user attempts to access a protected resource, the system shall deny access and provide an appropriate error message.
+**FR-SEC-deny-unauthorized (Event-Driven):** When an unauthorized user attempts to access a protected resource, the system shall deny access and provide an appropriate error message.
 
 ### *Export and Formatting Requirements*
 
-**FR-EXP-1 (Event-Driven):** When a user exports a document, the system shall generate a PDF, DOCX, or Markdown file consistent with the template-defined structure. _(Realizes UC-EXP-1; honors BR-1.)_
+**FR-EXP-generate (Event-Driven):** When a user exports a document, the system shall generate a PDF, DOCX, or Markdown file consistent with the template-defined structure. _(Realizes UC-EXP-export-document; honors BR-team-scoped-access.)_
 
-**FR-EXP-2 (Ubiquitous):** The system shall maintain table of contents, heading hierarchy, numbering, and formatting consistency in exported documents.
+**FR-EXP-formatting (Ubiquitous):** The system shall maintain table of contents, heading hierarchy, numbering, and formatting consistency in exported documents.
 
 ### *Project Source Material and Import Requirements*
 
-**FR-IMP-1 (Event-Driven):** When a student imports client pitch materials, the system shall accept PDF (`.pdf`) and PowerPoint (`.pptx`, `.ppt`) files, reject any file whose type is not on this allowlist or whose size exceeds a configurable per-file size limit (default 25 MB), and store each accepted file as the team's project source material.
+**FR-IMP-upload-allowlist (Event-Driven):** When a student imports client pitch materials, the system shall accept PDF (`.pdf`) and PowerPoint (`.pptx`, `.ppt`) files, reject any file whose type is not on this allowlist or whose size exceeds a configurable per-file size limit (default 25 MB), and store each accepted file as the team's project source material.
 
-**FR-IMP-2 (Event-Driven):** When project source material is imported, the system shall extract its text content for reference and for use as assistant context, and shall report when extraction is incomplete (for example, for image-only or scanned files).
+**FR-IMP-text-extraction (Event-Driven):** When project source material is imported, the system shall extract its text content for reference and for use as assistant context, and shall report when extraction is incomplete (for example, for image-only or scanned files).
 
 ### *Notification Requirements*
 
-**FR-NOT-1 (Event-Driven):** When the system raises a review-workflow notification — a requirement document submitted for review, returned for revision, or accepted — it shall deliver it by email to the designated recipients through the Gmail SMTP integration. _(Supports UC-REV-1, UC-REV-2; honors DE-3.)_
+**FR-NOT-review-workflow (Event-Driven):** When the system raises a review-workflow notification — a requirement document submitted for review, returned for revision, or accepted — it shall deliver it by email to the designated recipients through the Gmail SMTP integration. _(Supports UC-REV-submit-for-review, UC-REV-review-documents; honors DE-gmail-smtp.)_
 
-**FR-NOT-2 (Ubiquitous):** The system shall not raise persistent or email notifications for routine authoring changes (creating, editing, or deleting glossary terms, requirement artifacts, artifact links, document sections, use cases, and comments); such changes are propagated to connected collaborators in real time per FR-COL-1..4 instead.
+**FR-NOT-suppress-routine (Ubiquitous):** The system shall not raise persistent or email notifications for routine authoring changes (creating, editing, or deleting glossary terms, requirement artifacts, artifact links, document sections, use cases, and comments); such changes are propagated to connected collaborators in real time per FR-COL-* instead.
 
-**FR-NOT-3 (Event-Driven):** On a course section's configured weekly due day for weekly activity reports or peer evaluations, the system shall email each student in that course section a submission reminder listing the item(s) due that day and their due times, delivered through the Gmail SMTP integration. The reminder job runs only for course sections eligible for reminders in the current week and may be disabled by configuration. _(Supports BO-9, BO-10.)_
+**FR-NOT-weekly-reminder (Event-Driven):** On a course section's configured weekly due day for weekly activity reports or peer evaluations, the system shall email each student in that course section a submission reminder listing the item(s) due that day and their due times, delivered through the Gmail SMTP integration. The reminder job runs only for course sections eligible for reminders in the current week and may be disabled by configuration. _(Supports BO-PERF-submission-rate, BO-PERF-faster-completion.)_
 
 # **Business Rules**
 
@@ -313,7 +313,7 @@ The Business Rules document is available here: [business-rules.md](business-rule
 
 ## **Business Domain Model**
 
-Project Pulse's domain spans both capability areas, modeled below as two diagrams: the performance-tracking domain and the requirements graph that the RAM environment adds. The two share the course / course section / team / user backbone — RAM scopes its requirements content to those same teams (BR-1) — but are otherwise independent.
+Project Pulse's domain spans both capability areas, modeled below as two diagrams: the performance-tracking domain and the requirements graph that the RAM environment adds. The two share the course / course section / team / user backbone — RAM scopes its requirements content to those same teams (BR-team-scoped-access) — but are otherwise independent.
 
 ### *Performance-tracking domain*
 
@@ -432,7 +432,7 @@ classDiagram
     Instructor --> "1" Section : defaultSection
 ```
 
-Here `Section` is the course section entity — the enrollment unit students join and that groups them into teams — not a document section. There is no standalone weekly-activity-report entity: a student's weekly activity report is her `Activity` rows for a given `week`. A course section's `warWeeklyDueDay` / `peerEvaluationWeeklyDueDay` and the paired due times drive the weekly submission reminders (FR-NOT-3). `ActivityCategory` and `ActivityStatus` are enumerations (shown above); `DayOfWeek`, `LocalDate`, and `LocalTime` are `java.time` types. `Student` and `Instructor` share the platform's user identity fields (id, email, name).
+Here `Section` is the course section entity — the enrollment unit students join and that groups them into teams — not a document section. There is no standalone weekly-activity-report entity: a student's weekly activity report is her `Activity` rows for a given `week`. A course section's `warWeeklyDueDay` / `peerEvaluationWeeklyDueDay` and the paired due times drive the weekly submission reminders (FR-NOT-weekly-reminder). `ActivityCategory` and `ActivityStatus` are enumerations (shown above); `DayOfWeek`, `LocalDate`, and `LocalTime` are `java.time` types. `Student` and `Instructor` share the platform's user identity fields (id, email, name).
 
 ### *RAM requirements graph*
 
@@ -440,27 +440,27 @@ The RAM environment persists requirements as a team-scoped graph of typed requir
 
 **Ownership and documents**
 
-- **Team** — the ownership boundary for all requirements content (per BR-1); a team owns its documents, artifacts, and links.
-- **RequirementDocument** — a document of a given `DocumentType`, with a `documentKey`, `title`, and a `status` (`DRAFT` → `SUBMITTED` → `RETURNED` or `ACCEPTED`) that drives the review-and-submission workflow (BR-13, BR-14, UC-REV-\*): a submitted document is either returned for revision (`RETURNED`, editable again) or accepted (`ACCEPTED`, final and read-only).
+- **Team** — the ownership boundary for all requirements content (per BR-team-scoped-access); a team owns its documents, artifacts, and links.
+- **RequirementDocument** — a document of a given `DocumentType`, with a `documentKey`, `title`, and a `status` (`DRAFT` → `SUBMITTED` → `RETURNED` or `ACCEPTED`) that drives the review-and-submission workflow (BR-review-lock, BR-review-authority, UC-REV-\*): a submitted document is either returned for revision (`RETURNED`, editable again) or accepted (`ACCEPTED`, final and read-only).
 - **DocumentSection** — a section of a document, identified by its `sectionKey` (the section key), with a `title`, a `type` (`RICH_TEXT` narrative or a `LIST` of artifacts), authored `content`, and template `guidance`.
-- **DocumentSectionLock** — the exclusive edit lock held on a document section while a student edits it (`lockedAt`, `expiresAt` for the lock-expiry timeout, `reason`), realizing FR-LOCK\* and BR-9 / BR-10 for document-section authoring destinations.
+- **DocumentSectionLock** — the exclusive edit lock held on a document section while a student edits it (`lockedAt`, `expiresAt` for the lock-expiry timeout, `reason`), realizing FR-LOCK\* and BR-edit-lock-required / BR-lock-expiry for document-section authoring destinations.
 
 **The requirements graph**
 
 - **RequirementArtifact** — the atomic graph node: its `type` (`RequirementArtifactType`), `artifactKey` (the artifact key, e.g., `FR-1`, `UC-5`), `title`, `content`, `priority`, and `notes`. An artifact is grouped under a source `DocumentSection`; the section determines where the artifact appears in a requirement document.
 - **ArtifactLink** — a typed, directed edge between two artifacts (the artifact's `outgoing` and `incoming` links): its `type` (`ArtifactLinkType`) and optional `notes`. This is the requirement link of the glossary.
-- **ArtifactKeySequence** — a per-team, per-artifact-type sequence counter that assigns the next product-generated `artifactKey` while preserving the artifact-key uniqueness and stability rules (BR-5).
+- **ArtifactKeySequence** — a per-team, per-artifact-type sequence counter that assigns the next product-generated `artifactKey` while preserving the artifact-key uniqueness and stability rules (BR-artifact-key-unique).
 - Enumerations: `RequirementArtifactType` (the authoritative artifact taxonomy), `ArtifactLinkType` (`DERIVES_FROM`, `REALIZES`, `REFERENCES`, `IMPACTS`, `MITIGATES`, `MOTIVATES` — matching the glossary's artifact link type), and `Priority` (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`).
 
 **Use-case structure**
 
 - **UseCase** — the structured behavioral spec (`trigger`, plus its flows below), paired **1:1 with a RequirementArtifact** of type `USE_CASE` so a use case participates in the graph (links, traceability) like any other artifact while keeping its detailed behavioral fields.
-- **UseCaseLock** — the exclusive edit lock held on a use case while a student edits it (`lockedAt`, `expiresAt` for the lock-expiry timeout, `reason`), realizing FR-LOCK\* and BR-9 / BR-10 for use-case authoring destinations.
+- **UseCaseLock** — the exclusive edit lock held on a use case while a student edits it (`lockedAt`, `expiresAt` for the lock-expiry timeout, `reason`), realizing FR-LOCK\* and BR-edit-lock-required / BR-lock-expiry for use-case authoring destinations.
 - **UseCaseMainStep**, **UseCaseExtension**, **UseCaseExtensionStep** — the ordered decomposition of a use case's normal flow and its alternative/exception extensions and their steps. Preconditions and postconditions are represented as associated `RequirementArtifact` nodes of type `PRECONDITION` and `POSTCONDITION`, so they remain part of the requirements graph.
 
 **Collaboration**
 
-- **CommentThread** — a discussion (`status` `OPEN` / `RESOLVED`) attachable to a `RequirementDocument`, a `DocumentSection`, or a `RequirementArtifact`; realizes UC-COL-2 / UC-COL-3.
+- **CommentThread** — a discussion (`status` `OPEN` / `RESOLVED`) attachable to a `RequirementDocument`, a `DocumentSection`, or a `RequirementArtifact`; realizes UC-COL-add-comment / UC-COL-resolve-comment.
 - **Comment** — one message within a thread (`content`).
 
 ```mermaid
@@ -671,15 +671,15 @@ direction TB
     CommentThread "1" <--> "many" Comment
 ```
 
-**Mapping to the conceptual model.** `RequirementArtifact` is the glossary's requirement artifact and `artifactKey` its artifact key (the per-type running sequence `FR-1`, `UC-5`); `ArtifactKeySequence` implements the team-scoped running sequence for each artifact type; `ArtifactLink` / `ArtifactLinkType` are the requirement link / artifact link type; `DocumentSection.sectionKey` is the section key; `DocumentSectionLock` and `UseCaseLock` realize the locking rules (BR-9 / BR-10) for the two authoring destination types; `DocumentStatus` drives the review lock (BR-13); `RequirementArtifact` associations on `UseCase` represent the primary actor, secondary actors, preconditions, and postconditions; and `CommentThread` / `Comment` back the commenting use cases (UC-COL-2 / UC-COL-3).
+**Mapping to the conceptual model.** `RequirementArtifact` is the glossary's requirement artifact and `artifactKey` its artifact key (the per-type running sequence `FR-1`, `UC-5`); `ArtifactKeySequence` implements the team-scoped running sequence for each artifact type; `ArtifactLink` / `ArtifactLinkType` are the requirement link / artifact link type; `DocumentSection.sectionKey` is the section key; `DocumentSectionLock` and `UseCaseLock` realize the locking rules (BR-edit-lock-required / BR-lock-expiry) for the two authoring destination types; `DocumentStatus` drives the review lock (BR-review-lock); `RequirementArtifact` associations on `UseCase` represent the primary actor, secondary actors, preconditions, and postconditions; and `CommentThread` / `Comment` back the commenting use cases (UC-COL-add-comment / UC-COL-resolve-comment).
 
 **Notes.**
 
-- The built-in templates that provision a team's documents and sections (UC-TPL-1) are the _provisioning_ layer and are not shown in this domain diagram; the MVP ships fixed, built-in templates.
+- The built-in templates that provision a team's documents and sections (UC-TPL-provision-documents) are the _provisioning_ layer and are not shown in this domain diagram; the MVP ships fixed, built-in templates.
 - `RequirementArtifactType` is the authoritative artifact taxonomy and is reconciled one-to-one with the glossary's requirement artifact list. `OTHER` is an implementation fallback, not a domain concept. A single `RISK` type is the umbrella over business/adoption, technical/feasibility, and security/safety risks (the earlier `BUSINESS_RISK`/`RISK` pair was collapsed into `RISK`); `DEPENDENCY` is a tracked artifact.
 - User stories are a **deferred** concept: the `USER_STORY` artifact type and the `USER_STORIES` `DocumentType` are retained so a future, optional User Stories document can be enabled without a schema change, but no User Stories document, template, or use case ships in the MVP.
 
-**Artifact type → authoring home.** Each artifact type is authored in a specific document section, which determines where it appears in a document. In the MVP the student authors an artifact in the document section she is in, which fixes its type (UC-ART-3); the map below is the canonical placement (and the basis for the future requirements-graph "add by type" path):
+**Artifact type → authoring home.** Each artifact type is authored in a specific document section, which determines where it appears in a document. In the MVP the student authors an artifact in the document section she is in, which fixes its type (UC-ART-create-artifact); the map below is the canonical placement (and the basis for the future requirements-graph "add by type" path):
 
 | Artifact type                               | Document → Section                                                                                                                                                                             |
 | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -688,7 +688,7 @@ direction TB
 | `BUSINESS_OBJECTIVE`, `SUCCESS_METRIC`      | Vision and Scope → Business Objectives                                                                                                                                                    |
 | `VISION_STATEMENT`                          | Vision and Scope → Vision Statement                                                                                                                                                       |
 | `RISK`                                      | Vision and Scope → Risks                                                                                                                                                                  |
-| `ASSUMPTION`, `DEPENDENCY`                  | Vision and Scope → Business Assumptions and Dependencies (business-level) **and** SRS → Assumptions and Dependencies (architecture-level, e.g., `DE-1`/`DE-2`) — these two types are authored in either document's Assumptions-and-Dependencies section |
+| `ASSUMPTION`, `DEPENDENCY`                  | Vision and Scope → Business Assumptions and Dependencies (business-level) **and** SRS → Assumptions and Dependencies (architecture-level, e.g., `DE-shared-foundation`/`DE-llm-service`) — these two types are authored in either document's Assumptions-and-Dependencies section |
 | `STAKEHOLDER`                               | Vision and Scope → Stakeholder Profiles                                                                                                                                                   |
 | `FEATURE`                                   | Vision and Scope → Major Features / Scope                                                                                                                                                 |
 | `USE_CASE`, `PRECONDITION`, `POSTCONDITION` | Use Cases → the use case (preconditions/postconditions are its constituents)                                                                                                                   |
@@ -704,79 +704,79 @@ direction TB
 
 ## **Data Dictionary**
 
-The Business Domain Model above names the system's entities, their fields, and their enumerations. Field-level definitions — data type, length, format, required/optional, and allowed values — are maintained with the database schema in the design docs ([../design/](../design/)), not restated here, so that a single source defines each field and the SRS does not drift from the implementation. Format-bearing fields that are themselves requirements (the `artifactKey`, `sectionKey`, and `documentKey` schemes and the document/comment status values) are specified where they are introduced: artifact key, section key, and the artifact-key uniqueness and stability rules in the Project Glossary and Business Rules (BR-5, BR-12), and the `DRAFT` → `SUBMITTED` → `RETURNED` status values in the Business Domain Model above.
+The Business Domain Model above names the system's entities, their fields, and their enumerations. Field-level definitions — data type, length, format, required/optional, and allowed values — are maintained with the database schema in the design docs ([../design/](../design/)), not restated here, so that a single source defines each field and the SRS does not drift from the implementation. Format-bearing fields that are themselves requirements (the `artifactKey`, `sectionKey`, and `documentKey` schemes and the document/comment status values) are specified where they are introduced: artifact key, section key, and the artifact-key uniqueness and stability rules in the Project Glossary and Business Rules (BR-artifact-key-unique, BR-deletion-integrity), and the `DRAFT` → `SUBMITTED` → `RETURNED` status values in the Business Domain Model above.
 
 ## **Reports**
 
-The performance-tracking capability generates reports: peer evaluation reports for students and instructors (UC-EVA-2, UC-EVA-3, UC-EVA-4) and weekly activity report summaries for teams and individual students (UC-WAR-2, UC-WAR-3); each is specified by its use case, including its report parameters and generating algorithm. The RAM environment generates no reports in release 1.0 — completeness-metric, progress, and requirement-quality dashboards over a team's requirements graph are a deferred RAM capability (future release). Document export — PDF, DOCX, or Markdown rendered to the template structure — is a formatted document, not a report, and is specified under External Interface Requirements (SI-3, FR-EXP-1, FR-EXP-2).
+The performance-tracking capability generates reports: peer evaluation reports for students and instructors (UC-EVA-view-own-evaluation, UC-EVA-section-evaluation-report, UC-EVA-student-evaluation-report) and weekly activity report summaries for teams and individual students (UC-WAR-team-war-report, UC-WAR-student-war-report); each is specified by its use case, including its report parameters and generating algorithm. The RAM environment generates no reports in release 1.0 — completeness-metric, progress, and requirement-quality dashboards over a team's requirements graph are a deferred RAM capability (future release). Document export — PDF, DOCX, or Markdown rendered to the template structure — is a formatted document, not a report, and is specified under External Interface Requirements (SI-export-formats, FR-EXP-generate, FR-EXP-formatting).
 
 ## **Data Acquisition, Integrity, Retention, and Disposal**
 
-DI-1: RAM shall acquire user identity, role, course section, team membership, and team ownership data from the rest of Project Pulse rather than maintaining a separate copy (DE-1, SI-2).
+DI-acquire-shared-data: RAM shall acquire user identity, role, course section, team membership, and team ownership data from the rest of Project Pulse rather than maintaining a separate copy (DE-shared-foundation, SI-foundation-auth, SI-foundation-data).
 
-DI-2: RAM shall persist requirement documents, document sections, requirement artifacts, artifact links, use cases, locks, comment threads, comments, and artifact-key sequences in the Project Pulse relational database (CO-3, SI-2.3).
+DI-persist-graph: RAM shall persist requirement documents, document sections, requirement artifacts, artifact links, use cases, locks, comment threads, comments, and artifact-key sequences in the Project Pulse relational database (CO-relational-persistence, SI-foundation-persist).
 
-DI-3: RAM shall scope persisted RAM content by team wherever the entity represents team-owned requirements content, and shall enforce that students can access only their own team's requirements graph, documents, project source material, comments, and locks (BR-1, FR-SEC-2).
+DI-team-scoping: RAM shall scope persisted RAM content by team wherever the entity represents team-owned requirements content, and shall enforce that students can access only their own team's requirements graph, documents, project source material, comments, and locks (BR-team-scoped-access, FR-SEC-authorization).
 
-DI-4: RAM shall assign product-generated artifact keys from the team's `ArtifactKeySequence` for the artifact type, shall keep assigned artifact keys stable across edits, and shall not reuse keys after deletion (BR-5, BR-12).
+DI-artifact-key-assignment: RAM shall assign product-generated artifact keys from the team's `ArtifactKeySequence` for the artifact type, shall keep assigned artifact keys stable across edits, and shall not reuse keys after deletion (BR-artifact-key-unique, BR-deletion-integrity).
 
-DI-5: RAM shall preserve graph integrity by preventing deletion of glossary terms or requirement artifacts while active artifact links or references still depend on them, unless those references are removed or repointed first (BR-12).
+DI-referential-integrity: RAM shall preserve graph integrity by preventing deletion of glossary terms or requirement artifacts while active artifact links or references still depend on them, unless those references are removed or repointed first (BR-deletion-integrity).
 
-DI-6: RAM shall retain logically deleted glossary terms and requirement artifacts for audit, excluding them from normal active authoring and search results while preserving their identifiers and audit metadata (BR-12).
+DI-soft-delete-retention: RAM shall retain logically deleted glossary terms and requirement artifacts for audit, excluding them from normal active authoring and search results while preserving their identifiers and audit metadata (BR-deletion-integrity).
 
-DI-7: RAM shall record authorship metadata for authored RAM items as specified by FR-HIS-4; known implementation gaps are tracked in OI-19.
+DI-authorship-metadata: RAM shall record authorship metadata for authored RAM items as specified by FR-HIS-authorship-metadata; known implementation gaps are tracked in OI-19.
 
-DI-8: RAM shall use optimistic version fields and exclusive edit locks for document sections and use cases to protect concurrent edits, and shall treat expired locks as releasable according to the locking requirements (FR-LOCK-1..5).
+DI-concurrency-control: RAM shall use optimistic version fields and exclusive edit locks for document sections and use cases to protect concurrent edits, and shall treat expired locks as releasable according to the locking requirements (FR-LOCK-*).
 
-DI-9: RAM shall not retain document-section version checkpoints for release 1.0; document version history is deferred to a future release (FR-HIS-1, FR-HIS-2, FR-HIS-3).
+DI-no-version-history: RAM shall not retain document-section version checkpoints for release 1.0; document version history is deferred to a future release (FR-HIS-checkpoint, FR-HIS-restore, FR-HIS-retention).
 
-DI-10: RAM shall rely on the Project Pulse database backup, recovery, and disposal policies for physical retention and disposal of persisted RAM data, except where RAM-specific business rules require stronger logical retention for audit.
+DI-backup-disposal: RAM shall rely on the Project Pulse database backup, recovery, and disposal policies for physical retention and disposal of persisted RAM data, except where RAM-specific business rules require stronger logical retention for audit.
 
 # **External Interface Requirements**
 
 ## **User Interfaces**
 
-UI-1: Project Pulse is delivered as a single Vue.js single-page application; the RAM environment's user interface shall be a set of views within it, conforming to the application's shared layout, navigation, and styling conventions (per CO-1, CO-2, INT-1). Detailed UI design is maintained with the SPA, not in this document.
+UI-spa-views: Project Pulse is delivered as a single Vue.js single-page application; the RAM environment's user interface shall be a set of views within it, conforming to the application's shared layout, navigation, and styling conventions (per CO-single-application, CO-vue-spring-stack, INT-single-application). Detailed UI design is maintained with the SPA, not in this document.
 
-UI-2: Project Pulse shall conform to WCAG 2.1 Level AA for color contrast, keyboard navigation, and screen-reader support (per USE-1; addresses risk RI-6).
+UI-wcag-aa: Project Pulse shall conform to WCAG 2.1 Level AA for color contrast, keyboard navigation, and screen-reader support (per USE-wcag-aa; addresses risk RI-accessibility).
 
-UI-3: The requirement-document editor shall present a two-column layout — a document-and-section outline alongside the selected section's editor — with per-section locking; a list section shall provide an "Add Requirement" action for authoring artifacts within it. The Use Cases document editor shall expose equivalent per-use-case locking when a student edits a use case.
+UI-section-editor-layout: The requirement-document editor shall present a two-column layout — a document-and-section outline alongside the selected section's editor — with per-section locking; a list section shall provide an "Add Requirement" action for authoring artifacts within it. The Use Cases document editor shall expose equivalent per-use-case locking when a student edits a use case.
 
 ## **Software Interfaces**
 
-SI-1: External LLM Service (via the AI proxy)
+**External LLM Service (via the AI proxy)**
 
-SI-1.1: RAM shall call the external LLM service only through the REST API's server-side AI proxy; the Vue single-page application shall never call the LLM service directly (per CO-6, SEC-4).
+SI-llm-proxy-only: RAM shall call the external LLM service only through the REST API's server-side AI proxy; the Vue single-page application shall never call the LLM service directly (per CO-server-side-llm-proxy, SEC-llm-proxy).
 
-SI-1.2: For each assistant request, the AI proxy shall send the assembled assistant context — the assistant's system prompt, the course section's teaching context and per-assistant assistant instructions, the document and requirements-graph content relevant to the session's scope (for a session targeting a document section or use case, that target and the applicable template context; for a project-wide session, the project's current requirements coverage across its documents), and, where enabled, the team's project source material — and shall return the assistant's response to the requesting feature (per FR-AI-6, FR-AI-14, FR-AI-16).
+SI-llm-context: For each assistant request, the AI proxy shall send the assembled assistant context — the assistant's system prompt, the course section's teaching context and per-assistant assistant instructions, the document and requirements-graph content relevant to the session's scope (for a session targeting a document section or use case, that target and the applicable template context; for a project-wide session, the project's current requirements coverage across its documents), and, where enabled, the team's project source material — and shall return the assistant's response to the requesting feature (per FR-AI-teaching-context, FR-AI-source-material-context, FR-AI-assistant-instructions).
 
-SI-1.3: Requests to and responses from the LLM service shall use JSON; an assistant that returns candidate artifacts shall use a structured (tool/JSON) schema so the response is machine-parseable.
+SI-llm-json: Requests to and responses from the LLM service shall use JSON; an assistant that returns candidate artifacts shall use a structured (tool/JSON) schema so the response is machine-parseable.
 
-SI-1.4: LLM service credentials shall be held server-side and shall never be exposed to the browser (per CO-6, SEC-4).
+SI-llm-credentials: LLM service credentials shall be held server-side and shall never be exposed to the browser (per CO-server-side-llm-proxy, SEC-llm-proxy).
 
-SI-1.5: While the LLM service is unavailable or a request times out, the AI proxy shall report the condition to the requesting feature so that AI features become unavailable while the rest of Project Pulse continues to operate (per FR-AI-13, AVL-2, PER-4).
+SI-llm-degradation: While the LLM service is unavailable or a request times out, the AI proxy shall report the condition to the requesting feature so that AI features become unavailable while the rest of Project Pulse continues to operate (per FR-AI-degradation, AVL-llm-degradation, PER-ai-response-time).
 
-SI-2: Project Pulse shared foundation
+**Project Pulse shared foundation**
 
-SI-2.1: The RAM environment shall obtain the authenticated user's identity and role (course admin, instructor, student) from Project Pulse's authenticated session and shall not implement its own login (per CO-4, SEC-1).
+SI-foundation-auth: The RAM environment shall obtain the authenticated user's identity and role (course admin, instructor, student) from Project Pulse's authenticated session and shall not implement its own login (per CO-single-auth, SEC-authentication).
 
-SI-2.2: The RAM environment shall read course, course section, team, and membership data from Project Pulse's shared data model rather than maintaining its own copy (per DE-1; AS-8).
+SI-foundation-data: The RAM environment shall read course, course section, team, and membership data from Project Pulse's shared data model rather than maintaining its own copy (per DE-shared-foundation; AS-shared-data-current).
 
-SI-2.3: The RAM environment shall persist its requirements graph — artifacts, links, documents, document sections, locks, comment threads, and comments — in the Project Pulse relational database (per CO-3).
+SI-foundation-persist: The RAM environment shall persist its requirements graph — artifacts, links, documents, document sections, locks, comment threads, and comments — in the Project Pulse relational database (per CO-relational-persistence).
 
-SI-2.4: The RAM environment shall send email notifications through Project Pulse's Gmail SMTP integration (per CO-7, DE-3); the triggering conditions and message content are specified in the Communications Interfaces section.
+SI-foundation-email: The RAM environment shall send email notifications through Project Pulse's Gmail SMTP integration (per CO-gmail-smtp, DE-gmail-smtp); the triggering conditions and message content are specified in the Communications Interfaces section.
 
-SI-3: Document export
+**Document export**
 
-SI-3.1: RAM shall generate an exported document as a PDF, DOCX, or Markdown file consistent with the template-defined structure (per FR-EXP-1; realizes UC-EXP-1), and shall package all of a team's documents as a single bundle on request (UC-EXP-2).
+SI-export-formats: RAM shall generate an exported document as a PDF, DOCX, or Markdown file consistent with the template-defined structure (per FR-EXP-generate; realizes UC-EXP-export-document), and shall package all of a team's documents as a single bundle on request (UC-EXP-export-bundle).
 
-SI-3.2: Exported documents shall preserve table of contents, heading hierarchy, numbering, and formatting consistency (per FR-EXP-2).
+SI-export-fidelity: Exported documents shall preserve table of contents, heading hierarchy, numbering, and formatting consistency (per FR-EXP-formatting).
 
-SI-4: Project source material import
+**Project source material import**
 
-SI-4.1: RAM shall accept PDF (`.pdf`) and PowerPoint (`.pptx`, `.ppt`) uploads as project source material and shall reject any file whose type is not on this allowlist or whose size exceeds a configurable per-file limit (default 25 MB) (per FR-IMP-1; realizes UC-AI-1).
+SI-import-allowlist: RAM shall accept PDF (`.pdf`) and PowerPoint (`.pptx`, `.ppt`) uploads as project source material and shall reject any file whose type is not on this allowlist or whose size exceeds a configurable per-file limit (default 25 MB) (per FR-IMP-upload-allowlist; realizes UC-AI-import-source-material).
 
-SI-4.2: RAM shall extract the text content of an imported file for use as assistant context and shall report when extraction is incomplete, for example for image-only or scanned files (per FR-IMP-2).
+SI-import-extraction: RAM shall extract the text content of an imported file for use as assistant context and shall report when extraction is incomplete, for example for image-only or scanned files (per FR-IMP-text-extraction).
 
 ## **API Document**
 
@@ -788,13 +788,13 @@ No hardware interfaces have been identified.
 
 ## **Communications Interfaces**
 
-CI-1: RAM shall send review-workflow email notifications — when a requirement document is submitted for review, returned for revision, or accepted — to the designated recipients through Project Pulse's Gmail SMTP integration (per CO-7, DE-3, FR-NOT-1; supports UC-REV-1, UC-REV-2).
+CI-review-emails: RAM shall send review-workflow email notifications — when a requirement document is submitted for review, returned for revision, or accepted — to the designated recipients through Project Pulse's Gmail SMTP integration (per CO-gmail-smtp, DE-gmail-smtp, FR-NOT-review-workflow; supports UC-REV-submit-for-review, UC-REV-review-documents).
 
-CI-2: RAM shall not send email for the routine authoring changes covered by FR-NOT-2; such changes propagate to connected teammates in real time over the collaboration channel instead (per FR-COL-1..4).
+CI-no-routine-email: RAM shall not send email for the routine authoring changes covered by FR-NOT-suppress-routine; such changes propagate to connected teammates in real time over the collaboration channel instead (per FR-COL-*).
 
-CI-3: RAM shall communicate with the external LLM service over HTTPS (per OE-5, SEC-4).
+CI-llm-https: RAM shall communicate with the external LLM service over HTTPS (per OE-external-services, SEC-llm-proxy).
 
-CI-4: Project Pulse shall conduct all browser-to-server communication over HTTPS.
+CI-browser-https: Project Pulse shall conduct all browser-to-server communication over HTTPS.
 
 # **Quality Attributes**
 
@@ -802,78 +802,78 @@ These quality attributes apply to Project Pulse as a whole. Some — accessibili
 
 ## **Usability**
 
-USE-1: Project Pulse shall follow WCAG 2.1 Level AA guidelines for color contrast, keyboard navigation, and screen-reader support. (Addresses risk RI-6.)
+USE-wcag-aa: Project Pulse shall follow WCAG 2.1 Level AA guidelines for color contrast, keyboard navigation, and screen-reader support. (Addresses risk RI-accessibility.)
 
-USE-2: Project Pulse shall be fully operable using the keyboard alone, including all RAM authoring, navigation, validation, and review actions.
+USE-keyboard-operable: Project Pulse shall be fully operable using the keyboard alone, including all RAM authoring, navigation, validation, and review actions.
 
-USE-3: RAM shall present every ReqLint validation finding and AI critique finding with the specific document location it refers to and an instructive rationale, so that a student can act on it without external help.
+USE-actionable-findings: RAM shall present every ReqLint validation finding and AI critique finding with the specific document location it refers to and an instructive rationale, so that a student can act on it without external help.
 
-USE-4: A new student shall be able to open a document section, edit and save content, run validation, and submit for review during her first session without prior training. _(Target: 95% of new students succeed without assistance in usability testing.)_
+USE-first-session-success: A new student shall be able to open a document section, edit and save content, run validation, and submit for review during her first session without prior training. _(Target: 95% of new students succeed without assistance in usability testing.)_
 
 ## **Performance**
 
-PER-1: While up to 100 users are editing concurrently, RAM shall propagate collaborator presence and lock-state events (join, disconnect, lock acquire/release) within 1 second for 95% of events. _(Post-MVP — depends on the deferred real-time collaboration; see the Real-Time Collaboration Requirements section.)_
+PER-collab-latency: While up to 100 users are editing concurrently, RAM shall propagate collaborator presence and lock-state events (join, disconnect, lock acquire/release) within 1 second for 95% of events. _(Post-MVP — depends on the deferred real-time collaboration; see the Real-Time Collaboration Requirements section.)_
 
-PER-2: RAM shall autosave an actively edited authoring destination at least every 10 seconds and persist its latest content immediately when the student navigates away. (Realized by FR-SAVE-1, FR-SAVE-2.)
+PER-autosave-cadence: RAM shall autosave an actively edited authoring destination at least every 10 seconds and persist its latest content immediately when the student navigates away. (Realized by FR-SAVE-autosave-active, FR-SAVE-on-navigate-away.)
 
-PER-3: RAM shall return ReqLint validation results for a single requirement document within 3 seconds for 95% of runs.
+PER-validation-speed: RAM shall return ReqLint validation results for a single requirement document within 3 seconds for 95% of runs.
 
-PER-4: RAM shall present an AI assistant response, or a clear "working" / timeout indication, within 15 seconds of a student's request.
+PER-ai-response-time: RAM shall present an AI assistant response, or a clear "working" / timeout indication, within 15 seconds of a student's request.
 
 ## **Security**
 
-SEC-1: Project Pulse shall authenticate every user through its JWT-based authentication mechanism before granting access to any protected resource, per CO-4 and FR-SEC-1.
+SEC-authentication: Project Pulse shall authenticate every user through its JWT-based authentication mechanism before granting access to any protected resource, per CO-single-auth and FR-SEC-authentication.
 
-SEC-2: Project Pulse shall enforce role-based access control across the course admin, instructor, and student roles, and the RAM environment shall restrict each student to her own team's requirements graph, documents, and project source material, per BR-1, BR-2, and FR-SEC-2.
+SEC-authorization: Project Pulse shall enforce role-based access control across the course admin, instructor, and student roles, and the RAM environment shall restrict each student to her own team's requirements graph, documents, and project source material, per BR-team-scoped-access, BR-role-based-access, and FR-SEC-authorization.
 
-SEC-3: Project Pulse shall store and transmit student educational records in compliance with FERPA, per CO-5.
+SEC-ferpa: Project Pulse shall store and transmit student educational records in compliance with FERPA, per CO-ferpa.
 
-SEC-4: RAM shall route all calls to the external LLM service through the server-side AI proxy and shall never expose LLM service credentials to the browser, per CO-6.
+SEC-llm-proxy: RAM shall route all calls to the external LLM service through the server-side AI proxy and shall never expose LLM service credentials to the browser, per CO-server-side-llm-proxy.
 
-SEC-5: Project Pulse shall encrypt all traffic between the browser and the server over HTTPS, per OE-3.
+SEC-https: Project Pulse shall encrypt all traffic between the browser and the server over HTTPS, per OE-https-access.
 
 ## **Safety**
 
-SAF-1: RAM is a web-based requirements-authoring tool with no physical actuation or safety-critical functions; no safety hazards have been identified, and no safety requirements apply.
+SAF-not-applicable: RAM is a web-based requirements-authoring tool with no physical actuation or safety-critical functions; no safety hazards have been identified, and no safety requirements apply.
 
 ## **Availability**
 
-AVL-1: Project Pulse shall be available at least 99% of each academic term, excluding scheduled maintenance windows, with availability prioritized near assignment deadlines.
+AVL-uptime: Project Pulse shall be available at least 99% of each academic term, excluding scheduled maintenance windows, with availability prioritized near assignment deadlines.
 
-AVL-2: While the external LLM service is unavailable, Project Pulse shall keep all non-AI functionality operational and clearly indicate that AI assistance is temporarily unavailable, per FR-AI-13 and DE-2.
+AVL-llm-degradation: While the external LLM service is unavailable, Project Pulse shall keep all non-AI functionality operational and clearly indicate that AI assistance is temporarily unavailable, per FR-AI-degradation and DE-llm-service.
 
 ## **Robustness**
 
-ROB-1: In the event of a browser crash, disconnection, or power failure, RAM shall lose no more than 10 seconds of a student's edits. (Realized by FR-SAVE-3.)
+ROB-edit-loss-bound: In the event of a browser crash, disconnection, or power failure, RAM shall lose no more than 10 seconds of a student's edits. (Realized by FR-SAVE-crash-loss-bound.)
 
-ROB-2: When an autosave fails, RAM shall notify the student and retry in the background without interrupting editing. (Realized by FR-SAVE-4.)
+ROB-autosave-retry: When an autosave fails, RAM shall notify the student and retry in the background without interrupting editing. (Realized by FR-SAVE-failure-retry.)
 
-ROB-3: RAM shall ensure that real-time collaborative updates never overwrite or corrupt content already saved by another collaborator, per FR-COL-4 and BR-11. _(Post-MVP — applies to the deferred real-time collaboration; in the MVP, section-level locking prevents concurrent overwrites.)_
+ROB-no-overwrite: RAM shall ensure that real-time collaborative updates never overwrite or corrupt content already saved by another collaborator, per FR-COL-no-overwrite and BR-collab-no-overwrite. _(Post-MVP — applies to the deferred real-time collaboration; in the MVP, section-level locking prevents concurrent overwrites.)_
 
 ## **Scalability and Interoperability**
 
-SCA-1: Project Pulse shall sustain its performance and availability targets under peak concurrent load near assignment deadlines for a Senior Design cohort of approximately 70 students (about 75 total users including instructors and course admins), whose peak concurrent editing stays within the 100-concurrent performance envelope specified in PER-1 (cf. risk RI-3).
+SCA-cohort-load: Project Pulse shall sustain its performance and availability targets under peak concurrent load near assignment deadlines for a Senior Design cohort of approximately 70 students (about 75 total users including instructors and course admins), whose peak concurrent editing stays within the 100-concurrent performance envelope specified in PER-collab-latency (cf. risk RI-scalability).
 
-INT-1: Project Pulse shall operate as a single application across both capability areas; the RAM environment shall reuse its single-page application, REST API, relational database, authentication, and notification services rather than introducing a parallel system, per CO-1 and OE-4.
+INT-single-application: Project Pulse shall operate as a single application across both capability areas; the RAM environment shall reuse its single-page application, REST API, relational database, authentication, and notification services rather than introducing a parallel system, per CO-single-application and OE-single-application.
 
 ## **Maintainability**
 
-MNT-1: RAM shall access its requirements graph behind a service layer so that new artifact types and artifact link types can be added without reworking unrelated features, consistent with its module structure within Project Pulse (per CO-1, INT-1).
+MNT-service-layer: RAM shall access its requirements graph behind a service layer so that new artifact types and artifact link types can be added without reworking unrelated features, consistent with its module structure within Project Pulse (per CO-single-application, INT-single-application).
 
 **Priority of attributes:** where quality attributes conflict, the intended priority order is **security and data integrity → availability → usability → performance**. Educational value governs trade-offs in the AI assistant features specifically (see [AI/LLM Integration Requirements](#aillm-integration-requirements)).
 
 # **Internationalization and Localization Requirements**
 
-N/A for release 1.0. Project Pulse targets TCU software-engineering courses and ships in U.S. English only; no multi-language, multi-currency, or locale-specific formatting requirements apply. (Accessibility is in scope but is a usability requirement — see USE-1 / WCAG 2.1 AA in the Usability section — not an internationalization one.)
+N/A for release 1.0. Project Pulse targets TCU software-engineering courses and ships in U.S. English only; no multi-language, multi-currency, or locale-specific formatting requirements apply. (Accessibility is in scope but is a usability requirement — see USE-wcag-aa / WCAG 2.1 AA in the Usability section — not an internationalization one.)
 
 # **Other Requirements**
 
 Project Pulse introduces no additional requirements beyond those specified elsewhere; the cross-cutting concerns that would otherwise appear here are referenced rather than restated, and the content areas that do not apply are marked so explicitly:
 
-- Regulatory and compliance: FERPA handling of student educational records — CO-5 and SEC-3 (Security).
-- Security and access control: platform authentication and role-based access — FR-SEC-1..3 (Security and Authorization Requirements) and the Security quality attributes.
-- Authorship and audit trail: creator/editor identity and timestamps on every authored item — FR-HIS-4 (Authorship Metadata and Document Versioning Requirements); logical (soft) deletion that retains items for audit — BR-12.
+- Regulatory and compliance: FERPA handling of student educational records — CO-ferpa and SEC-ferpa (Security).
+- Security and access control: platform authentication and role-based access — FR-SEC-* (Security and Authorization Requirements) and the Security quality attributes.
+- Authorship and audit trail: creator/editor identity and timestamps on every authored item — FR-HIS-authorship-metadata (Authorship Metadata and Document Versioning Requirements); logical (soft) deletion that retains items for audit — BR-deletion-integrity.
 - Installation, configuration, and startup/shutdown: Project Pulse is deployed as a single application (see the [Deployment View](../design/architectural-design.md#deployment-view)).
-- Memory and capacity: Project Pulse sets no RAM-specific storage or capacity limit for release 1.0; RAM content persists in the shared Project Pulse relational database and is sized for the cohort in SCA-1 (the per-team artifact-count design target is ~1,000 artifacts — quality scenario QS-7 in the architecture-of-record).
-- Portability: N/A for release 1.0. Project Pulse is a single hosted web application on a fixed server stack (OE-2, CO-2), reached through a standard web browser (OE-1, OE-3); no requirement to run on multiple operating systems or to be ported to another platform applies.
-- Site adaptation: Project Pulse ships a single application configuration with no per-installation site-adaptation files; per-deployment adaptation is instead realized as per-course-section configuration — a course section's teaching context, per-assistant enablement and assistant instructions, cross-document review criteria, and weekly due days (UC-CFG-\*, FR-AI-7, FR-AI-16, FR-AI-22, FR-AI-23, FR-NOT-3).
+- Memory and capacity: Project Pulse sets no RAM-specific storage or capacity limit for release 1.0; RAM content persists in the shared Project Pulse relational database and is sized for the cohort in SCA-cohort-load (the per-team artifact-count design target is ~1,000 artifacts — quality scenario QS-7 in the architecture-of-record).
+- Portability: N/A for release 1.0. Project Pulse is a single hosted web application on a fixed server stack (OE-server-stack, CO-vue-spring-stack), reached through a standard web browser (OE-supported-browsers, OE-https-access); no requirement to run on multiple operating systems or to be ported to another platform applies.
+- Site adaptation: Project Pulse ships a single application configuration with no per-installation site-adaptation files; per-deployment adaptation is instead realized as per-course-section configuration — a course section's teaching context, per-assistant enablement and assistant instructions, cross-document review criteria, and weekly due days (UC-CFG-\*, FR-AI-enablement, FR-AI-assistant-instructions, FR-AI-review-criteria, FR-AI-review-criteria-required, FR-NOT-weekly-reminder).

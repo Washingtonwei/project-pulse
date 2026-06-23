@@ -9,7 +9,7 @@ docs/
 ├── requirements/   the spec (what the system does)
 │   ├── project-glossary.md                       canonical domain vocabulary
 │   ├── vision-and-scope.md                        business objectives, risks, assumptions, features
-│   ├── use-cases.md                               behavioral specs, grouped by area (UC-<AREA>-<n>)
+│   ├── use-cases.md                               behavioral specs, grouped by area (UC-<AREA>-<slug>)
 │   ├── business-rules.md                          cross-cutting policies & access rules (BR-*)
 │   ├── software-requirements-specification.md     non-use-case FRs, domain model, quality attributes
 │   └── OPEN-ISSUES.md                             implementation-readiness backlog (OI-n)

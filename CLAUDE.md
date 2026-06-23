@@ -135,7 +135,7 @@ Project Pulse is developed **spec-first**: its requirements are authored as Mark
 - `docs/requirements/` — the spec (what):
    1. `project-glossary.md` — domain vocabulary; canonical term definitions.
    2. `vision-and-scope.md` — business objectives (BO-*), risks (RI-*), assumptions (AS-*), features.
-   3. `use-cases.md` — behavioral specs as use cases with area-prefixed IDs (`UC-WAR-1`, `UC-GLO-1`, `UC-DOC-5`), grouped by area.
+   3. `use-cases.md` — behavioral specs as use cases with area-prefixed IDs (`UC-WAR-manage-activities`, `UC-GLO-view-glossary`, `UC-DOC-create-use-case`), grouped by area.
    4. `business-rules.md` — cross-cutting policies, constraints, and access rules (BR-*).
    5. `software-requirements-specification.md` — functional requirements (FR-*), domain model, quality attributes.
    - `OPEN-ISSUES.md` — the working backlog (`OI-n`, P0–P3) of gaps still needed to make the spec implementation-ready.
@@ -147,7 +147,7 @@ Project Pulse is developed **spec-first**: its requirements are authored as Mark
 
 Use cases are grouped by **area** — a short code that mirrors a backend bounded context: the foundation and performance-tracking areas `RUB`/`SEC`/`TEA`/`STU`/`INS`/`ACC`/`WAR`/`EVA`, then RAM areas `TPL`/`GLO`/`DOC`/`ART`/`LNK`/`VAL`/`COL`/`REV`/`EXP`/`CFG`/`AI` (`docs/CLAUDE.md` enumerates them). The foundation and performance-tracking features were built before this spec set existed, so their use cases are documented retrospectively; RAM use cases drive new implementation.
 
-**Functional requirements.** A **use case is itself a high-level functional requirement** (the SRS's Use Cases section) — its "The system ..." steps + Associated Information are its detailed spec. The SRS's **Non-Use Case Functional Requirements** section holds only the non-use-case, system-level behaviors, with IDs in `FR-<AREA>-<n>` format (parallel to `UC-<AREA>-<n>`; `docs/CLAUDE.md` enumerates the area codes). **Business rules** (`BR-*`, in `business-rules.md`) are an append-only sequence cited by use cases and the SRS. FR/BR/UC IDs are identifier spaces independent of heading position — never renumber them.
+**Functional requirements.** A **use case is itself a high-level functional requirement** (the SRS's Use Cases section) — its "The system ..." steps + Associated Information are its detailed spec. The SRS's **Non-Use Case Functional Requirements** section holds only the non-use-case, system-level behaviors, with IDs in `FR-<AREA>-<slug>` format (parallel to `UC-<AREA>-<slug>`; `docs/CLAUDE.md` enumerates the area codes). **Business rules** (`BR-*`, in `business-rules.md`) are flat name-based slugs cited by use cases and the SRS. FR/BR/UC IDs are name-based identifier spaces independent of heading position — their slugs are stable handles, so inserting or reordering never renumbers them.
 
 ### Spec-driven feature workflow
 
@@ -165,9 +165,9 @@ Treat the use case as the contract:
 - **The spec is authoritative but not infallible.** When a step is ambiguous, an assumption breaks against the existing code, or requirements contradict — ask a clarifying question or challenge the spec; don't silently comply or silently invent. Fix the spec and re-derive rather than diverging quietly in code. `/design` and `/implement` build this in.
 
 Cross-cutting behavior is already specified, and some is already built — reuse it, don't reinvent per feature:
-- **Locking** (`FR-LOCK-*`): section-level pessimistic locking already exists in `ram/document/`. See UC-DOC-2 / UC-DOC-6.
-- **Collaboration** (`FR-COL-*`): comment threads exist in `ram/collaboration/`; real-time presence/broadcast is specified in UC-COL-1 (not yet built).
-- **Validation** (`FR-VAL-*`, ReqLint): deterministic structural checks. See UC-VAL-1.
+- **Locking** (`FR-LOCK-*`): section-level pessimistic locking already exists in `ram/document/`. See UC-DOC-edit-document / UC-DOC-edit-use-case.
+- **Collaboration** (`FR-COL-*`): comment threads exist in `ram/collaboration/`; real-time presence/broadcast is specified in UC-COL-collaborative-edit (not yet built).
+- **Validation** (`FR-VAL-*`, ReqLint): deterministic structural checks. See UC-VAL-run-validation.
 
 When implementing, **extend the existing RAM packages** (`ram/document`, `ram/requirement`, `ram/usecase`, `ram/glossary`, `ram/collaboration`) and the shared course/section/team/auth/email infrastructure — RAM is a module inside this codebase, not a separate system, so don't fork or duplicate the architecture "for RAM." Then map the use case back into `docs/traceability.md` (frontend `apis/` + views + stores, backend `ram/*` controller/service/repository/entity, tests).
 

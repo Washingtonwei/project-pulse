@@ -33,7 +33,7 @@ The remainder of this document contains terms followed by their definitions. Ter
 
 ## **Team**
 
-A group of users (students or instructors) collaborating on a single project. In the senior design course a team usually consists of 5–6 students working with a real external client through the full project lifecycle, and is assigned a single instructor — its TCU instructor (see BR-21).
+A group of users (students or instructors) collaborating on a single project. In the senior design course a team usually consists of 5–6 students working with a real external client through the full project lifecycle, and is assigned a single instructor — its TCU instructor (see BR-team-single-instructor).
 
 Teams are the ownership boundary for requirement artifacts and documents.
 
@@ -47,11 +47,11 @@ A specific offering of a Course within an academic term (e.g., Fall 2026, Sectio
 
 ## **Course Admin**
 
-A course-scoped owner role in Project Pulse. The user who creates a Course becomes its course admin; different Courses have different course admins. A course admin is also an instructor of her Course and therefore holds every instructor capability; in addition, she invites instructors to the Course, creates course sections and teams, manages instructor and student enrollment, assigns teams, and configures which built-in templates are available to each team. Provisioning a team's requirement documents from those templates is reserved to the course admin (UC-TPL-1, BR-3).
+A course-scoped owner role in Project Pulse. The user who creates a Course becomes its course admin; different Courses have different course admins. A course admin is also an instructor of her Course and therefore holds every instructor capability; in addition, she invites instructors to the Course, creates course sections and teams, manages instructor and student enrollment, assigns teams, and configures which built-in templates are available to each team. Provisioning a team's requirement documents from those templates is reserved to the course admin (UC-TPL-provision-documents, BR-document-creation).
 
 ## **Instructor**
 
-A user role that teaches a course section, invited to the Course by its course admin (who is herself also an instructor of the Course). Instructors review and grade student requirement documents, provide inline feedback, and configure AI assistance settings for their course section (when permitted). Team and document provisioning, and template selection, are reserved to the course admin (BR-3).
+A user role that teaches a course section, invited to the Course by its course admin (who is herself also an instructor of the Course). Instructors review and grade student requirement documents, provide inline feedback, and configure AI assistance settings for their course section (when permitted). Team and document provisioning, and template selection, are reserved to the course admin (BR-document-creation).
 
 ## **Student**
 
@@ -63,7 +63,7 @@ The period an educational institution uses to measure study, typically spanning 
 
 ## **Active Week**
 
-A week in which students are required to submit weekly activity reports and peer evaluations. Because a course section spans a winter holiday break, the course admin can mark some weeks inactive so that students need not submit reports during those weeks (see BR-22). A week runs Monday to Sunday; Monday's date may serve as the identifier for the week.
+A week in which students are required to submit weekly activity reports and peer evaluations. Because a course section spans a winter holiday break, the course admin can mark some weeks inactive so that students need not submit reports during those weeks (see BR-active-weeks). A week runs Monday to Sunday; Monday's date may serve as the identifier for the week.
 
 ## **TCU Online**
 
@@ -177,7 +177,7 @@ Examples:
 - UC-5 — use case #5
 - GL-7 — glossary term #7
 
-In the MVP, artifact keys are assigned as a simple running sequence per artifact type (`FR-1`, `FR-2`, …; `UC-1`, `UC-2`, …), with the system tracking the current index per type and incrementing on each new artifact. A categorical scheme (e.g., the SRS's `FR-SAVE*` / `FR-LOCK*` families) may be adopted in a later version. These product-generated artifact keys are distinct from the area-prefixed `UC-<AREA>-<n>` identifiers (e.g., `UC-GLO-1`) used to organize the Use Cases document of this specification itself.
+In the MVP, artifact keys are assigned as a simple running sequence per artifact type (`FR-1`, `FR-2`, …; `UC-1`, `UC-2`, …), with the system tracking the current index per type and incrementing on each new artifact. A categorical scheme (e.g., the SRS's `FR-SAVE*` / `FR-LOCK*` families) may be adopted in a later version. These product-generated artifact keys are distinct from the area-prefixed `UC-<AREA>-<slug>` identifiers (e.g., `UC-GLO-view-glossary`) used to organize the Use Cases document of this specification itself.
 
 ## **Requirement Link**
 
@@ -193,7 +193,7 @@ The link type is one of the values defined by artifact link type — covering de
 
 ## **Artifact Link Type**
 
-An enumeration defining the allowed semantic relationships between requirement artifacts. Each value is read source → target; the permitted source → target artifact-type combinations are defined authoritatively by the link-type compatibility matrix under BR-8 in [business-rules.md](business-rules.md), and the descriptions below are illustrative:
+An enumeration defining the allowed semantic relationships between requirement artifacts. Each value is read source → target; the permitted source → target artifact-type combinations are defined authoritatively by the link-type compatibility matrix under BR-link-constraints in [business-rules.md](business-rules.md), and the descriptions below are illustrative:
 
 - DERIVES_FROM — the source (lower-level) artifact is derived from a higher-level target (e.g., functional requirement → use case → feature → objective).
 - REALIZES — the source artifact realizes or implements a more abstract target (e.g., implementation → design → functional requirement / use case / feature / objective).
@@ -317,7 +317,7 @@ A requirement artifact describing a specific, testable behavior the system must 
 
 Examples: FR-1 (the system autosaves the active document section every 10 seconds), FR-2 (the system grants a student an exclusive lock before editing a document section), FR-3 (the system assigns a unique key to each new artifact).
 
-Note: the area-prefixed form `FR-<AREA>-<n>` (e.g., `FR-SAVE-1`, `FR-LOCK-1`) is not a product-generated artifact key — it is the organizing convention used by this specification's own Non-Use Case Functional Requirements, parallel to the `UC-<AREA>-<n>` use-case IDs. See artifact key.
+Note: the area-prefixed form `FR-<AREA>-<slug>` (e.g., `FR-SAVE-autosave-active`, `FR-LOCK-acquire`) is not a product-generated artifact key — it is the organizing convention used by this specification's own Non-Use Case Functional Requirements, parallel to the `UC-<AREA>-<slug>` use-case IDs. See artifact key.
 
 ## **Constraint**
 
@@ -401,9 +401,9 @@ Instructor-authored, course section-level standards an assistant is held to when
 
 ## **Cross-Document Review Criteria**
 
-Instructor-authored (or course admin-authored), course section-level criteria the critique assistant applies when reviewing a team's entire set of requirement documents together — a *whole-project review* (UC-AI-10) — for cross-document gaps, inconsistencies, conflicts, and broken traceability. They specify the dimensions and standards the whole-project review checks across documents (for example: every feature has a downstream use case and functional requirement; every cited term, business rule, and FR resolves; scope statements agree across documents).
+Instructor-authored (or course admin-authored), course section-level criteria the critique assistant applies when reviewing a team's entire set of requirement documents together — a *whole-project review* (UC-AI-whole-project-review) — for cross-document gaps, inconsistencies, conflicts, and broken traceability. They specify the dimensions and standards the whole-project review checks across documents (for example: every feature has a downstream use case and functional requirement; every cited term, business rule, and FR resolves; scope statements agree across documents).
 
-Distinct from the two other AI teaching artifacts: the teaching context supplies shared, per-requirement quality standards every assistant is held to, and assistant instructions supply per-assistant behavioral directives; the cross-document review criteria instead define *what the whole-project review evaluates across the document set*. They must be defined for a course section before a student can request a whole-project review (UC-AI-10), and are a first-class, instructor-controlled teaching artifact maintained per course section.
+Distinct from the two other AI teaching artifacts: the teaching context supplies shared, per-requirement quality standards every assistant is held to, and assistant instructions supply per-assistant behavioral directives; the cross-document review criteria instead define *what the whole-project review evaluates across the document set*. They must be defined for a course section before a student can request a whole-project review (UC-AI-whole-project-review), and are a first-class, instructor-controlled teaching artifact maintained per course section.
 
 ## **Project Source Material**
 
