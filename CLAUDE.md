@@ -85,44 +85,12 @@ npm run cy:open      # Cypress E2E tests
 > **Canonical architecture-of-record:** [`docs/design/architectural-design.md`](docs/design/architectural-design.md) — the single whole-product architecture: the C4 context/container views, the foundation/performance-tracking and RAM component views, the binding conventions, the cross-cutting subsystems, and deployment. When the architecture changes, update *that* doc; the summary below is just orientation for working in the code. The architecture-of-record follows the **arc42** template (with **C4** for the context/building-block views); the requirements specs follow **Wiegers & Beatty** — see [`docs/methodology.md`](docs/methodology.md).
 
 ### Monorepo Layout
-- `backend/` — Spring Boot 4.0 Maven project (Java 21)
-- `frontend/` — Vue 3 + Vite + TypeScript SPA
+- `backend/` — Spring Boot 4.0 (Java 21); DDD vertical-slice packages under `team.projectpulse.*`, RAM under `ram/`. **Conventions, package map, testing:** [`backend/CLAUDE.md`](backend/CLAUDE.md)
+- `frontend/` — Vue 3 + Vite + TypeScript SPA; Element Plus, Pinia, per-domain `apis/` over a shared Axios instance. **Conventions:** [`frontend/CLAUDE.md`](frontend/CLAUDE.md)
 - `docker-compose.yml` — MySQL 8, Mailpit, Prometheus, Grafana, Zipkin
 
 ### Deployment
 One Azure deployment for the whole platform (frontend bundled into the Spring Boot jar, served alongside the API). Canonical detail — pipeline stages, environments, SPA serving — is in the architecture-of-record's [Deployment](docs/design/architectural-design.md#deployment-view) section; see also **CI** at the end of this file.
-
-### Backend Architecture
-
-**Domain-Driven Design (DDD)** — each domain (bounded context) lives in its own package under `team.projectpulse.*` (e.g., `activity`, `evaluation`, `course`, `student`, `team`, `section`, `rubric`, `instructor`) and owns its full vertical slice:
-- Entity, Repository, Service, Controller, DTOs, Converters, and a `*SecurityService` (or `*Specs` for dynamic queries)
-
-**Key cross-cutting packages:**
-- `system/` — `Result` (standard API response envelope with `flag`, `code`, `message`, `data`), `StatusCode` constants, `ExceptionHandlerAdvice` (global `@RestControllerAdvice`), `DataInitializer` (dev-profile seed data), `EmailService`, clock configs
-- `security/` — JWT-based auth (RSA key pair generated at startup), `SecurityConfiguration` defines URL-level authorization rules, `authorizationmanagers/` package has fine-grained ownership/membership `AuthorizationManager` implementations
-- `user/` — Shared `PeerEvaluationUser` base class, password reset, user invitation flows
-
-**RAM domain** (`ram/`): Requirements Authoring & Management — originally a separate project, merged into Project Pulse to reuse the existing course/section/team/student infrastructure. Sub-packages: `document/` (requirement documents with section-level pessimistic locking), `requirement/` (artifacts, traceability links), `usecase/`, `glossary/`, `collaboration/` (comment threads)
-
-**Patterns:** the binding conventions every package follows — `/api/v1` endpoints returning the `Result` envelope, DDD vertical slice with `Converter<S,T>` DTOs (no Lombok/MapStruct), JWT + `AuthorizationManager` auth (`admin > instructor > student`), Flyway migrations — are stated normatively in the architecture-of-record's [Architectural Conventions](docs/design/architectural-design.md#architectural-conventions). Follow them; don't restate them here.
-
-**Spring profiles:** `dev` (default, local MySQL + Mailpit), `staging`, `prod` (Azure Key Vault for secrets)
-
-### Frontend Architecture
-
-- **Router:** `router/routes.ts` defines all routes with `meta` flags (`requiresAuth`, `visitorOnly`, `requiresPermissions`). Guards in `router/guards.ts` enforce auth/role checks via JWT decoding.
-- **State:** Pinia stores in `stores/` — `token.ts` (JWT, persisted), `userInfo.ts` (decoded user details + roles), `menuRoute.ts`, `settings.ts`
-- **API layer:** `apis/<feature>/index.ts` + `types.ts` per domain. All use a shared Axios instance (`utils/request.ts`) that adds Bearer token, handles 401 redirect to login, and unwraps `response.data` automatically.
-- **UI framework:** Element Plus components, SCSS for custom styles, Chart.js via vue-chartjs, TipTap rich text editor (RAM documents)
-- **E2E tests:** Cypress (`frontend/cypress/e2e/`)
-
-### Testing
-
-**Backend tests** are split into:
-- Unit tests (`*ServiceTest.java`) — mock repositories with Mockito
-- Integration tests (`*IntegrationTest.java`) — use Testcontainers with MySQL, test full controller→DB round-trips with `@SpringBootTest` and `MockMvc`
-
-Both types live under `backend/src/test/java/team/projectpulse/`.
 
 ## Spec-driven development
 
@@ -130,24 +98,11 @@ Project Pulse is developed **spec-first**: its requirements are authored as Mark
 
 ### The spec is the source of truth
 
-`docs/` is organized **doctype-first** — one spec set for the whole product (the shared foundation, performance tracking, and RAM), grouped by document type, not by module:
+`docs/` is the spec, organized **doctype-first** — one spec set for the whole product (shared foundation, performance tracking, RAM), grouped by document type, not by module. The directory layout, the five requirements docs and their ID schemes, and the rule that `docs/product/` is **runtime content, not a spec of Project Pulse**, are all described in [`docs/CLAUDE.md`](docs/CLAUDE.md). Two files you'll touch from code: `docs/traceability.md` (the spec→code map, one row per use case) and `docs/design/` (the architecture-of-record plus per-area design docs).
 
-- `docs/requirements/` — the spec (what):
-   1. `project-glossary.md` — domain vocabulary; canonical term definitions.
-   2. `vision-and-scope.md` — business objectives (BO-*), risks (RI-*), assumptions (AS-*), features.
-   3. `use-cases.md` — behavioral specs as use cases with area-prefixed IDs (`UC-WAR-manage-activities`, `UC-GLO-view-glossary`, `UC-DOC-create-use-case`), grouped by area.
-   4. `business-rules.md` — cross-cutting policies, constraints, and access rules (BR-*).
-   5. `software-requirements-specification.md` — functional requirements (FR-*), domain model, quality attributes.
-   - `OPEN-ISSUES.md` — the working backlog (`OI-n`, P0–P3) of gaps still needed to make the spec implementation-ready.
-- `docs/design/` — `architectural-design.md` (the one arc42/C4 architecture-of-record for the whole product) plus per-UC-area design docs generated from the spec. The area docs sit *below* the SRS (component/class design, sequence diagrams, API contracts, DB schema) and cite the UC/FRs they realize without restating them.
-- `docs/traceability.md` — the spec→code map: one row per use case → FR IDs → design doc → frontend/backend modules → tests → status.
-- `docs/guides/` — supporting build guidance that isn't itself a spec doc (e.g., AI implementation notes).
-- `docs/product/` — **product material the running product uses at runtime, not a spec of Project Pulse**: shipped default content the product seeds at runtime (e.g., the default cross-document review criteria for the whole-project critique, and the requirement-quality criteria for the per-destination critique, each with its critique-assistant system prompt). Project Pulse *operates with* this to evaluate students' requirements; the spec that *describes* Project Pulse is the rest of `docs/`.
-- `docs/CLAUDE.md` — authoring rules for these docs (anchor slugs, ID schemes, cross-doc consistency); it governs edits anywhere under `docs/`.
+Use cases are grouped by **area** — a short code that mirrors a backend bounded context (`docs/CLAUDE.md` enumerates them). The foundation and performance-tracking features were built before this spec set existed, so their use cases are documented retrospectively; RAM use cases drive new implementation.
 
-Use cases are grouped by **area** — a short code that mirrors a backend bounded context: the foundation and performance-tracking areas `RUB`/`SEC`/`TEA`/`STU`/`INS`/`ACC`/`WAR`/`EVA`, then RAM areas `TPL`/`GLO`/`DOC`/`ART`/`LNK`/`VAL`/`COL`/`REV`/`EXP`/`CFG`/`AI` (`docs/CLAUDE.md` enumerates them). The foundation and performance-tracking features were built before this spec set existed, so their use cases are documented retrospectively; RAM use cases drive new implementation.
-
-**Functional requirements.** A **use case is itself a high-level functional requirement** (the SRS's Use Cases section) — its "The system ..." steps + Associated Information are its detailed spec. The SRS's **Non-Use Case Functional Requirements** section holds only the non-use-case, system-level behaviors, with IDs in `FR-<AREA>-<slug>` format (parallel to `UC-<AREA>-<slug>`; `docs/CLAUDE.md` enumerates the area codes). **Business rules** (`BR-*`, in `business-rules.md`) are flat name-based slugs cited by use cases and the SRS. FR/BR/UC IDs are name-based identifier spaces independent of heading position — their slugs are stable handles, so inserting or reordering never renumbers them.
+**Functional requirements.** A **use case is itself a high-level functional requirement** (the SRS's Use Cases section) — its "The system ..." steps + Associated Information are its detailed spec. The SRS's **Non-Use Case Functional Requirements** section holds only the non-use-case, system-level behaviors, with IDs in `FR-<AREA>-<slug>` format (parallel to `UC-<AREA>-<slug>`; `docs/CLAUDE.md` enumerates the area codes). **Business rules** (`BR-*`, in `business-rules.md`) are cited by use cases and the SRS. The naming and stability conventions for all these ID spaces are specified in `docs/CLAUDE.md`.
 
 ### Spec-driven feature workflow
 

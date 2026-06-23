@@ -8,6 +8,18 @@ When developing new features, follow the same modeling approach used throughout 
 - **OOP best practices** — encapsulation, meaningful abstractions, favor composition over inheritance
 - **Design patterns** where appropriate (e.g., Converter pattern, Specification pattern, Strategy pattern) — follow existing patterns in the codebase rather than introducing new ones without reason
 
+## Package Layout
+
+Each bounded context is a self-contained vertical-slice package under `team.projectpulse.<domain>` (`activity`, `evaluation`, `course`, `student`, `team`, `section`, `rubric`, `instructor`). Cross-cutting packages:
+
+- `system/` — `Result` (the API response envelope; see Conventions below), `StatusCode` constants, `ExceptionHandlerAdvice` (global `@RestControllerAdvice`), `DataInitializer` (dev-profile seed data), `EmailService`, clock configs
+- `security/` — JWT auth (RSA key pair generated at startup), `SecurityConfiguration` (URL-level rules), `authorizationmanagers/` (fine-grained ownership/membership `AuthorizationManager`s)
+- `user/` — shared `PeerEvaluationUser` base class, password reset, user invitation flows
+
+**RAM module** (`ram/`) — Requirements Authoring & Management, merged in to reuse the course/section/team/student infrastructure. Sub-packages: `document/` (requirement documents with section-level pessimistic locking), `requirement/` (artifacts, traceability links), `usecase/`, `glossary/`, `collaboration/` (comment threads). Extend these packages — don't fork the architecture for RAM.
+
+The binding conventions every package follows are normative in the [architecture-of-record's Architectural Conventions](../docs/design/architectural-design.md#architectural-conventions); the sections below are the working detail.
+
 ## Adding a New Feature/Entity
 
 **Reference implementation:** Use the `activity` package as the canonical example. It demonstrates the full vertical slice: Entity, Repository, Service, Controller, DTO, Converters, Specs, and SecurityService. Read it end-to-end before building a new domain.
@@ -89,6 +101,9 @@ Error handling is centralized in `ExceptionHandlerAdvice` — services throw exc
 - Prod/staging: Flyway migrations only (`src/main/resources/db/migration/V*.sql`)
 - When adding schema changes for production, create a new `V<n>__description.sql` migration file
 - When adding a new domain, add representative seed data to `DataInitializer` for dev and integration testing
+
+### Spring Profiles
+`dev` (default — local MySQL + Mailpit, fixed clock, `ddl-auto: create` + `DataInitializer`), `staging`, and `prod` (Azure Key Vault for secrets, Flyway migrations). Per-profile clock and schema behavior is detailed in **Time Handling** and **Database** above.
 
 ## Testing Patterns
 
