@@ -21,7 +21,7 @@ This document is used to define terms used throughout the planning, design, and 
 
 ## **Scope**
 
-This glossary is associated with the Project Pulse project. The terms in this document will be used in the Vision and Scope document, the Use Cases document, the Business Rules document, the Software Requirements Specification, and other project documents.
+This glossary owns the canonical definitions of every domain term used in Project Pulse's spec docs. Each term's name *is* its identifier — name-based, stable, and unique within the glossary, so terms can be inserted into or reordered within their thematic group without renaming. The four other core docs — [vision-and-scope.md](vision-and-scope.md), [use-cases.md](use-cases.md), [business-rules.md](business-rules.md), and [software-requirements-specification.md](software-requirements-specification.md) — and the design docs use these defined terms verbatim (no synonyms, no Title-Casing for emphasis in prose) and link to a term by its anchor (e.g., `[Document Section](#document-section)`) rather than by position. Code-level enums whose value space tracks the requirements model align here as well: in particular, the SRS's Business Domain Model `RequirementArtifactType` enum maps one-to-one to the artifact-type terms defined below.
 
 ## **References**
 
@@ -35,11 +35,11 @@ The remainder of this document contains terms followed by their definitions. Ter
 
 A group of users (students or instructors) collaborating on a single project. In the senior design course a team usually consists of 5–6 students working with a real external client through the full project lifecycle, and is assigned a single instructor — its TCU instructor (see BR-team-single-instructor).
 
-Teams are the ownership boundary for requirement artifacts and documents.
+Teams are the unit at which weekly activity reports are produced, and the cohort within which peer evaluations are exchanged. They are also the ownership boundary for requirement artifacts and documents.
 
 ## **Course**
 
-An academic course managed in Project Pulse (e.g., COSC 40943 Senior Design). The user who creates a Course becomes its course admin; a Course contains one or more course sections offered across terms.
+An academic course managed in Project Pulse (e.g., COSC 40943 Senior Design). The user who creates a Course becomes its course admin; a Course contains one or more course sections.
 
 ## **Course Section**
 
@@ -47,15 +47,15 @@ A specific offering of a Course within an academic term (e.g., Fall 2026, Sectio
 
 ## **Course Admin**
 
-A course-scoped owner role in Project Pulse. The user who creates a Course becomes its course admin; different Courses have different course admins. A course admin is also an instructor of her Course and therefore holds every instructor capability; in addition, she invites instructors to the Course, creates course sections and teams, manages instructor and student enrollment, assigns teams, and configures which built-in templates are available to each team. Provisioning a team's requirement documents from those templates is reserved to the course admin (UC-TPL-provision-documents, BR-document-creation).
+A course-scoped owner role in Project Pulse. The user who creates a Course becomes its course admin; different Courses have different course admins. A course admin is also an instructor of her Course and therefore holds every instructor capability; in addition, she invites instructors to the Course, creates course sections and teams, manages instructor and student enrollment, assigns teams, configures the academic year and which weeks are active (see BR-active-weeks) for the course section's weekly activity reports and peer evaluations, and configures which built-in templates are available to each team. Provisioning a team's requirement documents from those templates is reserved to the course admin (UC-TPL-provision-documents, BR-document-creation).
 
 ## **Instructor**
 
-A user role that teaches a course section, invited to the Course by its course admin (who is herself also an instructor of the Course). Instructors review and grade student requirement documents, provide inline feedback, and configure AI assistance settings for their course section (when permitted). Team and document provisioning, and template selection, are reserved to the course admin (BR-document-creation).
+A user role that teaches a course section, invited to the Course by its course admin (who is herself also an instructor of the Course). Instructors monitor team progress through weekly activity reports and peer evaluations, review and grade student requirement documents, provide inline feedback, and configure AI assistance settings for their course section (when permitted). Team and document provisioning, and template selection, are reserved to the course admin (BR-document-creation).
 
 ## **Student**
 
-A user role enrolled in a course section as a member of a team. Students author requirement documents collaboratively with teammates, respond to instructor feedback, and submit work for grading.
+A user role enrolled in a course section as a member of a team. Each active week, students submit a weekly activity report and a peer evaluation of their teammates. They also author requirement documents collaboratively with teammates, respond to instructor feedback, and submit work for grading.
 
 ## **Academic Year**
 
@@ -95,7 +95,7 @@ A single standard or aspect of performance, work, or behavior assessed within a 
 
 ## **Requirement Artifact**
 
-The core domain entity representing a traceable requirements engineering concept. Artifacts are modeled explicitly to enable traceability, validation, navigation, and analysis. RAM models requirements as atomic artifacts (e.g., objective, feature, use case, step, functional requirement, glossary term), each with identity, type, and explicit links.
+The core domain entity representing a traceable requirements engineering concept. Artifacts are modeled explicitly to enable traceability, validation, navigation, and analysis. RAM models requirements as atomic artifacts (e.g., objective, feature, use case, functional requirement, glossary term), each with identity, type, and explicit links.
 
 A requirement artifact may represent:
 
@@ -133,23 +133,9 @@ Requirement artifacts are:
 - independent of document structure
 - connected via typed traceability links
 
-| Artifact Type      | title means    | content means         |
-| :----------------- | :------------- | :-------------------- |
-| Glossary term      | term           | definition            |
-| FR                 | Short summary  | The system shall…     |
-| Business Objective | Objective name | Objective description |
-| Feature            | Feature name   | Feature description   |
-| Use Case           | Use case name  | Brief description     |
-
 ## **Artifact Type**
 
-A predefined classification that specifies the semantic role of a requirement artifact within the requirements model.
-
-Notes / Clarifications:
-
-- Artifact types are selected from a system-defined list.
-- The artifact type determines how an artifact participates in validation, traceability, and visualization.
-- Artifact types help enforce structure and consistency across requirement documents.
+A predefined classification that specifies the semantic role of a requirement artifact within the requirements model. The artifact type determines how an artifact participates in validation, traceability, and visualization. Artifact types help enforce structure and consistency across requirement documents.
 
 Examples:
 
@@ -266,7 +252,6 @@ Examples:
 
 - vision.businessObjectives
 - srs.functionalRequirements
-- glossary.terms
 
 Section keys remain stable even if document section titles or ordering change.
 

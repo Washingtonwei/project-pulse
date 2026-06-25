@@ -13,6 +13,20 @@
 |  |  |  |  |
 |  |  |  |  |
 
+# **Introduction**
+
+## **Purpose**
+
+This document is the behavioral specification of Project Pulse — every user-initiated workflow it supports, written as a use case in the Wiegers & Beatty template (the field-by-field guidance follows below). Each use case carries a stable `UC-<AREA>-<slug>` identifier — a short area code (e.g., `SEC`, `WAR`, `DOC`, `AI`) plus a kebab-case name-based slug coined from the use case's name, unique within its area. Identifiers are stable handles, never renumbered; the area grouping is organizational only and does not affect a use case's identity. **A use case is itself a high-level functional requirement:** its "The system…" steps plus its Associated Information are its detailed functional specification, so the Software Requirements Specification does not restate use-case flows as separate functional requirements.
+
+## **Scope**
+
+This catalog covers Project Pulse end to end — the shared foundation (course sections, teams, students, instructors, accounts, rubrics), the performance-tracking workflows (weekly activity reports, peer evaluations), and the Requirements Authoring & Management (RAM) areas (templates and provisioning, glossary, documents, artifacts, links, validation, collaboration, review and submission, export, AI configuration, and AI assistants). Other docs cite use cases by identifier rather than restate their flows: the [Software Requirements Specification](software-requirements-specification.md) lists each `UC-<AREA>-<slug>` in its Use Cases section as a high-level functional requirement, [traceability.md](../traceability.md) carries one row per use case mapping it to the non-use-case `FR-<AREA>-<slug>`s it honors, the area design doc that realizes it, and the code modules and tests that implement it, and per-area design docs cite the use cases they design. In the other direction, this document cites business rules ([business-rules.md](business-rules.md), `BR-<slug>`) in each use case's Business Rules field and uses defined terms from [project-glossary.md](project-glossary.md) verbatim.
+
+# **Use Case Template**
+
+The headings below describe each field of the use-case template (Wiegers & Beatty). The use cases themselves begin in the [Use Case List](#use-case-list) section.
+
 ***Use Case ID and Name***
 *Give each use case a unique integer sequence number identifier. State a concise name for the use case that indicates the value the use case would provide to some user. Begin with an action verb, followed by an object.*
 
@@ -116,7 +130,7 @@ The note below is **not** the catalog. It records scope context only: a few Proj
 
 **Priority:** High
 **Frequency of Use:** 1 user, 1 usage per year.
-**Business Rules:**
+**Business Rules:** BR-rubric-admin-only
 
 **Associated Information:**
 - Details:  Rubric name (must be unique): E.g., Peer Eval Rubric v1 Several criteria: each criterion has a name, a description, and a max score (must be positive and can be a decimal number). For example: Criterion 1: Criterion: Quality of work Description: How do you rate the quality of this teammate's work? (1-10)  Max score: 10 Criterion 2: Criterion: Productivity Description: How productive is this teammate? (1-10)  Max score: 10 Criterion 3: Criterion: Initiative Description: How proactive is this teammate? (1-10)  Max score: 10 Criterion 4: Criterion: Courtesy Description: Does this teammate treat others with respect? (1-10)  Max score: 10 Criterion 5: Criterion: Open-mindedness Description: How well does this teammate handle criticism of their work? (1-10)  Max score: 10 Criterion 6: Criterion: Engagement in meetings Description: How is this teammate's performance during meetings? (1-10) Max score: 10 The course admin shall be able to cancel the use case at any time prior to submitting it.
@@ -246,7 +260,7 @@ Details:
 
 **Priority:** Medium
 **Frequency of Use:** Rare; rubrics are stable once defined.
-**Business Rules:** BR-role-based-access — only a course admin may edit a rubric in her own course. To change a rubric's criteria membership, see UC-RUB-add-criterion and UC-RUB-remove-criterion.
+**Business Rules:** BR-rubric-admin-only, BR-role-based-access — only a course admin may edit a rubric in her own course. To change a rubric's criteria membership, see UC-RUB-add-criterion and UC-RUB-remove-criterion.
 
 **Associated Information:**
 
@@ -290,7 +304,7 @@ Details:
 
 **Priority:** Medium
 **Frequency of Use:** Rare.
-**Business Rules:** BR-role-based-access — only a course admin may delete a rubric in her own course.
+**Business Rules:** BR-rubric-admin-only, BR-role-based-access — only a course admin may delete a rubric in her own course.
 
 **Associated Information:**
 
@@ -327,7 +341,7 @@ Details:
 
 **Priority:** Medium
 **Frequency of Use:** At rubric setup and occasional revision.
-**Business Rules:** BR-role-based-access — the rubric and criterion must be in the course admin's own course.
+**Business Rules:** BR-rubric-admin-only, BR-role-based-access — the rubric and criterion must be in the course admin's own course.
 
 **Associated Information:**
 
@@ -361,7 +375,7 @@ Details:
 **Extensions:**
 **Priority:** Medium
 **Frequency of Use:** At rubric setup and occasional revision.
-**Business Rules:** BR-role-based-access — only a course admin may modify a rubric in her own course.
+**Business Rules:** BR-rubric-admin-only, BR-role-based-access — only a course admin may modify a rubric in her own course.
 
 **Associated Information:**
 
@@ -395,7 +409,7 @@ Details:
 **Extensions:**
 **Priority:** High
 **Frequency of Use:** Once per course section at setup; rarely changed.
-**Business Rules:** BR-role-based-access — the course section and rubric must be in the course admin's own course.
+**Business Rules:** BR-section-admin-only, BR-role-based-access — the course section and rubric must be in the course admin's own course.
 
 **Associated Information:**
 - A course section uses one rubric at a time; assigning a new rubric replaces the previous assignment. The currently assigned rubric is shown when viewing the course section (UC-SEC-view-section).
@@ -526,7 +540,7 @@ Details:
 
 **Priority:** High
 **Frequency of Use:** Occasional; mostly at course setup.
-**Business Rules:** BR-role-based-access — criteria are created within the course admin's own course.
+**Business Rules:** BR-rubric-admin-only, BR-role-based-access — criteria are created within the course admin's own course.
 
 **Associated Information:**
 
@@ -574,7 +588,7 @@ Details:
 
 **Priority:** Medium
 **Frequency of Use:** Rare.
-**Business Rules:** BR-role-based-access — only a course admin may edit a criterion in her own course.
+**Business Rules:** BR-rubric-admin-only, BR-role-based-access — only a course admin may edit a criterion in her own course.
 
 **Associated Information:**
 
@@ -620,7 +634,7 @@ Details:
 
 **Priority:** Medium
 **Frequency of Use:** Rare.
-**Business Rules:** BR-role-based-access — only a course admin may delete a criterion in her own course.
+**Business Rules:** BR-rubric-admin-only, BR-role-based-access — only a course admin may delete a criterion in her own course.
 
 **Associated Information:**
 
@@ -774,7 +788,7 @@ Details:
 
 **Priority:** High
 **Frequency of Use:** 1 user, 1 usage per year.
-**Business Rules:**
+**Business Rules:** BR-section-admin-only
 
 **Associated Information:**
 - Details: course section name: E.g., Section 2023-2024 Start and end date of the course section: E.g., 08/21/2023 and 05/01/2024 Editing a rubric: When the course admin edits an existing rubric, behind the scenes, the system shall first duplicate the existing rubric and then let the course admin edit it. In other words, a new rubric is created. Duplication detection rules: course section name is used as the unique identifier for a course section. The course admin shall be able to cancel the use case at any time prior to submitting it.
@@ -818,7 +832,7 @@ Details:
 
 **Priority:** High
 **Frequency of Use:** 1 user, average of 1 usage per year.
-**Business Rules:**
+**Business Rules:** BR-section-admin-only
 
 **Associated Information:**
 
@@ -865,7 +879,7 @@ The course admin shall be able to cancel the use case at any time prior to submi
 **Extensions:**
 **Priority:** High
 **Frequency of Use:** 1 user, 1 usage per year.
-**Business Rules:** BR-active-weeks
+**Business Rules:** BR-section-admin-only, BR-active-weeks
 
 **Associated Information:**
 - The course admin shall be able to cancel the use case at any time prior to submitting it.
@@ -1009,7 +1023,7 @@ Details:
 
 **Priority:** High
 **Frequency of Use:** 1 user, 5-10 usages per year.
-**Business Rules:**
+**Business Rules:** BR-team-admin-only
 
 **Associated Information:**
 - Details: Senior design team name: E.g., Peer Evaluation Tool team Team description Team website URL Duplication detection rules: Team name must be unique The course admin shall be able to cancel the use case at any time prior to submitting it.
@@ -1053,7 +1067,7 @@ Details:
 
 **Priority:** High
 **Frequency of Use:** 1 user, average of 6 usages per year.
-**Business Rules:**
+**Business Rules:** BR-team-admin-only
 
 **Associated Information:**
 
@@ -1105,7 +1119,7 @@ No two teams can have the same name. The team name must be unique. The course ad
 
 **Priority:** High
 **Frequency of Use:** 1 user, 1 usage per year.
-**Business Rules:**
+**Business Rules:** BR-team-admin-only
 
 **Associated Information:**
 - Notification: The system notifies the students about their team assignment. The course admin shall be able to cancel the process at any time prior to submitting it.
@@ -1146,7 +1160,7 @@ No two teams can have the same name. The team name must be unique. The course ad
 
 **Priority:** Low
 **Frequency of Use:** Rare. 1 user, 1 usage per year.
-**Business Rules:**
+**Business Rules:** BR-team-admin-only
 
 **Associated Information:**
 - Notification: The system notifies the student about her team removal. The course admin shall be able to cancel the process at any time prior to submitting it.
@@ -1185,7 +1199,7 @@ No two teams can have the same name. The team name must be unique. The course ad
 **Extensions:**
 **Priority:** Low
 **Frequency of Use:** Rare. 1 user, 1 usage per year.
-**Business Rules:**
+**Business Rules:** BR-team-admin-only
 
 **Associated Information:**
 - Data integrity and deletion rules: If a team already has students or instructors in it, deleting a team will automatically remove students and instructors from this team first. If a team already has WARs and peer evaluations,  deleting a team will automatically delete the associated WARs and peer evaluations. Deletion strategy: Team deletion is a physical delete. In other words, this will permanently remove the team and the associated WARs and peer evaluations from the database (cannot be recovered). Notification: students and instructors of the deleted team shall be notified. The course admin shall be able to cancel the use case at any time prior to submitting it.
@@ -1235,7 +1249,7 @@ No two teams can have the same name. The team name must be unique. The course ad
 
 **Priority:** High
 **Frequency of Use:** 1 user, 1 usage per year.
-**Business Rules:**
+**Business Rules:** BR-invitations-admin-only
 
 **Associated Information:**
 - Email format: emails shall be separated by semicolon and the system shall ignore spaces in between. E.g., Good: john.doe@tcu.edu; f.smith@tcu.edu; tim.johnson@tcu.edu; lily.p.lee@tcu.edu Good: john.doe@tcu.edu;f.smith@tcu.edu Bad: john.doe@tcu.edu; f.smith@tcu.edu; Bad: john.doe@tcu.edu f.smith@tcu.edu Default email message: *Subject: Welcome to Project Pulse - Complete Your Registration Hello, [Name of the course admin] has invited you to join Project Pulse. To complete your registration, please use the link below: [Registration link] If you have any questions or need assistance, feel free to contact [course admin's email] or our team directly. Please note: This email is not monitored, so do not reply directly to this message. Best regards, Project Pulse Team*  The invitation link shall be unique for each student. The course admin shall be able to cancel the use case at any time prior to submitting it.
@@ -1373,7 +1387,7 @@ Details:
 **Extensions:**
 **Priority:** Low
 **Frequency of Use:** Rare. 1 user, 1 usage per year.
-**Business Rules:**
+**Business Rules:** BR-student-lifecycle
 
 **Associated Information:**
 - Data integrity and deletion rules: If a student already submits WARs and peer evaluations,  deleting a student will automatically delete the associated WARs and peer evaluations. Deletion strategy: student deletion is a physical delete. In other words, this will permanently remove the student and the associated WARs and peer evaluations from the database (cannot be recovered). The course admin shall be able to cancel the use case at any time prior to submitting it.
@@ -1411,7 +1425,7 @@ Details:
 **Extensions:**
 **Priority:** Low
 **Frequency of Use:** Rare. Occurs occasionally when a student withdraws from a course section.
-**Business Rules:**
+**Business Rules:** BR-student-lifecycle
 
 **Associated Information:**
 - Consequence of the deactivation: The student will no longer be able to log in or submit weekly activity reports and peer evaluations, but the student's account and her previously submitted work are kept in the system. Deactivation will NOT remove the student from the system, and the account can be reactivated in the future (UC-STU-reactivate-student: Reactivate a student). This is distinct from deletion (UC-STU-delete-student: Delete a student), which is a physical, unrecoverable delete. The course admin or instructor shall be able to cancel the use case at any time prior to submitting it.
@@ -1449,7 +1463,7 @@ Details:
 **Extensions:**
 **Priority:** Low
 **Frequency of Use:** Rare. Occurs occasionally when a previously withdrawn student returns to a course section.
-**Business Rules:**
+**Business Rules:** BR-student-lifecycle
 
 **Associated Information:**
 - The course admin or instructor shall be able to cancel the use case at any time prior to submitting it.
@@ -1499,7 +1513,7 @@ Details:
 
 **Priority:** High
 **Frequency of Use:** 1 user, 1 usage per year.
-**Business Rules:**
+**Business Rules:** BR-invitations-admin-only
 
 **Associated Information:**
 - Email format: emails shall be separated by semicolon and the system shall ignore spaces in between. E.g., Good: john.doe@tcu.edu; f.smith@tcu.edu; tim.johnson@tcu.edu; lily.p.lee@tcu.edu Good: john.doe@tcu.edu;f.smith@tcu.edu Bad: john.doe@tcu.edu; f.smith@tcu.edu; Bad: john.doe@tcu.edu f.smith@tcu.edu Default email message: *Subject: Welcome to Project Pulse - Complete Your Registration Hello, [Name of the course admin] has invited you to join Project Pulse. To complete your registration, please use the link below: [Registration link] If you have any questions or need assistance, feel free to contact [course admin's email] or our team directly. Please note: This email is not monitored, so do not reply directly to this message. Best regards, Project Pulse Team*  The invitation link shall be unique for each instructor. The course admin shall be able to cancel the use case at any time prior to submitting it.
@@ -1541,7 +1555,7 @@ Details:
 
 **Priority:** High
 **Frequency of Use:** 1 user, 1 usage per year.
-**Business Rules:** BR-team-single-instructor
+**Business Rules:** BR-team-admin-only, BR-team-single-instructor
 
 **Associated Information:**
 - Notification: The system notifies the instructors about their team assignment. The course admin shall be able to cancel the process at any time prior to submitting it.
@@ -1582,7 +1596,7 @@ Details:
 
 **Priority:** Low
 **Frequency of Use:** Rare. 1 user, 1 usage per year.
-**Business Rules:** BR-team-single-instructor
+**Business Rules:** BR-team-admin-only, BR-team-single-instructor
 
 **Associated Information:**
 - Notification: The system notifies the instructor about her team removal. The course admin shall be able to cancel the process at any time prior to submitting it.
@@ -1718,7 +1732,7 @@ Supervised teams shall be organized by section names.
 **Extensions:**
 **Priority:** Low
 **Frequency of Use:** Rare. 1 user, 1 usage per year.
-**Business Rules:**
+**Business Rules:** BR-instructor-lifecycle
 
 **Associated Information:**
 - Consequence of the deactivation: The instructor will no longer have access to the system. But the instructor's information is kept in the system. Deactivation: Deactivation will NOT remove the instructor from the system and the instructor's account can be recovered in the future. The course admin shall be able to cancel the use case at any time prior to submitting it.
@@ -1756,7 +1770,7 @@ Supervised teams shall be organized by section names.
 **Extensions:**
 **Priority:** Low
 **Frequency of Use:** Rare. 1 user, 1 usage per year.
-**Business Rules:**
+**Business Rules:** BR-instructor-lifecycle
 
 **Associated Information:**
 - The course admin shall be able to cancel the use case at any time prior to submitting it.
@@ -1805,7 +1819,7 @@ Supervised teams shall be organized by section names.
 
 **Priority:** High
 **Frequency of Use:** Approximately 35-40 users, 1 usage per year.
-**Business Rules:**
+**Business Rules:** BR-account-self-setup
 
 **Associated Information:**
 - Details: First name Last name Email Password The student shall be able to cancel the use case at any time prior to submitting it.
@@ -1905,7 +1919,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 **Priority:** High
 **Frequency of Use:** Approximately 2 users, average of 1 usage per year.
-**Business Rules:**
+**Business Rules:** BR-account-self-setup
 
 **Associated Information:**
 - Details: First name Middle initial Last name Password Reenter password: must be the same as password. The instructor shall be able to cancel the use case at any time prior to submitting it.
@@ -2144,7 +2158,7 @@ Report generating algorithm: N/A
 
 **Priority:** High
 **Frequency of Use:** Approximately 35-40 users, 1 usage per week.
-**Business Rules:** BR-evaluation-editable-until-close, BR-evaluation-submission-window
+**Business Rules:** BR-evaluation-editable-until-close, BR-evaluation-submission-window, BR-evaluation-private-comment
 
 **Associated Information:**
 
@@ -2200,7 +2214,7 @@ Private comments are for the instructor only. Public comments will be sent to th
 
 **Priority:** High
 **Frequency of Use:** Approximately 35-40 users, average of 1 usage per week.
-**Business Rules:** BR-evaluation-visibility
+**Business Rules:** BR-evaluation-visibility, BR-evaluation-private-comment
 
 **Associated Information:**
 
@@ -2259,7 +2273,7 @@ Report generating algorithm: For each individual criterion score (e.g., Quality 
 
 **Priority:** High
 **Frequency of Use:** Approximately 2 users, average of 1 usage per week.
-**Business Rules:**
+**Business Rules:** BR-evaluation-private-comment
 
 **Associated Information:**
 
@@ -2331,7 +2345,7 @@ Details of a peer evaluation: The instructor may choose to see more details of o
 
 **Priority:** High
 **Frequency of Use:** 2 users, average of 10 usage per week.
-**Business Rules:**
+**Business Rules:** BR-evaluation-private-comment
 
 **Associated Information:**
 

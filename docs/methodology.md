@@ -57,6 +57,22 @@ The artifacts above follow **recognized industry templates** rather than bespoke
 
 Adopt the canonical sections and ordering; *drop or merge* sections that genuinely don't apply (arc42 explicitly allows this) rather than padding with filler. Fidelity to the standard beats local optimization here.
 
+### Features and use case areas — different views, not different fragments
+
+Two listings sit close to each other in the requirements docs and look like they should be the same list — and aren't. Conflating them flattens both, so it's worth naming the distinction once.
+
+- In `vision-and-scope.md`, the **Major Features** are stakeholder-visible *capabilities* — "what does the product do for the user?" Typically 8–15 per product, named and written in value terms, no behavioral detail.
+- In `use-cases.md`, **use case areas** (`UC-<AREA>-*`) are *behavioral groupings* — "which actor-task interactions belong together?" Usually aligned with a bounded context in the code, so they double as the spine of the design and the traceability matrix.
+
+The relationship between them is **many-to-many**, not one-to-one. A single feature is usually realized by use cases across several areas (Administration & Course Management spans course-section, team, student, instructor, account); a single area can serve more than one feature (the glossary area feeds *Glossary & Terminology Consistency*, but its terms also show up under *Smart Editing and Validation* and *Full Requirements Traceability*). Forcing a 1:1 list either flattens features into a CRUD enumeration or inflates UC areas into marketing buckets — losing what each view is for.
+
+Two health checks keep the two lists honest:
+
+- **Coverage.** Every UC area should be reachable from at least one feature; otherwise there are use cases without a stakeholder-visible reason, and the spec has work the vision doesn't justify. (When we ran this check on Project Pulse, the glossary and document-authoring areas had no feature pointing at them — both real gaps, fixed by naming features for them.)
+- **Right altitude.** A feature should describe a capability, not enumerate use cases; a UC area should reflect the domain, not the marketing pitch. If a feature reads like "create / edit / delete X", it's a UC list mis-cast as a feature. If an area name reads like a tagline, it's a feature mis-cast as an area.
+
+A deliberate consequence: **the Major Features keep no inline UC IDs.** The feature → use-case-area map lives in `traceability.md` and is verified there. That separation keeps the features at value-altitude and frees the use-case catalog to organize by domain rather than by the marketing brochure.
+
 ## The lifecycle
 
 ### Phase A — Author requirements and a breadth-complete architecture (human-led, often parallel)

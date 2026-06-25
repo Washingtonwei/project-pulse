@@ -21,7 +21,17 @@ This document catalogs the business rules for Project Pulse — the policies, co
 
 ## **Scope**
 
-These business rules apply across Project Pulse. The course-management rules govern how teams are staffed with instructors and how the weekly activity report and peer evaluation workflows are constrained (active weeks, submission windows, edit and visibility policy). The requirements-authoring rules govern who may perform which actions on a team's requirements (access and ownership), how artifacts are identified and kept unique, how concurrent editing is controlled, how deletion preserves integrity, how the review-and-submission workflow constrains editing, how the AI assistants behave, how project source material is handled, and how comments and feedback are governed. Defined terms are catalogued in [project-glossary.md](project-glossary.md).
+These business rules apply across Project Pulse. The course-administration rules govern who may create and configure course sections, invite and manage student and instructor accounts, form teams and assign their members, and manage rubrics. The performance-tracking rules govern how teams are staffed with their single instructor and how the weekly activity report and peer evaluation workflows are constrained (active weeks, submission windows, edit and visibility policy). The requirements-authoring rules govern who may perform which actions on a team's requirements (access and ownership), how artifacts are identified and kept unique, how concurrent editing is controlled, how deletion preserves integrity, how the review-and-submission workflow constrains editing, how the AI assistants behave, how project source material is handled, and how comments and feedback are governed. Defined terms are catalogued in [project-glossary.md](project-glossary.md).
+
+# **Course Administration**
+
+- **BR-section-admin-only:** Only a course admin may create or edit a course section, configure its active-weeks window (per BR-active-weeks), or assign a rubric to it.
+- **BR-invitations-admin-only:** Only a course admin may invite students to a course section or invite instructors to register an account. Each invitation is delivered by email with a registration link unique to the invitee.
+- **BR-account-self-setup:** A student or instructor sets up her own account by using the unique registration link from her invitation email; the system permits self-setup only against an unconsumed invitation.
+- **BR-team-admin-only:** Only a course admin may create, edit, or delete a team within a course section, and only a course admin may assign students or instructors to a team or remove them from one. The single-instructor cardinality per team is governed by BR-team-single-instructor.
+- **BR-student-lifecycle:** A course admin, or an instructor assigned to the student's course section, may deactivate or reactivate a student — deactivation revokes the student's access while preserving her submitted work. Only a course admin may delete a student; deletion is physical and unrecoverable and also removes the student's weekly activity reports and peer evaluations.
+- **BR-instructor-lifecycle:** Only a course admin may deactivate or reactivate an instructor; deactivation revokes the instructor's access while retaining her record.
+- **BR-rubric-admin-only:** Only a course admin may create, edit, or delete a rubric or its criteria.
 
 # **Teams and Instructor Assignment**
 
@@ -29,10 +39,11 @@ These business rules apply across Project Pulse. The course-management rules gov
 
 # **Weekly Activity Report and Peer Evaluation**
 
-- **BR-active-weeks:** Active weeks vary by semester: in the fall semester the active weeks are usually weeks 5 through 15 (winter holidays are inactive weeks), and in the spring semester they are weeks 1 through 15. A student may submit a peer evaluation only during active weeks, but may submit a weekly activity report outside active weeks.
+- **BR-active-weeks:** Each course section's active weeks are configured per section by its course admin (see UC-SEC-setup-active-weeks and BR-section-admin-only); as typical instructor guidance (not enforced by the system), fall sections usually have weeks 5 through 15 of the semester active (winter holidays inactive) and spring sections weeks 1 through 15. A student may submit a peer evaluation only during her course section's active weeks, but may submit a weekly activity report outside active weeks.
 - **BR-evaluation-editable-until-close:** A peer evaluation remains editable by its evaluator while its submission window is open — re-submitting updates the existing evaluation in place. The system applies no separate finalize or completion action; the close of the submission window (BR-evaluation-submission-window) is itself the lock that makes the evaluation read-only.
 - **BR-evaluation-submission-window:** A student may submit a peer evaluation only for the previous week, and has that one week to complete it; both the initial submission and any later edits must occur within this window. A student who fails to complete a peer evaluation in that window cannot make it up, and an evaluation can no longer be changed once its window has closed.
-- **BR-evaluation-visibility:** For a peer evaluation, a student may see only her own rubric criterion scores, public comments, and overall grade.
+- **BR-evaluation-private-comment:** When submitting a peer evaluation, the evaluator may optionally include a private comment about the teammate being evaluated. A private comment is visible only to the instructor assigned to the course section (and course admin, per BR-role-based-access); it is never shown to the evaluatee or any other student on the team. Private comments exist to give students a safe channel to raise concerns early.
+- **BR-evaluation-visibility:** For a peer evaluation, a student may see only her own rubric criterion scores, public comments (not private comments — see BR-evaluation-private-comment), and overall grade.
 
 # **Access and Ownership**
 
@@ -52,7 +63,7 @@ These business rules apply across Project Pulse. The course-management rules gov
 
 - Tier 1 — Business/Vision: Business Problem, Business Opportunity, Business Objective, Vision Statement, Success Metric
 - Tier 2 — Feature: Feature
-- Tier 3 — Behavioral: use case, User Story (and a use case's Preconditions and Postconditions)
+- Tier 3 — Behavioral: Use Case, User Story
 - Tier 4 — Detailed/system: Functional Requirement, Quality Attribute, External Interface Requirement, Constraint, Data Requirement, Operating Environment
 - Cross-cutting: Stakeholder, Risk, Assumption, Dependency, Business Rule, glossary term
 

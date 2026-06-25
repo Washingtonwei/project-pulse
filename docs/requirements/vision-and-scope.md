@@ -20,7 +20,7 @@ This document defines the purpose, goals, and boundaries of **Project Pulse**, t
 - **Student Performance Tracking** — when students work together on a team project, individual effort is easy to hide and hard to assess fairly; this area keeps each student's contribution visible by replacing the manual, spreadsheet-based collection of weekly activity reports (WARs) and peer evaluations with an integrated, automated workflow.
 - **Requirements Authoring & Management (RAM)** — students rarely arrive able to write clear, professional requirements, yet weak requirements quietly derail projects and increasingly misdirect AI-assisted coding; RAM is a software requirements authoring environment that modernizes how software requirements are written, understood, and evaluated, replacing old-school, document-centric requirement writing with a structured, model-driven approach that reflects professional requirements engineering practices while remaining accessible to students and instructors. Requirements become a graph-first model of atomic, interlinked artifacts — unlocking end-to-end traceability, real-time quality validation, and Socratic AI assistants that coach students rather than write for them.
 
-This document outlines the business opportunity, major features, stakeholders, and proposed workflows. Detailed behavioral specifications, cross-cutting business rules, and implementation-facing requirements are defined in the Use Cases, Business Rules, and Software Requirements Specification (SRS) documents.
+This document owns the project's motivation identifiers — business objectives (`BO-<AREA>-<slug>`, area-prefixed by capability: `BO-PERF-*` for performance tracking, `BO-RAM-*` for requirements authoring), risks (`RI-<slug>`), and assumptions (`AS-<slug>`) — alongside the named major features and stakeholders. The downstream docs cite these by identifier rather than restate them: use cases (`UC-<AREA>-<slug>` in [use-cases.md](use-cases.md)) and non-use-case functional requirements (`FR-<AREA>-<slug>` in [software-requirements-specification.md](software-requirements-specification.md)) link to the business objective or feature they realize, the [traceability matrix](../traceability.md) carries the spec→code map keyed to those IDs, and cross-cutting policies are catalogued in [business-rules.md](business-rules.md) (`BR-<slug>`). Defined terms used here are owned by [project-glossary.md](project-glossary.md).
 
 ## **Background**
 
@@ -37,7 +37,7 @@ The Department of Computer Science at TCU teaches a two-semester Software Engine
 - *Weekly activity report (WAR).* Every student completes a weekly activity report each week recording what they did. WARs are kept in shared Google Sheets — one sheet per team per week — that teammates can edit and view, which also fosters communication. Each Monday students record the previous week's activities in their team's sheet; the instructor keeps the URLs of all the sheets, reviews the updated ones on Tuesday, and grades and gives feedback through the university LMS (TCU Online).
 - *Peer evaluation.* Each Tuesday students first review the team's WAR from the previous week, complete a peer evaluation form in an Excel spreadsheet, and upload it to TCU Online. The instructor then downloads all the forms, runs an instructor-written Java program to parse and score them, finalizes grades, compiles comments, and uploads the results to TCU Online, where students can view their teammates' evaluations.
 
-This process improves team efficiency but is overly manual and time-consuming. Students can make formatting mistakes (wrong columns, missing data) that cost them credit, and the instructor must perform many repetitive download / parse / upload steps by hand for the whole cohort.
+This process improves team efficiency but is overly manual and time-consuming. The submission workflow spans two systems and several discrete steps — open the team's Google Sheet on Monday to record last week's activities; on Tuesday, download the peer-evaluation Excel template, fill it in, and upload it to TCU Online — and under deadline pressure students often forget one of the steps, or miss a submission entirely, costing them credit. Students can also make formatting mistakes (wrong columns, missing data) that cost them credit, and the instructor must perform many repetitive download / parse / upload steps by hand for the whole cohort.
 
 **Requirements authoring.** Students currently author requirements using Google Docs templates, including:
 
@@ -60,7 +60,7 @@ While workable, this traditional process leads to incomplete document sections, 
 
 Project Pulse addresses two business problems, one for each capability area.
 
-**Manual performance tracking.** The current weekly-activity-report and peer-evaluation process within the Computer Science Department is burdened by inefficiencies, errors, and delays. Students must download, complete, and upload spreadsheets on TCU Online, and faculty manage the evaluations by hand, which sometimes delays feedback. Automating these workflows — collecting weekly activity reports and peer evaluations in one place and compiling scores and feedback automatically — streamlines operations, improves data accuracy, and delivers timely feedback for both students and instructors across the department.
+**Manual performance tracking.** The current weekly-activity-report and peer-evaluation process within the Computer Science Department is burdened by inefficiencies, errors, missed submissions, and delays. Students must track due dates across two systems and download, complete, and upload spreadsheets on TCU Online — a multi-step routine that students under deadline pressure often forget, costing them credit — and faculty manage the evaluations by hand, which sometimes delays feedback. Automating these workflows — collecting weekly activity reports and peer evaluations in one place and compiling scores and feedback automatically — streamlines operations, improves data accuracy, raises submission rates, and delivers timely feedback for both students and instructors across the department.
 
 **Document-centric requirements authoring.** Modern IDEs provide powerful support for writing and maintaining code, including navigation, refactoring, validation, and dependency analysis. In contrast, requirements authoring in educational settings remains largely unchanged. Students continue to write requirements in generic, document-centric tools such as Microsoft Word or Google Docs—tools that are not designed to model the structure, relationships, or semantics of requirements engineering.
 
@@ -118,6 +118,8 @@ Each objective carries an area-prefixed `BO-<AREA>-<slug>` identifier — parall
 
 BO-PERF-faster-grading: Reduce the instructor's time to grade peer evaluations by 50%.
 
+BO-PERF-instructor-workload: Reduce instructor workload by automating the end-to-end processing of weekly activity reports and peer evaluations — collection, parsing, scoring, comment compilation, and result distribution — eliminating the manual download / parse / upload cycle the instructor runs each week for the whole cohort.
+
 BO-PERF-submission-rate: Increase students' weekly activity report and peer evaluation submission rate by 20%.
 
 BO-PERF-faster-completion: Reduce the time students spend completing their weekly activity reports and peer evaluations by 25%.
@@ -136,7 +138,7 @@ BO-RAM-learning-outcomes: Provide an integrated environment that supports learni
 
 BO-RAM-navigation: Enable navigation, visualization, and impact analysis of requirements relationships. *(MVP delivers graph navigation and traceability linking; interactive visualization and change-impact analysis are post-MVP.)*
 
-BO-RAM-research: Create opportunities for research in educational technology, AI-in-the-loop requirements engineering, NLP-based requirement quality analysis, and HCI.
+BO-RAM-research: Create opportunities for research in educational technology, AI-in-the-loop requirements engineering, NLP-based requirement quality analysis, and HCI. *(Platform-level emergent objective; no direct UC or FR realizer — research opportunities arise from the platform as a whole rather than any one feature.)*
 
 ## **Vision Statement**
 
@@ -245,23 +247,23 @@ AS-maintainable-stack: The system uses technologies the client already knows and
 
 ## **Major Features / Scope**
 
-Project Pulse provides a modern environment for running the senior design course — tracking student performance through weekly activity reports and peer evaluations, and authoring, validating, and managing software requirements. The features below describe the major functional capabilities at a high level. Detailed behavioral descriptions, actor interactions, and exception scenarios are defined in the accompanying [Use Cases document](use-cases.md). The course-management and performance-tracking features come first, followed by the requirements-authoring (RAM) features.
+Project Pulse provides a modern environment for running the senior design course — tracking student performance through weekly activity reports and peer evaluations, and authoring, validating, and managing software requirements. The features below describe the major functional capabilities at a high level. Detailed behavioral descriptions, actor interactions, and exception scenarios are defined in the accompanying [Use Cases document](use-cases.md); the feature ↔ use-case-area map is maintained in [traceability.md](../traceability.md). The course-management and performance-tracking features come first, followed by the requirements-authoring (RAM) features.
 
 ### *Administration and Course Management*
 
 The system supports secure authentication, role-based access control, and FERPA-compliant data storage. It provides course, course section, team, student, and instructor management for the whole platform: the course admin (the user who created the Course) sets up its course sections and project teams, manages rosters and document access, invites instructors, configures active weeks, and provisions each team's requirement documents from the built-in templates; instructors configure their course sections' teaching context and AI assistants and run the review-and-feedback workflow.
 
+### *Rubric Management*
+
+Course admins author the peer-evaluation rubric: a weighted set of criteria that drives evaluation scoring. Rubrics and their criteria are managed centrally — created, edited, found, and deleted — and assigned to course sections, so different sections can use different rubrics and the same criterion can appear in multiple rubrics. The rubric is the contract the peer-evaluation workflow scores against.
+
 ### *Weekly Activity Reports*
 
-Each week, students record their work as a weekly activity report — for each activity, its category, the planned activity, a description, hours planned, actual hours taken, and status. Teammates and instructors can review a team's reports, and the system generates a WAR report for a team or for an individual student. This replaces the shared-spreadsheet workflow and fosters communication within the team. (See the Use Cases document, *Weekly Activity Report*: UC-WAR-*.)
+Each week, students record their work as a weekly activity report — for each activity, its category, the planned activity, a description, hours planned, actual hours taken, and status. Teammates and instructors can review a team's reports, and the system generates a WAR report for a team or for an individual student. This replaces the shared-spreadsheet workflow and fosters communication within the team.
 
 ### *Peer Evaluations*
 
-During active weeks, students evaluate their teammates against a rubric of weighted criteria, optionally adding public comments (shared with the evaluatee) and private comments (visible only to the instructor). The system aggregates scores and comments, generates a peer-evaluation report for the entire course section and per-student reports, and lets each student view her own results. Submission windows, edit rules, and visibility are governed by the business rules in [business-rules.md](business-rules.md) (BR-active-weeks, BR-evaluation-editable-until-close, BR-evaluation-submission-window, BR-evaluation-visibility). (See the Use Cases document, *Peer Evaluation*: UC-EVA-*.)
-
-### *Graph-First Requirements Model*
-
-The tool is not a document editor intended to replicate Google Docs or Microsoft Word. Instead, RAM is model-first: it stores requirements as a connected domain model (a requirements graph) where nodes represent atomic requirement artifacts — each meaningful requirement element (e.g., objectives, features, use case steps, functional requirements, glossary terms) modeled as a first-class, uniquely identifiable artifact — and edges represent relationships (traceability, realization, references). Traditional "documents" are generated and edited as structured views of this underlying model. This enables capabilities that are difficult or impossible in text-first tools, including instant navigation across requirement chains (objective → feature → use case step/extension → functional requirement), "find all references" for glossary terms, safe rename, and change-impact analysis. *(MVP ships trace navigation and safe rename; graph visualization and change-impact analysis are post-MVP — see [MVP Scope](#mvp-scope-initial-classroom-deployment).)*
+During active weeks, students evaluate their teammates against a rubric of weighted criteria, optionally adding public comments (shared with the evaluatee) and private comments (visible only to the instructor). The system aggregates scores and comments, generates a peer-evaluation report for the entire course section and per-student reports, and lets each student view her own results. Submission windows, edit rules, and visibility are governed by the business rules in [business-rules.md](business-rules.md) (BR-active-weeks, BR-evaluation-editable-until-close, BR-evaluation-submission-window, BR-evaluation-visibility).
 
 ### *Template Management*
 
@@ -277,6 +279,31 @@ Course admins or instructors can also create new structured document templates b
 
 This enables flexibility across methodologies and supports instructor-specific teaching goals. The initial release ships with fixed, built-in templates; template customization is post-MVP — see [MVP Scope](#mvp-scope-initial-classroom-deployment).
 
+### *Glossary and Terminology Consistency*
+
+Each project maintains a shared Project Glossary — the team's authoritative vocabulary for actors, domain concepts, and data entities referenced across every requirement document. Students view, search, create, edit, rename, and delete glossary terms in one place, and the same terms then flow into smart-editing assistance and ReqLint validation, where they enforce consistent naming as those terms appear in Vision and Scope, Use Cases, Business Rules, and the SRS. Renaming a glossary term updates references project-wide (safe rename), so the glossary stays the single source of truth and synonym drift is prevented across documents.
+
+### *Document and Use Case Authoring*
+
+The primary authoring surface for the requirement documents. Students browse the team's documents, open a section-based document (Vision and Scope, Glossary, Business Rules, SRS) and edit its sections through a template-driven editor that follows the structure, required fields, and example prompts the chosen template defines. Use cases are first-class artifacts in their own catalog — students browse, view, create, and edit them through a use-case-shaped form covering actors, trigger, main success scenario, extensions, and associated information. Edits are protected by per-section / per-use-case pessimistic locking and autosaved as students work, so teams can divide and conquer documents without colliding.
+
+### *Graph-First Requirements Model*
+
+The tool is not a document editor intended to replicate Google Docs or Microsoft Word. Instead, RAM is model-first: it stores requirements as a connected domain model (a requirements graph) where nodes represent atomic requirement artifacts — each meaningful requirement element (objectives, features, use cases, functional requirements, glossary terms) modeled as a first-class, uniquely identifiable artifact — and edges represent typed relationships between them. Traditional "documents" are generated and edited as structured views over this underlying model, and the same artifact can surface in more than one view without duplication. This enables capabilities that are difficult or impossible in text-first tools — "find all references" for any artifact, safe rename that propagates across every view, and change-impact analysis. *(MVP ships safe rename; interactive graph visualization and change-impact analysis are post-MVP — see [MVP Scope](#mvp-scope-initial-classroom-deployment).)*
+
+### *Full Requirements Traceability*
+
+The tool supports bidirectional traceability across all major requirement types, enabling students and instructors to see how business goals flow down into user requirements and functional specifications. Users can link:
+
+- Business Requirements → Product Features
+- Product Features → Use Cases (User Requirements)
+- Use Cases → Functional Requirements
+- Functional Requirements → Constraints, Data Requirements, Quality Attributes
+- Business Rules → Use Cases / Functional Requirements
+- Glossary Terms → All Requirements
+
+The initial release supports creating, viewing, and navigating the typed links themselves — following them upstream and downstream to trace a requirement across levels; the traceability-matrix view, orphan and missing-link highlighting, and change-impact analysis are post-MVP — see [MVP Scope](#mvp-scope-initial-classroom-deployment). This lets students practice industry-standard traceability and helps instructors quickly evaluate completeness, coverage, and consistency across all requirement artifacts.
+
 ### *Smart Editing and Validation (ReqLint)*
 
 The tool includes ReqLint, a lightweight rule-based validation engine inspired by code linters such as ESLint. ReqLint is non-AI and performs deterministic checks that enforce structure, completeness, and writing standards. Typical checks include:
@@ -291,22 +318,11 @@ A central and shared glossary is integrated into ReqLint to maintain consistent 
 
 The MVP provides deterministic ReqLint validation together with glossary-term suggestion; broader smart-editing auto-suggestion and auto-complete are post-MVP — see [MVP Scope](#mvp-scope-initial-classroom-deployment).
 
-### *Full Requirements Traceability*
-
-The tool will support bidirectional traceability across all major requirement types, enabling students and instructors to see how business goals flow down into user requirements and functional specifications. Users can link:
-
-- Business Requirements → Product Features
-- Product Features → Use Cases (User Requirements)
-- Use Cases → Functional Requirements
-- Functional Requirements → Constraints, Data Requirements, Quality Attributes
-- Business Rules → Use Cases / Functional Requirements
-- Glossary Terms → All Requirements
-
-The initial release supports creating and navigating the typed links themselves (see the Use Cases document, *Artifact Links and Tracing*: UC-LNK-*); the traceability-matrix view, orphan and missing-link highlighting, and change-impact analysis are post-MVP — see [MVP Scope](#mvp-scope-initial-classroom-deployment). This allows students to practice industry-standard traceability and helps instructors quickly evaluate completeness, coverage, and consistency across all requirement artifacts.
-
 ### *AI-Assisted Guidance and Feedback*
 
 Beyond rule-based validation, RAM provides AI assistance through a set of deliberately Socratic assistants whose purpose is educational: they coach students to author high-quality requirements and to communicate with non-technical clients, rather than producing finished requirements. Each assistant behaves according to its instructor-authored assistant instructions — the per-assistant role, persona, and boundaries — and draws on the course section's teaching context (the standards, common student mistakes, and thinking order the course teaches); instructors enable or disable each assistant per course section.
+
+The assistants are grounded in the team's own project material. At the start of a project the client provides pitch materials — typically a slide deck and a short brief — describing the background, stakeholders, problem, users, objectives, desired functionality, possible solutions, prototypes, and a candidate tech stack. Students import these into RAM as **project source material**: the input the team works from. RAM stores the materials, extracts their text, and makes them available as context to the assistants — most directly to the elicitation assistant, which uses them in its gap analysis to help the team prepare client-interview questions. Because the pitch goes stale as the project evolves, later-authored, verified requirements take precedence, and a student can exclude the project source material from an elicitation session entirely. Project source material is a project input, not authored requirement content, and is not itself graded.
 
 The assistants include:
 
@@ -327,7 +343,7 @@ Combined with ReqLint, the assistant layer improves learning outcomes, trains cl
 
 ### *Collaboration and Document Workflow*
 
-Student teams collaborate through document-section-level editing and commenting. The tool supports submission-and-review workflows that allow students to submit drafts, receive instructor feedback, and revise their work iteratively. The initial release coordinates teammates through per-section pessimistic locking and comment threads (UC-COL-add-comment, UC-COL-resolve-comment); real-time collaboration — live presence and concurrent co-editing (UC-COL-collaborative-edit) — is post-MVP, see [MVP Scope](#mvp-scope-initial-classroom-deployment).
+Student teams collaborate through document-section-level editing and commenting. The tool supports submission-and-review workflows that allow students to submit drafts, receive instructor feedback, and revise their work iteratively. The initial release coordinates teammates through per-section pessimistic locking and comment threads; real-time collaboration — live presence and concurrent co-editing — is post-MVP, see [MVP Scope](#mvp-scope-initial-classroom-deployment).
 
 The initial release keeps authorship metadata (the creator/editor and timestamps recorded on every authored item); document version history — checkpointing each save, viewing prior versions, and restoring them — is post-MVP, see [MVP Scope](#mvp-scope-initial-classroom-deployment).
 
@@ -335,17 +351,11 @@ The initial release keeps authorship metadata (the creator/editor and timestamps
 
 Instructors will have access to dashboards summarizing team progress, document completeness, and validation results. Integrated grading tools enable rubric-based evaluation aligned with the selected templates, as well as inline comments and structured feedback. This improves grading consistency and reduces review effort.
 
-**MVP scope:** the initial release provides only the review-and-feedback workflow — an instructor opens a submitted document, leaves inline comments, and either accepts it or returns it for revision (see the Use Cases document, *Review and Submission*: UC-REV-submit-for-review, UC-REV-review-documents, and commenting UC-COL-add-comment / UC-COL-resolve-comment, governed by the business rules in [business-rules.md](business-rules.md)). Progress/completeness dashboards and rubric-based grading are post-MVP — see [MVP Scope](#mvp-scope-initial-classroom-deployment).
-
-### *Project Source Material Import*
-
-At the start of a project the client provides pitch materials — typically a slide deck and a short brief — describing the background, stakeholders, problem, users, objectives, desired functionality, possible solutions, prototypes, and a candidate tech stack. Students import these into RAM as project source material, the input the team works from. RAM stores the materials, extracts their text, and makes them available as context to the AI assistants — most directly to the elicitation assistant, which uses them in its gap analysis to help the team prepare client-interview questions. Because the pitch goes stale as the project evolves, later-authored, verified requirements take precedence over it, and a student can exclude the project source material from an elicitation session entirely. Project source material is a project input, not authored requirement content, and is not itself graded.
+**MVP scope:** the initial release provides only the review-and-feedback workflow — an instructor opens a submitted document, leaves inline comments, and either accepts it or returns it for revision (governed by the business rules in [business-rules.md](business-rules.md)). Progress/completeness dashboards and rubric-based grading are post-MVP — see [MVP Scope](#mvp-scope-initial-classroom-deployment).
 
 ### *Export and Delivery*
 
 Students can export requirement documents to professional-quality PDF, Word (DOCX), or Markdown formats that follow the structure of the chosen template (Markdown prioritizes structure and traceability over visual styling, and supports downstream code generation). Exported documents are suitable for client or stakeholder review in senior design and capstone projects.
-
-**See the Use Cases document for more details.**
 
 ## **MVP Scope (Initial Classroom Deployment)**
 

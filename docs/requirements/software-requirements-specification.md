@@ -69,7 +69,7 @@ The arrows read "is referenced by": the Project Glossary, Vision and Scope, Use 
 - Business Rules: [business-rules.md](business-rules.md)
 - Architectural Design (architecture-of-record): [../design/architectural-design.md](../design/architectural-design.md)
 - User Interface Wireframe/Prototypes: URL (N/A)
-- API Document: [RAM API](https://app.swaggerhub.com/apis/Washingtonwei/RAM/1.0.0)
+- API Document: [API Doc 1](https://app.swaggerhub.com/apis/Washingtonwei/project-pulse/1.0.0), [API Doc 2](https://app.swaggerhub.com/apis/Washingtonwei/RAM/1.0.0)
 
 # **Overall Description**
 
@@ -120,8 +120,6 @@ AS-supported-browser: Users have a supported web browser and a reliable internet
 AS-llm-api-stable: The external LLM service remains available and its API contract stays stable for the integration RAM relies on.
 
 AS-shared-data-current: Project Pulse's course, course section, team, and user data is accurate and current; the RAM environment reads this shared data rather than maintaining its own copy.
-
-DE-shared-foundation: The RAM environment depends on the rest of Project Pulse for authentication, the course/course section/team data model, and the course admin, instructor, and student roles.
 
 DE-llm-service: AI-assisted requirement review depends on the external LLM service; if it is unavailable, the AI features are unavailable while the rest of Project Pulse continues to operate.
 
@@ -185,29 +183,29 @@ These requirements describe system-level functions that support or enable the us
 
 ### *Validation and Consistency Requirements (ReqLint)*
 
-**FR-VAL-engine (Ubiquitous):** The system shall provide a ReqLint validation engine that evaluates a requirement document against the applicable deterministic validation rules and produces a structured list of issues, each classified by severity (ERROR, WARNING, INFO) and tied to the document section or item it concerns. This engine is invoked both on student request (UC-VAL-run-validation) and by the periodic background re-evaluation of FR-VAL-background-recheck.
+**FR-VAL-engine (Ubiquitous):** The system shall provide a ReqLint validation engine that evaluates a requirement document against the applicable deterministic validation rules and produces a structured list of issues, each classified by severity (ERROR, WARNING, INFO) and tied to the document section or item it concerns. This engine is invoked both on student request (UC-VAL-run-validation) and by the periodic background re-evaluation of FR-VAL-background-recheck. _(Supports BO-RAM-requirement-quality, BO-RAM-instructor-workload.)_
 
-**FR-VAL-background-recheck (State-Driven, Optional):** While a student edits a document section, the system shall periodically re-evaluate the document section for ambiguity, missing required fields, or stylistic violations.
+**FR-VAL-background-recheck (State-Driven, Optional):** While a student edits a document section, the system shall periodically re-evaluate the document section for ambiguity, missing required fields, or stylistic violations. _(Supports BO-RAM-requirement-quality.)_
 
-**FR-VAL-unique-ids (Ubiquitous):** The system shall provide unique identifiers for all requirements, document sections, glossary terms, and use cases to support traceability.
+**FR-VAL-unique-ids (Ubiquitous):** The system shall provide unique identifiers for all requirements, document sections, glossary terms, and use cases to support traceability. _(Supports BO-RAM-requirement-quality, BO-RAM-consistency.)_
 
-**FR-VAL-rename-propagation (Event-Driven):** When a glossary term is renamed, the system shall identify and update or flag all references to that term across all documents in the project.
+**FR-VAL-rename-propagation (Event-Driven):** When a glossary term is renamed, the system shall identify and update or flag all references to that term across all documents in the project. _(Supports BO-RAM-requirement-quality, BO-RAM-consistency.)_
 
-**FR-VAL-required-sections (Ubiquitous):** The system shall verify the presence of all mandatory document sections defined in the chosen template.
+**FR-VAL-required-sections (Ubiquitous):** The system shall verify the presence of all mandatory document sections defined in the chosen template. _(Supports BO-RAM-requirement-quality.)_
 
-**FR-VAL-vagueness (Ubiquitous):** The system shall flag ambiguous, unverifiable, or subjective wording based on instructor-defined rules and defaults.
+**FR-VAL-vagueness (Ubiquitous):** The system shall flag ambiguous, unverifiable, or subjective wording based on instructor-defined rules and defaults. _(Supports BO-RAM-requirement-quality.)_
 
 ### *AI/LLM Integration Requirements*
 
 RAM's AI assistance is delivered through Socratic assistants whose primary purpose is educational: to train students to author high-quality requirements rather than to hand them finished text. Where a design choice trades productivity against educational value, educational value governs.
 
-**FR-AI-elicitation-coaching (Event-Driven):** When a student requests elicitation help, the elicitation assistant shall return coaching for the student's own elicitation — candidate questions to put to the client (in plain, non-technical language), suggested follow-ups, and checks that help the student verify the client's answers — grounded in the session-scoped context assembled per SI-llm-context, rather than finished requirement content.
+**FR-AI-elicitation-coaching (Event-Driven):** When a student requests elicitation help, the elicitation assistant shall return coaching for the student's own elicitation — candidate questions to put to the client (in plain, non-technical language), suggested follow-ups, and checks that help the student verify the client's answers — grounded in the session-scoped context assembled per SI-llm-context, rather than finished requirement content. _(Supports BO-RAM-learning-outcomes.)_
 
-**FR-AI-critique (Optional):** Where AI assistance is enabled, the critique assistant shall return its findings (possibly none) for clarity, consistency, completeness, or testability, each accompanied by an instructive rationale.
+**FR-AI-critique (Optional):** Where AI assistance is enabled, the critique assistant shall return its findings (possibly none) for clarity, consistency, completeness, or testability, each accompanied by an instructive rationale. _(Supports BO-RAM-requirement-quality.)_
 
-**FR-AI-no-auto-edit (Ubiquitous):** The system shall not modify student-authored content with assistant-generated text without an explicit confirmation action by the student.
+**FR-AI-no-auto-edit (Ubiquitous):** The system shall not modify student-authored content with assistant-generated text without an explicit confirmation action by the student. _(Supports BO-RAM-learning-outcomes.)_
 
-**FR-AI-tutor-explain (Event-Driven):** When a student requests an explanation for a flagged validation or critique issue, the tutor assistant shall return an explanation describing the rule or weakness involved and a suggested fix.
+**FR-AI-tutor-explain (Event-Driven):** When a student requests an explanation for a flagged validation or critique issue, the tutor assistant shall return an explanation describing the rule or weakness involved and a suggested fix. _(Supports BO-RAM-learning-outcomes.)_
 
 **FR-AI-distinguish-suggestions (Ubiquitous):** The system shall visually distinguish assistant-generated suggestions from student-authored content until the student accepts them.
 
@@ -215,15 +213,15 @@ RAM's AI assistance is delivered through Socratic assistants whose primary purpo
 
 **FR-AI-enablement (State-Driven):** While an instructor has disabled a given assistant for a course section, the system shall make that assistant's corresponding feature unavailable to that course section's students; the drafting assistant shall be disabled by default.
 
-**FR-AI-explicit-acceptance (Event-Driven):** When an assistant proposes concrete content, the system shall apply it only after an explicit, per-item acceptance by the student, and shall not provide an "accept all" action.
+**FR-AI-explicit-acceptance (Event-Driven):** When an assistant proposes concrete content, the system shall apply it only after an explicit, per-item acceptance by the student, and shall not provide an "accept all" action. _(Supports BO-RAM-learning-outcomes.)_
 
-**FR-AI-rationale (Ubiquitous):** The system shall accompany every assistant finding or proposal with an instructive rationale phrased for student learning.
+**FR-AI-rationale (Ubiquitous):** The system shall accompany every assistant finding or proposal with an instructive rationale phrased for student learning. _(Supports BO-RAM-requirement-quality.)_
 
-**FR-AI-client-roleplay (Event-Driven):** When a student starts a practice client interview, the client role-play assistant shall respond in a non-technical client persona and shall not author requirements on the student's behalf.
+**FR-AI-client-roleplay (Event-Driven):** When a student starts a practice client interview, the client role-play assistant shall respond in a non-technical client persona and shall not author requirements on the student's behalf. _(Supports BO-RAM-learning-outcomes.)_
 
 **FR-AI-question-review (Event-Driven):** When a student requests a review of planned client questions, the system shall flag technical jargon and suggest plain-language phrasings, each accompanied by a rationale.
 
-**FR-AI-structuring (Event-Driven):** When a student submits plain-language notes for translation, the structuring assistant shall propose candidate structured requirements, each traceable to its source note and applied only through the acceptance action of FR-AI-explicit-acceptance.
+**FR-AI-structuring (Event-Driven):** When a student submits plain-language notes for translation, the structuring assistant shall propose candidate structured requirements, each traceable to its source note and applied only through the acceptance action of FR-AI-explicit-acceptance. _(Supports BO-RAM-learning-outcomes.)_
 
 **FR-AI-degradation (State-Driven):** While the external LLM service is unavailable, the system shall make AI features unavailable and shall keep the rest of Project Pulse operational.
 
@@ -239,11 +237,11 @@ RAM's AI assistance is delivered through Socratic assistants whose primary purpo
 
 **FR-AI-routing (Event-Driven):** When the project assistant recommends a specialized assistant or an authoring action, the system shall route the student into the corresponding use case and shall honor that assistant's per-course-section enablement.
 
-**FR-AI-drafting (Event-Driven):** When the drafting assistant is enabled and a student requests a draft, the system shall return a structural skeleton or clearly-marked candidate requirements derived from the student's prompt, applied only through the acceptance action of FR-AI-explicit-acceptance.
+**FR-AI-drafting (Event-Driven):** When the drafting assistant is enabled and a student requests a draft, the system shall return a structural skeleton or clearly-marked candidate requirements derived from the student's prompt, applied only through the acceptance action of FR-AI-explicit-acceptance. _(Supports BO-RAM-learning-outcomes.)_
 
-**FR-AI-whole-project-review (Event-Driven):** When a student requests a whole-project review, the critique assistant shall evaluate the team's requirement documents together and return cross-document findings — covering completeness gaps, coverage and traceability holes, inconsistencies, and conflicts across the documents — each accompanied by an instructive rationale, and shall author no requirement content.
+**FR-AI-whole-project-review (Event-Driven):** When a student requests a whole-project review, the critique assistant shall evaluate the team's requirement documents together and return cross-document findings — covering completeness gaps, coverage and traceability holes, inconsistencies, and conflicts across the documents — each accompanied by an instructive rationale, and shall author no requirement content. _(Supports BO-RAM-requirement-quality, BO-RAM-instructor-workload.)_
 
-**FR-AI-review-criteria (Ubiquitous):** The system shall include the course section's cross-document review criteria in the context provided to the critique assistant for a whole-project review, so that the review applies the instructor-configured criteria.
+**FR-AI-review-criteria (Ubiquitous):** The system shall include the course section's cross-document review criteria in the context provided to the critique assistant for a whole-project review, so that the review applies the instructor-configured criteria. _(Supports BO-RAM-instructor-workload.)_
 
 **FR-AI-review-criteria-required (State-Driven):** While a course section's cross-document review criteria are undefined, the system shall make the whole-project review unavailable to that course section's students.
 
@@ -251,19 +249,19 @@ RAM's AI assistance is delivered through Socratic assistants whose primary purpo
 
 The initial release ships fixed, built-in templates, and the enforcement requirements (FR-TPL-enforce-structure, FR-TPL-section-keys) apply to them. Template customization — letting a course admin or instructor author or edit templates (FR-TPL-customize) — is **deferred to a future release and is not part of the MVP scope** (see Vision and Scope, [Template Management](vision-and-scope.md#template-management)). FR-TPL-customize is retained here, with its ID, so the intent is not lost.
 
-**FR-TPL-enforce-structure (Ubiquitous):** The system shall enforce the structure, required document sections, and metadata defined by the active template.
+**FR-TPL-enforce-structure (Ubiquitous):** The system shall enforce the structure, required document sections, and metadata defined by the active template. _(Supports BO-RAM-requirement-quality.)_
 
 **FR-TPL-customize (Deferred — future release):** When an authorized user (a course admin or instructor) updates a template, the system shall apply the updated structure to new documents but shall not retroactively modify existing documents without that user's approval.
 
-**FR-TPL-section-keys (Ubiquitous):** The system shall apply the numbering and section-key scheme defined by the active template to all document sections within a document.
+**FR-TPL-section-keys (Ubiquitous):** The system shall apply the numbering and section-key scheme defined by the active template to all document sections within a document. _(Supports BO-RAM-requirement-quality.)_
 
 ### *Terminology and Glossary Requirements*
 
-**FR-GLO-authoritative-definition (Ubiquitous):** The system shall provide a single authoritative definition for each glossary term within a project.
+**FR-GLO-authoritative-definition (Ubiquitous):** The system shall provide a single authoritative definition for each glossary term within a project. _(Supports BO-RAM-consistency.)_
 
-**FR-GLO-reference-linking (Event-Driven):** When a glossary term is created or updated, the system shall ensure that references in documents link to the term.
+**FR-GLO-reference-linking (Event-Driven):** When a glossary term is created or updated, the system shall ensure that references in documents link to the term. _(Supports BO-RAM-consistency.)_
 
-**FR-GLO-term-suggestion (State-Driven):** While a student is writing or editing text, the system shall suggest existing glossary terms when there is a match.
+**FR-GLO-term-suggestion (State-Driven):** While a student is writing or editing text, the system shall suggest existing glossary terms when there is a match. _(Supports BO-RAM-consistency.)_
 
 ### *Authorship Metadata and Document Versioning Requirements*
 
