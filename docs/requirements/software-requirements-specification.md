@@ -143,7 +143,7 @@ Each **use case is itself a functional requirement**, expressed at a high level:
 
 Not all functional behaviors of Project Pulse are best expressed as use cases. This section captures the system-driven, event-driven, global, or background behaviors that **no single use case owns**, written as structured "shall" statements following principles inspired by the EARS (Easy Approach to Requirements Syntax) format.
 
-**What belongs here — and what does not.** A behavior is specified here only when it cannot be stated naturally inside one use case (or a small, cohesive set of them) — that is, when it is either a **horizontal invariant** holding across many otherwise-unrelated use cases (security and authorization `FR-SEC-*`; authorship metadata `FR-HIS-authorship-metadata`; routine-change notification suppression `FR-NOT-suppress-routine`; glossary term suggestion `FR-GLO-term-suggestion`) or a **background or scheduled** behavior with no user-initiated trigger to host it (the autosave cadence `FR-SAVE-autosave-active`; background re-validation `FR-VAL-background-recheck`; the weekly submission reminder `FR-NOT-weekly-reminder`). The test when adding one is the converse: if there is a use case whose system step, postcondition, or Associated Information already states the behavior — or naturally could — it belongs in that use case, not here. That is why review-workflow notifications are specified in UC-REV-submit-for-review / UC-REV-review-documents (steps + Notification fields, delivered per CI-review-emails) and glossary terminology linking in the UC-GLO-\* term use cases (steps + Effect-of-change), rather than as FRs in this section. These requirements span both capability areas: `FR-SEC-*` is system-wide, while autosave, validation, AI orchestration, templates, terminology invariants, and authorship metadata are the cross-cutting subsystems of the RAM environment.
+**What belongs here — and what does not.** A behavior is specified here only when it cannot be stated naturally inside one use case (or a small, cohesive set of them) — that is, when it is either a **horizontal invariant** holding across many otherwise-unrelated use cases (security and authorization `FR-SEC-*`; authorship metadata `FR-HIS-authorship-metadata`; routine-change notification suppression `FR-NOT-suppress-routine`; glossary term suggestion `FR-GLO-term-suggestion`) or a **background or scheduled** behavior with no user-initiated trigger to host it (the autosave cadence `FR-SAVE-autosave-active`; background re-validation `FR-VAL-background-recheck`; the weekly submission reminder `FR-NOT-weekly-reminder`). The test when adding one is the converse: if there is a use case whose system step, postcondition, or Associated Information already states the behavior — or naturally could — it belongs in that use case, not here. These requirements span both capability areas: `FR-SEC-*` is system-wide, while autosave, validation, AI orchestration, templates, terminology invariants, and authorship metadata are the cross-cutting subsystems of the RAM environment.
 
 ### *Autosave and Persistence Requirements*
 
@@ -185,8 +185,6 @@ The initial release ships fixed, built-in templates, and the enforcement require
 
 ### *Terminology and Glossary Requirements*
 
-Terminology linking — linking occurrences of a glossary term across the team's documents to its definition when the term is created, and keeping those references consistent when it is renamed or its definition changes — is specified by the glossary use cases themselves (UC-GLO-create-term, UC-GLO-edit-term-definition, UC-GLO-rename-term), via their steps and Effect-of-change Associated Information, and is not restated here. This section holds only the cross-cutting term-suggestion behavior, which fires while a student edits any authoring destination and so has no single owning use case.
-
 **FR-GLO-term-suggestion (State-Driven):** While a student is writing or editing text, the system shall suggest existing glossary terms when there is a match. _(Supports BO-RAM-consistency.)_
 
 ### *Authorship Metadata and Document Versioning Requirements*
@@ -205,13 +203,11 @@ Authorship metadata (FR-HIS-authorship-metadata) is in scope for the initial rel
 
 **FR-SEC-authentication (Ubiquitous):** The system shall authenticate users via its JWT-based authentication mechanism before granting access to protected resources.
 
-**FR-SEC-authorization (Ubiquitous):** The system shall enforce role-based access control (student, instructor, course admin).
+**FR-SEC-authorization (Ubiquitous):** The system shall enforce role-based access control (student, instructor, course admin) and shall restrict each student to her own team's requirements graph, documents, and project source material, per BR-team-scoped-access.
 
 **FR-SEC-deny-unauthorized (Event-Driven):** When an unauthorized user attempts to access a protected resource, the system shall deny access and provide an appropriate error message.
 
 ### *Notification Requirements*
-
-Review-workflow notifications — notifying the instructor on submission and the team on the review outcome (returned for revision or accepted) — are specified by the review use cases themselves (UC-REV-submit-for-review, UC-REV-review-documents), via their steps, postconditions, and Notification Associated Information, and are not restated here; their email delivery is specified by CI-review-emails. This section holds only the notification behaviors with no single owning use case: the global suppression of routine-change notifications and the scheduled weekly submission reminder.
 
 **FR-NOT-suppress-routine (Ubiquitous):** The system shall not raise persistent (in-app) notifications for routine authoring changes (creating, editing, or deleting glossary terms, requirement artifacts, artifact links, document sections, use cases, and comments), and shall suppress their email per CI-no-routine-email; such changes are propagated to connected collaborators in real time per the real-time collaboration model (UC-COL-collaborative-edit) instead.
 

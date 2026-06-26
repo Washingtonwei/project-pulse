@@ -2152,13 +2152,19 @@ Report generating algorithm: N/A
 10. Use case ends.
 
 **Extensions:**
+- **1a. The previous week is not one of the course section's active weeks** (e.g., the current week is the section's first active week, whose preceding week is inactive):
+  - 1a1. The system does not accept a peer evaluation for that week and informs the student that peer evaluations may be submitted only for the course section's active weeks (BR-active-weeks).
+  - 1a2. Use case ends.
+- **1b. The week to be evaluated is not the previous week, or its one-week submission window has closed:**
+  - 1b1. The system does not accept the peer evaluation and informs the student that a peer evaluation may be submitted only for the previous week, within its one-week window, and that a missed evaluation cannot be made up (BR-evaluation-submission-window).
+  - 1b2. Use case ends.
 - **4a. Input validation rule violation:**
   - 4a1. The system alerts the student that an input validation rule is violated and displays the nature and location of the error.
   - 4a2. The student corrects the mistake and returns to step 4 of the normal flow.
 
 **Priority:** High
 **Frequency of Use:** Approximately 35-40 users, 1 usage per week.
-**Business Rules:** BR-evaluation-editable-until-close, BR-evaluation-submission-window, BR-evaluation-private-comment
+**Business Rules:** BR-active-weeks, BR-evaluation-editable-until-close, BR-evaluation-submission-window, BR-evaluation-private-comment
 
 **Associated Information:**
 
@@ -2891,7 +2897,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 **Priority:** High
 **Frequency of Use:** Very frequent: multiple times per student per working session; peaks near deadlines.
-**Business Rules:** BR-team-scoped-access (team-scoped access control); BR-edit-lock-required (editing a document section requires an exclusive lock).
+**Business Rules:** BR-team-scoped-access (team-scoped access control); BR-edit-lock-required (editing a document section requires an exclusive lock); BR-lock-expiry (an edit lock expires after a configurable interval and is released automatically).
 **Associated Information:**
 
 Details:
@@ -3114,7 +3120,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 **Priority:** High
 **Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
-**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-edit-lock-required (editing a use case requires an exclusive lock).
+**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-edit-lock-required (editing a use case requires an exclusive lock); BR-lock-expiry (an edit lock expires after a configurable interval and is released automatically).
 **Associated Information:**
 
 Details:
