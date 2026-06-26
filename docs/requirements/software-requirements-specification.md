@@ -141,29 +141,21 @@ Each **use case is itself a functional requirement**, expressed at a high level:
 
 ## **Non-Use Case Functional Requirements**
 
-Not all functional behaviors of Project Pulse are best expressed as use cases. This section captures system-driven, event-driven, global, or background behaviors using structured "shall" statements following principles inspired by the EARS (Easy Approach to Requirements Syntax) format.
+Not all functional behaviors of Project Pulse are best expressed as use cases. This section captures the system-driven, event-driven, global, or background behaviors that **no single use case owns**, written as structured "shall" statements following principles inspired by the EARS (Easy Approach to Requirements Syntax) format.
 
-These requirements describe system-level functions that support or enable the use cases but are not user-initiated workflows. They span both capability areas: security and authorization (`FR-SEC-*`) and notifications (`FR-NOT-*`) are system-wide, while autosave, validation, AI orchestration, templates, terminology invariants, and authorship metadata are the cross-cutting subsystems of the RAM environment. (Section locking is specified by BR-edit-lock-required / BR-lock-expiry and the editing use cases' own steps; real-time collaboration by UC-COL-collaborative-edit and the PER-collab-latency / ROB-no-overwrite targets; and document export and project-source import by their use cases and the External Interface Requirements — so none carries separate non-use-case FRs.)
+**What belongs here — and what does not.** A behavior is specified here only when it cannot be stated naturally inside one use case (or a small, cohesive set of them) — that is, when it is either a **horizontal invariant** holding across many otherwise-unrelated use cases (security and authorization `FR-SEC-*`; authorship metadata `FR-HIS-authorship-metadata`; routine-change notification suppression `FR-NOT-suppress-routine`; glossary term suggestion `FR-GLO-term-suggestion`) or a **background or scheduled** behavior with no user-initiated trigger to host it (the autosave cadence `FR-SAVE-autosave-active`; background re-validation `FR-VAL-background-recheck`; the weekly submission reminder `FR-NOT-weekly-reminder`). The test when adding one is the converse: if there is a use case whose system step, postcondition, or Associated Information already states the behavior — or naturally could — it belongs in that use case, not here. That is why review-workflow notifications are specified in UC-REV-submit-for-review / UC-REV-review-documents (steps + Notification fields, delivered per CI-review-emails) and glossary terminology linking in the UC-GLO-\* term use cases (steps + Effect-of-change), rather than as FRs in this section. These requirements span both capability areas: `FR-SEC-*` is system-wide, while autosave, validation, AI orchestration, templates, terminology invariants, and authorship metadata are the cross-cutting subsystems of the RAM environment.
 
 ### *Autosave and Persistence Requirements*
 
-**FR-SAVE-autosave-active (State-Driven):** While a student is actively editing an authoring destination, the system shall automatically save the authoring destination's content at the autosave cadence specified in PER-autosave-cadence. (Immediate persistence when the student navigates away is part of the editing use cases — UC-DOC-edit-document, UC-DOC-edit-use-case; the edit-loss and autosave-retry robustness bounds are ROB-edit-loss-bound and ROB-autosave-retry.)
-
-### *Real-Time Collaboration Requirements*
-
-*Post-MVP, and specified by its use case rather than by separate FRs.* Real-time collaboration — live collaborator presence, join/disconnect notification, and live broadcast of saved changes and lock state — is deferred beyond the initial release. Its behavior is the flow of UC-COL-collaborative-edit: presence and lock-state display, join and disconnect notification, and live broadcast are its system steps, and its POST-2 is the no-overwrite guarantee — so it carries no separate non-use-case FRs (the same complement-don't-duplicate rule applied to section locking, export, and import). The timing and robustness targets are PER-collab-latency and ROB-no-overwrite, and the no-overwrite invariant is BR-collab-no-overwrite. The MVP collaboration model is comment threads (UC-COL-add-comment, UC-COL-resolve-comment) over pessimistic section-level locking (BR-edit-lock-required, BR-lock-expiry; UC-DOC-edit-document, UC-DOC-edit-use-case); concurrent authoring is serialized by locks rather than merged live.
+**FR-SAVE-autosave-active (State-Driven):** While a student is actively editing an authoring destination, the system shall automatically save the authoring destination's content at the autosave cadence specified in PER-autosave-cadence.
 
 ### *Validation and Consistency Requirements (ReqLint)*
-
-The on-demand ReqLint behavior — the engine that evaluates a requirement document against the applicable deterministic validation rules and returns a structured list of issues, each classified by severity (ERROR, WARNING, INFO) and tied to the document section or item it concerns, including the specific checks it applies (required document sections present, ambiguous/unverifiable/subjective wording flagged, naming and "shall"-structure rules) — is specified by UC-VAL-run-validation, which is itself a high-level functional requirement, and is not restated here. Unique identifiers for requirements, document sections, glossary terms, and use cases are assigned and kept unique by the create use cases (UC-ART-create-artifact, UC-DOC-create-use-case) under BR-artifact-key-unique and DI-artifact-key-assignment, not by a separate validation requirement. This section therefore holds only the one validation behavior that is **not** a user-initiated workflow: the background re-evaluation that runs automatically while a student edits.
 
 **FR-VAL-background-recheck (State-Driven, Optional):** While a student edits a document section, the system shall periodically re-evaluate that document section using the same ReqLint checks that UC-VAL-run-validation runs on demand — flagging missing required fields, ambiguous wording, and stylistic violations — so that issues surface during authoring rather than only on an explicit validation run. _(Supports BO-RAM-requirement-quality, BO-RAM-instructor-workload, BO-RAM-consistency.)_
 
 ### *AI/LLM Integration Requirements*
 
 RAM's AI assistance is delivered through Socratic assistants whose primary purpose is educational: to train students to author high-quality requirements rather than to hand them finished text. Where a design choice trades productivity against educational value, educational value governs.
-
-Each assistant's per-request behavior is specified by its own use case (the `UC-AI-*` family — elicitation, client role-play, structuring, critique, tutor, drafting, project assistant, whole-project review) and is not restated here; this section holds only the cross-cutting invariants that span the assistants — the Socratic guardrails (no auto-edit, distinguish suggestions, instructive rationale; explicit per-item acceptance, the "no accept all" rule, is governed by BR-explicit-acceptance and specified by UC-AI-review-proposal), enablement, graceful degradation, and the per-request context the proxy assembles (teaching context, assistant instructions, project source material; see SI-llm-context).
 
 **FR-AI-no-auto-edit (Ubiquitous):** The system shall not modify student-authored content with assistant-generated text without an explicit confirmation action by the student. _(Supports BO-RAM-learning-outcomes.)_
 
@@ -193,7 +185,7 @@ The initial release ships fixed, built-in templates, and the enforcement require
 
 ### *Terminology and Glossary Requirements*
 
-**FR-GLO-reference-linking (Event-Driven):** When a glossary term is created or updated, the system shall ensure that references in documents link to the term. _(Supports BO-RAM-consistency.)_
+Terminology linking — linking occurrences of a glossary term across the team's documents to its definition when the term is created, and keeping those references consistent when it is renamed or its definition changes — is specified by the glossary use cases themselves (UC-GLO-create-term, UC-GLO-edit-term-definition, UC-GLO-rename-term), via their steps and Effect-of-change Associated Information, and is not restated here. This section holds only the cross-cutting term-suggestion behavior, which fires while a student edits any authoring destination and so has no single owning use case.
 
 **FR-GLO-term-suggestion (State-Driven):** While a student is writing or editing text, the system shall suggest existing glossary terms when there is a match. _(Supports BO-RAM-consistency.)_
 
@@ -219,7 +211,7 @@ Authorship metadata (FR-HIS-authorship-metadata) is in scope for the initial rel
 
 ### *Notification Requirements*
 
-**FR-NOT-review-workflow (Event-Driven):** When a requirement document is submitted for review, returned for revision, or accepted, the system shall raise a review-workflow notification to the designated recipients, delivered as specified by CI-review-emails. _(Supports UC-REV-submit-for-review, UC-REV-review-documents.)_
+Review-workflow notifications — notifying the instructor on submission and the team on the review outcome (returned for revision or accepted) — are specified by the review use cases themselves (UC-REV-submit-for-review, UC-REV-review-documents), via their steps, postconditions, and Notification Associated Information, and are not restated here; their email delivery is specified by CI-review-emails. This section holds only the notification behaviors with no single owning use case: the global suppression of routine-change notifications and the scheduled weekly submission reminder.
 
 **FR-NOT-suppress-routine (Ubiquitous):** The system shall not raise persistent (in-app) notifications for routine authoring changes (creating, editing, or deleting glossary terms, requirement artifacts, artifact links, document sections, use cases, and comments), and shall suppress their email per CI-no-routine-email; such changes are propagated to connected collaborators in real time per the real-time collaboration model (UC-COL-collaborative-edit) instead.
 
@@ -708,7 +700,7 @@ No hardware interfaces have been identified.
 
 ## **Communications Interfaces**
 
-CI-review-emails: RAM shall deliver each review-workflow notification raised by FR-NOT-review-workflow as email through Project Pulse's Gmail SMTP integration (per CO-gmail-smtp, DE-gmail-smtp; supports UC-REV-submit-for-review, UC-REV-review-documents).
+CI-review-emails: RAM shall deliver each review-workflow notification raised by UC-REV-submit-for-review and UC-REV-review-documents as email through Project Pulse's Gmail SMTP integration (per CO-gmail-smtp, DE-gmail-smtp).
 
 CI-no-routine-email: RAM shall send no email for the routine authoring changes suppressed by FR-NOT-suppress-routine.
 
@@ -732,7 +724,7 @@ USE-first-session-success: A new student shall be able to open a document sectio
 
 ## **Performance**
 
-PER-collab-latency: While up to 100 users are editing concurrently, RAM shall propagate collaborator presence and lock-state events (join, disconnect, lock acquire/release) within 1 second for 95% of events. _(Post-MVP — depends on the deferred real-time collaboration; see the Real-Time Collaboration Requirements section.)_
+PER-collab-latency: While up to 100 users are editing concurrently, RAM shall propagate collaborator presence and lock-state events (join, disconnect, lock acquire/release) within 1 second for 95% of events. _(Post-MVP — depends on the deferred real-time collaboration; see UC-COL-collaborative-edit.)_
 
 PER-autosave-cadence: RAM shall autosave an actively edited authoring destination at least every 10 seconds and persist its latest content immediately when the student navigates away. (Realized by FR-SAVE-autosave-active and the navigate-away extension of UC-DOC-edit-document / UC-DOC-edit-use-case.)
 

@@ -2594,6 +2594,7 @@ Details:
 **Postconditions:**
 - POST-1. The new glossary term is stored in the system.
 - POST-2. The system records authorship metadata (e.g., last-modified timestamp and editor identity).
+- POST-3. Occurrences of the term across the team's requirement documents are linked to the new glossary term's definition.
 
 **Main Success Scenario:**
 1. The student indicates to create a new glossary term.
@@ -2623,12 +2624,14 @@ Details:
 
 | Property name | Data type | Editability | Validation rule | Effect of change | Reference to glossary |
 | ---- | ---- | ---- | ---- | ---- | ---- |
-| Term | String | Yes |  |  |  |
+| Term | String | Yes |  | Occurrences of this term across the team's requirement documents are linked to the new glossary term's definition. |  |
 | Definition | String | Yes |  |  |  |
 
 *Column "Effect of change" shows the consequences of modification other than saving.*
 
 Duplication detection rules: glossary term must be unique
+
+Terminology linking: on creation, the system links occurrences of the new term across the team's requirement documents to its glossary definition, so the term is navigable from where it is used (supports BO-RAM-consistency).
 
 Notification: None — routine authoring changes are not notified (FR-NOT-suppress-routine); saved changes propagate to connected teammates in real time (UC-COL-collaborative-edit).
 
@@ -2656,6 +2659,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Postconditions:**
 - POST-1. Changes made to the glossary term definition are stored in the system.
 - POST-2. The system records authorship metadata (e.g., last-modified timestamp and editor identity).
+- POST-3. Existing references to the term across the team's requirement documents remain linked and resolve to the updated definition.
 
 **Main Success Scenario:**
 1. The student indicates to change the definition of an existing glossary term.
@@ -2683,7 +2687,7 @@ Details:
 
 | Property name | Data type | Editability | Validation rule | Effect of change | Warning | Reference to glossary |
 | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
-| Definition | String | Yes |  |  |  |  |
+| Definition | String | Yes |  | The updated definition is resolved at every linked reference to the term across the team's requirement documents; the term name and its existing links are unchanged. |  |  |
 
 *Column "Effect of change" shows consequences of modification other than saving.*
 
@@ -3847,7 +3851,7 @@ Details (Examples of Document-Level Checks):
 
 ### **UC-COL-collaborative-edit: The Student collaboratively edits a requirement document**
 
-*Post-MVP — this real-time collaborative-editing session is deferred beyond the initial release (see the SRS Real-Time Collaboration Requirements). In the MVP, teammates author the same document through per-section locking (UC-DOC-edit-document, UC-DOC-edit-use-case) and coordinate via comment threads (UC-COL-add-comment, UC-COL-resolve-comment).*
+*Post-MVP — this real-time collaborative-editing session is deferred beyond the initial release. In the MVP, teammates author the same document through per-section locking (UC-DOC-edit-document, UC-DOC-edit-use-case) and coordinate via comment threads (UC-COL-add-comment, UC-COL-resolve-comment).*
 
 **UC ID and Name:** UC-COL-collaborative-edit: Collaboratively edit a requirement document
 **Status:** Deferred — post-MVP
@@ -4026,7 +4030,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Business Rules:** BR-review-lock — Once a document is locked for review, students may no longer edit it until the instructor returns it for revision (see UC-REV-review-documents).
 **Associated Information:**
 
-Notification: Notify the course section's instructor on submission (FR-NOT-review-workflow; delivered per CI-review-emails).
+Notification: Notify the course section's instructor on submission, delivered as email per CI-review-emails.
 
 **Related Use Cases:** UC-REV-review-documents: The instructor reviews a team's requirement documents.
 **Assumptions:**
@@ -4071,7 +4075,7 @@ Notification: Notify the course section's instructor on submission (FR-NOT-revie
 **Business Rules:** BR-review-authority — Only an instructor assigned to the course section may review, accept, or return a submitted document. Returning a document for revision unlocks it for student editing.
 **Associated Information:**
 
-Notification: Notify the team's students of the review outcome — returned for revision or accepted (FR-NOT-review-workflow; delivered per CI-review-emails).
+Notification: Notify the team's students of the review outcome — returned for revision or accepted, delivered as email per CI-review-emails.
 
 **Related Use Cases:** UC-COL-add-comment: Comment on a requirement document; UC-REV-submit-for-review: The student submits requirements for review.
 **Assumptions:**
