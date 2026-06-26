@@ -114,13 +114,13 @@ A feature begins as a use case. The loop:
 4. The work is recorded back into `docs/traceability.md` (`/design` marks the row `📐 Designed`; `/implement` flips it to the built state).
 
 Treat the use case as the contract:
-- The **use case** gives actors, trigger, main success scenario, extensions, and pre/postconditions — *what to build and the flows to test*. Its system-subject steps plus their **Associated Information** are themselves the detailed functional requirement (a use case is a high-level FR); the cross-cutting **non-use-case FRs** (`FR-LOCK-*`, `FR-SAVE-*`, …) it cites are the additional atomic "shall" statements it must honor. Together they are the *acceptance criteria* — don't restate the use-case flow as a new FR, and don't invent missing detail silently.
+- The **use case** gives actors, trigger, main success scenario, extensions, and pre/postconditions — *what to build and the flows to test*. Its system-subject steps plus their **Associated Information** are themselves the detailed functional requirement (a use case is a high-level FR); the cross-cutting **non-use-case FRs** (`FR-SAVE-*`, `FR-VAL-*`, …) it cites are the additional atomic "shall" statements it must honor. Together they are the *acceptance criteria* — don't restate the use-case flow as a new FR, and don't invent missing detail silently.
 - **Citation is at the use-case level.** Traceability is one row per UC and tests are tagged to the UC — there is no finer (per-step) handle, so the UC's tests must cover the whole main flow **and every extension**, and a use case must stay small enough that "UC-X passes" is a meaningful statement. The extensions carry the edge-case requirements.
 - The **glossary** fixes vocabulary — use the defined term in code identifiers and UI text, never a synonym.
 - **The spec is authoritative but not infallible.** When a step is ambiguous, an assumption breaks against the existing code, or requirements contradict — ask a clarifying question or challenge the spec; don't silently comply or silently invent. Fix the spec and re-derive rather than diverging quietly in code. `/design` and `/implement` build this in.
 
 Cross-cutting behavior is already specified, and some is already built — reuse it, don't reinvent per feature:
-- **Locking** (`FR-LOCK-*`): section-level pessimistic locking already exists in `ram/document/`. See UC-DOC-edit-document / UC-DOC-edit-use-case.
+- **Locking** (`BR-edit-lock-required`, `BR-lock-expiry`): section-level pessimistic locking already exists in `ram/document/`; its lock lifecycle is specified by the steps of UC-DOC-edit-document / UC-DOC-edit-use-case.
 - **Collaboration** (`FR-COL-*`): comment threads exist in `ram/collaboration/`; real-time presence/broadcast is specified in UC-COL-collaborative-edit (not yet built).
 - **Validation** (`FR-VAL-*`, ReqLint): deterministic structural checks. See UC-VAL-run-validation.
 

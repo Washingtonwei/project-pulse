@@ -1,13 +1,18 @@
 # Traceability Matrix
 
-The map from **spec → code**. Each use case in `requirements/use-cases.md` gets one row linking it to the cross-cutting functional requirements it depends on and the actual frontend/backend/test artifacts that implement it. This is how Claude (and you) find the right code from a requirement, and — via the **Status** column — see at a glance **which use cases are implemented and which are not**. Note: in this project a **use case is itself a (high-level) functional requirement**, and its "The system …" steps + Associated Information are its detailed functional spec (the SRS's Use Cases section); the SRS's Non-Use Case Functional Requirements "shall" statements capture only the system-level behaviors.
+The whole-project map from **spec → code**. These two matrices are the *instance* of a broader **bidirectional traceability graph** — business objective → feature → use case / FR → design → code → tests, with business rules and quality attributes as cross-cutting layers — described as one picture in [methodology.md, *The traceability model*](methodology.md#the-traceability-model). This file is where that model is recorded and verified, on two axes:
+
+- **[Functional traceability](#functional-traceability-matrix)** — one row per use case (`UC-<AREA>-<slug>`), linking it to the cross-cutting functional requirements it depends on and the actual frontend/backend/test artifacts that implement it. This is how Claude (and you) find the right code from a requirement, and — via the **Status** column — see at a glance **which use cases are implemented and which are not**. Its companion, the **[non-use-case FR matrix](#non-use-case-fr-traceability)**, gives each cross-cutting `FR-<AREA>-*` its own realization row — because a non-use-case FR is a *functional* requirement node in its own right (sibling of the use case), not just a dependency annotation on UC rows.
+- **[Non-functional traceability](#non-functional-traceability-matrix)** — one row per quality attribute (`PER-*`, `SEC-*`, `ROB-*`, …), mapping it to the architecture-of-record's quality scenario (`QS-n`) that operationalizes it and the test that verifies it. Quality attributes trace through scenarios and architecture decisions, **not** through use cases, so they live in their own matrix rather than as UC rows.
+
+Together these make this file the single place to ask "is requirement X traced to code and verified?" for **both** functional and non-functional requirements. Note: in this project a **use case is itself a (high-level) functional requirement**, and its "The system …" steps + Associated Information are its detailed functional spec (the SRS's Use Cases section); the SRS's Non-Use Case Functional Requirements "shall" statements capture only the system-level behaviors. The `QS-n` scenario *definitions* (stimulus/response/measure) are owned by the [architecture-of-record](design/architectural-design.md#quality-requirements) and cited here by ID; this file owns the **verification map** (which test proves each scenario, and its state).
 
 > `/design` sets a use case's row to `📐 Designed` and fills the **Design** column with the area's design-of-record when it is written; `/implement` fills the code columns and flips the status at the end of its run (Phase 5).
 
 ## How to use it
 
 - **One row per use case**, in `UC-<AREA>-<slug>` order, mirroring `requirements/use-cases.md`.
-- **FR IDs** — the SRS's non-use-case, system-level functional requirements this use case **depends on / builds upon** (e.g. locking, autosave, validation, real-time collaboration, export, AI). The use case's own "The system …" steps are its primary acceptance criteria; this column points to the reusable cross-cutting subsystems behind it. `—` means the use case is self-contained (its steps are the whole spec). The most universal behaviors — authorship metadata (`FR-HIS-authorship-metadata`) and RBAC (`FR-SEC-*`) — apply to nearly every row and are omitted here to reduce noise.
+- **FR IDs** — the SRS's non-use-case, system-level functional requirements this use case **depends on / builds upon** (e.g. autosave, validation, real-time collaboration, AI), and, where relevant, the External Interface Requirements (`SI-*`) that carry the use case's interface detail (export formats/fidelity, import allowlist/extraction). The use case's own "The system …" steps are its primary acceptance criteria; this column points to the reusable cross-cutting subsystems behind it. `—` means the use case is self-contained (its steps are the whole spec). The most universal behaviors — authorship metadata (`FR-HIS-authorship-metadata`) and RBAC (`FR-SEC-*`) — apply to nearly every row and are omitted here to reduce noise. Section locking is part of the editing use cases' own steps (governed by `BR-edit-lock-required` / `BR-lock-expiry`), not a separate FR.
 - **Design** — the area's design-of-record (`design/<area>.md`, optionally anchored to the use case's subsection) once `/design` has written it; `—` until then. A single area doc covers every use case in its area, so rows in the same area cite the same file.
 - **Frontend / Backend / Tests** — concrete artifacts (`file_path` or component/class names) once built; `—` until then.
 - **Status** — implementation state, from the legend below.
@@ -28,26 +33,28 @@ The map from **spec → code**. Each use case in `requirements/use-cases.md` get
 
 `requirements/vision-and-scope.md` lists product **features** (stakeholder-visible capabilities); `requirements/use-cases.md` groups behavioral specs into **use case areas** (`UC-<AREA>-*`). The relationship is many-to-many — one feature usually decomposes into use cases across several areas, and one area can serve more than one feature. This map keeps them aligned without making `vision-and-scope.md` cite UC IDs directly. See [methodology.md](methodology.md), *Features and use case areas — different views, not different fragments*, for why the two are not made 1:1.
 
-The first column lists the features as they appear in `vision-and-scope.md`; the second names every UC area whose use cases realize that feature, with the area that owns the primary surface listed first.
+The first column lists the features as they appear in `vision-and-scope.md`; the **BOs** column records each feature's **business objectives**; and the last column names every UC area whose use cases realize that feature, with the area that owns the primary surface listed first.
 
-| Feature | UC areas |
-|---|---|
-| Administration and Course Management | SEC, TEA, STU, INS, ACC |
-| Rubric Management | RUB |
-| Weekly Activity Reports | WAR |
-| Peer Evaluations | EVA |
-| Template Management | TPL |
-| Glossary and Terminology Consistency | GLO (terms also drawn on by VAL, LNK, AI) |
-| Document and Use Case Authoring | DOC |
-| Graph-First Requirements Model | ART (with LNK for typed edges, GLO for safe rename of terms) |
-| Full Requirements Traceability | LNK |
-| Smart Editing and Validation (ReqLint) | VAL |
-| AI-Assisted Guidance and Feedback | CFG (per-section setup), AI (assistants, incl. project-source-material import) |
-| Collaboration and Document Workflow | COL, REV |
-| Instructor Dashboard, Feedback, and Grading | REV |
-| Export and Delivery | EXP |
+The **BOs** column is the coarse, vision-level `BO → feature` edge — *why does this capability exist?* — and is deliberately **distinct from** the fine, realization-level `BO → use case / FR` edge carried by the **Supports BOs** column in the functional matrix (a use case *advances* an objective; a feature *exists to serve* it). They are two edges of the same `BO → feature → use case` chain, so a feature may name an objective that **none of its individual UC rows carry** — e.g. `BO-PERF-submission-rate` / `BO-PERF-faster-completion`, realized through the cross-cutting `FR-NOT-weekly-reminder` rather than any single use case. This column is a vision aid, **not** a coverage realizer: `/spec-build`'s forward BO check still reads the UC-level `Supports BOs` column and the SRS's `_(Supports BO-…)_` FR annotations, never this one. Enabling/substrate features that serve no measurable objective directly show `—`; `BO-RAM-research` appears in no row, being the platform-level emergent objective with no single-feature realizer.
 
-## Matrix
+| Feature | BOs | UC areas |
+|---|---|---|
+| Administration and Course Management | — (enabling/substrate) | SEC, TEA, STU, INS, ACC |
+| Rubric Management | — (enabling; feeds peer-evaluation grading) | RUB |
+| Weekly Activity Reports | BO-PERF-instructor-workload, BO-PERF-submission-rate, BO-PERF-faster-completion | WAR |
+| Peer Evaluations | BO-PERF-faster-grading, BO-PERF-instructor-workload, BO-PERF-submission-rate, BO-PERF-faster-completion | EVA |
+| Template Management | BO-RAM-requirement-quality | TPL |
+| Glossary and Terminology Consistency | BO-RAM-consistency | GLO (terms also drawn on by VAL, LNK, AI) |
+| Document and Use Case Authoring | BO-RAM-learning-outcomes | DOC |
+| Graph-First Requirements Model | BO-RAM-traceability, BO-RAM-navigation | ART (with LNK for typed edges, GLO for safe rename of terms) |
+| Full Requirements Traceability | BO-RAM-traceability, BO-RAM-navigation | LNK |
+| Smart Editing and Validation (ReqLint) | BO-RAM-requirement-quality, BO-RAM-instructor-workload, BO-RAM-consistency | VAL |
+| AI-Assisted Guidance and Feedback | BO-RAM-learning-outcomes, BO-RAM-requirement-quality, BO-RAM-instructor-workload | CFG (per-section setup), AI (assistants, incl. project-source-material import) |
+| Collaboration and Document Workflow | BO-RAM-instructor-workload | COL, REV |
+| Instructor Dashboard, Feedback, and Grading | BO-RAM-instructor-workload | REV |
+| Export and Delivery | — (delivery; no measurable objective directly) | EXP |
+
+## Functional traceability matrix
 
 > Mapped against the repository on 2026-06-20. `Frontend` cites the Vue page(s) + `apis/ram` call(s); `Backend` cites the controller (+ key method) and supporting service/entity; `Tests` cites the backend test class + methods (`—` = none yet). Frontend modules are under `frontend/src/` (`pages/ram/*.vue`, `apis/ram/`); backend modules under `backend/src/main/java/team/projectpulse/ram/`; tests under `backend/src/test/java/team/projectpulse/ram/`. No frontend automated tests exist for RAM yet. Note: the glossary endpoints (`GlossaryController`) and the requirement-artifact delete endpoint currently have **no** backend tests — see the `—` cells.
 
@@ -86,7 +93,7 @@ The first column lists the features as they appear in `vision-and-scope.md`; the
 | UC-STU-delete-student | The Course Admin deletes a student | ✅ Implemented | — | — | — | `Students.vue` → `apis/student` `deleteStudent` | `StudentController.deleteStudent → StudentService.deleteStudent` / `Student` | `StudentServiceTest.testDeleteStudent`; `StudentIntegrationTest.testAdminDeletesStudent`, `testStudentDeletesAnotherStudent` |
 | UC-STU-deactivate-student | The Course Admin/Instructor deactivates a student | 🟡 In progress | — | — | — | — (no dedicated control; via student edit) → `apis/student` `updateStudent` | `StudentController.updateStudent → StudentService.updateStudent` (`enabled` flag; no dedicated deactivate endpoint) / `Student` | — (no targeted deactivate test; only the generic `updateStudent` path) |
 | UC-STU-reactivate-student | The Course Admin/Instructor reactivates a student | 🟡 In progress | — | — | — | — (no dedicated control; via student edit) → `apis/student` `updateStudent` | `StudentController.updateStudent → StudentService.updateStudent` (`enabled` flag; no dedicated reactivate endpoint) / `Student` | — (no targeted reactivate test; only the generic `updateStudent` path) |
-| UC-INS-invite-instructors | The Course Admin invites instructors to register an account | ✅ Implemented | — | — | — | `InviteUsersForm.vue` → `apis/section` `inviteOrAddInstructors` | `SectionController.inviteOrAddInstructors → UserInvitationService.sendEmailInvitations` / `UserInvitation` | — (no test exercises the `invite-or-add` path) |
+| UC-INS-invite-instructors | The Course Admin invites instructors to register an account | 🔎 Needs verification | — | — | — | `InviteUsersForm.vue` → `apis/section` `inviteOrAddInstructors` | `SectionController.inviteOrAddInstructors → UserInvitationService.sendEmailInvitations` / `UserInvitation` | — (no test exercises the `invite-or-add` path) |
 | UC-INS-assign-instructors | The Course Admin assigns instructors to teams | ✅ Implemented | — | — | — | `Sections.vue` → `apis/team` `assignInstructorToTeam` | `TeamController.assignInstructorToTeam → TeamService.assignInstructorToTeam` (+ `InstructorRepository`) / `Team` | `TeamServiceTest.testAssignInstructorToTeam`; `TeamIntegrationTest.assignInstructorToTeam`, `assignInstructorToTeamNotSameSection` |
 | UC-INS-remove-instructor | The Course Admin removes an instructor from a team | ✅ Implemented | — | — | — | `Sections.vue` → `apis/section` `removeInstructorFromSection` | `SectionController.removeInstructor → SectionService.removeInstructor` / `Section` | `SectionServiceTest.testRemoveInstructorSuccess`, `testRemoveInstructorFailsWhenLastInstructor`; `SectionIntegrationTest.adminBingyangRemoveInstructor`, `adminTimRemoveInstructor` |
 | UC-INS-find-instructors | The Course Admin finds instructors | ✅ Implemented | — | — | — | `Sections.vue` (no dedicated instructor page) → `apis/instructor` `fetchInstructors` / `apis/section` `getInstructors` | `InstructorController.findInstructorsByCriteria → InstructorService.findByCriteria` (+ `InstructorSpecs`); section-scoped `SectionController.getInstructors` / `Instructor` | `InstructorServiceTest.testFindByCriteria`; `InstructorIntegrationTest.testFindInstructorsByCriteria` |
@@ -106,20 +113,20 @@ The first column lists the features as they appear in `vision-and-scope.md`; the
 | UC-TPL-provision-documents | The Course Admin creates team documents from built-in templates | ✅ Implemented | FR-TPL-enforce-structure, FR-TPL-section-keys | BO-RAM-requirement-quality, BO-RAM-learning-outcomes | — | `Teams.vue` → `apis/ram` `createDocument` | `DocumentController.createDocument` → `DocumentService.createRequirementDocument` + `DocumentTemplateRegistry` (template YAMLs) | `DocumentControllerTest.createVisionScopeDocument`, `…ByStudent` |
 | UC-GLO-view-glossary | The Student views the Project Glossary | ✅ Implemented | — | — | — | `RamGlossary.vue` → `searchRequirementArtifacts` | `RequirementArtifactController.findRequirementArtifactsByCriteria` (+ `RequirementArtifactSpecs`) | `RequirementArtifactControllerTest.findRequirementArtifactsByCriteria1..3` |
 | UC-GLO-find-terms | The Student finds glossary terms | ✅ Implemented | — | — | — | `RamGlossary.vue` (search/filter) → `searchRequirementArtifacts` | `RequirementArtifactController.findRequirementArtifactsByCriteria` (+ `RequirementArtifactSpecs`) | `RequirementArtifactControllerTest.findRequirementArtifactsByCriteria1..3` |
-| UC-GLO-view-term | The Student views a glossary term | ✅ Implemented | — | — | — | `RamGlossary.vue` → `getGlossaryTermById` | `GlossaryController.findGlossaryTermById` → `GlossaryService` | — |
-| UC-GLO-create-term | The Student creates a glossary term | ✅ Implemented | FR-GLO-authoritative-definition, FR-GLO-reference-linking | BO-RAM-consistency | — | `RamGlossary.vue` → `createGlossaryTerm` | `GlossaryController.createGlossaryTerm` → `GlossaryService` | — |
-| UC-GLO-edit-term-definition | The Student changes a glossary term definition | ✅ Implemented | FR-GLO-authoritative-definition, FR-GLO-reference-linking | BO-RAM-consistency | — | `RamGlossary.vue` → `updateGlossaryTermDefinition` | `GlossaryController.updateGlossaryTermDefinition` | — |
-| UC-GLO-rename-term | The Student renames a glossary term | ✅ Implemented | FR-VAL-rename-propagation | BO-RAM-consistency | — | `RamGlossary.vue` → `renameGlossaryTerm` | `GlossaryController.renameGlossaryTerm` | — |
+| UC-GLO-view-term | The Student views a glossary term | 🔎 Needs verification | — | — | — | `RamGlossary.vue` → `getGlossaryTermById` | `GlossaryController.findGlossaryTermById` → `GlossaryService` | — |
+| UC-GLO-create-term | The Student creates a glossary term | 🔎 Needs verification | FR-GLO-reference-linking | BO-RAM-consistency | — | `RamGlossary.vue` → `createGlossaryTerm` | `GlossaryController.createGlossaryTerm` → `GlossaryService` | — |
+| UC-GLO-edit-term-definition | The Student changes a glossary term definition | 🔎 Needs verification | FR-GLO-reference-linking | BO-RAM-consistency | — | `RamGlossary.vue` → `updateGlossaryTermDefinition` | `GlossaryController.updateGlossaryTermDefinition` | — |
+| UC-GLO-rename-term | The Student renames a glossary term | 🔎 Needs verification | — | BO-RAM-consistency | — | `RamGlossary.vue` → `renameGlossaryTerm` | `GlossaryController.renameGlossaryTerm` | — |
 | UC-GLO-delete-term | The Student deletes a glossary term | 🟡 In progress | — | — | — | — (no delete control in `RamGlossary.vue`) | `RequirementArtifactController.deleteRequirementArtifact` (generic artifact delete; no glossary-specific endpoint) | — |
 | UC-DOC-view-document | The Student views a section-based requirement document | ✅ Implemented | — | — | — | `RamDocuments.vue` → `searchDocuments`; `RamDocumentEditor.vue` → `findDocumentById` | `DocumentController.findDocumentById` / `findDocumentsByCriteria` → `DocumentService.findDocumentByIdWithFullGraph` | `DocumentControllerTest.findDocumentById*`, `findDocumentsByCriteria*` |
-| UC-DOC-edit-document | The Student edits a section-based requirement document | ✅ Implemented | FR-LOCK-*, FR-SAVE-autosave-active, FR-SAVE-on-navigate-away, FR-VAL-engine | — | — | `RamDocumentEditor.vue` → `findDocumentSectionById`, `updateDocumentSection`, `getDocumentSectionLock`, `lock`/`unlockDocumentSection` | `DocumentSectionController` → `DocumentSectionService` (+ `DocumentSectionLock`) | `DocumentSectionControllerTest.*` (update / lock / unlock / `*_LockedByAnotherUser`, `*_NotLocked`) |
-| UC-DOC-view-use-cases-document | The Student views the Use Cases document | ✅ Implemented | — | — | Design | `RamUseCases.vue` (sidebar) → `searchRequirementArtifacts` | `RequirementArtifactController.findRequirementArtifactsByCriteria`; `UseCaseController` | `RequirementArtifactControllerTest.findRequirementArtifactsByCriteria1..3` |
+| UC-DOC-edit-document | The Student edits a section-based requirement document | ✅ Implemented | FR-SAVE-autosave-active, FR-VAL-background-recheck | — | — | `RamDocumentEditor.vue` → `findDocumentSectionById`, `updateDocumentSection`, `getDocumentSectionLock`, `lock`/`unlockDocumentSection` | `DocumentSectionController` → `DocumentSectionService` (+ `DocumentSectionLock`) | `DocumentSectionControllerTest.*` (update / lock / unlock / `*_LockedByAnotherUser`, `*_NotLocked`) |
+| UC-DOC-view-use-cases-document | The Student views the Use Cases document | ✅ Implemented | — | — | — | `RamUseCases.vue` (sidebar) → `searchRequirementArtifacts` | `RequirementArtifactController.findRequirementArtifactsByCriteria`; `UseCaseController` | `RequirementArtifactControllerTest.findRequirementArtifactsByCriteria1..3` |
 | UC-DOC-view-use-case | The Student views a use case | ✅ Implemented | — | — | — | `RamUseCases.vue` → `getUseCaseById` | `UseCaseController.findUseCaseById` → `UseCaseService` | `UseCaseControllerTest.findUseCaseById` |
-| UC-DOC-create-use-case | The Student creates a use case | ✅ Implemented | FR-VAL-unique-ids | — | — | `RamUseCases.vue` → `createUseCase` | `UseCaseController.addUseCase` → `UseCaseService` | `UseCaseControllerTest.addUseCase`, `addUseCase_NotSameTeam` |
-| UC-DOC-edit-use-case | The Student edits a use case | ✅ Implemented | FR-LOCK-*, FR-SAVE-autosave-active, FR-SAVE-on-navigate-away, FR-VAL-engine | — | — | `RamUseCases.vue` → `updateUseCase`, `getUseCaseLock`, `lock`/`unlockUseCase` | `UseCaseController.updateUseCase` / lock endpoints (+ `UseCaseLock`) | `UseCaseControllerTest.updateUseCaseWith*`, `lockUseCase*`, `unlockUseCase*` |
+| UC-DOC-create-use-case | The Student creates a use case | ✅ Implemented | — | — | — | `RamUseCases.vue` → `createUseCase` | `UseCaseController.addUseCase` → `UseCaseService` | `UseCaseControllerTest.addUseCase`, `addUseCase_NotSameTeam` |
+| UC-DOC-edit-use-case | The Student edits a use case | ✅ Implemented | FR-SAVE-autosave-active, FR-VAL-background-recheck | — | — | `RamUseCases.vue` → `updateUseCase`, `getUseCaseLock`, `lock`/`unlockUseCase` | `UseCaseController.updateUseCase` / lock endpoints (+ `UseCaseLock`) | `UseCaseControllerTest.updateUseCaseWith*`, `lockUseCase*`, `unlockUseCase*` |
 | UC-ART-find-artifacts | The Student finds requirement artifacts | 🟡 In progress | — | BO-RAM-navigation | — | — (no standalone artifact browser; artifacts surface embedded in `RamDocumentEditor.vue` / `RamGlossary.vue` / `RamUseCases.vue` via `searchRequirementArtifacts`) | `RequirementArtifactController.findRequirementArtifactsByCriteria` (+ `RequirementArtifactSpecs`) | `RequirementArtifactControllerTest.findRequirementArtifactsByCriteria1..3` |
 | UC-ART-view-artifact | The Student views a requirement artifact | 🟡 In progress | — | — | — | — | `RequirementArtifactController.findRequirementArtifactById` | `RequirementArtifactControllerTest.findRequirementArtifactById_Admin`, `_SameTeam`, `_NotSameTeam` |
-| UC-ART-create-artifact | The Student creates a requirement artifact | 🟡 In progress | FR-VAL-unique-ids | — | — | — | `RequirementArtifactController.addRequirementArtifact` (+ `ArtifactKeySequence`) | `RequirementArtifactControllerTest.addRequirementArtifact_SameTeam`, `_NotSameTeam` |
+| UC-ART-create-artifact | The Student creates a requirement artifact | 🟡 In progress | — | — | — | — | `RequirementArtifactController.addRequirementArtifact` (+ `ArtifactKeySequence`) | `RequirementArtifactControllerTest.addRequirementArtifact_SameTeam`, `_NotSameTeam` |
 | UC-ART-promote-selection | The Student creates a requirement artifact from document content (promote selection) | 🚫 Tabled | — | — | — | — | — | — |
 | UC-ART-edit-artifact | The Student edits a requirement artifact | 🟡 In progress | — | — | — | — | `RequirementArtifactController.updateRequirementArtifact` | `RequirementArtifactControllerTest.updateRequirementArtifact` |
 | UC-ART-delete-artifact | The Student deletes a requirement artifact | 🟡 In progress | — | — | — | — | `RequirementArtifactController.deleteRequirementArtifact` | — |
@@ -129,29 +136,110 @@ The first column lists the features as they appear in `vision-and-scope.md`; the
 | UC-LNK-edit-link | The Student edits a requirement artifact link | 🟡 In progress | — | BO-RAM-traceability | — | — | `ArtifactLinkController.updateArtifactLink` | `ArtifactLinkControllerTest.updateArtifactLink` |
 | UC-LNK-delete-link | The Student deletes a requirement artifact link | 🟡 In progress | — | BO-RAM-traceability | — | — | `ArtifactLinkController.deleteArtifactLink` | `ArtifactLinkControllerTest.deleteArtifactLink` |
 | UC-LNK-trace-requirement | The Student traces a requirement across levels | 🟡 In progress | — | BO-RAM-traceability, BO-RAM-navigation | — | — | `ArtifactLinkController.getArtifactTraceabilityByRequirementArtifactId` → `ArtifactTraceability` DTO (upstream/downstream link views) | `ArtifactLinkControllerTest.findArtifactLinksForOneArtifact`, `_NotSameTeam` |
-| UC-VAL-run-validation | The Student runs validation (ReqLint) on the current document | ❌ Not started | FR-VAL-engine, FR-VAL-required-sections, FR-VAL-vagueness | BO-RAM-requirement-quality, BO-RAM-instructor-workload, BO-RAM-consistency | — | — | — | — |
-| UC-COL-collaborative-edit | The Student collaboratively edits a requirement document | ❌ Not started | FR-COL-presence, FR-COL-join, FR-COL-disconnect, FR-COL-no-overwrite | — | — | — | — | — |
+| UC-VAL-run-validation | The Student runs validation (ReqLint) on the current document | ❌ Not started | — | BO-RAM-requirement-quality, BO-RAM-instructor-workload, BO-RAM-consistency | — | — | — | — |
+| UC-COL-collaborative-edit | The Student collaboratively edits a requirement document | ❌ Not started | — | — | — | — | — | — |
 | UC-COL-add-comment | The Student comments on a requirement document | 🟡 In progress | — | — | — | — | `CommentController` (`createCommentThreadForDocument` / `…ForDocumentSection` / `…ForRequirementArtifact`, `addCommentToCommentThread`, list/get) → `CommentService` | `CommentControllerTest.*` (list/create/get/add/update/delete comment & thread) |
 | UC-COL-resolve-comment | The Student resolves a comment | 🟡 In progress | — | — | — | — | `CommentController.updateCommentThreadStatus` (+ `CommentThreadStatus`) | `CommentControllerTest.resolveACommentThread` |
 | UC-REV-submit-for-review | The Student submits requirements for review | 🟡 In progress | FR-NOT-review-workflow | — | — | — (no `apis/ram` status call) | `DocumentController.updateDocumentStatus` → `DocumentStatus.SUBMITTED` (email notification FR-NOT-review-workflow not built) | `DocumentControllerTest.updateDocumentStatus`, `_NotSameTeam` |
 | UC-REV-review-documents | The Instructor reviews a team's requirement documents | 🟡 In progress | FR-NOT-review-workflow | BO-RAM-instructor-workload | — | — | `DocumentController.updateDocumentStatus` → `DocumentStatus.RETURNED`, `findDocumentById` (email notification FR-NOT-review-workflow not built) | `DocumentControllerTest.updateDocumentStatus`, `_NotSameTeam` |
-| UC-EXP-export-document | The Student exports a requirement document | ❌ Not started | FR-EXP-generate, FR-EXP-formatting | — | — | — | — | — |
-| UC-EXP-export-bundle | The Student exports all the requirement documents as a bundle | ❌ Not started | FR-EXP-generate, FR-EXP-formatting | — | — | — | — | — |
+| UC-EXP-export-document | The Student exports a requirement document | ❌ Not started | SI-export-formats, SI-export-fidelity | — | — | — | — | — |
+| UC-EXP-export-bundle | The Student exports all the requirement documents as a bundle | ❌ Not started | SI-export-formats, SI-export-fidelity | — | — | — | — | — |
 | UC-CFG-configure-teaching-context | The Instructor configures the teaching context for a course section | ❌ Not started | FR-AI-teaching-context | — | — | — | — | — |
 | UC-CFG-toggle-assistants | The Instructor enables or disables AI assistants for a course section | ❌ Not started | FR-AI-enablement | — | — | — | — | — |
 | UC-CFG-configure-assistant-instructions | The Instructor configures the assistant instructions for a course section | ❌ Not started | FR-AI-assistant-instructions | — | — | — | — | — |
-| UC-CFG-configure-review-criteria | The Instructor configures the cross-document review criteria for a course section | ❌ Not started | FR-AI-review-criteria | — | — | — | — | — |
-| UC-AI-import-source-material | The Student imports client pitch materials as project source | ❌ Not started | FR-IMP-upload-allowlist, FR-IMP-text-extraction | BO-RAM-learning-outcomes | — | — | — | — |
-| UC-AI-elicit-requirements | The Student elicits requirements with the elicitation assistant | ❌ Not started | FR-AI-elicitation-coaching, FR-AI-question-review, FR-AI-gap-analysis, FR-AI-exclude-source-material | BO-RAM-learning-outcomes | — | — | — | — |
-| UC-AI-practice-interview | The Student practices a client interview with a role-playing client assistant | ❌ Not started | FR-AI-client-roleplay | BO-RAM-learning-outcomes | — | — | — | — |
-| UC-AI-structure-notes | The Student turns meeting notes into structured requirements | ❌ Not started | FR-AI-structuring, FR-AI-rationale | BO-RAM-learning-outcomes | — | — | — | — |
-| UC-AI-critique | The Student requests a critique from the critique assistant | ❌ Not started | FR-AI-critique, FR-AI-rationale | BO-RAM-requirement-quality, BO-RAM-learning-outcomes | — | — | — | — |
-| UC-AI-tutor | The Student asks an assistant to explain a concept (Tutor Mode) | ❌ Not started | FR-AI-tutor-explain | BO-RAM-learning-outcomes | — | — | — | — |
-| UC-AI-draft-skeleton | The Student generates a draft requirement skeleton with an assistant | ❌ Not started | FR-AI-explicit-acceptance, FR-AI-drafting | BO-RAM-learning-outcomes | — | — | — | — |
-| UC-AI-review-proposal | The Student reviews and accepts or rejects an assistant proposal | ❌ Not started | FR-AI-explicit-acceptance | BO-RAM-learning-outcomes | — | — | — | — |
-| UC-AI-consult-project-assistant | The Student consults the project assistant | ❌ Not started | FR-AI-project-assistant, FR-AI-routing | BO-RAM-learning-outcomes | — | — | — | — |
-| UC-AI-whole-project-review | The Student requests a whole-project review from the critique assistant | ❌ Not started | FR-AI-whole-project-review, FR-AI-review-criteria, FR-AI-review-criteria-required, FR-AI-rationale | BO-RAM-requirement-quality, BO-RAM-instructor-workload, BO-RAM-learning-outcomes | — | — | — | — |
+| UC-CFG-configure-review-criteria | The Instructor configures the cross-document review criteria for a course section | ❌ Not started | — | — | — | — | — | — |
+| UC-AI-import-source-material | The Student imports client pitch materials as project source | ❌ Not started | SI-import-allowlist, SI-import-extraction | BO-RAM-learning-outcomes | — | — | — | — |
+| UC-AI-elicit-requirements | The Student elicits requirements with the elicitation assistant | ❌ Not started | FR-AI-no-auto-edit, FR-AI-degradation, FR-AI-source-material-context | BO-RAM-learning-outcomes | — | — | — | — |
+| UC-AI-practice-interview | The Student practices a client interview with a role-playing client assistant | ❌ Not started | FR-AI-degradation | BO-RAM-learning-outcomes | — | — | — | — |
+| UC-AI-structure-notes | The Student turns meeting notes into structured requirements | ❌ Not started | FR-AI-rationale, FR-AI-no-auto-edit, FR-AI-degradation | BO-RAM-learning-outcomes | — | — | — | — |
+| UC-AI-critique | The Student requests a critique from the critique assistant | ❌ Not started | FR-AI-rationale, FR-AI-no-auto-edit, FR-AI-distinguish-suggestions, FR-AI-degradation | BO-RAM-requirement-quality, BO-RAM-learning-outcomes | — | — | — | — |
+| UC-AI-tutor | The Student asks an assistant to explain a concept (Tutor Mode) | ❌ Not started | FR-AI-degradation | BO-RAM-learning-outcomes | — | — | — | — |
+| UC-AI-draft-skeleton | The Student generates a draft requirement skeleton with an assistant | ❌ Not started | FR-AI-no-auto-edit, FR-AI-distinguish-suggestions, FR-AI-enablement, FR-AI-degradation | BO-RAM-learning-outcomes | — | — | — | — |
+| UC-AI-review-proposal | The Student reviews and accepts or rejects an assistant proposal | ❌ Not started | — | BO-RAM-learning-outcomes | — | — | — | — |
+| UC-AI-consult-project-assistant | The Student consults the project assistant | ❌ Not started | FR-AI-no-auto-edit, FR-AI-enablement, FR-AI-degradation | BO-RAM-learning-outcomes | — | — | — | — |
+| UC-AI-whole-project-review | The Student requests a whole-project review from the critique assistant | ❌ Not started | FR-AI-rationale, FR-AI-no-auto-edit, FR-AI-degradation | BO-RAM-requirement-quality, BO-RAM-instructor-workload, BO-RAM-learning-outcomes | — | — | — | — |
 
 > The FR IDs column lists the **SRS's non-use-case cross-cutting subsystems** each use case depends on; `—` marks a self-contained use case whose own steps are its full spec (the common case for CRUD use cases — per the project's model, the use case *is* the functional requirement). The universal behaviors — authorship metadata (`FR-HIS-authorship-metadata`) and RBAC (`FR-SEC-*`) — apply almost everywhere and are omitted per row. When planning a use case, treat its "The system …" steps + Associated Information as the acceptance criteria, and flag any step with no backing behavior.
 
-> **UC-COL-collaborative-edit note:** section/use-case **locking and unlocking is implemented** — but that scope belongs to UC-DOC-edit-document and UC-DOC-edit-use-case (both ✅), which UC-COL-collaborative-edit references rather than owns. UC-COL-collaborative-edit's own scope is the real-time collaboration layer (teammate presence, join/leave notification, live broadcast of saved changes and lock state — `FR-COL-*`), and **none of that is built**, so UC-COL-collaborative-edit is ❌.
+> **UC-COL-collaborative-edit note:** section/use-case **locking and unlocking is implemented** — but that scope belongs to UC-DOC-edit-document and UC-DOC-edit-use-case (both ✅), which UC-COL-collaborative-edit references rather than owns. UC-COL-collaborative-edit's own scope is the real-time collaboration layer (teammate presence, join/leave notification, live broadcast of saved changes and lock state — the system steps of UC-COL-collaborative-edit itself), and **none of that is built**, so UC-COL-collaborative-edit is ❌.
+
+## Non-use-case FR traceability
+
+Non-use-case functional requirements (`FR-<AREA>-*`) are **first-class requirement nodes** — siblings of the use case under each feature (a use case *is* a high-level FR; these are the cross-cutting ones no single use case owns: autosave, validation, AI, templates, glossary invariants, authorship metadata, notifications, security). The functional matrix above records them only as the *FR IDs* **dependency** column on UC rows; this matrix gives each its **own realization** row (design → code → tests → status), so "is `FR-X` built and tested?" has an answer even when no use case carries it. Same Status legend as the functional matrix.
+
+Two conventions keep this from duplicating the other matrices: a cross-cutting FR already verified through a quality scenario (the `FR-SEC-*` ↔ `QS-1`/`QS-2` pair) cites that scenario in **Tests** rather than restating it; and **deferred** non-use-case FRs carry no row until scheduled (mirroring deferred use cases) — `FR-HIS-checkpoint` / `-restore` / `-retention` and `FR-TPL-customize` are post-MVP and omitted here.
+
+| FR | Supports BO | Design | Code | Tests | Status |
+|----|-------------|--------|------|-------|--------|
+| FR-SAVE-autosave-active | — | — | `DocumentSectionController.updateDocumentSection` → `DocumentSectionService` (backend persistence) | `DocumentSectionControllerTest.*` (update); 10 s client-side cadence untested — cf. `QS-4` | 🟡 In progress |
+| FR-VAL-background-recheck | BO-RAM-requirement-quality, BO-RAM-instructor-workload, BO-RAM-consistency | — | — (ReqLint engine not built; cf. UC-VAL-run-validation ❌) | — | ❌ Not started |
+| FR-AI-no-auto-edit | BO-RAM-learning-outcomes | — | — (AI not built) | — | ❌ Not started |
+| FR-AI-distinguish-suggestions | — | — | — (AI not built) | — | ❌ Not started |
+| FR-AI-teaching-context | — | — | — (AI not built) | — | ❌ Not started |
+| FR-AI-enablement | — | — | — (AI not built) | — | ❌ Not started |
+| FR-AI-rationale | BO-RAM-requirement-quality | — | — (AI not built) | — | ❌ Not started |
+| FR-AI-degradation | — | — | — (AI not built) | — | ❌ Not started |
+| FR-AI-source-material-context | — | — | — (AI not built) | — | ❌ Not started |
+| FR-AI-assistant-instructions | — | — | — (AI not built) | — | ❌ Not started |
+| FR-TPL-enforce-structure | BO-RAM-requirement-quality | — | `DocumentService.createRequirementDocument` + `DocumentTemplateRegistry` / `DocumentTemplate` (template YAMLs) | `DocumentControllerTest.createVisionScopeDocument` | ✅ Implemented |
+| FR-TPL-section-keys | BO-RAM-requirement-quality | — | `DocumentTemplate` (section keys) + `DocumentService.createRequirementDocument` | `DocumentControllerTest.createVisionScopeDocument` | ✅ Implemented |
+| FR-GLO-reference-linking | BO-RAM-consistency | — | — (no reference-linking logic; `GlossaryService` is CRUD-only) | — | ❌ Not started |
+| FR-GLO-term-suggestion | BO-RAM-consistency | — | — (no term-suggestion logic) | — | ❌ Not started |
+| FR-HIS-authorship-metadata | — | — | `JpaAuditingConfig` + `@CreatedBy`/`@LastModifiedBy` on RAM entities (`RequirementArtifact`, `RequirementDocument`, `DocumentSection`, `ArtifactLink`, `Comment`, …) | — (no targeted test; known gaps tracked in OI-19) | 🟡 In progress |
+| FR-NOT-review-workflow | — (supports UC-REV-submit-for-review, UC-REV-review-documents) | — | `DocumentController.updateDocumentStatus` (status transitions); **email not built** (`EmailService` has no review-workflow method) | `DocumentControllerTest.updateDocumentStatus` (status only) | 🟡 In progress |
+| FR-NOT-suppress-routine | — | — | Holds by construction (no routine-edit notification code; `CI-no-routine-email`) | — (no negative test) | 🔎 Needs verification |
+| FR-NOT-weekly-reminder | BO-PERF-submission-rate, BO-PERF-faster-completion | — | `WeeklyReminderScheduler` (`system/`) → `EmailService.sendReminderEmail`, `SectionService` | — (no scheduler test) | 🔎 Needs verification |
+| FR-SEC-authentication | — | — | `SecurityConfiguration` + JWT (`AuthService`, `CustomBearerTokenAuthenticationEntryPoint`) | integration `isUnauthorized` cases → see NFR matrix `QS-2` | ✅ Implemented |
+| FR-SEC-authorization | — | — | `*AuthorizationManager` family + `*SecurityService` (RBAC + team scoping) | `*_NotSameTeam` / `*NotInSameCourse` / `*NotSameSection` → see NFR matrix `QS-1` | ✅ Implemented |
+| FR-SEC-deny-unauthorized | — | — | `CustomBearerTokenAccessDeniedHandler` + `CustomBasicAuthenticationEntryPoint` + `SecurityConfiguration` | integration `isForbidden` / `isUnauthorized` cases → see NFR matrix `QS-1`/`QS-2` | ✅ Implemented |
+
+> **Why some `FR IDs` cells above repeat here.** An FR that appears in a UC row's *FR IDs* column (e.g. `FR-SAVE-autosave-active`, `FR-TPL-*`, `FR-NOT-review-workflow`) is *depended on* by that use case; its row here records where **its own** code and tests live — a different relation (the model's *FR → design → code → tests* tail vs. the *UC depends on FR* edge). The previously untraced FRs this matrix newly homes: `FR-NOT-weekly-reminder` (built, `WeeklyReminderScheduler`), `FR-NOT-suppress-routine`, `FR-GLO-term-suggestion`, and `FR-SEC-deny-unauthorized`.
+
+## Non-functional traceability matrix
+
+The second axis: **quality attribute → quality scenario → verifying test**. Where the functional matrix above is keyed to the use case, this one is keyed to the SRS quality attributes (`USE-*`, `PER-*`, `SEC-*`, `AVL-*`, `ROB-*`, `SCA-*`, `INT-*`, `MNT-*`). Each is operationalized by a quality scenario (`QS-n`) in the [architecture-of-record](design/architectural-design.md#quality-requirements) — which owns the scenario *definitions* (stimulus / response / measure) — and verified by a test cited here. This file owns the **verification map** (the *Verifying test* and *State* columns); the arch-of-record's QS table points back here rather than duplicating them.
+
+### How to use it
+
+- **One row per committed quality scenario** in the first table; the `QS-n` cell cites the arch-of-record scenario by ID (definitions live there, not here).
+- A quality attribute that no committed scenario yet operationalizes is **not** dropped silently — it goes in the *unpinned tail* table with its verification route, so an untraced NFR is visible rather than forgotten.
+- When a new `QS-n` is added to the arch-of-record, add its row here; when `/implement` builds the feature a `❌ Pending feature` row waits on, fill the *Verifying test* and flip the *State*.
+
+### Verification-state legend
+
+| Symbol | Meaning |
+|--------|---------|
+| ✅ Verified | Automated test(s) exercise the scenario and pass. |
+| 🟡 Half-verified | One part of the scenario is tested; another part is not. |
+| ⚙️ Pipeline-verified | Verified by the CI/CD pipeline (deploy smoke check, migrations), not the test suite. |
+| ⚠️ Process-verified | Relies on review/convention today; no automated guard. |
+| 🧪 Empirically verified | Verified by a non-automated method (usability testing); not a code test. |
+| ❌ Pending feature | Cannot be verified until the underlying feature is built. |
+
+### Quality attribute → scenario → test
+
+| Quality attribute(s) | QS | Verifying test (today) | State |
+|---|---|---|---|
+| `SEC-authorization` (honors `BR-team-scoped-access`, `BR-role-based-access`) | [QS-1](design/architectural-design.md#quality-requirements) | Cross-scope denial: `*_NotSameTeam` / `*NotInSameCourse` / `*NotSameSection` methods + `isForbidden` assertions across `RequirementArtifactControllerTest`, `DocumentControllerTest`, `ArtifactLinkControllerTest`, `ActivityIntegrationTest`, `CriterionIntegrationTest`, … | ✅ Verified |
+| `SEC-authentication` | [QS-2](design/architectural-design.md#quality-requirements) | `isUnauthorized` cases on protected `/api/v1` endpoints in the integration suite (`CourseIntegrationTest`, `EvaluationIntegrationTest`, `InstructorIntegrationTest`, …) | ✅ Verified |
+| `MNT-service-layer`, `INT-single-application` | [QS-3](design/architectural-design.md#quality-requirements) | — (no architecture-conformance test; convention is review-enforced) | ⚠️ Process-verified |
+| `PER-autosave-cadence`, `ROB-edit-loss-bound`, `ROB-autosave-retry` | [QS-4](design/architectural-design.md#quality-requirements) | Collision half: `DocumentSectionControllerTest.*_LockedByAnotherUser` / `*_NotLocked`, `UseCaseControllerTest.lock*` / `unlock*` (✅). Autosave-cadence / edit-loss / retry half: client-side, **no test** (no RAM frontend test) | 🟡 Half-verified |
+| `AVL-llm-degradation`, `PER-ai-response-time`, `SEC-llm-proxy` | [QS-5](design/architectural-design.md#quality-requirements) | — (AI not built; `UC-AI-*` all ❌) | ❌ Pending feature |
+| `AVL-uptime` | [QS-6](design/architectural-design.md#quality-requirements) | Flyway migration apply + staging-slot smoke check in `azure-webapps-deploy.yml` | ⚙️ Pipeline-verified |
+| `PER-validation-speed`, `SCA-cohort-load` | [QS-7](design/architectural-design.md#quality-requirements) | — (ReqLint/`UC-VAL` not built; no load-test harness for graph-load) | ❌ Pending feature |
+
+### Quality attributes with no committed scenario (unpinned tail)
+
+These have no `QS-n` yet; the matrix records *why* and the verification route so none floats untraced.
+
+| Quality attribute | Why no committed scenario | Verification route |
+|---|---|---|
+| `USE-wcag-aa`, `USE-keyboard-operable` | Accessibility "in scope but not yet architecturally addressed" — tracked as **TD-11** in the arch-of-record | Add a QS + `cypress-axe` / keyboard-only E2E when TD-11 is picked up |
+| `SEC-ferpa` | Compliance umbrella, realized by composition of `SEC-authorization` (QS-1) + `SEC-https` | Verified-by-composition of QS-1 + TLS config; no dedicated test |
+| `SEC-https` | TLS is deploy/infrastructure config | Verified by deployment configuration (outside the test suite) |
+| `USE-first-session-success` | 95%-success is an empirical target, not automatable | 🧪 Verified by usability testing |
+| `USE-actionable-findings` | Depends on ReqLint / AI finding presentation | Folds into QS-4 / QS-5 once those features land |
+| `PER-collab-latency`, `ROB-no-overwrite` | Post-MVP — depend on the deferred real-time collaboration (UC-COL-collaborative-edit) | Deferred; add scenarios with that feature |
+| `SAF-not-applicable` | No safety functions exist (`SAF-not-applicable`) | N/A by definition |
+
+> **Readout.** Security is the strongest NFR spine — QS-1/QS-2 are genuinely test-backed from the foundation work. QS-5 and QS-7 are honest `❌ Pending feature` rows (you cannot test ReqLint speed or LLM degradation before those features exist), and they make the perf/degradation tests part of "done" when `/implement` reaches `UC-VAL` and the AI use cases. The two gaps **not** waiting on a feature: QS-3 has no automated architecture guard (an ArchUnit test would move it to ✅), and QS-4's client-side half (autosave cadence, ≤10 s edit-loss) is untested even though the feature is built (a Cypress test could close it today).

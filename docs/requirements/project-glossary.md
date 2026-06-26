@@ -163,7 +163,7 @@ Examples:
 - UC-5 — use case #5
 - GL-7 — glossary term #7
 
-In the MVP, artifact keys are assigned as a simple running sequence per artifact type (`FR-1`, `FR-2`, …; `UC-1`, `UC-2`, …), with the system tracking the current index per type and incrementing on each new artifact. A categorical scheme (e.g., the SRS's `FR-SAVE*` / `FR-LOCK*` families) may be adopted in a later version. These product-generated artifact keys are distinct from the area-prefixed `UC-<AREA>-<slug>` identifiers (e.g., `UC-GLO-view-glossary`) used to organize the Use Cases document of this specification itself.
+In the MVP, artifact keys are assigned as a simple running sequence per artifact type (`FR-1`, `FR-2`, …; `UC-1`, `UC-2`, …), with the system tracking the current index per type and incrementing on each new artifact. A categorical scheme (e.g., the SRS's `FR-SAVE*` / `FR-VAL*` families) may be adopted in a later version. These product-generated artifact keys are distinct from the area-prefixed `UC-<AREA>-<slug>` identifiers (e.g., `UC-GLO-view-glossary`) used to organize the Use Cases document of this specification itself.
 
 ## **Requirement Link**
 
@@ -302,7 +302,7 @@ A requirement artifact describing a specific, testable behavior the system must 
 
 Examples: FR-1 (the system autosaves the active document section every 10 seconds), FR-2 (the system grants a student an exclusive lock before editing a document section), FR-3 (the system assigns a unique key to each new artifact).
 
-Note: the area-prefixed form `FR-<AREA>-<slug>` (e.g., `FR-SAVE-autosave-active`, `FR-LOCK-acquire`) is not a product-generated artifact key — it is the organizing convention used by this specification's own Non-Use Case Functional Requirements, parallel to the `UC-<AREA>-<slug>` use-case IDs. See artifact key.
+Note: the area-prefixed form `FR-<AREA>-<slug>` (e.g., `FR-SAVE-autosave-active`, `FR-VAL-background-recheck`) is not a product-generated artifact key — it is the organizing convention used by this specification's own Non-Use Case Functional Requirements, parallel to the `UC-<AREA>-<slug>` use-case IDs. See artifact key.
 
 ## **Constraint**
 

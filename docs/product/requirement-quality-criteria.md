@@ -6,8 +6,8 @@
 
 The spec's critique assistant has two modes, and this doc is the narrow one:
 
-- **Per-destination critique (UC-AI-critique, FR-AI-critique / FR-AI-rationale)** — reviews the requirements in **one authoring destination** (a document section or a use case) for clarity, ambiguity, consistency, completeness, and testability. **This document.**
-- **Whole-project review (UC-AI-whole-project-review, FR-AI-whole-project-review, FR-AI-review-criteria, FR-AI-review-criteria-required)** — reads the team's whole requirement set together and hunts *cross-document* gaps, conflicts, and broken traceability. Covered by its own product doc, [`cross-document-review-criteria.md`](cross-document-review-criteria.md).
+- **Per-destination critique (UC-AI-critique; honors FR-AI-rationale)** — reviews the requirements in **one authoring destination** (a document section or a use case) for clarity, ambiguity, consistency, completeness, and testability. **This document.**
+- **Whole-project review (UC-AI-whole-project-review)** — reads the team's whole requirement set together and hunts *cross-document* gaps, conflicts, and broken traceability. Covered by its own product doc, [`cross-document-review-criteria.md`](cross-document-review-criteria.md).
 
 The two are complementary: this mode asks *"is each requirement in front of me well-formed?"*; the other asks *"do the documents agree with each other?"* Both complement, and neither replaces, **ReqLint** (UC-VAL-run-validation, FR-VAL-*) — the deterministic, single-document, rule-based checker (missing sections, vague verbs, ID format). The division of labor between ReqLint and this critique is spelled out in Part 3.
 
@@ -136,7 +136,7 @@ Order findings by severity (blocker -> minor).
 
 The §5.2 criteria split cleanly across Project Pulse's two requirement-checking engines. **Run the deterministic checks first (ReqLint), then spend the LLM's reasoning on what's left** — it's faster, cheaper, more reliable, and keeps the critique focused on teaching rather than rediscovering mechanical errors.
 
-| §5.2 characteristic | Deterministic — **ReqLint** (UC-VAL-run-validation, FR-VAL-*) | Judgment — **critique assistant** (UC-AI-critique, FR-AI-critique, FR-AI-rationale) |
+| §5.2 characteristic | Deterministic — **ReqLint** (UC-VAL-run-validation, FR-VAL-*) | Judgment — **critique assistant** (UC-AI-critique; FR-AI-rationale) |
 |---|---|---|
 | Conforming | "shall" present, EARS form, ID format, required sections present | use-case structure reads as coherent |
 | Singular | heuristic: flag `and`/`or`-conjoined clauses in one "shall" | genuinely compound intent the heuristic misses |
@@ -156,7 +156,7 @@ The shared build, enforcement, and output guidance (assistant anatomy, determini
 
 ### Configurability
 
-This rubric ships as a **fixed product default** baked into the critique assistant's system prompt — unlike the whole-project **cross-document review criteria**, which are instructor-tunable per course section (UC-CFG-configure-review-criteria, FR-AI-review-criteria). The instructor still shapes per-destination critique indirectly, through the course section's **teaching context** (UC-CFG-configure-teaching-context) and the critique assistant's **assistant instructions** (UC-CFG-configure-assistant-instructions), which the server prepends to the prompt above. If a future release wants instructor-tunable per-requirement criteria, model it on the cross-document-review-criteria pattern.
+This rubric ships as a **fixed product default** baked into the critique assistant's system prompt — unlike the whole-project **cross-document review criteria**, which are instructor-tunable per course section (UC-CFG-configure-review-criteria). The instructor still shapes per-destination critique indirectly, through the course section's **teaching context** (UC-CFG-configure-teaching-context) and the critique assistant's **assistant instructions** (UC-CFG-configure-assistant-instructions), which the server prepends to the prompt above. If a future release wants instructor-tunable per-requirement criteria, model it on the cross-document-review-criteria pattern.
 
 ### Provenance
 

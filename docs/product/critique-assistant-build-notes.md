@@ -18,7 +18,7 @@ A critique assistant = a **system prompt + a context builder + one model call**,
 In spec-driven development the **specification is the source of truth** — these guardrails are *required by the spec*, and the implementation conforms to it. Because the model's output, the browser client, and student content are all **untrusted** (a prompt-injection surface), the spec's guardrails must be enforced at a trusted point — the **server** — and never delegated to the system prompt or the client:
 
 - **Enablement** — the critique assistant runs only where it is enabled for the course section (FR-AI-enablement, UC-CFG-toggle-assistants).
-- **Never author without acceptance** — the assistant proposes; content changes only through the student's explicit, per-item acceptance (FR-AI-no-auto-edit, FR-AI-explicit-acceptance, BR-explicit-acceptance). No silent writes, no "accept all".
+- **Never author without acceptance** — the assistant proposes; content changes only through the student's explicit, per-item acceptance (FR-AI-no-auto-edit, BR-explicit-acceptance; UC-AI-review-proposal). No silent writes, no "accept all".
 - **Validate model-chosen targets** — confirm that any ID, document section, or use case the model names actually exists before acting on it.
 
 ## Findings output discipline (common to both modes)

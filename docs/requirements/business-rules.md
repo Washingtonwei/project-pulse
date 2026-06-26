@@ -55,7 +55,7 @@ These business rules apply across Project Pulse. The course-administration rules
 # **Identity and Uniqueness**
 
 - **BR-artifact-key-unique:** Every artifact key is unique within a team and remains stable across edits to the artifact's content.
-- **BR-glossary-term-unique:** A glossary term name is unique within a team's glossary.
+- **BR-glossary-term-unique:** A glossary term name is unique within a team's glossary, so each term carries a single authoritative definition.
 - **BR-use-case-name-unique:** A use case name is unique within a team's Use Cases document.
 - **BR-link-constraints:** A requirement link is unique on the combination of (source artifact, target artifact, link type); an artifact may not link to itself; and a link type is permitted only between artifact types for which it is defined (see the link-type compatibility matrix below).
 

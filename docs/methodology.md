@@ -27,7 +27,7 @@ The methodology here is the middle path tuned specifically for a **human + codin
 2. **Breadth-complete, depth-shallow architecture.** The architecture-of-record names *every* component and cross-cutting subsystem (so the map is whole) but stops at responsibilities and relationships (so nothing is over-committed). Internals are designed per area, against real code, just-in-time.
 3. **The use case is the unit of work, citation, and test.** Each use case is a high-level functional requirement; its steps + associated information are its acceptance criteria; traceability and tests are tagged to it. Use cases are kept small enough that "UC-X passes" is a meaningful statement.
 4. **The spec is authoritative but not infallible — the challenge loop.** The agent is not a stenographer. When a step is ambiguous, an assumption breaks against the code, requirements contradict, or the spec suggests something that isn't best practice, the agent **surfaces it** — asks or pushes back — rather than silently complying or silently inventing. Fixes go back into the spec, then the design is re-derived.
-5. **Bidirectional traceability and co-evolution.** A single matrix maps use case → FRs → design doc → code modules → tests → status. It is the connective tissue: changes loop *back* into the requirements and architecture, not just forward into code.
+5. **Bidirectional traceability and co-evolution.** Traceability is a two-direction graph, not a one-way chain (see [The traceability model](#the-traceability-model)): a matrix maps requirements → design → code → tests on a functional and a non-functional axis, checked *forward* (is every objective built?) and *backward* (does every artifact justify itself?). It is the connective tissue: changes loop *back* into the requirements and architecture, not just forward into code.
 6. **Stable identifiers decoupled from position.** Requirements carry position-independent IDs (`UC-<AREA>-<slug>`, `FR-<AREA>-<slug>`, `BR-<slug>`) so the spec can be reorganized without breaking citations — essential when many documents and the code all reference the same handles.
 7. **Human-owned levels, agent-built levels.** Humans own requirements quality and the high-level architectural decisions; the agent owns turning an approved use case into a design-of-record and then into code + tests, behind explicit approval gates.
 
@@ -44,7 +44,7 @@ The methodology is realized as a layered set of documents. The shape (realized i
 - **Design (`design/`)** — the *how*, generated from the spec, in **two levels**:
   - **Level 1 — architecture-of-record.** The breadth-complete, depth-shallow map: a single arc42/C4 architecture-of-record for the whole product (`docs/design/architectural-design.md`) — the platform context/container views and conventions every module inherits, plus each module's component view. Component boundaries for not-yet-designed areas are explicitly **provisional**.
   - **Level 2 — design-of-record, one per use-case area.** Component/class design, sequence diagrams, API contracts, schema deltas. Cites the use cases/FRs it realizes; never restates them. Lean: diagrams + non-obvious decisions + pointers to real files.
-- **Traceability (`traceability.md`)** — the spec→code map: one row per use case, carrying FR IDs, design doc, frontend/backend modules, tests, and build status.
+- **Traceability (`traceability.md`)** — the spec→code map on two axes (see [The traceability model](#the-traceability-model)): a *functional* matrix (one row per use case, carrying FR IDs, design doc, frontend/backend modules, tests, status) and a *non-functional* matrix (one row per quality attribute → quality scenario → verifying test).
 
 A companion **product/guides** split keeps shipped default content and build-guidance distinct from the spec itself, and an **OPEN-ISSUES** backlog (`OI-n`) tracks gaps still needed to make the spec implementation-ready.
 
@@ -72,6 +72,54 @@ Two health checks keep the two lists honest:
 - **Right altitude.** A feature should describe a capability, not enumerate use cases; a UC area should reflect the domain, not the marketing pitch. If a feature reads like "create / edit / delete X", it's a UC list mis-cast as a feature. If an area name reads like a tagline, it's a feature mis-cast as an area.
 
 A deliberate consequence: **the Major Features keep no inline UC IDs.** The feature → use-case-area map lives in `traceability.md` and is verified there. That separation keeps the features at value-altitude and frees the use-case catalog to organize by domain rather than by the marketing brochure.
+
+## The traceability model
+
+Principle 5 calls traceability "bidirectional" and points at "a single matrix." This section makes the model *behind* that matrix explicit, because the intuitive picture most people carry — a linear chain `business objective → feature → use case → design → code` — is incomplete in three ways that matter for keeping a fallible spec and generated code honest with each other. The chain is the right **spine**; it just isn't the whole shape.
+
+**1. It is a graph, not a chain.** Every edge is many-to-many: one objective spawns several features, one feature decomposes into use cases across several areas (the many-to-many feature ↔ area relation above is one slice of this), one use case touches several code modules, and one cross-cutting module serves many use cases. So an edge reads "realized by **one or more**," and the structure is a directed acyclic graph, not a line.
+
+**2. It runs in two directions, and both are load-bearing.** *Forward* (objective → code) answers **coverage**: is every objective actually built? *Backward* (code → objective) answers **justification**: why does this artifact exist? A requirement nothing traces up to is gold-plating; a feature nothing traces down from is unimplemented promised scope. Bidirectionality is not decoration — ISO/IEC/IEEE 29148 requires it — and `/spec-build` enforces both: its forward check flags orphan scope, its backward check flags unjustified requirements.
+
+**3. It has a vertical spine and orthogonal layers.** Not every requirement type sits on the objective→code line. Business rules and quality attributes cross-cut it, and glossary terms underpin all of it:
+
+```mermaid
+flowchart TD
+    RIAS["Risks / assumptions (RI-*, AS-*)"] -. motivate .-> BO["Business objective (BO-*)"]
+    BO -- realized by --> FEAT["Feature"]
+    FEAT --> UC["Use case = high-level FR (UC-*)"]
+    FEAT --> FR["Non-use-case FR (FR-*)"]
+    UC -- allocated to --> DSGN["Design-of-record"]
+    FR -- allocated to --> DSGN
+    DSGN --> CODE["Code"]
+    CODE --> TEST["Tests"]
+    TEST -. verifies .-> UC
+
+    BR["Business rules (BR-*)"] -. constrains .-> UC
+    BR -. constrains .-> FR
+
+    QA["Quality attributes (PER-*, SEC-*, ROB-*, ...)"] -- operationalized by --> QS["Quality scenario (QS-n)"]
+    QS -- allocated to --> DSGN
+    QS -. verified by .-> TEST
+
+    GLOSS["Glossary terms"] -. fix vocabulary of .-> UC
+```
+
+The nodes, grounded in this repo's identifier spaces:
+
+- **Risks / assumptions** (`RI-*`, `AS-*`) — *motivate* objectives; they are not "realized by" code, so they sit off the spine.
+- **Business objective** (`BO-<AREA>-*`) — the *why*.
+- **Feature** — the stakeholder-visible *capability*.
+- **Use case = high-level FR** (`UC-<AREA>-*`) — observable behavior. Collapsing the textbook user-requirement / system-requirement split into one node (a use case *is* its detailed functional requirement — its steps + associated information) deliberately **removes a whole traceability hop and its drift**; this is the single biggest simplification the method buys.
+- **Non-use-case FR** (`FR-<AREA>-*`) — the cross-cutting subsystems (autosave, validation, AI orchestration, notifications, security) that no single use case owns. They sit *beside* the use-case layer, not below it.
+- **Design-of-record → code → tests** — the realization tail. Requirements are *allocated to* design, design is built as code, code is *verified by* tests. The verification edge is what closes the loop: a requirement with no test verifying it is not actually traced.
+- **Business rules** (`BR-*`) — an orthogonal **constraint** layer cited by use cases and FRs; the question "what enforces a given `BR-*`?" is a different relation than "what realizes a given `BO-*`?".
+- **Quality attributes** (`USE-*`, `PER-*`, `SEC-*`, `AVL-*`, `ROB-*`, …) — the **NFR spine runs in parallel**, never through a use case: a quality attribute is *operationalized by* a quality scenario (`QS-n`) and *verified by* a test. This is the spine most projects let float; naming it as its own axis is what keeps it honest.
+- **Glossary terms** — the **consistency axis** underneath everything: the same word in objective, use case, code identifier, and UI label.
+
+Three relation kinds, then, not one: requirements **derive from** higher needs (the spine), are **allocated to** design, and are **verified by** tests — plus the orthogonal **constrains** (rules) and **operationalizes** (attribute → scenario) edges. Keeping them distinct is what lets the matrix answer "is X built?", "why does X exist?", and "is X verified?" as separate questions.
+
+This model is instantiated, not just described: `traceability.md` carries it on **two axes** — a functional matrix (use case → FR/design/code/tests) and a non-functional matrix (quality attribute → `QS-n` → test) — the `QS-n` scenario definitions live in the architecture-of-record, the `BR-*` constraints in the business rules, and `/spec-build` mechanically checks that every edge resolves and every node is covered both ways. The model is the picture; those documents and checks are its enforcement.
 
 ## The lifecycle
 

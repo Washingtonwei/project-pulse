@@ -356,9 +356,9 @@ Beyond the platform-wide machinery above, each **RAM** area builds on a small se
 
 | Subsystem | FR family | Owner | How an area plugs in |
 |---|---|---|---|
-| Section locking | `FR-LOCK-*` | `ram/document` (`DocumentSectionLock`), `ram/usecase` (`UseCaseLock`) | Acquire/release a lock on the authoring destination before edit (UC-DOC-edit-document / UC-DOC-edit-use-case) |
+| Section locking | `BR-edit-lock-required`, `BR-lock-expiry` | `ram/document` (`DocumentSectionLock`), `ram/usecase` (`UseCaseLock`) | Acquire/release a lock on the authoring destination before edit (UC-DOC-edit-document / UC-DOC-edit-use-case) |
 | Document templates | `FR-TPL-*` | `ram/document/template` (`DocumentTemplateRegistry`) | Provision a document's sections from its `DocumentType` template |
-| Collaboration | `FR-COL-*` | `ram/collaboration` | Attach comment threads to an artifact / destination (the built collaboration model). Real-time presence/broadcast (UC-COL-collaborative-edit, `FR-COL-*`, PER-collab-latency) is **deferred** — a future layer, not in the current design (see KD-6) |
+| Collaboration | `UC-COL-*` | `ram/collaboration` | Attach comment threads to an artifact / destination (the built collaboration model). Real-time presence/broadcast (UC-COL-collaborative-edit, PER-collab-latency) is **deferred** — a future layer, not in the current design (see KD-6) |
 | Glossary | `FR-GLO-*` | `ram/glossary` | Terminology lookups and invariants |
 | Authorship & history | `FR-HIS-*` | `system` (JPA auditing, `PeerEvaluationUserAuditorAware`) | Inherited via JPA auditing — no per-area work |
 | Notifications | `FR-NOT-*` | `system` (`EmailService`, `WeeklyReminderScheduler`) | Call `EmailService`; Gmail over SMTP |
@@ -366,7 +366,7 @@ Beyond the platform-wide machinery above, each **RAM** area builds on a small se
 | Autosave | `FR-SAVE-*` | `ram/document` (section save) + client-side debounce | Persist edits through the document-section save endpoint |
 | Validation (ReqLint) | `FR-VAL-*` | `ram/validation` | Deterministic structural checks (UC-VAL-run-validation) |
 | AI assistants | `FR-AI-*` | `ram/ai` (LLM proxy) | Proxy to the external LLM service |
-| Export / Import | `FR-EXP-*` / `FR-IMP-*` | `ram/export` | Export rendering to PDF/DOCX/Markdown preserving template structure (UC-EXP-export-document, UC-EXP-export-bundle); project-source-material upload (PDF/PPTX, allowlisted, ≤ 25 MB), storage, and server-side text extraction for AI context (UC-AI-import-source-material). Binary storage & extraction: see [Data architecture](#data-architecture) |
+| Export / Import | `SI-export-formats`/`SI-export-fidelity` / `SI-import-allowlist`/`SI-import-extraction` | `ram/export` | Export rendering to PDF/DOCX/Markdown preserving template structure (UC-EXP-export-document, UC-EXP-export-bundle); project-source-material upload (PDF/PPTX, allowlisted, ≤ 25 MB), storage, and server-side text extraction for AI context (UC-AI-import-source-material). Binary storage & extraction: see [Data architecture](#data-architecture) |
 
 ### *Security & Compliance*
 
@@ -430,13 +430,13 @@ Single-tenant: one deployment serves one institution. The trust boundary is the 
 
 #### **Binary content & file storage**
 
-- Beyond the relational graph, RAM accepts **uploaded files** — a team's *project source material* (PDF/PPTX, allowlisted file types, ≤ 25 MB per file) imported as input for the AI assistants (FR-IMP-*, SI-import-allowlist, SI-import-extraction, UC-AI-import-source-material). For each accepted upload the module stores **the file's bytes** and the **server-side-extracted text** used as assistant context.
+- Beyond the relational graph, RAM accepts **uploaded files** — a team's *project source material* (PDF/PPTX, allowlisted file types, ≤ 25 MB per file) imported as input for the AI assistants (SI-import-allowlist, SI-import-extraction, UC-AI-import-source-material). For each accepted upload the module stores **the file's bytes** and the **server-side-extracted text** used as assistant context.
 - **Storage location:** the large binary files live in **Azure Blob Storage**; MySQL holds only a **reference** (blob path/URL + metadata) and the **server-side-extracted text**. Large media don't belong in the relational store — keeping bytes out of MySQL keeps the DB small and backups/migrations fast. The cost is a **second managed store**: the FERPA surface now spans MySQL **and** the Blob container (both Azure-managed and encrypted at rest, under the one single-tenant trust boundary). The `export` component writes and reads file bytes through the Blob SDK over HTTPS and persists the reference + text over JDBC.
-- **Text extraction** runs **server-side** (a parsing step, e.g. Apache Tika / PDFBox + Apache POI) and reports incomplete extraction for image-only or scanned files (FR-IMP-text-extraction). The browser never parses files; uploads are multipart to the REST API, which streams the bytes to Blob Storage and persists the reference + extracted text in MySQL.
+- **Text extraction** runs **server-side** (a parsing step, e.g. Apache Tika / PDFBox + Apache POI) and reports incomplete extraction for image-only or scanned files (SI-import-extraction; UC-AI-import-source-material). The browser never parses files; uploads are multipart to the REST API, which streams the bytes to Blob Storage and persists the reference + extracted text in MySQL.
 
 #### **Document export**
 
-- Export (UC-EXP-export-document, UC-EXP-export-bundle, FR-EXP-*, SI-export-formats) renders a document — or a **bundle** of all of a team's documents — to **PDF, DOCX, or Markdown** from the stored section content, preserving the template-defined structure (table of contents, heading hierarchy, numbering, formatting). Rendering is a **server-side** step in the `export` component; the specific rendering toolchain/library is an open decision settled at `/design` of the EXP area. Export reads existing data only — it adds no persistent state.
+- Export (UC-EXP-export-document, UC-EXP-export-bundle, SI-export-formats, SI-export-fidelity) renders a document — or a **bundle** of all of a team's documents — to **PDF, DOCX, or Markdown** from the stored section content, preserving the template-defined structure (table of contents, heading hierarchy, numbering, formatting). Rendering is a **server-side** step in the `export` component; the specific rendering toolchain/library is an open decision settled at `/design` of the EXP area. Export reads existing data only — it adds no persistent state.
 
 #### **Retention**
 
@@ -530,6 +530,8 @@ Single-tenant: one deployment serves one institution. The trust boundary is the 
 | QS-5 | Reliability *(availability)* | The LLM service times out or is down · degraded | AI features degrade gracefully; authoring/saving unaffected | Authoring + save unaffected; AI shows a response or a clear working/timeout indication within 15 s (PER-ai-response-time) and offers retry; no data loss |
 | QS-6 | Reliability | A new release is deployed · deploy-time | Schema migrates; one container serves API + SPA | Flyway migrations apply cleanly; staging-slot smoke check passes before swap; overall availability ≥ 99% per academic term excluding scheduled maintenance (AVL-uptime); **note:** new RSA key invalidates live JWTs → users re-login (see KD-4) |
 | QS-7 | Performance | A student loads a team's requirements graph and runs ReqLint at course scale (~75 total users, ≤ 100 concurrent editors — SCA-cohort-load; ~1,000 artifacts) · normal op | Page and validation respond within target | ReqLint returns within 3 s for 95% of runs on a single document (PER-validation-speed); p95 graph-load API response < 500 ms at ~1,000 artifacts |
+
+> **Verification.** This table owns each scenario's *definition* (stimulus / response / measure). Which test verifies each `QS-n`, and its current state, are tracked once in the [non-functional traceability matrix](../traceability.md#non-functional-traceability-matrix) — the quality-attribute → scenario → test map — not duplicated here.
 
 ## **Risks and Technical Debt**
 

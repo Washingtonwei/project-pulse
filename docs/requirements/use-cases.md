@@ -2879,6 +2879,8 @@ The student shall be able to cancel the use case at any time prior to submitting
 - **4a. document section already locked by another team member**
   - 4a1. The system alerts the student that another team member is currently editing this document section and does not grant the lock.
   - 4a2. The student either chooses to select a different document section (returns to step 3) or chooses to terminate the use case.
+- **6a. The student navigates away from the document section before confirming completion**
+  - 6a1. The system immediately persists the latest content of the document section, releases the lock on the document section, and ends the use case.
 - **7a. Input validation rule violation**
   - 7a1. The system alerts the student that an input validation rule is violated and displays the nature and location of the error.
   - 7a2. The student corrects the mistake and returns to step 7 of the normal flow.
@@ -3100,6 +3102,8 @@ The student shall be able to cancel the use case at any time prior to submitting
 - **4a. use case already locked by another team member**
   - 4a1. The system alerts the student that another team member is currently editing this use case and does not grant the lock.
   - 4a2. The student either waits and returns to step 3 of the normal flow or chooses to terminate the use case.
+- **6a. The student navigates away from the use case before confirming the change**
+  - 6a1. The system immediately persists the latest changes to the use case, releases the lock on the use case, and ends the use case.
 - **7a. Input validation rule violation**
   - 7a1. The system alerts the student that an input validation rule is violated and displays the nature and location of the error.
   - 7a2. The student corrects the mistake and returns to step 7 of the normal flow.
@@ -3825,9 +3829,12 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Business Rules:**
 **Associated Information:**
 
+The ReqLint engine applies the applicable deterministic validation rules to the document and returns a structured list of issues, each classified by severity (ERROR, WARNING, INFO) and tied to the document section or item it concerns. The same checks are re-run automatically during authoring by the background re-evaluation (FR-VAL-background-recheck).
+
 Details (Examples of Document-Level Checks):
 - Required document section missing or empty
 - Required fields missing for a document section/item
+- Ambiguous, unverifiable, or subjective wording, per instructor-defined rules and defaults
 - Naming convention violations (e.g., missing artifact keys where required)
 - Required "shall" structure for functional requirements (if applicable)
 - use case step format rules (if applicable)
@@ -4019,7 +4026,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Business Rules:** BR-review-lock — Once a document is locked for review, students may no longer edit it until the instructor returns it for revision (see UC-REV-review-documents).
 **Associated Information:**
 
-Notification: Notify the course section's instructor on submission, delivered by email via the Gmail SMTP integration (FR-NOT-review-workflow).
+Notification: Notify the course section's instructor on submission (FR-NOT-review-workflow; delivered per CI-review-emails).
 
 **Related Use Cases:** UC-REV-review-documents: The instructor reviews a team's requirement documents.
 **Assumptions:**
@@ -4064,7 +4071,7 @@ Notification: Notify the course section's instructor on submission, delivered by
 **Business Rules:** BR-review-authority — Only an instructor assigned to the course section may review, accept, or return a submitted document. Returning a document for revision unlocks it for student editing.
 **Associated Information:**
 
-Notification: Notify the team's students of the review outcome (returned for revision or accepted), delivered by email via the Gmail SMTP integration (FR-NOT-review-workflow).
+Notification: Notify the team's students of the review outcome — returned for revision or accepted (FR-NOT-review-workflow; delivered per CI-review-emails).
 
 **Related Use Cases:** UC-COL-add-comment: Comment on a requirement document; UC-REV-submit-for-review: The student submits requirements for review.
 **Assumptions:**
@@ -4330,9 +4337,9 @@ File names include document type and team identifier.
 **Business Rules:** BR-section-config-access — Only an instructor assigned to the course section (including a course admin of its course) may view or edit its cross-document review criteria.
 **Associated Information:**
 - The cross-document review criteria are a course-section-level teaching artifact, distinct from the teaching context (UC-CFG-configure-teaching-context) and per-assistant assistant instructions (UC-CFG-configure-assistant-instructions); they govern the critique assistant's whole-project review mode (UC-AI-whole-project-review) specifically.
-- While the criteria are undefined for a course section, the whole-project review is unavailable to that course section's students (FR-AI-review-criteria-required).
+- While the criteria are undefined for a course section, the whole-project review is unavailable to that course section's students (UC-AI-whole-project-review, PRE-4 and extension 1a).
 - The system-provided default the criteria are seeded from (main flow step 2) is maintained in `docs/product/cross-document-review-criteria.md` (the default criteria set + the critique assistant's whole-project-review system prompt).
-- Realized by FR-AI-review-criteria; honors FR-AI-review-criteria-required.
+- The configured criteria are consumed by the critique assistant's whole-project review (UC-AI-whole-project-review), which includes them in its context and is unavailable until they are defined.
 
 **Related Use Cases:** UC-AI-whole-project-review: Request a whole-project review from the critique assistant; UC-CFG-configure-teaching-context: Configure the teaching context for a course section; UC-CFG-configure-assistant-instructions: Configure the assistant instructions for a course section.
 **Assumptions:**
@@ -4379,7 +4386,7 @@ File names include document type and team identifier.
 **Associated Information:**
 - The elicitation assistant uses the imported materials for gap analysis and interview-question preparation (UC-AI-elicit-requirements); the critique and drafting assistants may use them as context.
 - Supported formats are PDF (`.pdf`) and PowerPoint (`.pptx`, `.ppt`); the per-file size limit is system-configurable (default 25 MB).
-- Realized by FR-IMP-upload-allowlist, FR-IMP-text-extraction; honors FR-AI-source-material-context.
+- Honors FR-AI-source-material-context; the upload allowlist and text extraction are specified by SI-import-allowlist and SI-import-extraction.
 
 **Related Use Cases:** UC-AI-elicit-requirements: Elicit requirements with the elicitation assistant; UC-AI-structure-notes: Turn meeting notes into structured requirements.
 **Assumptions:**
@@ -4446,7 +4453,7 @@ File names include document type and team identifier.
 - The imported pitch materials are a starting snapshot that rots as the project evolves; in the broad, project-wide mode the assistant grounds its gap analysis increasingly in the project's current requirements coverage, and flags when a gap or assumption rests only on the (possibly stale) pitch so the student knows to re-verify with the client. Later in the project the student can exclude the pitch entirely for a session and elicit against the drafted requirements alone.
 - Reviewing the student's own draft questions — flagging technical jargon and suggesting plain-language phrasings with rationale — is part of this coaching, so the student learns to communicate with a non-technical client.
 - All calls to the LLM Service are routed through the server-side AI proxy.
-- Realized by FR-AI-elicitation-coaching, FR-AI-question-review, FR-AI-gap-analysis, FR-AI-exclude-source-material; honors FR-AI-no-auto-edit, FR-AI-degradation, FR-AI-source-material-context.
+- Honors FR-AI-no-auto-edit, FR-AI-degradation, FR-AI-source-material-context.
 
 **Related Use Cases:** UC-AI-practice-interview: Practice a client interview with a role-playing client assistant; UC-AI-structure-notes: Turn meeting notes into structured requirements; UC-AI-consult-project-assistant: Consult the project assistant; UC-DOC-edit-document: Edit a section-based requirement document; UC-DOC-edit-use-case: Edit a use case; UC-CFG-configure-teaching-context: Configure the teaching context for a course section; UC-CFG-toggle-assistants: Enable or disable AI assistants for a course section.
 **Assumptions:**
@@ -4493,7 +4500,7 @@ File names include document type and team identifier.
 - Educational goal: train client communication without putting real clients in the system.
 - The assistant draws on the teaching context for the scenario and the standards being taught.
 - The practice runs on a fictional scenario: nothing the simulated client says is real project input, and the session yields no requirement content for the team's project. Its value is the interviewing skill the student builds before the real elicitation (UC-AI-elicit-requirements) — it is deliberately not wired to the structuring use case (UC-AI-structure-notes), which is for real client-meeting notes.
-- Realized by FR-AI-client-roleplay; honors FR-AI-degradation.
+- Honors FR-AI-degradation.
 
 **Related Use Cases:** UC-AI-elicit-requirements: Elicit requirements with the elicitation assistant; UC-CFG-toggle-assistants: Enable or disable AI assistants for a course section.
 **Assumptions:**
@@ -4545,7 +4552,7 @@ File names include document type and team identifier.
 - The meeting notes are the student's own notes from a real client interaction (typically the off-platform interview she prepared for via UC-AI-elicit-requirements) — transient input provided for this session, not project source material (UC-AI-import-source-material) and not stored or graded as requirement content. Practice-interview notes (UC-AI-practice-interview) are fictional and are deliberately not used here.
 - This use case **structures** verified notes into candidate requirements; it is distinct from the **verification** the elicitation assistant performs in UC-AI-elicit-requirements (step 6), which checks the client's raw answers for clarity, consistency, and completeness. The normal order is verify first (UC-AI-elicit-requirements), then structure the verified notes here.
 - Each accepted candidate is applied through UC-AI-review-proposal as the student's own authored edit (recorded as hers, with provenance), then refined by her — the assistant never silently writes content.
-- Realized by FR-AI-structuring, FR-AI-rationale; honors FR-AI-no-auto-edit, FR-AI-explicit-acceptance, FR-AI-degradation.
+- Honors FR-AI-rationale, FR-AI-no-auto-edit, FR-AI-degradation; per-item acceptance via UC-AI-review-proposal (BR-explicit-acceptance).
 
 **Related Use Cases:** UC-AI-elicit-requirements: Elicit requirements with the elicitation assistant; UC-AI-review-proposal: Review and accept or reject an assistant proposal; UC-DOC-edit-document: Edit a section-based requirement document; UC-DOC-create-use-case: Create a use case; UC-DOC-edit-use-case: Edit a use case; UC-ART-create-artifact: Create a requirement artifact; UC-CFG-toggle-assistants: Enable or disable AI assistants for a course section.
 **Assumptions:**
@@ -4595,7 +4602,7 @@ File names include document type and team identifier.
 - Critique evaluates against the standards encoded in the teaching context (e.g., INVEST, testability, Wiegers categories).
 - Distinct from UC-VAL-run-validation (ReqLint): ReqLint is deterministic rule-checking; critique is qualitative assistant feedback that complements it.
 - Requesting a critique is read-only — it neither locks nor modifies the selected item. Acting on a finding changes content only through the normal path: a manual revision (UC-DOC-edit-document / UC-DOC-edit-use-case) or an accepted rewrite (extension 4a) via UC-AI-review-proposal, each subject to the selected item's lock.
-- Realized by FR-AI-critique, FR-AI-rationale; honors FR-AI-no-auto-edit, FR-AI-distinguish-suggestions, FR-AI-degradation.
+- Honors FR-AI-rationale, FR-AI-no-auto-edit, FR-AI-distinguish-suggestions, FR-AI-degradation.
 
 **Related Use Cases:** UC-VAL-run-validation: Run validation (ReqLint) on the current document; UC-AI-review-proposal: Review and accept or reject an assistant proposal; UC-DOC-edit-document: Edit a section-based requirement document; UC-DOC-edit-use-case: Edit a use case; UC-CFG-configure-teaching-context: Configure the teaching context for a course section; UC-CFG-toggle-assistants: Enable or disable AI assistants for a course section.
 **Assumptions:**
@@ -4639,7 +4646,7 @@ File names include document type and team identifier.
 **Business Rules:** BR-assistant-socratic — Tutor Mode shall not modify student-authored content. The tutor assistant must be enabled for the course section (UC-CFG-toggle-assistants). For a flagged validation issue, the explanation shall identify the rule violated and a suggested fix.
 **Associated Information:**
 - The tutor draws on the teaching context so explanations match the standards the student is graded against.
-- Realized by FR-AI-tutor-explain; honors FR-AI-degradation.
+- Honors FR-AI-degradation.
 
 **Related Use Cases:** UC-VAL-run-validation: Run validation (ReqLint) on the current document; UC-GLO-view-term: View a glossary term; UC-AI-critique: Request a critique from the critique assistant; UC-CFG-configure-teaching-context: Configure the teaching context for a course section; UC-CFG-toggle-assistants: Enable or disable AI assistants for a course section.
 **Assumptions:**
@@ -4683,7 +4690,7 @@ File names include document type and team identifier.
 **Business Rules:** BR-assistant-enablement, BR-assistant-socratic, BR-explicit-acceptance — The drafting assistant shall be disabled by default for a course section and is enabled only through UC-CFG-toggle-assistants. Proposed content shall be applied only through the explicit acceptance loop of UC-AI-review-proposal (no "accept all"). The assistant shall produce scaffolding and clearly-marked candidates, not silently inserted finished content.
 **Associated Information:**
 - Educational tiebreaker: in course use this assistant is off by default so that students structure their own work; it exists chiefly for the secondary, future real-developer audience.
-- Realized by FR-AI-drafting, FR-AI-explicit-acceptance; honors FR-AI-no-auto-edit, FR-AI-distinguish-suggestions, FR-AI-enablement, FR-AI-degradation; governed by UC-CFG-toggle-assistants.
+- Honors FR-AI-no-auto-edit, FR-AI-distinguish-suggestions, FR-AI-enablement, FR-AI-degradation; per-item acceptance via UC-AI-review-proposal (BR-explicit-acceptance); governed by UC-CFG-toggle-assistants.
 
 **Related Use Cases:** UC-DOC-create-use-case: Create a use case; UC-ART-create-artifact: Create a requirement artifact; UC-AI-review-proposal: Review and accept or reject an assistant proposal; UC-CFG-toggle-assistants: Enable or disable AI assistants for a course section.
 **Assumptions:**
@@ -4728,7 +4735,7 @@ File names include document type and team identifier.
 **Business Rules:** BR-assistant-socratic, BR-explicit-acceptance — The system shall not apply assistant-generated content without an explicit, per-item acceptance by the student. The system shall not provide an "accept all" shortcut. Each proposed change shall be shown with its rationale and visually distinguished until accepted. A change shall be applied only to its authoring destination — a document section (UC-DOC-edit-document) or a use case (UC-DOC-edit-use-case) — and only while the student holds that authoring destination's lock.
 **Associated Information:**
 - The friction in this loop is pedagogically intentional and shall not be optimized away.
-- Realized by FR-AI-explicit-acceptance; honors FR-AI-no-auto-edit, FR-AI-distinguish-suggestions.
+- Specifies the per-item acceptance rule of BR-explicit-acceptance (no "accept all"); honors FR-AI-no-auto-edit, FR-AI-distinguish-suggestions.
 
 **Related Use Cases:** UC-AI-critique: Request a critique from the critique assistant; UC-AI-draft-skeleton: Generate a draft requirement skeleton with an assistant; UC-AI-structure-notes: Turn meeting notes into structured requirements; UC-AI-tutor: Ask an assistant to explain a concept (Tutor Mode); UC-DOC-edit-document: Edit a section-based requirement document; UC-DOC-edit-use-case: Edit a use case.
 **Assumptions:**
@@ -4780,7 +4787,7 @@ File names include document type and team identifier.
 - It draws on the project's current requirements coverage, the imported project source material, and the teaching context configured for the course section (UC-CFG-configure-teaching-context).
 - Educational intent: it lowers the cost of finding the right next step without doing the student's thinking for her; productivity is deliberately subordinate to learning.
 - All calls to the LLM Service are routed through the server-side AI proxy.
-- Realized by FR-AI-project-assistant, FR-AI-routing; honors FR-AI-no-auto-edit, FR-AI-enablement, FR-AI-degradation.
+- Honors FR-AI-no-auto-edit, FR-AI-enablement, FR-AI-degradation.
 
 **Related Use Cases:** UC-AI-elicit-requirements: Elicit requirements with the elicitation assistant; UC-AI-critique: Request a critique from the critique assistant; UC-AI-whole-project-review: Request a whole-project review from the critique assistant; UC-AI-tutor: Ask an assistant to explain a concept (Tutor Mode); UC-DOC-edit-document: Edit a section-based requirement document; UC-DOC-edit-use-case: Edit a use case; UC-CFG-configure-teaching-context: Configure the teaching context for a course section; UC-CFG-toggle-assistants: Enable or disable AI assistants for a course section.
 **Assumptions:**
@@ -4829,11 +4836,11 @@ File names include document type and team identifier.
 **Frequency of Use:** Periodic; typically at milestones and before submission.
 **Business Rules:** BR-assistant-socratic, BR-explicit-acceptance — Every finding shall include an instructive rationale. The critique assistant must be enabled for the course section (UC-CFG-toggle-assistants). The assistant shall not modify student-authored content without explicit confirmation (UC-AI-review-proposal). The review is advisory and distinct from ReqLint validation (UC-VAL-run-validation).
 **Associated Information:**
-- The whole-project review reads the team's entire set of requirement documents together (the document set may grow beyond the current five); it is the project-wide complement to the per-destination critique in UC-AI-critique and to the elicitation assistant's broad-mode gap analysis (FR-AI-gap-analysis).
+- The whole-project review reads the team's entire set of requirement documents together (the document set may grow beyond the current five); it is the project-wide complement to the per-destination critique in UC-AI-critique and to the elicitation assistant's broad-mode gap analysis (UC-AI-elicit-requirements, extension 1a).
 - The dimensions and standards applied are the cross-document review criteria configured by the instructor for the course section (UC-CFG-configure-review-criteria); the review methodology and the system-provided default criteria set are maintained in `docs/product/cross-document-review-criteria.md`.
 - Requesting a whole-project review is read-only — it neither locks nor modifies any document. Acting on a finding changes content only through the normal path: a manual revision (UC-DOC-edit-document / UC-DOC-edit-use-case) or an accepted rewrite (extension 4a) via UC-AI-review-proposal, each subject to the affected item's lock.
 - Reachable directly (a "Review whole project" action) and via the project assistant (UC-AI-consult-project-assistant), which routes the student into this use case.
-- Realized by FR-AI-whole-project-review, FR-AI-review-criteria; honors FR-AI-no-auto-edit, FR-AI-rationale, FR-AI-degradation, FR-AI-review-criteria-required.
+- Honors FR-AI-rationale, FR-AI-no-auto-edit, FR-AI-degradation.
 
 **Related Use Cases:** UC-AI-critique: Request a critique from the critique assistant; UC-AI-consult-project-assistant: Consult the project assistant; UC-CFG-configure-review-criteria: Configure the cross-document review criteria for a course section; UC-VAL-run-validation: Run validation (ReqLint) on the current document; UC-AI-review-proposal: Review and accept or reject an assistant proposal; UC-DOC-edit-document: Edit a section-based requirement document; UC-DOC-edit-use-case: Edit a use case.
 **Assumptions:**

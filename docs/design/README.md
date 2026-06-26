@@ -84,7 +84,7 @@ Use this skeleton as a *menu*, not a checklist. Drop any section that would only
 # <Area> Design
 
 > Realizes: UC-<AREA>-1, UC-<AREA>-2, …
-> Depends on FRs: FR-<AREA>-n, FR-LOCK-*, … (the cross-cutting subsystems it builds on)
+> Depends on FRs: FR-<AREA>-n, FR-SAVE-*, … (the cross-cutting subsystems it builds on)
 > See: ../requirements/use-cases.md, ../requirements/software-requirements-specification.md, architectural-design.md (Container & Component diagrams + cross-cutting subsystems)
 
 ## Overview
@@ -110,8 +110,8 @@ The *delta* this area adds (new tables/columns/migrations) — as an ER diagram 
 helps. Don't redraw the shared graph; link to the SRS's Business Domain Model instead.
 
 ## Reuse & cross-cutting
-Which existing subsystems this leans on — locking (FR-LOCK-*), collaboration
-(FR-COL-*), validation (FR-VAL-*), auth, email — rather than reinventing.
+Which existing subsystems this leans on — locking (BR-edit-lock-required/BR-lock-expiry),
+collaboration (UC-COL-*), validation (FR-VAL-*), auth, email — rather than reinventing.
 
 ## Open questions / risks
 ```

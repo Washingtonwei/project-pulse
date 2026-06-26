@@ -21,7 +21,7 @@
 
 ## **The Purpose of this Document**
 
-This Software Requirements Specification describes the external behavior and quality attributes of Project Pulse for release 1.0, across both of its capability areas — the weekly activity report and peer evaluation workflows and the Requirements Authoring & Management (RAM) environment. The behavioral specification for both areas is carried by the use cases ([use-cases.md](use-cases.md)), each of which is itself a high-level functional requirement. The non-use-case functional requirements, data model, external interfaces, and quality attributes in this document specify the system-level behaviors that fall outside any single use case; these are concentrated in the cross-cutting subsystems — authentication and access control, notifications, and the RAM-specific autosave, locking, validation, AI orchestration, export, and import — because the performance-tracking workflows are specified almost entirely as use cases. It is the reference against which Project Pulse is built, tested, and maintained, and it aligns students, instructors, and developers on what the system does.
+This Software Requirements Specification describes the external behavior and quality attributes of Project Pulse for release 1.0, across both of its capability areas — the weekly activity report and peer evaluation workflows and the Requirements Authoring & Management (RAM) environment. The behavioral specification for both areas is carried by the use cases ([use-cases.md](use-cases.md)), each of which is itself a high-level functional requirement. The non-use-case functional requirements, data model, external interfaces, and quality attributes in this document specify the system-level behaviors that fall outside any single use case; these are concentrated in the cross-cutting subsystems — authentication and access control, notifications, and the RAM-specific autosave, validation, and AI orchestration — because the performance-tracking workflows are specified almost entirely as use cases. It is the reference against which Project Pulse is built, tested, and maintained, and it aligns students, instructors, and developers on what the system does.
 
 **How the requirements are organized.** The requirements are not one document but a set of linked documents that describe a single shared model of the system from complementary angles, each the source of truth for its own topic. The SRS is the integrating entry point: it specifies the requirements it owns and links to the others rather than restating them, so each topic is defined once. The documents, in reading order:
 
@@ -56,7 +56,7 @@ The arrows read "is referenced by": the Project Glossary, Vision and Scope, Use 
 
 ## **Document Conventions**
 
-- Identifier schemes are stable, append-only handles, independent of heading position. Business objectives use `BO-<AREA>-<slug>` ([vision-and-scope.md](vision-and-scope.md)); non-use-case functional requirements use `FR-<AREA>-<slug>` (e.g., `FR-LOCK-exclusive`); use cases use `UC-<AREA>-<slug>` ([use-cases.md](use-cases.md)); business rules use `BR-<slug>` ([business-rules.md](business-rules.md)). Product-generated artifact keys (e.g., `BO-3`, `RI-1`, `AS-6`, `UC-5`) follow a per-type running sequence, unique within a team, as defined under artifact key in the Project Glossary. SRS-local identifiers label its interface, data, and quality items: the External Interface Requirements codes (`UI-*`, `SI-*`, `CI-*`), the Data Requirements codes (`DI-*`), and the Quality Attributes codes (`USE-*`, `PER-*`, `SEC-*`, `SAF-*`, `AVL-*`, `ROB-*`, `SCA-*`, `INT-*`, `MNT-*`). The operating environment (`OE-*`), design and implementation constraints (`CO-*`), and architecture-level assumptions and dependencies (`AS-*`, one team-wide set shared with Vision and Scope, and `DE-*`) are defined in the Overall Description section below.
+- Identifier schemes are stable, append-only handles, independent of heading position. Business objectives use `BO-<AREA>-<slug>` ([vision-and-scope.md](vision-and-scope.md)); non-use-case functional requirements use `FR-<AREA>-<slug>` (e.g., `FR-SAVE-autosave-active`); use cases use `UC-<AREA>-<slug>` ([use-cases.md](use-cases.md)); business rules use `BR-<slug>` ([business-rules.md](business-rules.md)). Product-generated artifact keys (e.g., `BO-3`, `RI-1`, `AS-6`, `UC-5`) follow a per-type running sequence, unique within a team, as defined under artifact key in the Project Glossary. SRS-local identifiers label its interface, data, and quality items: the External Interface Requirements codes (`UI-*`, `SI-*`, `CI-*`), the Data Requirements codes (`DI-*`), and the Quality Attributes codes (`USE-*`, `PER-*`, `SEC-*`, `SAF-*`, `AVL-*`, `ROB-*`, `SCA-*`, `INT-*`, `MNT-*`). The operating environment (`OE-*`), design and implementation constraints (`CO-*`), and architecture-level assumptions and dependencies (`AS-*`, one team-wide set shared with Vision and Scope, and `DE-*`) are defined in the Overall Description section below.
 - Non-use-case functional requirements are written as EARS-style "shall" statements. A use case is itself a high-level functional requirement, so its steps and Associated Information are its detailed specification and are not restated as separate functional requirements.
 - Markdown is the canonical format and cross-references are live links. Square-bracketed italic passages are template author-guidance, not requirements.
 - This document does not duplicate content owned by another document: each topic has a single source of truth and is referenced here (for example, the Project Glossary, Vision and Scope, Use Cases, and Business Rules documents are linked here rather than copied in).
@@ -87,13 +87,11 @@ Project Pulse has three user classes — student, instructor, and course admin �
 
 OE-supported-browsers: Project Pulse shall run in the current released versions of Google Chrome, Mozilla Firefox, Microsoft Edge, and Apple Safari.
 
-OE-server-stack: The Project Pulse server shall run the REST API as a Java/Spring Boot application on a supported Java Virtual Machine, serve the Vue.js single-page application to clients, and persist data in a relational database.
+OE-server-stack: The Project Pulse server shall run on a supported Java Virtual Machine and serve the single-page application to standard web browsers over the network; the technology stack it is built on — the Vue.js client, the Java/Spring Boot REST API, and the relational database — is mandated by CO-vue-spring-stack and CO-relational-persistence rather than restated here.
 
 OE-https-access: Users shall access RAM over HTTPS from the public internet, requiring no client software beyond a web browser.
 
-OE-single-application: Project Pulse shall be deployed as a single application in which both capability areas — the weekly activity report and peer evaluation workflows and the RAM environment — share one single-page application, one REST API, and one database.
-
-OE-external-services: Project Pulse shall reach the external LLM service over HTTPS and the Gmail system over SMTP for AI-assisted review and email notifications, respectively.
+OE-external-services: Project Pulse operates alongside two external systems it must reach over the network — the external LLM service over HTTPS and the Gmail system over SMTP — for AI-assisted review and email notifications, respectively. How those calls are made (the server-side AI proxy, the Gmail SMTP integration) is mandated by CO-server-side-llm-proxy and CO-gmail-smtp.
 
 ## **Design and Implementation Constraints**
 
@@ -145,67 +143,29 @@ Each **use case is itself a functional requirement**, expressed at a high level:
 
 Not all functional behaviors of Project Pulse are best expressed as use cases. This section captures system-driven, event-driven, global, or background behaviors using structured "shall" statements following principles inspired by the EARS (Easy Approach to Requirements Syntax) format.
 
-These requirements describe system-level functions that support or enable the use cases but are not user-initiated workflows. They span both capability areas: security and authorization (`FR-SEC-*`) and notifications (`FR-NOT-*`) are system-wide, while autosave, locking, validation, real-time collaboration, AI orchestration, templates, terminology invariants, authorship metadata, export, and import are the cross-cutting subsystems of the RAM environment.
+These requirements describe system-level functions that support or enable the use cases but are not user-initiated workflows. They span both capability areas: security and authorization (`FR-SEC-*`) and notifications (`FR-NOT-*`) are system-wide, while autosave, validation, AI orchestration, templates, terminology invariants, and authorship metadata are the cross-cutting subsystems of the RAM environment. (Section locking is specified by BR-edit-lock-required / BR-lock-expiry and the editing use cases' own steps; real-time collaboration by UC-COL-collaborative-edit and the PER-collab-latency / ROB-no-overwrite targets; and document export and project-source import by their use cases and the External Interface Requirements — so none carries separate non-use-case FRs.)
 
 ### *Autosave and Persistence Requirements*
 
-**FR-SAVE-autosave-active (State-Driven):** While a student is actively editing an authoring destination, the system shall automatically save the authoring destination's content at the autosave cadence specified in PER-autosave-cadence.
-
-**FR-SAVE-on-navigate-away (Event-Driven):** When a student leaves an authoring destination or navigates away, the system shall immediately persist the latest content of that authoring destination.
-
-**FR-SAVE-crash-loss-bound (Ubiquitous):** The system shall limit the work lost in the event of a browser crash, disconnection, or power failure to the bound specified in ROB-edit-loss-bound.
-
-**FR-SAVE-failure-retry (Event-Driven):** When an autosave operation fails, the system shall notify the user and retry in the background without interrupting editing.
-
-### *Authoring Destination Locking Requirements*
-
-**FR-LOCK-acquire (Event-Driven):** When a student begins editing an authoring destination, the system shall acquire an exclusive lock for that authoring destination for that student.
-
-**FR-LOCK-exclusive (Ubiquitous):** The system shall prevent other students from modifying an authoring destination that is currently locked.
-
-**FR-LOCK-release (Event-Driven):** When a student stops interacting with an authoring destination, the system shall release the lock for that authoring destination.
-
-**FR-LOCK-timeout (State-Driven Timeout):** While an authoring destination lock has been held for longer than a configurable interval since it was acquired (default 15 minutes), the system shall automatically release the lock.
-
-**FR-LOCK-broadcast (Event-Driven):** When a lock is acquired or released, the system shall broadcast the updated lock state to all team members viewing the document.
+**FR-SAVE-autosave-active (State-Driven):** While a student is actively editing an authoring destination, the system shall automatically save the authoring destination's content at the autosave cadence specified in PER-autosave-cadence. (Immediate persistence when the student navigates away is part of the editing use cases — UC-DOC-edit-document, UC-DOC-edit-use-case; the edit-loss and autosave-retry robustness bounds are ROB-edit-loss-bound and ROB-autosave-retry.)
 
 ### *Real-Time Collaboration Requirements*
 
-*Post-MVP. Real-time collaboration — live collaborator presence and broadcast — is deferred beyond the initial release; the `FR-COL-*` requirements below (and the related PER-collab-latency and ROB-no-overwrite targets) are retained as future scope. The MVP collaboration model is comment threads (UC-COL-add-comment, UC-COL-resolve-comment) over pessimistic section-level locking (`FR-LOCK-*`); concurrent authoring is serialized by locks rather than merged live.*
-
-**FR-COL-presence (State-Driven):** While multiple students are connected to the same document, the system shall display the presence of each connected collaborator and the current lock state of each document section and use case.
-
-**FR-COL-join (Event-Driven):** When a collaborator joins a document, the system shall notify all currently connected users.
-
-**FR-COL-disconnect (Event-Driven):** When a collaborator disconnects, the system shall notify all currently connected users within 2 seconds.
-
-**FR-COL-no-overwrite (Ubiquitous):** The system shall ensure that real-time updates do not overwrite or corrupt content saved by other collaborators.
+*Post-MVP, and specified by its use case rather than by separate FRs.* Real-time collaboration — live collaborator presence, join/disconnect notification, and live broadcast of saved changes and lock state — is deferred beyond the initial release. Its behavior is the flow of UC-COL-collaborative-edit: presence and lock-state display, join and disconnect notification, and live broadcast are its system steps, and its POST-2 is the no-overwrite guarantee — so it carries no separate non-use-case FRs (the same complement-don't-duplicate rule applied to section locking, export, and import). The timing and robustness targets are PER-collab-latency and ROB-no-overwrite, and the no-overwrite invariant is BR-collab-no-overwrite. The MVP collaboration model is comment threads (UC-COL-add-comment, UC-COL-resolve-comment) over pessimistic section-level locking (BR-edit-lock-required, BR-lock-expiry; UC-DOC-edit-document, UC-DOC-edit-use-case); concurrent authoring is serialized by locks rather than merged live.
 
 ### *Validation and Consistency Requirements (ReqLint)*
 
-**FR-VAL-engine (Ubiquitous):** The system shall provide a ReqLint validation engine that evaluates a requirement document against the applicable deterministic validation rules and produces a structured list of issues, each classified by severity (ERROR, WARNING, INFO) and tied to the document section or item it concerns. This engine is invoked both on student request (UC-VAL-run-validation) and by the periodic background re-evaluation of FR-VAL-background-recheck. _(Supports BO-RAM-requirement-quality, BO-RAM-instructor-workload.)_
+The on-demand ReqLint behavior — the engine that evaluates a requirement document against the applicable deterministic validation rules and returns a structured list of issues, each classified by severity (ERROR, WARNING, INFO) and tied to the document section or item it concerns, including the specific checks it applies (required document sections present, ambiguous/unverifiable/subjective wording flagged, naming and "shall"-structure rules) — is specified by UC-VAL-run-validation, which is itself a high-level functional requirement, and is not restated here. Unique identifiers for requirements, document sections, glossary terms, and use cases are assigned and kept unique by the create use cases (UC-ART-create-artifact, UC-DOC-create-use-case) under BR-artifact-key-unique and DI-artifact-key-assignment, not by a separate validation requirement. This section therefore holds only the one validation behavior that is **not** a user-initiated workflow: the background re-evaluation that runs automatically while a student edits.
 
-**FR-VAL-background-recheck (State-Driven, Optional):** While a student edits a document section, the system shall periodically re-evaluate the document section for ambiguity, missing required fields, or stylistic violations. _(Supports BO-RAM-requirement-quality.)_
-
-**FR-VAL-unique-ids (Ubiquitous):** The system shall provide unique identifiers for all requirements, document sections, glossary terms, and use cases to support traceability. _(Supports BO-RAM-requirement-quality, BO-RAM-consistency.)_
-
-**FR-VAL-rename-propagation (Event-Driven):** When a glossary term is renamed, the system shall identify and update or flag all references to that term across all documents in the project. _(Supports BO-RAM-requirement-quality, BO-RAM-consistency.)_
-
-**FR-VAL-required-sections (Ubiquitous):** The system shall verify the presence of all mandatory document sections defined in the chosen template. _(Supports BO-RAM-requirement-quality.)_
-
-**FR-VAL-vagueness (Ubiquitous):** The system shall flag ambiguous, unverifiable, or subjective wording based on instructor-defined rules and defaults. _(Supports BO-RAM-requirement-quality.)_
+**FR-VAL-background-recheck (State-Driven, Optional):** While a student edits a document section, the system shall periodically re-evaluate that document section using the same ReqLint checks that UC-VAL-run-validation runs on demand — flagging missing required fields, ambiguous wording, and stylistic violations — so that issues surface during authoring rather than only on an explicit validation run. _(Supports BO-RAM-requirement-quality, BO-RAM-instructor-workload, BO-RAM-consistency.)_
 
 ### *AI/LLM Integration Requirements*
 
 RAM's AI assistance is delivered through Socratic assistants whose primary purpose is educational: to train students to author high-quality requirements rather than to hand them finished text. Where a design choice trades productivity against educational value, educational value governs.
 
-**FR-AI-elicitation-coaching (Event-Driven):** When a student requests elicitation help, the elicitation assistant shall return coaching for the student's own elicitation — candidate questions to put to the client (in plain, non-technical language), suggested follow-ups, and checks that help the student verify the client's answers — grounded in the session-scoped context assembled per SI-llm-context, rather than finished requirement content. _(Supports BO-RAM-learning-outcomes.)_
-
-**FR-AI-critique (Optional):** Where AI assistance is enabled, the critique assistant shall return its findings (possibly none) for clarity, consistency, completeness, or testability, each accompanied by an instructive rationale. _(Supports BO-RAM-requirement-quality.)_
+Each assistant's per-request behavior is specified by its own use case (the `UC-AI-*` family — elicitation, client role-play, structuring, critique, tutor, drafting, project assistant, whole-project review) and is not restated here; this section holds only the cross-cutting invariants that span the assistants — the Socratic guardrails (no auto-edit, distinguish suggestions, instructive rationale; explicit per-item acceptance, the "no accept all" rule, is governed by BR-explicit-acceptance and specified by UC-AI-review-proposal), enablement, graceful degradation, and the per-request context the proxy assembles (teaching context, assistant instructions, project source material; see SI-llm-context).
 
 **FR-AI-no-auto-edit (Ubiquitous):** The system shall not modify student-authored content with assistant-generated text without an explicit confirmation action by the student. _(Supports BO-RAM-learning-outcomes.)_
-
-**FR-AI-tutor-explain (Event-Driven):** When a student requests an explanation for a flagged validation or critique issue, the tutor assistant shall return an explanation describing the rule or weakness involved and a suggested fix. _(Supports BO-RAM-learning-outcomes.)_
 
 **FR-AI-distinguish-suggestions (Ubiquitous):** The system shall visually distinguish assistant-generated suggestions from student-authored content until the student accepts them.
 
@@ -213,37 +173,13 @@ RAM's AI assistance is delivered through Socratic assistants whose primary purpo
 
 **FR-AI-enablement (State-Driven):** While an instructor has disabled a given assistant for a course section, the system shall make that assistant's corresponding feature unavailable to that course section's students; the drafting assistant shall be disabled by default.
 
-**FR-AI-explicit-acceptance (Event-Driven):** When an assistant proposes concrete content, the system shall apply it only after an explicit, per-item acceptance by the student, and shall not provide an "accept all" action. _(Supports BO-RAM-learning-outcomes.)_
-
 **FR-AI-rationale (Ubiquitous):** The system shall accompany every assistant finding or proposal with an instructive rationale phrased for student learning. _(Supports BO-RAM-requirement-quality.)_
-
-**FR-AI-client-roleplay (Event-Driven):** When a student starts a practice client interview, the client role-play assistant shall respond in a non-technical client persona and shall not author requirements on the student's behalf. _(Supports BO-RAM-learning-outcomes.)_
-
-**FR-AI-question-review (Event-Driven):** When a student requests a review of planned client questions, the system shall flag technical jargon and suggest plain-language phrasings, each accompanied by a rationale.
-
-**FR-AI-structuring (Event-Driven):** When a student submits plain-language notes for translation, the structuring assistant shall propose candidate structured requirements, each traceable to its source note and applied only through the acceptance action of FR-AI-explicit-acceptance. _(Supports BO-RAM-learning-outcomes.)_
 
 **FR-AI-degradation (State-Driven):** While the external LLM service is unavailable, the system shall make AI features unavailable and shall keep the rest of Project Pulse operational.
 
 **FR-AI-source-material-context (Ubiquitous):** Where a team has imported project source material, the system shall make it available to the AI assistants as context for elicitation, critique, and drafting.
 
-**FR-AI-gap-analysis (Event-Driven):** When a student requests elicitation help, the elicitation assistant shall perform a gap analysis over the session-scoped context assembled per SI-llm-context — comparing a targeted document section or use case against its template, or a project-wide session's current requirements coverage against what a complete set requires — and return candidate interview questions for the gaps it identifies.
-
 **FR-AI-assistant-instructions (Ubiquitous):** The system shall include each assistant's instructor-authored assistant instructions in the context provided to that assistant so that the assistant's role, persona, and boundaries reflect the instructor's per-assistant configuration.
-
-**FR-AI-exclude-source-material (Event-Driven):** When a student excludes the imported project source material for an elicitation session, the system shall ground that session's gap analysis solely on the team's current drafted requirements and shall omit the project source material from the elicitation assistant's context for that session.
-
-**FR-AI-project-assistant (Event-Driven):** When a student asks the project assistant for help, the project assistant shall return orientation, answers about project status and coverage, navigation to the relevant document or artifact, and recommended next actions — grounded in the project's current requirements coverage, the imported project source material, and the course section's teaching context assembled per SI-llm-context — without authoring requirement content.
-
-**FR-AI-routing (Event-Driven):** When the project assistant recommends a specialized assistant or an authoring action, the system shall route the student into the corresponding use case and shall honor that assistant's per-course-section enablement.
-
-**FR-AI-drafting (Event-Driven):** When the drafting assistant is enabled and a student requests a draft, the system shall return a structural skeleton or clearly-marked candidate requirements derived from the student's prompt, applied only through the acceptance action of FR-AI-explicit-acceptance. _(Supports BO-RAM-learning-outcomes.)_
-
-**FR-AI-whole-project-review (Event-Driven):** When a student requests a whole-project review, the critique assistant shall evaluate the team's requirement documents together and return cross-document findings — covering completeness gaps, coverage and traceability holes, inconsistencies, and conflicts across the documents — each accompanied by an instructive rationale, and shall author no requirement content. _(Supports BO-RAM-requirement-quality, BO-RAM-instructor-workload.)_
-
-**FR-AI-review-criteria (Ubiquitous):** The system shall include the course section's cross-document review criteria in the context provided to the critique assistant for a whole-project review, so that the review applies the instructor-configured criteria. _(Supports BO-RAM-instructor-workload.)_
-
-**FR-AI-review-criteria-required (State-Driven):** While a course section's cross-document review criteria are undefined, the system shall make the whole-project review unavailable to that course section's students.
 
 ### *Template and Standards Enforcement Requirements*
 
@@ -256,8 +192,6 @@ The initial release ships fixed, built-in templates, and the enforcement require
 **FR-TPL-section-keys (Ubiquitous):** The system shall apply the numbering and section-key scheme defined by the active template to all document sections within a document. _(Supports BO-RAM-requirement-quality.)_
 
 ### *Terminology and Glossary Requirements*
-
-**FR-GLO-authoritative-definition (Ubiquitous):** The system shall provide a single authoritative definition for each glossary term within a project. _(Supports BO-RAM-consistency.)_
 
 **FR-GLO-reference-linking (Event-Driven):** When a glossary term is created or updated, the system shall ensure that references in documents link to the term. _(Supports BO-RAM-consistency.)_
 
@@ -283,23 +217,11 @@ Authorship metadata (FR-HIS-authorship-metadata) is in scope for the initial rel
 
 **FR-SEC-deny-unauthorized (Event-Driven):** When an unauthorized user attempts to access a protected resource, the system shall deny access and provide an appropriate error message.
 
-### *Export and Formatting Requirements*
-
-**FR-EXP-generate (Event-Driven):** When a user exports a document, the system shall generate a PDF, DOCX, or Markdown file consistent with the template-defined structure. _(Realizes UC-EXP-export-document; honors BR-team-scoped-access.)_
-
-**FR-EXP-formatting (Ubiquitous):** The system shall maintain table of contents, heading hierarchy, numbering, and formatting consistency in exported documents.
-
-### *Project Source Material and Import Requirements*
-
-**FR-IMP-upload-allowlist (Event-Driven):** When a student imports client pitch materials, the system shall accept PDF (`.pdf`) and PowerPoint (`.pptx`, `.ppt`) files, reject any file whose type is not on this allowlist or whose size exceeds a configurable per-file size limit (default 25 MB), and store each accepted file as the team's project source material.
-
-**FR-IMP-text-extraction (Event-Driven):** When project source material is imported, the system shall extract its text content for reference and for use as assistant context, and shall report when extraction is incomplete (for example, for image-only or scanned files).
-
 ### *Notification Requirements*
 
-**FR-NOT-review-workflow (Event-Driven):** When the system raises a review-workflow notification — a requirement document submitted for review, returned for revision, or accepted — it shall deliver it by email to the designated recipients through the Gmail SMTP integration. _(Supports UC-REV-submit-for-review, UC-REV-review-documents; honors DE-gmail-smtp.)_
+**FR-NOT-review-workflow (Event-Driven):** When a requirement document is submitted for review, returned for revision, or accepted, the system shall raise a review-workflow notification to the designated recipients, delivered as specified by CI-review-emails. _(Supports UC-REV-submit-for-review, UC-REV-review-documents.)_
 
-**FR-NOT-suppress-routine (Ubiquitous):** The system shall not raise persistent or email notifications for routine authoring changes (creating, editing, or deleting glossary terms, requirement artifacts, artifact links, document sections, use cases, and comments); such changes are propagated to connected collaborators in real time per FR-COL-* instead.
+**FR-NOT-suppress-routine (Ubiquitous):** The system shall not raise persistent (in-app) notifications for routine authoring changes (creating, editing, or deleting glossary terms, requirement artifacts, artifact links, document sections, use cases, and comments), and shall suppress their email per CI-no-routine-email; such changes are propagated to connected collaborators in real time per the real-time collaboration model (UC-COL-collaborative-edit) instead.
 
 **FR-NOT-weekly-reminder (Event-Driven):** On a course section's configured weekly due day for weekly activity reports or peer evaluations, the system shall email each student in that course section a submission reminder listing the item(s) due that day and their due times, delivered through the Gmail SMTP integration. The reminder job runs only for course sections eligible for reminders in the current week and may be disabled by configuration. _(Supports BO-PERF-submission-rate, BO-PERF-faster-completion.)_
 
@@ -441,7 +363,7 @@ The RAM environment persists requirements as a team-scoped graph of typed requir
 - **Team** — the ownership boundary for all requirements content (per BR-team-scoped-access); a team owns its documents, artifacts, and links.
 - **RequirementDocument** — a document of a given `DocumentType`, with a `documentKey`, `title`, and a `status` (`DRAFT` → `SUBMITTED` → `RETURNED` or `ACCEPTED`) that drives the review-and-submission workflow (BR-review-lock, BR-review-authority, UC-REV-\*): a submitted document is either returned for revision (`RETURNED`, editable again) or accepted (`ACCEPTED`, final and read-only).
 - **DocumentSection** — a section of a document, identified by its `sectionKey` (the section key), with a `title`, a `type` (`RICH_TEXT` narrative or a `LIST` of artifacts), authored `content`, and template `guidance`.
-- **DocumentSectionLock** — the exclusive edit lock held on a document section while a student edits it (`lockedAt`, `expiresAt` for the lock-expiry timeout, `reason`), realizing FR-LOCK\* and BR-edit-lock-required / BR-lock-expiry for document-section authoring destinations.
+- **DocumentSectionLock** — the exclusive edit lock held on a document section while a student edits it (`lockedAt`, `expiresAt` for the lock-expiry timeout, `reason`), realizing BR-edit-lock-required / BR-lock-expiry for document-section authoring destinations (the lock lifecycle is specified by the steps of UC-DOC-edit-document).
 
 **The requirements graph**
 
@@ -453,7 +375,7 @@ The RAM environment persists requirements as a team-scoped graph of typed requir
 **Use-case structure**
 
 - **UseCase** — the structured behavioral spec (`trigger`, plus its flows below), paired **1:1 with a RequirementArtifact** of type `USE_CASE` so a use case participates in the graph (links, traceability) like any other artifact while keeping its detailed behavioral fields.
-- **UseCaseLock** — the exclusive edit lock held on a use case while a student edits it (`lockedAt`, `expiresAt` for the lock-expiry timeout, `reason`), realizing FR-LOCK\* and BR-edit-lock-required / BR-lock-expiry for use-case authoring destinations.
+- **UseCaseLock** — the exclusive edit lock held on a use case while a student edits it (`lockedAt`, `expiresAt` for the lock-expiry timeout, `reason`), realizing BR-edit-lock-required / BR-lock-expiry for use-case authoring destinations (the lock lifecycle is specified by the steps of UC-DOC-edit-use-case).
 - **UseCaseMainStep**, **UseCaseExtension**, **UseCaseExtensionStep** — the ordered decomposition of a use case's normal flow and its alternative/exception extensions and their steps. Preconditions and postconditions are represented as associated `RequirementArtifact` nodes of type `PRECONDITION` and `POSTCONDITION`, so they remain part of the requirements graph.
 
 **Collaboration**
@@ -706,7 +628,7 @@ The Business Domain Model above names the system's entities, their fields, and t
 
 ## **Reports**
 
-The performance-tracking capability generates reports: peer evaluation reports for students and instructors (UC-EVA-view-own-evaluation, UC-EVA-section-evaluation-report, UC-EVA-student-evaluation-report) and weekly activity report summaries for teams and individual students (UC-WAR-team-war-report, UC-WAR-student-war-report); each is specified by its use case, including its report parameters and generating algorithm. The RAM environment generates no reports in release 1.0 — completeness-metric, progress, and requirement-quality dashboards over a team's requirements graph are a deferred RAM capability (future release). Document export — PDF, DOCX, or Markdown rendered to the template structure — is a formatted document, not a report, and is specified under External Interface Requirements (SI-export-formats, FR-EXP-generate, FR-EXP-formatting).
+The performance-tracking capability generates reports: peer evaluation reports for students and instructors (UC-EVA-view-own-evaluation, UC-EVA-section-evaluation-report, UC-EVA-student-evaluation-report) and weekly activity report summaries for teams and individual students (UC-WAR-team-war-report, UC-WAR-student-war-report); each is specified by its use case, including its report parameters and generating algorithm. The RAM environment generates no reports in release 1.0 — completeness-metric, progress, and requirement-quality dashboards over a team's requirements graph are a deferred RAM capability (future release). Document export — PDF, DOCX, or Markdown rendered to the template structure — is a formatted document, not a report, and is specified by UC-EXP-export-document and under External Interface Requirements (SI-export-formats, SI-export-fidelity).
 
 ## **Data Acquisition, Integrity, Retention, and Disposal**
 
@@ -724,7 +646,7 @@ DI-soft-delete-retention: RAM shall retain logically deleted glossary terms and 
 
 DI-authorship-metadata: RAM shall record authorship metadata for authored RAM items as specified by FR-HIS-authorship-metadata; known implementation gaps are tracked in OI-19.
 
-DI-concurrency-control: RAM shall use optimistic version fields and exclusive edit locks for document sections and use cases to protect concurrent edits, and shall treat expired locks as releasable according to the locking requirements (FR-LOCK-*).
+DI-concurrency-control: RAM shall use optimistic version fields and exclusive edit locks for document sections and use cases to protect concurrent edits, and shall treat expired locks as releasable according to the locking rules (BR-edit-lock-required, BR-lock-expiry).
 
 DI-no-version-history: RAM shall not retain document-section version checkpoints for release 1.0; document version history is deferred to a future release (FR-HIS-checkpoint, FR-HIS-restore, FR-HIS-retention).
 
@@ -766,15 +688,15 @@ SI-foundation-email: The RAM environment shall send email notifications through 
 
 **Document export**
 
-SI-export-formats: RAM shall generate an exported document as a PDF, DOCX, or Markdown file consistent with the template-defined structure (per FR-EXP-generate; realizes UC-EXP-export-document), and shall package all of a team's documents as a single bundle on request (UC-EXP-export-bundle).
+SI-export-formats: RAM shall generate an exported document as a PDF, DOCX, or Markdown file consistent with the template-defined structure (realizes UC-EXP-export-document; honors BR-team-scoped-access), and shall package all of a team's documents as a single bundle on request (UC-EXP-export-bundle).
 
-SI-export-fidelity: Exported documents shall preserve table of contents, heading hierarchy, numbering, and formatting consistency (per FR-EXP-formatting).
+SI-export-fidelity: Exported documents shall preserve table of contents, heading hierarchy, numbering, and formatting consistency (realizes UC-EXP-export-document).
 
 **Project source material import**
 
-SI-import-allowlist: RAM shall accept PDF (`.pdf`) and PowerPoint (`.pptx`, `.ppt`) uploads as project source material and shall reject any file whose type is not on this allowlist or whose size exceeds a configurable per-file limit (default 25 MB) (per FR-IMP-upload-allowlist; realizes UC-AI-import-source-material).
+SI-import-allowlist: RAM shall accept PDF (`.pdf`) and PowerPoint (`.pptx`, `.ppt`) uploads as project source material and shall reject any file whose type is not on this allowlist or whose size exceeds a configurable per-file limit (default 25 MB) (realizes UC-AI-import-source-material).
 
-SI-import-extraction: RAM shall extract the text content of an imported file for use as assistant context and shall report when extraction is incomplete, for example for image-only or scanned files (per FR-IMP-text-extraction).
+SI-import-extraction: RAM shall extract the text content of an imported file for use as assistant context and shall report when extraction is incomplete, for example for image-only or scanned files (realizes UC-AI-import-source-material).
 
 ## **API Document**
 
@@ -786,9 +708,9 @@ No hardware interfaces have been identified.
 
 ## **Communications Interfaces**
 
-CI-review-emails: RAM shall send review-workflow email notifications — when a requirement document is submitted for review, returned for revision, or accepted — to the designated recipients through Project Pulse's Gmail SMTP integration (per CO-gmail-smtp, DE-gmail-smtp, FR-NOT-review-workflow; supports UC-REV-submit-for-review, UC-REV-review-documents).
+CI-review-emails: RAM shall deliver each review-workflow notification raised by FR-NOT-review-workflow as email through Project Pulse's Gmail SMTP integration (per CO-gmail-smtp, DE-gmail-smtp; supports UC-REV-submit-for-review, UC-REV-review-documents).
 
-CI-no-routine-email: RAM shall not send email for the routine authoring changes covered by FR-NOT-suppress-routine; such changes propagate to connected teammates in real time over the collaboration channel instead (per FR-COL-*).
+CI-no-routine-email: RAM shall send no email for the routine authoring changes suppressed by FR-NOT-suppress-routine.
 
 CI-llm-https: RAM shall communicate with the external LLM service over HTTPS (per OE-external-services, SEC-llm-proxy).
 
@@ -812,7 +734,7 @@ USE-first-session-success: A new student shall be able to open a document sectio
 
 PER-collab-latency: While up to 100 users are editing concurrently, RAM shall propagate collaborator presence and lock-state events (join, disconnect, lock acquire/release) within 1 second for 95% of events. _(Post-MVP — depends on the deferred real-time collaboration; see the Real-Time Collaboration Requirements section.)_
 
-PER-autosave-cadence: RAM shall autosave an actively edited authoring destination at least every 10 seconds and persist its latest content immediately when the student navigates away. (Realized by FR-SAVE-autosave-active, FR-SAVE-on-navigate-away.)
+PER-autosave-cadence: RAM shall autosave an actively edited authoring destination at least every 10 seconds and persist its latest content immediately when the student navigates away. (Realized by FR-SAVE-autosave-active and the navigate-away extension of UC-DOC-edit-document / UC-DOC-edit-use-case.)
 
 PER-validation-speed: RAM shall return ReqLint validation results for a single requirement document within 3 seconds for 95% of runs.
 
@@ -842,17 +764,17 @@ AVL-llm-degradation: While the external LLM service is unavailable, Project Puls
 
 ## **Robustness**
 
-ROB-edit-loss-bound: In the event of a browser crash, disconnection, or power failure, RAM shall lose no more than 10 seconds of a student's edits. (Realized by FR-SAVE-crash-loss-bound.)
+ROB-edit-loss-bound: In the event of a browser crash, disconnection, or power failure, RAM shall lose no more than 10 seconds of a student's edits. (Bounds the autosave behavior of FR-SAVE-autosave-active.)
 
-ROB-autosave-retry: When an autosave fails, RAM shall notify the student and retry in the background without interrupting editing. (Realized by FR-SAVE-failure-retry.)
+ROB-autosave-retry: When an autosave fails, RAM shall notify the student and retry in the background without interrupting editing. (The failure-handling behavior of the autosave in FR-SAVE-autosave-active.)
 
-ROB-no-overwrite: RAM shall ensure that real-time collaborative updates never overwrite or corrupt content already saved by another collaborator, per FR-COL-no-overwrite and BR-collab-no-overwrite. _(Post-MVP — applies to the deferred real-time collaboration; in the MVP, section-level locking prevents concurrent overwrites.)_
+ROB-no-overwrite: RAM shall ensure that real-time collaborative updates never overwrite or corrupt content already saved by another collaborator, per BR-collab-no-overwrite and UC-COL-collaborative-edit (POST-2). _(Post-MVP — applies to the deferred real-time collaboration; in the MVP, section-level locking prevents concurrent overwrites.)_
 
 ## **Scalability and Interoperability**
 
 SCA-cohort-load: Project Pulse shall sustain its performance and availability targets under peak concurrent load near assignment deadlines for a Senior Design cohort of approximately 70 students (about 75 total users including instructors and course admins), whose peak concurrent editing stays within the 100-concurrent performance envelope specified in PER-collab-latency (cf. risk RI-scalability).
 
-INT-single-application: Project Pulse shall operate as a single application across both capability areas; the RAM environment shall reuse its single-page application, REST API, relational database, authentication, and notification services rather than introducing a parallel system, per CO-single-application and OE-single-application.
+INT-single-application: Project Pulse shall operate as a single application across both capability areas; the RAM environment shall reuse its single-page application, REST API, relational database, authentication, and notification services rather than introducing a parallel system, per CO-single-application.
 
 ## **Maintainability**
 
@@ -874,4 +796,4 @@ Project Pulse introduces no additional requirements beyond those specified elsew
 - Installation, configuration, and startup/shutdown: Project Pulse is deployed as a single application (see the [Deployment View](../design/architectural-design.md#deployment-view)).
 - Memory and capacity: Project Pulse sets no RAM-specific storage or capacity limit for release 1.0; RAM content persists in the shared Project Pulse relational database and is sized for the cohort in SCA-cohort-load (the per-team artifact-count design target is ~1,000 artifacts — quality scenario QS-7 in the architecture-of-record).
 - Portability: N/A for release 1.0. Project Pulse is a single hosted web application on a fixed server stack (OE-server-stack, CO-vue-spring-stack), reached through a standard web browser (OE-supported-browsers, OE-https-access); no requirement to run on multiple operating systems or to be ported to another platform applies.
-- Site adaptation: Project Pulse ships a single application configuration with no per-installation site-adaptation files; per-deployment adaptation is instead realized as per-course-section configuration — a course section's teaching context, per-assistant enablement and assistant instructions, cross-document review criteria, and weekly due days (UC-CFG-\*, FR-AI-enablement, FR-AI-assistant-instructions, FR-AI-review-criteria, FR-AI-review-criteria-required, FR-NOT-weekly-reminder).
+- Site adaptation: Project Pulse ships a single application configuration with no per-installation site-adaptation files; per-deployment adaptation is instead realized as per-course-section configuration — a course section's teaching context, per-assistant enablement and assistant instructions, cross-document review criteria, and weekly due days (UC-CFG-\*, FR-AI-enablement, FR-AI-assistant-instructions, FR-NOT-weekly-reminder).
