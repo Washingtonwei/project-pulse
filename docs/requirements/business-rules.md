@@ -79,7 +79,7 @@ A lower tier number is a higher level of abstraction (Tier 1 is the highest). Th
 | MITIGATES | Functional Requirement, Quality Attribute, Constraint, Business Rule, use case, or Feature → a Risk | Target must be a Risk (any category — business, technical, or security/safety). |
 | MOTIVATES | Stakeholder, Business Problem, or Business Opportunity → any requirement artifact | Source expresses a need or driver that motivates the target. |
 
-The artifact types named here are the canonical `RequirementArtifactType` set (glossary ↔ the SRS's Business Domain Model enum); Stakeholder and Dependency are tracked artifact types. User stories are a deferred type (see the SRS's Business Domain Model); a User Story, when present, is a Tier 3 behavioral artifact.
+The artifact types named here are the canonical `RequirementArtifactType` set (glossary ↔ the SRS's Business Domain Model enum) — the **product's student-facing taxonomy** for typing artifacts in a team's own requirements graph, **not** this spec's own requirement-class/ID inventory (the two share names but are different lists; see the `RequirementArtifactType` note in the SRS's Business Domain Model). Stakeholder and Dependency are tracked artifact types. User stories are a deferred type (see the SRS's Business Domain Model); a User Story, when present, is a Tier 3 behavioral artifact.
 
 # **Editing and Locking**
 

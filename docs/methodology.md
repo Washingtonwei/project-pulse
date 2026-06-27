@@ -28,7 +28,7 @@ The methodology here is the middle path tuned specifically for a **human + codin
 3. **The use case is the unit of work, citation, and test.** Each use case is a high-level functional requirement; its steps + associated information are its acceptance criteria; traceability and tests are tagged to it. Use cases are kept small enough that "UC-X passes" is a meaningful statement.
 4. **The spec is authoritative but not infallible — the challenge loop.** The agent is not a stenographer. When a step is ambiguous, an assumption breaks against the code, requirements contradict, or the spec suggests something that isn't best practice, the agent **surfaces it** — asks or pushes back — rather than silently complying or silently inventing. Fixes go back into the spec, then the design is re-derived.
 5. **Bidirectional traceability and co-evolution.** Traceability is a two-direction graph, not a one-way chain (see [The traceability model](#the-traceability-model)): a matrix maps requirements → design → code → tests on a functional and a non-functional axis, checked *forward* (is every objective built?) and *backward* (does every artifact justify itself?). It is the connective tissue: changes loop *back* into the requirements and architecture, not just forward into code.
-6. **Stable identifiers decoupled from position.** Requirements carry position-independent IDs (`UC-<AREA>-<slug>`, `FR-<AREA>-<slug>`, `BR-<slug>`) so the spec can be reorganized without breaking citations — essential when many documents and the code all reference the same handles.
+6. **Stable identifiers decoupled from position.** Requirements carry position-independent IDs (`FEAT-<slug>`, `UC-<AREA>-<slug>`, `FR-<AREA>-<slug>`, `BR-<slug>`) so the spec can be reorganized without breaking citations — essential when many documents and the code all reference the same handles.
 7. **Human-owned levels, agent-built levels.** Humans own requirements quality and the high-level architectural decisions; the agent owns turning an approved use case into a design-of-record and then into code + tests, behind explicit approval gates.
 
 ## The artifacts — a spec→design→trace chain
@@ -71,7 +71,7 @@ Two health checks keep the two lists honest:
 - **Coverage.** Every UC area should be reachable from at least one feature; otherwise there are use cases without a stakeholder-visible reason, and the spec has work the vision doesn't justify. (When we ran this check on Project Pulse, the glossary and document-authoring areas had no feature pointing at them — both real gaps, fixed by naming features for them.)
 - **Right altitude.** A feature should describe a capability, not enumerate use cases; a UC area should reflect the domain, not the marketing pitch. If a feature reads like "create / edit / delete X", it's a UC list mis-cast as a feature. If an area name reads like a tagline, it's a feature mis-cast as an area.
 
-A deliberate consequence: **the Major Features keep no inline UC IDs.** The feature → use-case-area map lives in `traceability.md` and is verified there. That separation keeps the features at value-altitude and frees the use-case catalog to organize by domain rather than by the marketing brochure.
+A deliberate consequence: **the Major Features keep no inline UC IDs.** Each feature *does* carry its own position-independent `FEAT-<slug>` ID (so it is a first-class, citable node and the BO→feature→use-case edges are keyed by handle, not by prose name), but it does **not** enumerate the use cases under it — the feature → use-case-area map lives in `traceability.md`, keyed to the `FEAT-<slug>` ID and verified there. That separation keeps the features at value-altitude and frees the use-case catalog to organize by domain rather than by the marketing brochure.
 
 ## The traceability model
 
@@ -86,7 +86,8 @@ Principle 5 calls traceability "bidirectional" and points at "a single matrix." 
 ```mermaid
 flowchart TD
     RIAS["Risks / assumptions (RI-*, AS-*)"] -. motivate .-> BO["Business objective (BO-*)"]
-    BO -- realized by --> FEAT["Feature"]
+    BO -. measured by .-> SM["Success metric (SM-*)"]
+    BO -- realized by --> FEAT["Feature (FEAT-*)"]
     FEAT --> UC["Use case = high-level FR (UC-*)"]
     FEAT --> FR["Non-use-case FR (FR-*)"]
     UC -- allocated to --> DSGN["Design-of-record"]
@@ -108,8 +109,8 @@ flowchart TD
 The nodes, grounded in this repo's identifier spaces:
 
 - **Risks / assumptions** (`RI-*`, `AS-*`) — *motivate* objectives; they are not "realized by" code, so they sit off the spine.
-- **Business objective** (`BO-<AREA>-*`) — the *why*.
-- **Feature** — the stakeholder-visible *capability*.
+- **Business objective** (`BO-<AREA>-*`) — the *why*. Its achievement is made checkable by a **success metric** (`SM-<slug>`) — a baseline, target, and evaluation route — the *outcome → objective backward edge* that answers "was it achieved?", not just "was it built?". Most routes are empirical (survey, logs, rubric), validated post-deployment rather than by a code test; the BO measurement matrix records them.
+- **Feature** (`FEAT-<slug>`) — the stakeholder-visible *capability*.
 - **Use case = high-level FR** (`UC-<AREA>-*`) — observable behavior. Collapsing the textbook user-requirement / system-requirement split into one node (a use case *is* its detailed functional requirement — its steps + associated information) deliberately **removes a whole traceability hop and its drift**; this is the single biggest simplification the method buys.
 - **Non-use-case FR** (`FR-<AREA>-*`) — the cross-cutting subsystems (autosave, validation, AI orchestration, notifications, security) that no single use case owns. They sit *beside* the use-case layer, not below it.
 - **Design-of-record → code → tests** — the realization tail. Requirements are *allocated to* design, design is built as code, code is *verified by* tests. The verification edge is what closes the loop: a requirement with no test verifying it is not actually traced.
@@ -119,7 +120,19 @@ The nodes, grounded in this repo's identifier spaces:
 
 Three relation kinds, then, not one: requirements **derive from** higher needs (the spine), are **allocated to** design, and are **verified by** tests — plus the orthogonal **constrains** (rules) and **operationalizes** (attribute → scenario) edges. Keeping them distinct is what lets the matrix answer "is X built?", "why does X exist?", and "is X verified?" as separate questions.
 
-This model is instantiated, not just described: `traceability.md` carries it on **two axes** — a functional matrix (use case → FR/design/code/tests), with a companion register giving each non-use-case `FR-*` its own realization row, and a non-functional matrix (quality attribute → `QS-n` → test) — the `QS-n` scenario definitions live in the architecture-of-record, the `BR-*` constraints in the business rules, and `/spec-build` mechanically checks that every edge resolves and every node is covered both ways. The model is the picture; those documents and checks are its enforcement.
+This model is instantiated, not just described: `traceability.md` carries it on **two axes** — a functional matrix (use case → FR/design/code/tests), with a companion register giving each non-use-case `FR-*` its own realization row, and a non-functional matrix (quality attribute → `QS-n` → test) — the `QS-n` scenario definitions live in the architecture-of-record, the `BR-*` constraints in the business rules, and `/spec-build` mechanically checks that every edge resolves, every node is covered both ways, and — for the `QS-n` edge that spans three files — that the scenario's *substance* (which attribute it binds and the threshold it asserts) stays consistent across the architecture-of-record, the SRS attribute, and the matrix, not just that the ID resolves. The model is the picture; those documents and checks are its enforcement.
+
+### *Quality attribute vs. quality scenario — the two-artifact NFR split*
+
+Non-functional requirements are recorded in **two artifacts drawn from two traditions**, deliberately kept distinct rather than merged. A **quality attribute** (`PER-*`, `SEC-*`, `ROB-*`, …) is a Wiegers & Beatty SRS requirement — an atomic "shall" statement naming *what must hold and to what threshold* (`PER-validation-speed`: ReqLint results "within 3 seconds for 95% of runs"). A **quality scenario** (`QS-n`) is the SEI / arc42 construct — a six-part operational vignette (*source · stimulus · artifact · environment · response · response measure*) naming a concrete situation the architecture must withstand and the mechanism by which it does. The attribute lives in the SRS (the requirements spec, Wiegers); the scenario lives in the architecture-of-record (where the architecture is reasoned about and evaluated, ATAM-style, arc42). The split is not accidental — it follows the project's two-template structure (Wiegers for specs, arc42/C4 for architecture).
+
+Keeping both is a **judgment call, not a law.** A pure-Wiegers SRS with no scenarios is perfectly valid, and in this project most quality attributes carry **no** scenario at all — they trace directly to a verification route in the non-functional matrix's *unpinned tail* (`SEC-https` → deployment config; `USE-first-session-success` → usability testing). A `QS-n` is added only when it earns its place by carrying something the attribute cannot:
+
+- **operating context** the bare requirement omits — "within 3 s" is untestable without "at course scale: ~1,000 artifacts, ≤ 100 concurrent editors";
+- an **architecture commitment** — the scenario's *response* names the tactic (deny at the `AuthorizationManager`; migrate + staging-slot smoke check before swap; add a bounded context in ≤ 2 person-days) — content with no home in a requirements "shall";
+- **bundling** — one scenario ties several atomic attributes plus cross-cutting behavior (autosave cadence + edit-loss bound + lock collision) into one testable story, the unit a test actually exercises.
+
+The division of labor is held in place by a single rule: **the attribute owns the number; the scenario cites it, never restates it.** A `QS-n` measure references the attribute by ID and must not introduce a requirement-level threshold that no attribute defines — a number found *only* in a scenario is a requirement hiding in the architecture doc, and is promoted to a real attribute first (the `PER-graph-load` case). This preserves a single source of truth for every threshold and confines the scenario to its proper job (operational context + architectural response), so the two artifacts complement rather than duplicate. The cost of two homes is drift: the same scenario is described across three files — the threshold in the SRS attribute, the scenario definition in the architecture-of-record, and the attribute → scenario → test binding in the matrix — so the *substance* can diverge while every ID still resolves. The build checks therefore verify not merely that the `QS-n` reference resolves, but that the **right attribute is bound to the right scenario** and that the **cited number matches the attribute's "shall" statement** — turning the cite-don't-restate rule from a convention into a checked invariant.
 
 ## The lifecycle
 

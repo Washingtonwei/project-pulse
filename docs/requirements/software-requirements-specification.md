@@ -111,13 +111,13 @@ CO-gmail-smtp: Email notifications shall be sent through the Gmail SMTP integrat
 
 ## **Assumptions and Dependencies**
 
-Assumptions and dependencies form one team-wide set authored in two homes: the business-level assumptions in Vision and Scope ([Business Assumptions and Dependencies](vision-and-scope.md#business-assumptions-and-dependencies)) and the architecture-level assumptions below. Both share the single `AS-*` namespace and dependencies the `DE-*` namespace, each carrying a name-based key (e.g., `AS-supported-browser`, `DE-llm-service`), so an assumption or dependency can be added in either home without renumbering.
+Assumptions and dependencies form **one team-wide namespace** (`AS-*` for assumptions, `DE-*` for dependencies) authored in **two homes, partitioned by altitude**: *business-level, environmental, and organizational* items live in Vision and Scope ([Business Assumptions and Dependencies](vision-and-scope.md#business-assumptions-and-dependencies)); the *architecture-, technical-, and integration-level* items live below. Each key is a name-based slug addable in either home without renumbering — but because the namespace is shared, every slug must be **unique across both homes**, and the two homes must **not state the same assumption under different keys** (connectivity, for instance, is owned once by `AS-internet-access` in Vision and Scope, not restated here). `/spec-build`'s *ID reference resolution* (cross-home uniqueness) and *cross-home assumption consistency* (overlap / contradiction / wrong-home) checks guard both.
 
-AS-supported-browser: Users have a supported web browser and a reliable internet connection.
+AS-supported-browser: Users access Project Pulse through a supported, current web browser. (Internet connectivity is assumed by AS-internet-access in Vision and Scope; not restated here.)
 
-AS-llm-api-stable: The external LLM service remains available and its API contract stays stable for the integration RAM relies on.
+AS-llm-api-stable: The external LLM service's API contract stays stable for the integration RAM relies on. (Availability is assumed by AS-llm-cost-effective in Vision and Scope; not restated here.)
 
-AS-shared-data-current: Project Pulse's course, course section, team, and user data is accurate and current; the RAM environment reads this shared data rather than maintaining its own copy.
+AS-shared-data-current: Project Pulse's course, course section, team, and user data — the single domain model every feature shares — is accurate and current.
 
 DE-llm-service: AI-assisted requirement review depends on the external LLM service; if it is unavailable, the AI features are unavailable while the rest of Project Pulse continues to operate.
 
@@ -175,7 +175,7 @@ RAM's AI assistance is delivered through Socratic assistants whose primary purpo
 
 ### *Template and Standards Enforcement Requirements*
 
-The initial release ships fixed, built-in templates, and the enforcement requirements (FR-TPL-enforce-structure, FR-TPL-section-keys) apply to them. Template customization — letting a course admin or instructor author or edit templates (FR-TPL-customize) — is **deferred to a future release and is not part of the MVP scope** (see Vision and Scope, [Template Management](vision-and-scope.md#template-management)). FR-TPL-customize is retained here, with its ID, so the intent is not lost.
+The initial release ships fixed, built-in templates, and the enforcement requirements (FR-TPL-enforce-structure, FR-TPL-section-keys) apply to them. Template customization — letting a course admin or instructor author or edit templates (FR-TPL-customize) — is **deferred to a future release and is not part of the MVP scope** (see Vision and Scope, [Template Management](vision-and-scope.md#feat-template-management-template-management)). FR-TPL-customize is retained here, with its ID, so the intent is not lost.
 
 **FR-TPL-enforce-structure (Ubiquitous):** The system shall enforce the structure, required document sections, and metadata defined by the active template. _(Supports BO-RAM-requirement-quality.)_
 
@@ -584,7 +584,7 @@ direction TB
 **Notes.**
 
 - The built-in templates that provision a team's documents and sections (UC-TPL-provision-documents) are the _provisioning_ layer and are not shown in this domain diagram; the MVP ships fixed, built-in templates.
-- `RequirementArtifactType` is the authoritative artifact taxonomy and is reconciled one-to-one with the glossary's requirement artifact list. `OTHER` is an implementation fallback, not a domain concept. A single `RISK` type is the umbrella over business/adoption, technical/feasibility, and security/safety risks (the earlier `BUSINESS_RISK`/`RISK` pair was collapsed into `RISK`); `DEPENDENCY` is a tracked artifact.
+- `RequirementArtifactType` is the authoritative artifact taxonomy and is reconciled one-to-one with the glossary's requirement artifact list. **It plays one role only: the product's student-facing taxonomy** — the controlled vocabulary the running product offers students to type the artifacts in their *own* project's requirements graph (with product-generated keys like `FR-1`, `SM-1`, `UC-5`). It is **deliberately distinct from the requirement classes by which *this* SRS organizes *Project Pulse's own* requirements** (`FR-<AREA>-<slug>`, `SM-<slug>`, `DI-*`, the quality codes, …). The two **share names** because both speak the same requirements-engineering vocabulary, but they are **different lists with different ID schemes and must not be conflated** — e.g., `SUCCESS_METRIC` / `DATA_REQUIREMENT` are types a student assigns to her own artifacts, whereas Project Pulse's own success metrics are `SM-<slug>` and its data requirements `DI-*`. `OTHER` is an implementation fallback, not a domain concept. A single `RISK` type is the umbrella over business/adoption, technical/feasibility, and security/safety risks (the earlier `BUSINESS_RISK`/`RISK` pair was collapsed into `RISK`); `DEPENDENCY` is a tracked artifact.
 - User stories are a **deferred** concept: the `USER_STORY` artifact type and the `USER_STORIES` `DocumentType` are retained so a future, optional User Stories document can be enabled without a schema change, but no User Stories document, template, or use case ships in the MVP.
 
 **Artifact type → authoring home.** Each artifact type is authored in a specific document section, which determines where it appears in a document. In the MVP the student authors an artifact in the document section she is in, which fixes its type (UC-ART-create-artifact); the map below is the canonical placement (and the basis for the future requirements-graph "add by type" path):
@@ -596,7 +596,7 @@ direction TB
 | `BUSINESS_OBJECTIVE`, `SUCCESS_METRIC`      | Vision and Scope → Business Objectives                                                                                                                                                    |
 | `VISION_STATEMENT`                          | Vision and Scope → Vision Statement                                                                                                                                                       |
 | `RISK`                                      | Vision and Scope → Risks                                                                                                                                                                  |
-| `ASSUMPTION`, `DEPENDENCY`                  | Vision and Scope → Business Assumptions and Dependencies (business-level) **and** SRS → Assumptions and Dependencies (architecture-level, e.g., `DE-shared-foundation`/`DE-llm-service`) — these two types are authored in either document's Assumptions-and-Dependencies section |
+| `ASSUMPTION`, `DEPENDENCY`                  | Vision and Scope → Business Assumptions and Dependencies (business-level) **and** SRS → Assumptions and Dependencies (architecture-level, e.g., `DE-llm-service`/`DE-gmail-smtp`) — these two types are authored in either document's Assumptions-and-Dependencies section |
 | `STAKEHOLDER`                               | Vision and Scope → Stakeholder Profiles                                                                                                                                                   |
 | `FEATURE`                                   | Vision and Scope → Major Features / Scope                                                                                                                                                 |
 | `USE_CASE`, `PRECONDITION`, `POSTCONDITION` | Use Cases → the use case (preconditions/postconditions are its constituents)                                                                                                                   |
@@ -620,7 +620,7 @@ The performance-tracking capability generates reports: peer evaluation reports f
 
 ## **Data Acquisition, Integrity, Retention, and Disposal**
 
-DI-acquire-shared-data: RAM shall acquire user identity, role, course section, team membership, and team ownership data from the rest of Project Pulse rather than maintaining a separate copy (DE-shared-foundation, SI-foundation-auth, SI-foundation-data).
+DI-acquire-shared-data: The requirement-authoring features shall use Project Pulse's single shared model of user identity, role, course section, team membership, and team ownership — the same records the performance-tracking features use (SI-foundation-auth, SI-foundation-data).
 
 DI-persist-graph: RAM shall persist requirement documents, document sections, requirement artifacts, artifact links, use cases, locks, comment threads, comments, and artifact-key sequences in the Project Pulse relational database (CO-relational-persistence, SI-foundation-persist).
 
@@ -668,7 +668,7 @@ SI-llm-degradation: While the LLM service is unavailable or a request times out,
 
 SI-foundation-auth: The RAM environment shall obtain the authenticated user's identity and role (course admin, instructor, student) from Project Pulse's authenticated session and shall not implement its own login (per CO-single-auth, SEC-authentication).
 
-SI-foundation-data: The RAM environment shall read course, course section, team, and membership data from Project Pulse's shared data model rather than maintaining its own copy (per DE-shared-foundation; AS-shared-data-current).
+SI-foundation-data: The requirement-authoring features shall read course, course section, team, and membership data from Project Pulse's single shared domain model — the same model the performance-tracking features use (per AS-shared-data-current).
 
 SI-foundation-persist: The RAM environment shall persist its requirements graph — artifacts, links, documents, document sections, locks, comment threads, and comments — in the Project Pulse relational database (per CO-relational-persistence).
 
@@ -725,6 +725,8 @@ PER-collab-latency: While up to 100 users are editing concurrently, RAM shall pr
 PER-autosave-cadence: RAM shall autosave an actively edited authoring destination at least every 10 seconds and persist its latest content immediately when the student navigates away. (Realized by FR-SAVE-autosave-active and the navigate-away extension of UC-DOC-edit-document / UC-DOC-edit-use-case.)
 
 PER-validation-speed: RAM shall return ReqLint validation results for a single requirement document within 3 seconds for 95% of runs.
+
+PER-graph-load: RAM shall return a team's requirements-graph load API response within 500 milliseconds at the 95th percentile for graphs of up to approximately 1,000 artifacts.
 
 PER-ai-response-time: RAM shall present an AI assistant response, or a clear "working" / timeout indication, within 15 seconds of a student's request.
 

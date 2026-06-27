@@ -20,7 +20,7 @@ This document defines the purpose, goals, and boundaries of **Project Pulse**, t
 - **Student Performance Tracking** — when students work together on a team project, individual effort is easy to hide and hard to assess fairly; this area keeps each student's contribution visible by replacing the manual, spreadsheet-based collection of weekly activity reports (WARs) and peer evaluations with an integrated, automated workflow.
 - **Requirements Authoring & Management (RAM)** — students rarely arrive able to write clear, professional requirements, yet weak requirements quietly derail projects and increasingly misdirect AI-assisted coding; RAM is a software requirements authoring environment that modernizes how software requirements are written, understood, and evaluated, replacing old-school, document-centric requirement writing with a structured, model-driven approach that reflects professional requirements engineering practices while remaining accessible to students and instructors. Requirements become a graph-first model of atomic, interlinked artifacts — unlocking end-to-end traceability, real-time quality validation, and Socratic AI assistants that coach students rather than write for them.
 
-This document owns the project's motivation identifiers — business objectives (`BO-<AREA>-<slug>`, area-prefixed by capability: `BO-PERF-*` for performance tracking, `BO-RAM-*` for requirements authoring), risks (`RI-<slug>`), and assumptions (`AS-<slug>`) — alongside the named major features and stakeholders. The downstream docs cite these by identifier rather than restate them: use cases (`UC-<AREA>-<slug>` in [use-cases.md](use-cases.md)) and non-use-case functional requirements (`FR-<AREA>-<slug>` in [software-requirements-specification.md](software-requirements-specification.md)) link to the business objective or feature they realize, the [traceability matrix](../traceability.md) carries the spec→code map keyed to those IDs, and cross-cutting policies are catalogued in [business-rules.md](business-rules.md) (`BR-<slug>`). Defined terms used here are owned by [project-glossary.md](project-glossary.md).
+This document owns the project's motivation identifiers — business objectives (`BO-<AREA>-<slug>`, area-prefixed by capability: `BO-PERF-*` for performance tracking, `BO-RAM-*` for requirements authoring) and their success metrics (`SM-<slug>`), major features (`FEAT-<slug>`, a flat name-based slug — a feature spans several use-case areas, so it carries no area segment), risks (`RI-<slug>`), and assumptions (`AS-<slug>`) — alongside the stakeholders. The downstream docs cite these by identifier rather than restate them: use cases (`UC-<AREA>-<slug>` in [use-cases.md](use-cases.md)) and non-use-case functional requirements (`FR-<AREA>-<slug>` in [software-requirements-specification.md](software-requirements-specification.md)) link to the business objective or feature they realize, the [traceability matrix](../traceability.md) carries the spec→code map keyed to those IDs, and cross-cutting policies are catalogued in [business-rules.md](business-rules.md) (`BR-<slug>`). Defined terms used here are owned by [project-glossary.md](project-glossary.md).
 
 ## **Background**
 
@@ -114,29 +114,51 @@ The RAM tool will elevate student requirements to professional industry standard
 
 Each objective carries an area-prefixed `BO-<AREA>-<slug>` identifier — parallel to the `UC-<AREA>-<slug>` and `FR-<AREA>-<slug>` schemes — grouping it by the capability area it serves: `PERF` (performance tracking) or `RAM` (requirements authoring). As with those schemes, the `<slug>` is a name-based handle, unique within its area and independent of reading position, so a new objective is added to its area without disturbing the others.
 
+Each objective's achievement is made measurable by a **success metric** (`SM-<slug>`, a flat name-based slug) defined immediately beneath it — a baseline, a target, a measurement method, and an evaluation cadence. The success metric is the **outcome → objective backward edge** (the means of telling whether the objective was actually met, not merely built); where an objective is genuinely qualitative, its metric says so and names the empirical method (survey, rubric scoring, instructor judgment) rather than inventing a false number. The [BO measurement matrix](../traceability.md#bo-measurement-matrix) in traceability.md records each metric's evaluation route and state. A purely platform-level emergent objective carries no success metric (the `*(Platform-level emergent objective; …)*` carve-out); `/spec-build` flags any other BO with no `SM-<slug>`.
+
 **Performance tracking.**
 
 BO-PERF-faster-grading: Reduce the instructor's time to grade peer evaluations by 50%.
 
+- SM-grading-time: Baseline — instructor-reported hours to grade one course section's peer evaluations under the spreadsheet process; target — 50% reduction; method — instructor time self-report, pre- vs post-adoption; evaluated at the end of the first piloted term.
+
 BO-PERF-instructor-workload: Reduce instructor workload by automating the end-to-end processing of weekly activity reports and peer evaluations — collection, parsing, scoring, comment compilation, and result distribution — eliminating the manual download / parse / upload cycle the instructor runs each week for the whole cohort.
+
+- SM-perf-manual-steps: Baseline — number of manual download / parse / upload steps the instructor performs per week under the spreadsheet process; target — eliminate the recurring manual cycle (qualitative); method — workflow step-count plus instructor self-report; evaluated per term.
 
 BO-PERF-submission-rate: Increase students' weekly activity report and peer evaluation submission rate by 20%.
 
+- SM-submission-rate: Baseline — on-time weekly activity report and peer evaluation submission rate from the spreadsheet era (LMS records); target — 20% increase; method — system submission logs compared against the historical baseline; evaluated per term.
+
 BO-PERF-faster-completion: Reduce the time students spend completing their weekly activity reports and peer evaluations by 25%.
+
+- SM-completion-time: Baseline — student-reported minutes per weekly activity report and peer evaluation; target — 25% reduction; method — student time survey; evaluated per term.
 
 **Requirements authoring (RAM).**
 
 BO-RAM-requirement-quality: Improve the quality of student-written requirements through structure, templates, standards, traceability, AI feedback, and consistency checks.
 
+- SM-requirement-quality: Baseline — rubric-scored quality of prior cohorts' requirement documents; target — measurable improvement (qualitative); method — instructor rubric scoring against prior cohorts; evaluated per term.
+
 BO-RAM-instructor-workload: Reduce instructor workload by automating completeness, quality, and formatting validation.
+
+- SM-ram-grading-workload: Baseline — instructor-reported effort to check completeness, quality, and formatting of student requirements; target — measurable reduction (qualitative); method — instructor self-report; evaluated per term.
 
 BO-RAM-consistency: Ensure cross-document consistency for glossary terms, names, actors, and business rules.
 
+- SM-terminology-consistency: Baseline — terminology / naming inconsistency count across a team's documents; target — measurable reduction (qualitative); method — ReqLint terminology-violation counts once built, manual review until then; evaluated per term.
+
 BO-RAM-traceability: Support end-to-end traceability across business, user, and functional levels.
+
+- SM-traceability-completeness: Baseline — orphan-artifact and missing-link counts in prior cohorts' projects; target — measurable reduction (qualitative); method — requirements-graph metrics on student projects; evaluated per term.
 
 BO-RAM-learning-outcomes: Provide an integrated environment that supports learning outcomes in the Software Engineering and Senior Design class.
 
+- SM-learning-outcomes: Baseline — the course's requirements-engineering learning-outcome assessment for prior cohorts; target — measurable improvement (qualitative); method — course learning-outcome assessment / instructor evaluation; evaluated per term.
+
 BO-RAM-navigation: Enable navigation, visualization, and impact analysis of requirements relationships. *(MVP delivers graph navigation and traceability linking; interactive visualization and change-impact analysis are post-MVP.)*
+
+- SM-navigation-usage: Baseline — none (new capability); target — students use trace navigation to find and resolve orphan artifacts (qualitative); method — feature-usage observation plus instructor and student feedback; evaluated per term.
 
 BO-RAM-research: Create opportunities for research in educational technology, AI-in-the-loop requirements engineering, NLP-based requirement quality analysis, and HCI. *(Platform-level emergent objective; no direct UC or FR realizer — research opportunities arise from the platform as a whole rather than any one feature.)*
 
@@ -174,7 +196,7 @@ The process is iterative: as authoring reveals gaps, the team returns to elicita
 
 ## **Risks**
 
-Risks to the success of the system or project — spanning business/adoption, technical/feasibility, and security/safety categories. Each carries a name-based `RI-<slug>` key: the identifier is the risk's name, not a position, so risks can be added or removed without renumbering.
+Risks to the success of the system or project — spanning business/adoption, technical/feasibility, and security/safety categories. Each carries a name-based `RI-<slug>` key: the identifier is the risk's name, not a position, so risks can be added or removed without renumbering. Each risk's mitigating requirement(s) or its explicit acceptance is traced in the [risk coverage matrix](../traceability.md#risk-coverage-matrix); a risk left unmitigated by software carries an inline `*(Accepted; …)*` marker (parallel to the business-rule `*(Advisory; not enforced by the system)*` carve-out) so a consciously accepted risk is distinguishable from a forgotten one. `/spec-build`'s risk-coverage check flags any risk that is neither traced to a mitigation there nor marked accepted here.
 
 RI-adoption-resistance: Adoption Resistance: Students comfortable with Microsoft Word or Google Docs may resist structured tools, particularly if the application proves more confusing to use than the previous manual process.
 
@@ -184,17 +206,19 @@ RI-scalability: Scalability concerns: High usage in large capstone programs may 
 
 RI-over-reliance-on-ai: Over-reliance on AI: Students might depend too heavily on AI-generated content.
 
-RI-cross-browser: Cross-browser/device inconsistency: the application may render or behave inconsistently across the supported browsers (Chrome, Safari, Firefox) and the range of student and instructor devices, degrading usability for some users.
+RI-cross-browser: Cross-browser/device inconsistency: the application may render or behave inconsistently across the supported browsers (Chrome, Safari, Firefox) and the range of student and instructor devices, degrading usability for some users. *(Accepted; the supported set is bounded by OE-supported-browsers and conformance is verified by manual cross-browser testing — no automated guard today.)*
 
 RI-accessibility: Accessibility shortfall: the application may fail to meet WCAG 2.1 AA accessibility standards, leaving some users unable to use it effectively and exposing the department to accessibility-compliance complaints (addressed by the accessibility quality attributes USE-wcag-aa / UI-wcag-aa in the Software Requirements Specification).
 
-RI-cloud-cost: Cloud cost ownership: if the system is deployed on a cloud service provider, the Computer Science Department must budget for the annual cloud fees.
+RI-cloud-cost: Cloud cost ownership: if the system is deployed on a cloud service provider, the Computer Science Department must budget for the annual cloud fees. *(Accepted; the Computer Science Department owns the cloud budget — a business decision with no software mitigation.)*
 
 RI-data-breach: Data breach: the students' peer evaluation data may be targeted by attackers (addressed by the security quality attributes in the Software Requirements Specification).
 
-RI-narrow-applicability: Narrow applicability: the application might prove too specialized for the TCU senior design course to be reused in other courses.
+RI-narrow-applicability: Narrow applicability: the application might prove too specialized for the TCU senior design course to be reused in other courses. *(Accepted; a reuse/adoption risk with no software mitigation in the MVP — post-MVP template customization (FR-TPL-customize) partially broadens applicability.)*
 
 ## **Business Assumptions and Dependencies**
+
+Assumptions and dependencies are **one team-wide namespace** (`AS-*` / `DE-*`) deliberately **authored in two homes, partitioned by altitude**: the *business-level, environmental, and organizational* items live here; the *architecture-, technical-, and integration-level* ones live in the SRS's [Assumptions and Dependencies](software-requirements-specification.md#assumptions-and-dependencies). Each key is a name-based slug addable in either home without renumbering — but the namespace is shared, so each slug is **unique across both homes** and the two homes must **not state the same assumption under different keys**. `/spec-build`'s *cross-home assumption consistency* check guards this.
 
 AS-internet-access: Students and instructors have stable internet access.
 
@@ -206,7 +230,7 @@ AS-llm-cost-effective: LLM APIs (e.g., OpenAI) remain available and cost-effecti
 
 AS-faculty-buy-in: Faculty buy-in will be sufficient for pilot use.
 
-AS-maintainable-stack: The system uses technologies the client already knows and can maintain after the product is delivered. *(Assumptions are one team-wide `AS-*` set authored in two homes; the architecture-level assumptions are defined in the Software Requirements Specification. Each carries a name-based key, so an assumption can be added in either home without renumbering.)*
+AS-maintainable-stack: The system uses technologies the client already knows and can maintain after the product is delivered.
 
 # **Stakeholder Profiles and User Descriptions**
 
@@ -247,25 +271,25 @@ AS-maintainable-stack: The system uses technologies the client already knows and
 
 ## **Major Features / Scope**
 
-Project Pulse provides a modern environment for running the senior design course — tracking student performance through weekly activity reports and peer evaluations, and authoring, validating, and managing software requirements. The features below describe the major functional capabilities at a high level. Detailed behavioral descriptions, actor interactions, and exception scenarios are defined in the accompanying [Use Cases document](use-cases.md); the feature ↔ use-case-area map is maintained in [traceability.md](../traceability.md). The course-management and performance-tracking features come first, followed by the requirements-authoring (RAM) features.
+Project Pulse provides a modern environment for running the senior design course — tracking student performance through weekly activity reports and peer evaluations, and authoring, validating, and managing software requirements. The features below describe the major functional capabilities at a high level. Each carries a flat name-based `FEAT-<slug>` identifier in its heading (parallel to the other requirement-ID spaces, and independent of reading position — inserting or reordering a feature renumbers nothing); downstream docs cite a feature by that handle rather than by prose name. Detailed behavioral descriptions, actor interactions, and exception scenarios are defined in the accompanying [Use Cases document](use-cases.md); the feature ↔ use-case-area map is maintained in [traceability.md](../traceability.md), keyed to the `FEAT-<slug>` IDs. The course-management and performance-tracking features come first, followed by the requirements-authoring (RAM) features.
 
-### *Administration and Course Management*
+### *FEAT-administration: Administration and Course Management*
 
 The system supports secure authentication, role-based access control, and FERPA-compliant data storage. It provides course, course section, team, student, and instructor management for the whole platform: the course admin (the user who created the Course) sets up its course sections and project teams, manages rosters and document access, invites instructors, configures active weeks, and provisions each team's requirement documents from the built-in templates; instructors configure their course sections' teaching context and AI assistants and run the review-and-feedback workflow.
 
-### *Rubric Management*
+### *FEAT-rubric-management: Rubric Management*
 
 Course admins author the peer-evaluation rubric: a weighted set of criteria that drives evaluation scoring. Rubrics and their criteria are managed centrally — created, edited, found, and deleted — and assigned to course sections, so different sections can use different rubrics and the same criterion can appear in multiple rubrics. The rubric is the contract the peer-evaluation workflow scores against.
 
-### *Weekly Activity Reports*
+### *FEAT-weekly-activity-reports: Weekly Activity Reports*
 
 Each week, students record their work as a weekly activity report — for each activity, its category, the planned activity, a description, hours planned, actual hours taken, and status. Teammates and instructors can review a team's reports, and the system generates a WAR report for a team or for an individual student. This replaces the shared-spreadsheet workflow and fosters communication within the team.
 
-### *Peer Evaluations*
+### *FEAT-peer-evaluations: Peer Evaluations*
 
 During active weeks, students evaluate their teammates against a rubric of weighted criteria, optionally adding public comments (shared with the evaluatee) and private comments (visible only to the instructor). The system aggregates scores and comments, generates a peer-evaluation report for the entire course section and per-student reports, and lets each student view her own results. Submission windows, edit rules, and visibility are governed by the business rules in [business-rules.md](business-rules.md) (BR-active-weeks, BR-evaluation-editable-until-close, BR-evaluation-submission-window, BR-evaluation-visibility).
 
-### *Template Management*
+### *FEAT-template-management: Template Management*
 
 The tool includes built-in structured document templates (based on Wiegers & Beatty's Software Requirements 3rd Edition Book) for Vision and Scope, Use Cases, Glossary, Business Rules, SRS, and other requirement documents. These templates define the structure of each document and give students clear expectations for required document sections, content, and writing styles and standards.
 
@@ -279,19 +303,19 @@ Course admins or instructors can also create new structured document templates b
 
 This enables flexibility across methodologies and supports instructor-specific teaching goals. The initial release ships with fixed, built-in templates; template customization is post-MVP — see [MVP Scope](#mvp-scope-initial-classroom-deployment).
 
-### *Glossary and Terminology Consistency*
+### *FEAT-glossary-consistency: Glossary and Terminology Consistency*
 
 Each project maintains a shared Project Glossary — the team's authoritative vocabulary for actors, domain concepts, and data entities referenced across every requirement document. Students view, search, create, edit, rename, and delete glossary terms in one place, and the same terms then flow into smart-editing assistance and ReqLint validation, where they enforce consistent naming as those terms appear in Vision and Scope, Use Cases, Business Rules, and the SRS. Renaming a glossary term updates references project-wide (safe rename), so the glossary stays the single source of truth and synonym drift is prevented across documents.
 
-### *Document and Use Case Authoring*
+### *FEAT-document-authoring: Document and Use Case Authoring*
 
 The primary authoring surface for the requirement documents. Students browse the team's documents, open a section-based document (Vision and Scope, Glossary, Business Rules, SRS) and edit its sections through a template-driven editor that follows the structure, required fields, and example prompts the chosen template defines. Use cases are first-class artifacts in their own catalog — students browse, view, create, and edit them through a use-case-shaped form covering actors, trigger, main success scenario, extensions, and associated information. Edits are protected by per-section / per-use-case pessimistic locking and autosaved as students work, so teams can divide and conquer documents without colliding.
 
-### *Graph-First Requirements Model*
+### *FEAT-graph-model: Graph-First Requirements Model*
 
 The tool is not a document editor intended to replicate Google Docs or Microsoft Word. Instead, RAM is model-first: it stores requirements as a connected domain model (a requirements graph) where nodes represent atomic requirement artifacts — each meaningful requirement element (objectives, features, use cases, functional requirements, glossary terms) modeled as a first-class, uniquely identifiable artifact — and edges represent typed relationships between them. Traditional "documents" are generated and edited as structured views over this underlying model, and the same artifact can surface in more than one view without duplication. This enables capabilities that are difficult or impossible in text-first tools — "find all references" for any artifact, safe rename that propagates across every view, and change-impact analysis. *(MVP ships safe rename; interactive graph visualization and change-impact analysis are post-MVP — see [MVP Scope](#mvp-scope-initial-classroom-deployment).)*
 
-### *Full Requirements Traceability*
+### *FEAT-traceability: Full Requirements Traceability*
 
 The tool supports bidirectional traceability across all major requirement types, enabling students and instructors to see how business goals flow down into user requirements and functional specifications. Users can link:
 
@@ -304,7 +328,7 @@ The tool supports bidirectional traceability across all major requirement types,
 
 The initial release supports creating, viewing, and navigating the typed links themselves — following them upstream and downstream to trace a requirement across levels; the traceability-matrix view, orphan and missing-link highlighting, and change-impact analysis are post-MVP — see [MVP Scope](#mvp-scope-initial-classroom-deployment). This lets students practice industry-standard traceability and helps instructors quickly evaluate completeness, coverage, and consistency across all requirement artifacts.
 
-### *Smart Editing and Validation (ReqLint)*
+### *FEAT-validation: Smart Editing and Validation (ReqLint)*
 
 The tool includes ReqLint, a lightweight rule-based validation engine inspired by code linters such as ESLint. ReqLint is non-AI and performs deterministic checks that enforce structure, completeness, and writing standards. Typical checks include:
 
@@ -318,7 +342,7 @@ A central and shared glossary is integrated into ReqLint to maintain consistent 
 
 The MVP provides deterministic ReqLint validation together with glossary-term suggestion; broader smart-editing auto-suggestion and auto-complete are post-MVP — see [MVP Scope](#mvp-scope-initial-classroom-deployment).
 
-### *AI-Assisted Guidance and Feedback*
+### *FEAT-ai-assistance: AI-Assisted Guidance and Feedback*
 
 Beyond rule-based validation, RAM provides AI assistance through a set of deliberately Socratic assistants whose purpose is educational: they coach students to author high-quality requirements and to communicate with non-technical clients, rather than producing finished requirements. Each assistant behaves according to its instructor-authored assistant instructions — the per-assistant role, persona, and boundaries — and draws on the course section's teaching context (the standards, common student mistakes, and thinking order the course teaches); instructors enable or disable each assistant per course section.
 
@@ -341,19 +365,19 @@ Two principles govern every assistant:
 
 Combined with ReqLint, the assistant layer improves learning outcomes, trains client communication, and reduces instructor workload while preserving student authorship.
 
-### *Collaboration and Document Workflow*
+### *FEAT-collaboration: Collaboration and Document Workflow*
 
 Student teams collaborate through document-section-level editing and commenting. The tool supports submission-and-review workflows that allow students to submit drafts, receive instructor feedback, and revise their work iteratively. The initial release coordinates teammates through per-section pessimistic locking and comment threads; real-time collaboration — live presence and concurrent co-editing — is post-MVP, see [MVP Scope](#mvp-scope-initial-classroom-deployment).
 
 The initial release keeps authorship metadata (the creator/editor and timestamps recorded on every authored item); document version history — checkpointing each save, viewing prior versions, and restoring them — is post-MVP, see [MVP Scope](#mvp-scope-initial-classroom-deployment).
 
-### *Instructor Dashboard, Feedback, and Grading*
+### *FEAT-instructor-review: Instructor Dashboard, Feedback, and Grading*
 
 Instructors will have access to dashboards summarizing team progress, document completeness, and validation results. Integrated grading tools enable rubric-based evaluation aligned with the selected templates, as well as inline comments and structured feedback. This improves grading consistency and reduces review effort.
 
 **MVP scope:** the initial release provides only the review-and-feedback workflow — an instructor opens a submitted document, leaves inline comments, and either accepts it or returns it for revision (governed by the business rules in [business-rules.md](business-rules.md)). Progress/completeness dashboards and rubric-based grading are post-MVP — see [MVP Scope](#mvp-scope-initial-classroom-deployment).
 
-### *Export and Delivery*
+### *FEAT-export: Export and Delivery*
 
 Students can export requirement documents to professional-quality PDF, Word (DOCX), or Markdown formats that follow the structure of the chosen template (Markdown prioritizes structure and traceability over visual styling, and supports downstream code generation). Exported documents are suitable for client or stakeholder review in senior design and capstone projects.
 
