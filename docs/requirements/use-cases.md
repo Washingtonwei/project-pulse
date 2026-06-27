@@ -4036,7 +4036,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Business Rules:** BR-review-lock — Once a document is locked for review, students may no longer edit it until the instructor returns it for revision (see UC-REV-review-documents).
 **Associated Information:**
 
-Notification: Notify the course section's instructor on submission, delivered as email per CI-review-emails.
+Notification: Notify the course section's instructor on submission, delivered as email per CI-email-notifications.
 
 **Related Use Cases:** UC-REV-review-documents: The instructor reviews a team's requirement documents.
 **Assumptions:**
@@ -4081,7 +4081,7 @@ Notification: Notify the course section's instructor on submission, delivered as
 **Business Rules:** BR-review-authority — Only an instructor assigned to the course section may review, accept, or return a submitted document. Returning a document for revision unlocks it for student editing.
 **Associated Information:**
 
-Notification: Notify the team's students of the review outcome — returned for revision or accepted, delivered as email per CI-review-emails.
+Notification: Notify the team's students of the review outcome — returned for revision or accepted, delivered as email per CI-email-notifications.
 
 **Related Use Cases:** UC-COL-add-comment: Comment on a requirement document; UC-REV-submit-for-review: The student submits requirements for review.
 **Assumptions:**

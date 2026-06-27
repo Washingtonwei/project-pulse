@@ -21,7 +21,7 @@
 
 ## **The Purpose of this Document**
 
-This Software Requirements Specification describes the external behavior and quality attributes of Project Pulse for release 1.0, across both of its capability areas — the weekly activity report and peer evaluation workflows and the Requirements Authoring & Management (RAM) environment. The behavioral specification for both areas is carried by the use cases ([use-cases.md](use-cases.md)), each of which is itself a high-level functional requirement. The non-use-case functional requirements, data model, external interfaces, and quality attributes in this document specify the system-level behaviors that fall outside any single use case; these are concentrated in the cross-cutting subsystems — authentication and access control, notifications, and the RAM-specific autosave, validation, and AI orchestration — because the performance-tracking workflows are specified almost entirely as use cases. It is the reference against which Project Pulse is built, tested, and maintained, and it aligns students, instructors, and developers on what the system does.
+This Software Requirements Specification describes the external behavior and quality attributes of Project Pulse for release 1.0, across both of its capability areas — the weekly activity report and peer evaluation workflows and the Requirements Authoring & Management (RAM) environment. The behavioral specification for both areas is carried by the use cases ([use-cases.md](use-cases.md)), each of which is itself a high-level functional requirement. The non-use-case functional requirements, data model, external interfaces, and quality attributes in this document specify the system-level behaviors that fall outside any single use case; these are concentrated in the cross-cutting subsystems — authentication and access control, notifications, and the RAM-specific autosave, validation, and AI orchestration. It is the reference against which Project Pulse is built, tested, and maintained, and it aligns students, instructors, and developers on what the system does.
 
 **How the requirements are organized.** The requirements are not one document but a set of linked documents that describe a single shared model of the system from complementary angles, each the source of truth for its own topic. The SRS is the integrating entry point: it specifies the requirements it owns and links to the others rather than restating them, so each topic is defined once. The documents, in reading order:
 
@@ -31,7 +31,7 @@ This Software Requirements Specification describes the external behavior and qua
 - **Business Rules** ([business-rules.md](business-rules.md)) — the cross-cutting policies, constraints, and access rules (`BR-*`) that the use cases and this SRS enforce.
 - **Software Requirements Specification** (this document) — the integrating specification: it orients the reader (the Overall Description section), then specifies the non-use-case functional requirements, the data model, external interfaces, and quality attributes, citing the documents above rather than repeating them.
 - **Architectural Design** ([../design/architectural-design.md](../design/architectural-design.md)) — the single arc42/C4 architecture-of-record, sitting below this SRS: the shared software architecture, conventions, and deployment that the RAM module inherits, plus the component views for the foundation and performance-tracking features and for RAM, and cross-cutting subsystems.
-- **Traceability** ([../traceability.md](../traceability.md)) — the spec→code map: one row per use case linking it to the requirements and design it realizes and the code and tests that implement it.
+- **Traceability** ([../traceability.md](../traceability.md)) — the spec→code map: a **functional** matrix in two registers — one row per use case and one per non-use-case `FR-*` — linking each to the design, code, and tests that realize it; a **non-functional** matrix (quality attribute → scenario → verifying test); and a **cross-cutting coverage layer** tracing each business objective, risk, and business rule to what satisfies it.
 
 ```mermaid
 flowchart TB
@@ -39,9 +39,9 @@ flowchart TB
     VS["Vision and Scope<br/>why and scope"]
     UC["Use Cases<br/>behavior = high-level FRs"]
     BR["Business Rules<br/>policies (BR-*)"]
-    SRS["Software Requirements Specification<br/>integrating entry point"]
+    SRS["Software Requirements<br/>Specification <br/>integrating entry point"]
     AD["Architectural Design<br/>architecture, deployment"]
-    TR["Traceability<br/>UC to design to code to tests"]
+    TR["Traceability<br/>UC + FR + quality realization,<br/>BO/risk/BR coverage"]
 
     GLO --> SRS
     VS --> SRS
@@ -49,14 +49,17 @@ flowchart TB
     BR --> SRS
     SRS --> AD
     UC --> TR
+    VS --> TR
+    BR --> TR
+    SRS --> TR
     AD --> TR
 ```
 
-The arrows read "is referenced by": the Project Glossary, Vision and Scope, Use Cases, and Business Rules documents are integrated by this SRS; the Architectural Design document sits below the SRS; and Traceability maps each use case, through the design, to the code and tests that realize it.
+The arrows read "is referenced by": the Project Glossary, Vision and Scope, Use Cases, and Business Rules documents are integrated by this SRS; the Architectural Design document sits below the SRS; and Traceability maps each use case and non-use-case requirement, through the design, to the code and tests that realize it, while tracing the business objectives, risks, and rules from Vision and Scope and Business Rules to what satisfies them.
 
 ## **Document Conventions**
 
-- Identifier schemes are stable, append-only handles, independent of heading position. Business objectives use `BO-<AREA>-<slug>` ([vision-and-scope.md](vision-and-scope.md)); non-use-case functional requirements use `FR-<AREA>-<slug>` (e.g., `FR-SAVE-autosave-active`); use cases use `UC-<AREA>-<slug>` ([use-cases.md](use-cases.md)); business rules use `BR-<slug>` ([business-rules.md](business-rules.md)). Product-generated artifact keys (e.g., `BO-3`, `RI-1`, `AS-6`, `UC-5`) follow a per-type running sequence, unique within a team, as defined under artifact key in the Project Glossary. SRS-local identifiers label its interface, data, and quality items: the External Interface Requirements codes (`UI-*`, `SI-*`, `CI-*`), the Data Requirements codes (`DI-*`), and the Quality Attributes codes (`USE-*`, `PER-*`, `SEC-*`, `SAF-*`, `AVL-*`, `ROB-*`, `SCA-*`, `INT-*`, `MNT-*`). The operating environment (`OE-*`), design and implementation constraints (`CO-*`), and architecture-level assumptions and dependencies (`AS-*`, one team-wide set shared with Vision and Scope, and `DE-*`) are defined in the Overall Description section below.
+- Identifier schemes are stable, name-based handles, independent of heading position — inserting or reordering renumbers nothing; only renaming a concept changes its slug. Business objectives use `BO-<AREA>-<slug>` and their paired success metrics `SM-<slug>`, and risks use `RI-<slug>` ([vision-and-scope.md](vision-and-scope.md)); non-use-case functional requirements use `FR-<AREA>-<slug>` (e.g., `FR-SAVE-autosave-active`); use cases use `UC-<AREA>-<slug>` ([use-cases.md](use-cases.md)); business rules use `BR-<slug>` ([business-rules.md](business-rules.md)). SRS-local identifiers label its interface, data, and quality items: the External Interface Requirements codes (`UI-*`, `SI-*`, `CI-*`), the Data Requirements codes (`DI-*`), and the Quality Attributes codes (`USE-*`, `PER-*`, `SEC-*`, `SAF-*`, `AVL-*`, `ROB-*`, `SCA-*`, `INT-*`, `MNT-*`). The operating environment (`OE-*`), design and implementation constraints (`CO-*`), and architecture-level assumptions and dependencies (`AS-*`, one team-wide set shared with Vision and Scope, and `DE-*`) are defined in the Overall Description section below.
 - Non-use-case functional requirements are written as EARS-style "shall" statements. A use case is itself a high-level functional requirement, so its steps and Associated Information are its detailed specification and are not restated as separate functional requirements.
 - Markdown is the canonical format and cross-references are live links. Square-bracketed italic passages are template author-guidance, not requirements.
 - This document does not duplicate content owned by another document: each topic has a single source of truth and is referenced here (for example, the Project Glossary, Vision and Scope, Use Cases, and Business Rules documents are linked here rather than copied in).
@@ -77,7 +80,7 @@ This section orients the reader to Project Pulse's context, users, environment, 
 
 ## **Product Perspective**
 
-Project Pulse is a single web application that delivers two capability areas over one shared architecture — a Vue.js single-page application, a Java/Spring Boot REST API, and a relational database, with one authentication mechanism and one notification service. The first capability area is the weekly activity report and peer evaluation workflows that track student performance; the second is the Requirements Authoring & Management (RAM) environment, a module within the same application rather than a parallel system, reusing that shared architecture. The system context and container views are in the architecture-of-record ([Context and Scope](../design/architectural-design.md#context-and-scope), [Containers](../design/architectural-design.md#containers)); the product positioning and competitive alternatives are in Vision and Scope ([Product Perspective](vision-and-scope.md#product-perspective)).
+Project Pulse is a single web application that delivers two capability areas over one shared architecture — a Vue.js single-page application, a Java/Spring Boot REST API, and a relational database, with one authentication mechanism and one notification service. The first capability area is the weekly activity report and peer evaluation workflows that track student performance in a team-based software project; the second is the Requirements Authoring & Management (RAM) environment that facilitates software requirements development. The system context and container views are in the architecture-of-record ([Context and Scope](../design/architectural-design.md#context-and-scope), [Containers](../design/architectural-design.md#containers)); the product positioning and competitive alternatives are in Vision and Scope ([Product Perspective](vision-and-scope.md#product-perspective)).
 
 ## **User Classes and Characteristics**
 
@@ -93,6 +96,8 @@ OE-https-access: Users shall access RAM over HTTPS from the public internet, req
 
 OE-external-services: Project Pulse operates alongside two external systems it must reach over the network — the external LLM service over HTTPS and the Gmail system over SMTP — for AI-assisted review and email notifications, respectively. How those calls are made (the server-side AI proxy, the Gmail SMTP integration) is mandated by CO-server-side-llm-proxy and CO-gmail-smtp.
 
+OE-fixed-deployment: Project Pulse is deployed as a single hosted application on a fixed server stack (per OE-server-stack, CO-vue-spring-stack); installation, configuration, and startup/shutdown follow the single-application [Deployment View](../design/architectural-design.md#deployment-view). It has no requirement to run on multiple operating systems or to be ported to another platform, and it ships no per-installation site-adaptation files — per-deployment adaptation is realized as per-course-section configuration (a course section's teaching context, per-assistant enablement and assistant instructions, cross-document review criteria, and weekly due days: UC-CFG-\*, FR-AI-enablement, FR-AI-assistant-instructions, FR-NOT-weekly-reminder).
+
 ## **Design and Implementation Constraints**
 
 CO-single-application: Project Pulse shall be a single application sharing one Vue.js single-page application, one Java/Spring Boot REST API, and one relational database across both capability areas; the RAM environment shall be implemented as a module within that codebase rather than as a separate system.
@@ -100,6 +105,8 @@ CO-single-application: Project Pulse shall be a single application sharing one V
 CO-vue-spring-stack: The client shall be implemented in Vue.js and the backend in Java using the Spring Boot framework.
 
 CO-relational-persistence: Requirement artifacts, links, documents, and document sections shall be persisted in the Project Pulse relational database.
+
+CO-blob-source-material: Project Pulse shall store uploaded project source material files in object storage (realized as Azure Blob Storage per the architecture-of-record's [Deployment View](../design/architectural-design.md#deployment-view)), persisting in the relational database only a reference to each stored file together with its extracted text (SI-import-extraction); source material files shall not be stored as database BLOBs (per DI-source-material-storage).
 
 CO-single-auth: Project Pulse shall provide a single JWT-based authentication mechanism for all users across both capability areas; the RAM environment shall reuse it rather than implementing a separate login.
 
@@ -111,7 +118,7 @@ CO-gmail-smtp: Email notifications shall be sent through the Gmail SMTP integrat
 
 ## **Assumptions and Dependencies**
 
-Assumptions and dependencies form **one team-wide namespace** (`AS-*` for assumptions, `DE-*` for dependencies) authored in **two homes, partitioned by altitude**: *business-level, environmental, and organizational* items live in Vision and Scope ([Business Assumptions and Dependencies](vision-and-scope.md#business-assumptions-and-dependencies)); the *architecture-, technical-, and integration-level* items live below. Each key is a name-based slug addable in either home without renumbering — but because the namespace is shared, every slug must be **unique across both homes**, and the two homes must **not state the same assumption under different keys** (connectivity, for instance, is owned once by `AS-internet-access` in Vision and Scope, not restated here). `/spec-build`'s *ID reference resolution* (cross-home uniqueness) and *cross-home assumption consistency* (overlap / contradiction / wrong-home) checks guard both.
+Assumptions and dependencies form **one team-wide namespace** (`AS-*` for assumptions, `DE-*` for dependencies) authored in **two homes, partitioned by altitude**: *business-level, environmental, and organizational* items live in Vision and Scope ([Business Assumptions and Dependencies](vision-and-scope.md#business-assumptions-and-dependencies)); the *architecture-, technical-, and integration-level* items live below. Each key is a name-based slug addable in either home without renumbering — but because the namespace is shared, every slug must be **unique across both homes**, and the two homes must **not state the same assumption under different keys** (connectivity, for instance, is owned once by `AS-internet-access` in Vision and Scope, not restated here).
 
 AS-supported-browser: Users access Project Pulse through a supported, current web browser. (Internet connectivity is assumed by AS-internet-access in Vision and Scope; not restated here.)
 
@@ -189,7 +196,7 @@ The initial release ships fixed, built-in templates, and the enforcement require
 
 ### *Authorship Metadata and Document Versioning Requirements*
 
-Authorship metadata (FR-HIS-authorship-metadata) is in scope for the initial release and is relied on by the authoring use cases. Document versioning — checkpointing, restoring, and retaining prior versions (FR-HIS-checkpoint, FR-HIS-restore, FR-HIS-retention) — is **deferred to a future release and is not part of the MVP scope** (see Vision and Scope, [Major Features / Scope](vision-and-scope.md#major-features--scope); tracked as OI-4). The three deferred requirements are retained here, with their IDs, so the intent is not lost.
+Authorship metadata (FR-HIS-authorship-metadata) is in scope for the initial release and is relied on by the authoring use cases. Document versioning — checkpointing, restoring, and retaining prior versions (FR-HIS-checkpoint, FR-HIS-restore, FR-HIS-retention) — is **deferred to a future release and is not part of the MVP scope** (see Vision and Scope, [Major Features / Scope](vision-and-scope.md#major-features--scope)). The three deferred requirements are retained here, with their IDs, so the intent is not lost.
 
 **FR-HIS-checkpoint (Deferred — future release):** When a document section is saved, the system shall create a version checkpoint containing the user, timestamp, and diff.
 
@@ -203,9 +210,11 @@ Authorship metadata (FR-HIS-authorship-metadata) is in scope for the initial rel
 
 **FR-SEC-authentication (Ubiquitous):** The system shall authenticate users via its JWT-based authentication mechanism before granting access to protected resources.
 
-**FR-SEC-authorization (Ubiquitous):** The system shall enforce role-based access control (student, instructor, course admin) and shall restrict each student to her own team's requirements graph, documents, and project source material, per BR-team-scoped-access.
+**FR-SEC-authorization (Ubiquitous):** The system shall enforce role-based access control across the student, instructor, and course admin roles, permitting each operation only for the roles authorized for it (per BR-role-based-access). It shall further restrict access to a user's own scope of ownership: a student to her own team's requirements graph, documents, and project source material (per BR-team-scoped-access) and to her own team's weekly activity reports — but not another team's — while restricting her peer evaluation results to her own, with private comments withheld from students (per BR-evaluation-visibility, BR-evaluation-private-comment); and an instructor or course admin to the course sections she is assigned to or owns.
 
 **FR-SEC-deny-unauthorized (Event-Driven):** When an unauthorized user attempts to access a protected resource, the system shall deny access and provide an appropriate error message.
+
+**FR-SEC-active-account (Ubiquitous):** The system shall deny authentication and access to protected resources for a deactivated student or instructor account, regardless of otherwise-valid credentials, until the account is reactivated, per BR-student-lifecycle and BR-instructor-lifecycle.
 
 ### *Notification Requirements*
 
@@ -225,7 +234,7 @@ Project Pulse's domain spans both capability areas, modeled below as two diagram
 
 ### *Performance-tracking domain*
 
-This diagram covers the shared foundation — course sections and their teams, students, and instructors — together with the performance-tracking entities: the rubrics and criteria used for assessment, each student's weekly activity report, and the peer evaluations students submit about one another. It predates this specification; field-level detail lives with the schema in the design docs ([../design/](../design/)).
+This diagram covers the shared foundation — course sections and their teams, students, and instructors — together with the performance-tracking entities: the rubrics and criteria used for assessment, each student's weekly activity report, and the peer evaluations students submit about one another.
 
 ```mermaid
 classDiagram
@@ -586,6 +595,7 @@ direction TB
 - The built-in templates that provision a team's documents and sections (UC-TPL-provision-documents) are the _provisioning_ layer and are not shown in this domain diagram; the MVP ships fixed, built-in templates.
 - `RequirementArtifactType` is the authoritative artifact taxonomy and is reconciled one-to-one with the glossary's requirement artifact list. **It plays one role only: the product's student-facing taxonomy** — the controlled vocabulary the running product offers students to type the artifacts in their *own* project's requirements graph (with product-generated keys like `FR-1`, `SM-1`, `UC-5`). It is **deliberately distinct from the requirement classes by which *this* SRS organizes *Project Pulse's own* requirements** (`FR-<AREA>-<slug>`, `SM-<slug>`, `DI-*`, the quality codes, …). The two **share names** because both speak the same requirements-engineering vocabulary, but they are **different lists with different ID schemes and must not be conflated** — e.g., `SUCCESS_METRIC` / `DATA_REQUIREMENT` are types a student assigns to her own artifacts, whereas Project Pulse's own success metrics are `SM-<slug>` and its data requirements `DI-*`. `OTHER` is an implementation fallback, not a domain concept. A single `RISK` type is the umbrella over business/adoption, technical/feasibility, and security/safety risks (the earlier `BUSINESS_RISK`/`RISK` pair was collapsed into `RISK`); `DEPENDENCY` is a tracked artifact.
 - User stories are a **deferred** concept: the `USER_STORY` artifact type and the `USER_STORIES` `DocumentType` are retained so a future, optional User Stories document can be enabled without a schema change, but no User Stories document, template, or use case ships in the MVP.
+- Cross-cutting fields required by the `DI-*` / `FR-HIS` requirements — authorship metadata (creator/editor identity and timestamps, FR-HIS-authorship-metadata / DI-authorship-metadata), an optimistic-lock version field (DI-concurrency-control), and the soft-delete marker that retains logically deleted items for audit (DI-soft-delete-retention) — apply to the applicable entities and are added when the system is built; they are deliberately not drawn on each class here, because they are cross-cutting persistence mechanisms rather than domain attributes.
 
 **Artifact type → authoring home.** Each artifact type is authored in a specific document section, which determines where it appears in a document. In the MVP the student authors an artifact in the document section she is in, which fixes its type (UC-ART-create-artifact); the map below is the canonical placement (and the basis for the future requirements-graph "add by type" path):
 
@@ -612,7 +622,10 @@ direction TB
 
 ## **Data Dictionary**
 
-The Business Domain Model above names the system's entities, their fields, and their enumerations. Field-level definitions — data type, length, format, required/optional, and allowed values — are maintained with the database schema in the design docs ([../design/](../design/)), not restated here, so that a single source defines each field and the SRS does not drift from the implementation. Format-bearing fields that are themselves requirements (the `artifactKey`, `sectionKey`, and `documentKey` schemes and the document/comment status values) are specified where they are introduced: artifact key, section key, and the artifact-key uniqueness and stability rules in the Project Glossary and Business Rules (BR-artifact-key-unique, BR-deletion-integrity), and the `DRAFT` → `SUBMITTED` → `RETURNED` status values in the Business Domain Model above.
+The Business Domain Model above names the system's entities, their fields, and their enumerations. Field-level facts therefore split in two:
+
+- **Field constraints that are requirements** — business-meaningful, testable, and unsafe to guess — are specified at their source and cited here rather than restated: the `artifactKey`, `sectionKey`, and `documentKey` schemes and the artifact-key uniqueness and no-reuse-after-deletion rules in the Project Glossary and Business Rules (BR-artifact-key-unique, BR-deletion-integrity); the `DRAFT` → `SUBMITTED` → `RETURNED`/`ACCEPTED` status values and their transitions in the Business Domain Model above; the project-source-material upload allowlist and per-file size limit in SI-import-allowlist; and per-field validation rules (required/optional, format, allowed values) in each use case's Associated Information.
+- **Incidental implementation details** — a column's storage type and length, database-level nullability, indexing — are **not** fixed here. They are derived from this specification when the system is built, so that each field has a single source of truth and the spec neither duplicates the implementation nor drifts from it.
 
 ## **Reports**
 
@@ -620,41 +633,51 @@ The performance-tracking capability generates reports: peer evaluation reports f
 
 ## **Data Acquisition, Integrity, Retention, and Disposal**
 
-DI-acquire-shared-data: The requirement-authoring features shall use Project Pulse's single shared model of user identity, role, course section, team membership, and team ownership — the same records the performance-tracking features use (SI-foundation-auth, SI-foundation-data).
+This section covers data concerns across the product. Performance-tracking data (weekly activity reports, peer evaluations, their comments) and RAM's requirements graph share one user, role, course section, team, and ownership model (per CO-single-auth, AS-shared-data-current) and are persisted in the same database. Physical retention and disposal (DI-data-retention-disposal) are product-wide and govern student educational records across both capabilities. All other requirements here are specific to the RAM requirements graph and so are stated as "RAM shall."
 
-DI-persist-graph: RAM shall persist requirement documents, document sections, requirement artifacts, artifact links, use cases, locks, comment threads, comments, and artifact-key sequences in the Project Pulse relational database (CO-relational-persistence, SI-foundation-persist).
+DI-persist-graph: RAM shall persist requirement documents, document sections, requirement artifacts, artifact links, use cases, locks, comment threads, comments, and artifact-key sequences in the Project Pulse relational database (CO-relational-persistence).
 
-DI-team-scoping: RAM shall scope persisted RAM content by team wherever the entity represents team-owned requirements content, and shall enforce that students can access only their own team's requirements graph, documents, project source material, comments, and locks (BR-team-scoped-access, FR-SEC-authorization).
+DI-source-material-storage: RAM shall store an uploaded project source material file in object storage and shall persist in the relational database only a reference to that file and the text extracted from it (SI-import-extraction), so that large binary uploads stay out of the relational database (CO-blob-source-material). The stored file and its extracted text are team-scoped RAM content (DI-team-scoping) and are retained and disposed of under the product-wide policy (DI-data-retention-disposal).
+
+DI-team-scoping: RAM shall partition persisted RAM content by team wherever the entity represents team-owned requirements content, so that team-scoped access control over the requirements graph, documents, project source material, comments, and locks is enforced over a clean ownership boundary (FR-SEC-authorization, per BR-team-scoped-access).
 
 DI-artifact-key-assignment: RAM shall assign product-generated artifact keys from the team's `ArtifactKeySequence` for the artifact type, shall keep assigned artifact keys stable across edits, and shall not reuse keys after deletion (BR-artifact-key-unique, BR-deletion-integrity).
 
 DI-referential-integrity: RAM shall preserve graph integrity by preventing deletion of glossary terms or requirement artifacts while active artifact links or references still depend on them, unless those references are removed or repointed first (BR-deletion-integrity).
 
-DI-soft-delete-retention: RAM shall retain logically deleted glossary terms and requirement artifacts for audit, excluding them from normal active authoring and search results while preserving their identifiers and audit metadata (BR-deletion-integrity).
+DI-soft-delete-retention: RAM shall retain logically deleted glossary terms and requirement artifacts for audit — excluding them from normal active authoring and search results while preserving their identifiers and audit metadata — and shall dispose of them only under the product-wide record-retention policy (DI-data-retention-disposal) (BR-deletion-integrity).
 
-DI-authorship-metadata: RAM shall record authorship metadata for authored RAM items as specified by FR-HIS-authorship-metadata; known implementation gaps are tracked in OI-19.
+DI-authorship-metadata: RAM shall persist authorship metadata — creator/editor identity and timestamps — on every authored RAM item as the audit trail specified by FR-HIS-authorship-metadata, preserved with logically deleted items (DI-soft-delete-retention).
 
 DI-concurrency-control: RAM shall use optimistic version fields and exclusive edit locks for document sections and use cases to protect concurrent edits, and shall treat expired locks as releasable according to the locking rules (BR-edit-lock-required, BR-lock-expiry).
 
 DI-no-version-history: RAM shall not retain document-section version checkpoints for release 1.0; document version history is deferred to a future release (FR-HIS-checkpoint, FR-HIS-restore, FR-HIS-retention).
 
-DI-backup-disposal: RAM shall rely on the Project Pulse database backup, recovery, and disposal policies for physical retention and disposal of persisted RAM data, except where RAM-specific business rules require stronger logical retention for audit.
+DI-data-retention-disposal: Project Pulse shall retain and dispose of all persisted data — both performance-tracking records and the RAM requirements graph — under the institution's record-retention and disposal policy, supported by the database's backup and recovery procedures, and shall handle student educational records in compliance with FERPA throughout retention and disposal (CO-ferpa, SEC-ferpa). Items kept for audit by DI-soft-delete-retention shall not be physically disposed of before that policy permits.
 
 # **External Interface Requirements**
 
+These are the interfaces of Project Pulse as a whole — one application whose two capability areas, performance tracking and requirements authoring, are delivered through the same user interface and reach the same external systems. Project Pulse integrates with two external systems: the Gmail SMTP email service, used across both capability areas (weekly activity-report and peer-evaluation reminders, team-membership notices, and requirements review-workflow notices), and the external LLM service, reached by the AI-assisted authoring features through a server-side proxy. The user interface, email delivery, and transport security specified below apply to the whole product; document export and project source material import serve the requirements-authoring features.
+
 ## **User Interfaces**
 
-UI-spa-views: Project Pulse is delivered as a single Vue.js single-page application; the RAM environment's user interface shall be a set of views within it, conforming to the application's shared layout, navigation, and styling conventions (per CO-single-application, CO-vue-spring-stack, INT-single-application). Detailed UI design is maintained with the SPA, not in this document.
+UI-spa-views: Project Pulse shall present a single Vue.js single-page application in which every feature — weekly activity reporting, peer evaluation, and requirements authoring — is a set of views sharing one layout, navigation, and styling convention (per CO-single-application, CO-vue-spring-stack, INT-single-application). Detailed UI design is maintained with the SPA, not in this document.
 
-UI-wcag-aa: Project Pulse shall conform to WCAG 2.1 Level AA for color contrast, keyboard navigation, and screen-reader support (per USE-wcag-aa; addresses risk RI-accessibility).
+UI-wcag-aa: Project Pulse's user interface shall satisfy the WCAG 2.1 Level AA accessibility requirement specified by USE-wcag-aa (which addresses risk RI-accessibility); the conformance criteria are defined there and are not restated here.
 
-UI-section-editor-layout: The requirement-document editor shall present a two-column layout — a document-and-section outline alongside the selected section's editor — with per-section locking; a list section shall provide an "Add Requirement" action for authoring artifacts within it. The Use Cases document editor shall expose equivalent per-use-case locking when a student edits a use case.
+UI-performance-views: The performance-tracking interface shall provide students with weekly activity-report and peer-evaluation entry forms and their own evaluation results, and instructors with the dashboards and report views over team and individual progress, all as views within the single-page application (realizing the weekly activity report and peer evaluation use cases).
+
+UI-section-editor-layout: The requirement-document editor shall present a two-column layout — a document-and-section outline alongside the selected section's editor — with per-section locking; a list section shall allow new requirement artifacts to be authored within it. The Use Cases document editor shall expose equivalent per-use-case locking when a student edits a use case.
+
+## **Hardware Interfaces**
+
+No hardware interfaces have been identified.
 
 ## **Software Interfaces**
 
 **External LLM Service (via the AI proxy)**
 
-SI-llm-proxy-only: RAM shall call the external LLM service only through the REST API's server-side AI proxy; the Vue single-page application shall never call the LLM service directly (per CO-server-side-llm-proxy, SEC-llm-proxy).
+SI-llm-proxy-only: Project Pulse shall call the external LLM service only through the REST API's server-side AI proxy; the Vue single-page application shall never call the LLM service directly (per CO-server-side-llm-proxy, SEC-llm-proxy).
 
 SI-llm-context: For each assistant request, the AI proxy shall send the assembled assistant context — the assistant's system prompt, the course section's teaching context and per-assistant assistant instructions, the document and requirements-graph content relevant to the session's scope (for a session targeting a document section or use case, that target and the applicable template context; for a project-wide session, the project's current requirements coverage across its documents), and, where enabled, the team's project source material — and shall return the assistant's response to the requesting feature (per FR-AI-teaching-context, FR-AI-source-material-context, FR-AI-assistant-instructions).
 
@@ -664,49 +687,35 @@ SI-llm-credentials: LLM service credentials shall be held server-side and shall 
 
 SI-llm-degradation: While the LLM service is unavailable or a request times out, the AI proxy shall report the condition to the requesting feature so that AI features become unavailable while the rest of Project Pulse continues to operate (per FR-AI-degradation, AVL-llm-degradation, PER-ai-response-time).
 
-**Project Pulse shared foundation**
-
-SI-foundation-auth: The RAM environment shall obtain the authenticated user's identity and role (course admin, instructor, student) from Project Pulse's authenticated session and shall not implement its own login (per CO-single-auth, SEC-authentication).
-
-SI-foundation-data: The requirement-authoring features shall read course, course section, team, and membership data from Project Pulse's single shared domain model — the same model the performance-tracking features use (per AS-shared-data-current).
-
-SI-foundation-persist: The RAM environment shall persist its requirements graph — artifacts, links, documents, document sections, locks, comment threads, and comments — in the Project Pulse relational database (per CO-relational-persistence).
-
-SI-foundation-email: The RAM environment shall send email notifications through Project Pulse's Gmail SMTP integration (per CO-gmail-smtp, DE-gmail-smtp); the triggering conditions and message content are specified in the Communications Interfaces section.
-
 **Document export**
 
-SI-export-formats: RAM shall generate an exported document as a PDF, DOCX, or Markdown file consistent with the template-defined structure (realizes UC-EXP-export-document; honors BR-team-scoped-access), and shall package all of a team's documents as a single bundle on request (UC-EXP-export-bundle).
+SI-export-formats: Project Pulse shall generate an exported document as a PDF, DOCX, or Markdown file consistent with the template-defined structure (realizes UC-EXP-export-document; honors BR-team-scoped-access), and shall package all of a team's documents as a single bundle on request (UC-EXP-export-bundle).
 
 SI-export-fidelity: Exported documents shall preserve table of contents, heading hierarchy, numbering, and formatting consistency (realizes UC-EXP-export-document).
 
 **Project source material import**
 
-SI-import-allowlist: RAM shall accept PDF (`.pdf`) and PowerPoint (`.pptx`, `.ppt`) uploads as project source material and shall reject any file whose type is not on this allowlist or whose size exceeds a configurable per-file limit (default 25 MB) (realizes UC-AI-import-source-material).
+SI-import-allowlist: Project Pulse shall accept PDF (`.pdf`) and PowerPoint (`.pptx`, `.ppt`) uploads as project source material and shall reject any file whose type is not on this allowlist or whose size exceeds a configurable per-file limit (default 25 MB) (realizes UC-AI-import-source-material).
 
-SI-import-extraction: RAM shall extract the text content of an imported file for use as assistant context and shall report when extraction is incomplete, for example for image-only or scanned files (realizes UC-AI-import-source-material).
+SI-import-extraction: Project Pulse shall extract the text content of an imported file for use as assistant context and shall report when extraction is incomplete, for example for image-only or scanned files (realizes UC-AI-import-source-material).
 
 ## **API Document**
 
-The API document is available on SwaggerHub: [RAM API](https://app.swaggerhub.com/apis/Washingtonwei/RAM/1.0.0).
-
-## **Hardware Interfaces**
-
-No hardware interfaces have been identified.
+The REST API is published on SwaggerHub as two documents: the [Project Pulse API](https://app.swaggerhub.com/apis/Washingtonwei/project-pulse/1.0.0), covering the course, course section, team, and performance-tracking endpoints, and the [RAM API](https://app.swaggerhub.com/apis/Washingtonwei/RAM/1.0.0), covering the requirements-authoring endpoints.
 
 ## **Communications Interfaces**
 
-CI-review-emails: RAM shall deliver each review-workflow notification raised by UC-REV-submit-for-review and UC-REV-review-documents as email through Project Pulse's Gmail SMTP integration (per CO-gmail-smtp, DE-gmail-smtp).
+CI-email-notifications: Project Pulse shall deliver every email notification through the Gmail SMTP integration (per CO-gmail-smtp, DE-gmail-smtp). Such notifications arise in both capability areas: performance tracking sends each student a weekly submission reminder for weekly activity reports and peer evaluations (FR-NOT-weekly-reminder) and notifies students and instructors of team-membership changes (UC-TEA-assign-students, UC-TEA-remove-student, UC-TEA-delete-team, UC-INS-assign-instructors); requirements authoring sends review-workflow notices on submission and review outcome (UC-REV-submit-for-review, UC-REV-review-documents).
 
-CI-no-routine-email: RAM shall send no email for the routine authoring changes suppressed by FR-NOT-suppress-routine.
+CI-no-routine-email: Project Pulse shall send no email for the routine requirements-authoring changes suppressed by FR-NOT-suppress-routine.
 
-CI-llm-https: RAM shall communicate with the external LLM service over HTTPS (per OE-external-services, SEC-llm-proxy).
+CI-llm-https: Project Pulse shall communicate with the external LLM service over HTTPS (per OE-external-services, SEC-llm-proxy).
 
-CI-browser-https: Project Pulse shall conduct all browser-to-server communication over HTTPS.
+CI-browser-https: Project Pulse shall conduct all browser-to-server communication over HTTPS (per SEC-https, OE-https-access).
 
 # **Quality Attributes**
 
-These quality attributes apply to Project Pulse as a whole. Some — accessibility, security, availability, and transport security — are system-wide; others name behaviors specific to the RAM environment's features (autosave and edit-loss bounds, ReqLint and AI response times, real-time collaboration) and are scoped to RAM accordingly.
+These quality attributes apply to Project Pulse as a whole. Most are system-wide — accessibility, security, availability, single-application interoperability, and cohort-scale scalability all name `Project Pulse shall …` behaviors. A few are scoped to one capability and say so in their subject: PER-report-load to the performance-tracking dashboards and reports, and the RAM-specific behaviors (autosave and edit-loss bounds, ReqLint and AI response times, the requirements-graph load target, real-time collaboration, and the service-layer maintainability rule) to the RAM environment.
 
 ## **Usability**
 
@@ -720,7 +729,9 @@ USE-first-session-success: A new student shall be able to open a document sectio
 
 ## **Performance**
 
-PER-collab-latency: While up to 100 users are editing concurrently, RAM shall propagate collaborator presence and lock-state events (join, disconnect, lock acquire/release) within 1 second for 95% of events. _(Post-MVP — depends on the deferred real-time collaboration; see UC-COL-collaborative-edit.)_
+PER-report-load: Project Pulse shall return the instructor progress-monitoring dashboard and the weekly-activity-report and peer-evaluation report views within 500 milliseconds at the 95th percentile, under the peak near-deadline concurrency envelope of SCA-cohort-load.
+
+PER-collab-latency: While editing under the SCA-cohort-load concurrency envelope, RAM shall propagate collaborator presence and lock-state events (join, disconnect, lock acquire/release) within 1 second for 95% of events. _(Post-MVP — depends on the deferred real-time collaboration; see UC-COL-collaborative-edit.)_
 
 PER-autosave-cadence: RAM shall autosave an actively edited authoring destination at least every 10 seconds and persist its latest content immediately when the student navigates away. (Realized by FR-SAVE-autosave-active and the navigate-away extension of UC-DOC-edit-document / UC-DOC-edit-use-case.)
 
@@ -762,7 +773,9 @@ ROB-no-overwrite: RAM shall ensure that real-time collaborative updates never ov
 
 ## **Scalability and Interoperability**
 
-SCA-cohort-load: Project Pulse shall sustain its performance and availability targets under peak concurrent load near assignment deadlines for a Senior Design cohort of approximately 70 students (about 75 total users including instructors and course admins), whose peak concurrent editing stays within the 100-concurrent performance envelope specified in PER-collab-latency (cf. risk RI-scalability).
+SCA-cohort-load: Project Pulse shall sustain its performance and availability targets under peak concurrent load near assignment deadlines for a Senior Design cohort of approximately 70 students (about 75 total users including instructors and course admins), within a performance envelope of up to 100 concurrent editors (cf. risk RI-scalability). This envelope is the concurrency baseline the other performance attributes (PER-report-load, PER-graph-load, PER-collab-latency) are measured under. Project Pulse sets no fixed storage or capacity limit for release 1.0; both performance-tracking records and the RAM requirements graph persist in the shared relational database, sized for this cohort (the RAM-side design target is ~1,000 artifacts per team — quality scenario QS-7 in the architecture-of-record).
+
+_Informative sizing estimate (provisioning guidance, not a limit)._ For a single cohort-term, the structured relational records are small — on the order of tens of MB in total: weekly activity reports and peer evaluations are roughly ~10 MB each (≈70 students × ~15 active weeks × the per-week rows and their text), and the requirements graph is a few tens of MB at the ~1,000-artifact-per-team design ceiling (≈12 teams of ~6 students). Uploaded project source material is the dominant store and is held in object storage rather than the relational database (CO-blob-source-material, DI-source-material-storage), on the order of ~1 GB per cohort-term (the 25 MB-per-file allowlist limit of SI-import-allowlist × a handful of files per team). Accumulated across the terms kept under DI-data-retention-disposal, total storage remains modest, so storage volume is not the binding scaling constraint — the concurrency envelope above is.
 
 INT-single-application: Project Pulse shall operate as a single application across both capability areas; the RAM environment shall reuse its single-page application, REST API, relational database, authentication, and notification services rather than introducing a parallel system, per CO-single-application.
 
@@ -770,20 +783,8 @@ INT-single-application: Project Pulse shall operate as a single application acro
 
 MNT-service-layer: RAM shall access its requirements graph behind a service layer so that new artifact types and artifact link types can be added without reworking unrelated features, consistent with its module structure within Project Pulse (per CO-single-application, INT-single-application).
 
-**Priority of attributes:** where quality attributes conflict, the intended priority order is **security and data integrity → availability → usability → performance**. Educational value governs trade-offs in the AI assistant features specifically (see [AI/LLM Integration Requirements](#aillm-integration-requirements)).
+**Priority of attributes:** where quality attributes conflict, the intended priority order is **security and integrity (SEC-*, ROB-*) → availability (AVL-*) → usability (USE-*) → performance (PER-*)**. Educational value governs trade-offs in the AI assistant features specifically (see [AI/LLM Integration Requirements](#aillm-integration-requirements)).
 
 # **Internationalization and Localization Requirements**
 
 N/A for release 1.0. Project Pulse targets TCU software-engineering courses and ships in U.S. English only; no multi-language, multi-currency, or locale-specific formatting requirements apply. (Accessibility is in scope but is a usability requirement — see USE-wcag-aa / WCAG 2.1 AA in the Usability section — not an internationalization one.)
-
-# **Other Requirements**
-
-Project Pulse introduces no additional requirements beyond those specified elsewhere; the cross-cutting concerns that would otherwise appear here are referenced rather than restated, and the content areas that do not apply are marked so explicitly:
-
-- Regulatory and compliance: FERPA handling of student educational records — CO-ferpa and SEC-ferpa (Security).
-- Security and access control: platform authentication and role-based access — FR-SEC-* (Security and Authorization Requirements) and the Security quality attributes.
-- Authorship and audit trail: creator/editor identity and timestamps on every authored item — FR-HIS-authorship-metadata (Authorship Metadata and Document Versioning Requirements); logical (soft) deletion that retains items for audit — BR-deletion-integrity.
-- Installation, configuration, and startup/shutdown: Project Pulse is deployed as a single application (see the [Deployment View](../design/architectural-design.md#deployment-view)).
-- Memory and capacity: Project Pulse sets no RAM-specific storage or capacity limit for release 1.0; RAM content persists in the shared Project Pulse relational database and is sized for the cohort in SCA-cohort-load (the per-team artifact-count design target is ~1,000 artifacts — quality scenario QS-7 in the architecture-of-record).
-- Portability: N/A for release 1.0. Project Pulse is a single hosted web application on a fixed server stack (OE-server-stack, CO-vue-spring-stack), reached through a standard web browser (OE-supported-browsers, OE-https-access); no requirement to run on multiple operating systems or to be ported to another platform applies.
-- Site adaptation: Project Pulse ships a single application configuration with no per-installation site-adaptation files; per-deployment adaptation is instead realized as per-course-section configuration — a course section's teaching context, per-assistant enablement and assistant instructions, cross-document review criteria, and weekly due days (UC-CFG-\*, FR-AI-enablement, FR-AI-assistant-instructions, FR-NOT-weekly-reminder).

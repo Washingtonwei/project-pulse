@@ -201,6 +201,7 @@ Two conventions keep this from duplicating the other matrices: a cross-cutting F
 | FR-SEC-authentication | — | — | `SecurityConfiguration` + JWT (`AuthService`, `CustomBearerTokenAuthenticationEntryPoint`) | integration `isUnauthorized` cases → see NFR matrix `QS-2` | ✅ Built | ✅ Verified |
 | FR-SEC-authorization | — | — | `*AuthorizationManager` family + `*SecurityService` (RBAC + team scoping) | `*_NotSameTeam` / `*NotInSameCourse` / `*NotSameSection` → see NFR matrix `QS-1` | ✅ Built | ✅ Verified |
 | FR-SEC-deny-unauthorized | — | — | `CustomBearerTokenAccessDeniedHandler` + `CustomBasicAuthenticationEntryPoint` + `SecurityConfiguration` | integration `isForbidden` / `isUnauthorized` cases → see NFR matrix `QS-1`/`QS-2` | ✅ Built | ✅ Verified |
+| FR-SEC-active-account | — | — | `MyUserPrincipal.isEnabled()` → Spring Security `enabled` contract (`DisabledException` at auth); `enabled` flag toggled by `StudentService` / `InstructorService` deactivate/reactivate | — (no disabled-login test) | ✅ Built | 🔎 None |
 
 > **Why some `FR IDs` cells above repeat here.** An FR that appears in a UC row's *FR IDs* column (e.g. `FR-SAVE-autosave-active`, `FR-TPL-*`) is *depended on* by that use case; its row here records where **its own** code and tests live — a different relation (the model's *FR → design → code → tests* tail vs. the *UC depends on FR* edge). The previously untraced FRs this matrix newly homes: `FR-NOT-weekly-reminder` (built, `WeeklyReminderScheduler`), `FR-NOT-suppress-routine`, `FR-GLO-term-suggestion`, and `FR-SEC-deny-unauthorized`.
 
@@ -249,6 +250,7 @@ These have no `QS-n` yet; the matrix records *why* and the verification route so
 | `SEC-llm-proxy` | A structural confidentiality property (LLM credentials never reach the browser), not an operational scenario — and the AI proxy it constrains is unbuilt (`UC-AI-*` ❌) | Enforced by the server-side AI proxy; verify by code review / config that no LLM credential is exposed client-side (no automated test until the AI features land) |
 | `USE-first-session-success` | 95%-success is an empirical target, not automatable | 🧪 Verified by usability testing |
 | `USE-actionable-findings` | Depends on ReqLint / AI finding presentation | Folds into QS-4 / QS-5 once those features land |
+| `PER-report-load` | Performance-tracking dashboards/reports are built, but there is no load-test harness — the same gap as `PER-graph-load`/`SCA-cohort-load` (QS-7), and not RAM-graph-shaped, so it folds into no existing scenario | Add a p95 load test under the `SCA-cohort-load` envelope when a perf harness lands |
 | `PER-collab-latency`, `ROB-no-overwrite` | Post-MVP — depend on the deferred real-time collaboration (UC-COL-collaborative-edit) | Deferred; add scenarios with that feature |
 | `SAF-not-applicable` | No safety functions exist (`SAF-not-applicable`) | N/A by definition |
 
@@ -310,7 +312,7 @@ A business rule (`BR-*`, owned by [business-rules.md](requirements/business-rule
 
 > ⚙️ **Generated, do not hand-edit.** This table is a *projection* of the forward citations — the use cases' **Business Rules** fields, the SRS's rule citations, and the NFR matrix's `QS-n` rows — not a second authored copy of them (that would violate "cited, never restated" and drift). `/spec-build` **regenerates and verifies** it against the live citations; a row that disagrees with them is a flagged defect, and edits belong in the citing artifacts, not here. The two universal access rules (`BR-role-based-access`, `BR-team-scoped-access`) are cited by essentially every authoring/CRUD use case and are summarized by count rather than enumerated (the same noise-reduction convention as the functional matrix's omitted `FR-SEC-*` column). This index is the **spec-level** backward view (which requirements *cite* a rule); its **code-level** companion — which `file:method` *enforces* each rule — lives in `/sync-check`'s `BR → enforcement-point` map. Together they trace a rule rule → requirements → code.
 >
-> **Last regenerated:** 2026-06-26 (against the citations as of this commit).
+> **Last regenerated:** 2026-06-27 (against the citations as of this commit).
 
 | Business rule | Cited by use cases | SRS | QS |
 |---|---|---|---|
@@ -326,12 +328,12 @@ A business rule (`BR-*`, owned by [business-rules.md](requirements/business-rule
 | `BR-document-creation` | `UC-TPL-provision-documents` | — | — |
 | `BR-edit-lock-required` | `UC-COL-collaborative-edit`, `UC-DOC-edit-document`, `UC-DOC-edit-use-case` | (prose) | — |
 | `BR-evaluation-editable-until-close` | `UC-EVA-submit-evaluation` | — | — |
-| `BR-evaluation-private-comment` | `UC-EVA-section-evaluation-report`, `UC-EVA-student-evaluation-report`, `UC-EVA-submit-evaluation`, `UC-EVA-view-own-evaluation` | — | — |
+| `BR-evaluation-private-comment` | `UC-EVA-section-evaluation-report`, `UC-EVA-student-evaluation-report`, `UC-EVA-submit-evaluation`, `UC-EVA-view-own-evaluation` | `FR-SEC-authorization` | — |
 | `BR-evaluation-submission-window` | `UC-EVA-submit-evaluation` | — | — |
-| `BR-evaluation-visibility` | `UC-EVA-view-own-evaluation` | — | — |
+| `BR-evaluation-visibility` | `UC-EVA-view-own-evaluation` | `FR-SEC-authorization` | — |
 | `BR-explicit-acceptance` | `UC-AI-critique`, `UC-AI-draft-skeleton`, `UC-AI-review-proposal`, `UC-AI-structure-notes`, `UC-AI-whole-project-review` | — | — |
 | `BR-glossary-term-unique` | `UC-GLO-create-term`, `UC-GLO-rename-term` | — | — |
-| `BR-instructor-lifecycle` | `UC-INS-deactivate-instructor`, `UC-INS-reactivate-instructor` | — | — |
+| `BR-instructor-lifecycle` | `UC-INS-deactivate-instructor`, `UC-INS-reactivate-instructor` | `FR-SEC-active-account` | — |
 | `BR-invitations-admin-only` | `UC-INS-invite-instructors`, `UC-STU-invite-students` | — | — |
 | `BR-link-constraints` | `UC-LNK-create-link`, `UC-LNK-edit-link` | — | — |
 | `BR-lock-expiry` | `UC-DOC-edit-document`, `UC-DOC-edit-use-case` | (prose) | — |
@@ -342,7 +344,7 @@ A business rule (`BR-*`, owned by [business-rules.md](requirements/business-rule
 | `BR-section-admin-only` | `UC-RUB-assign-rubric`, `UC-SEC-create-section`, `UC-SEC-edit-section`, `UC-SEC-setup-active-weeks` | — | — |
 | `BR-section-config-access` | `UC-CFG-configure-assistant-instructions`, `UC-CFG-configure-review-criteria`, `UC-CFG-configure-teaching-context`, `UC-CFG-toggle-assistants` | — | — |
 | `BR-source-material-import` | `UC-AI-import-source-material` | — | — |
-| `BR-student-lifecycle` | `UC-STU-deactivate-student`, `UC-STU-delete-student`, `UC-STU-reactivate-student` | — | — |
+| `BR-student-lifecycle` | `UC-STU-deactivate-student`, `UC-STU-delete-student`, `UC-STU-reactivate-student` | `FR-SEC-active-account` | — |
 | `BR-team-admin-only` | `UC-INS-assign-instructors`, `UC-INS-remove-instructor`, `UC-TEA-assign-students`, `UC-TEA-create-team`, `UC-TEA-delete-team`, `UC-TEA-edit-team`, `UC-TEA-remove-student` | — | — |
 | `BR-team-scoped-access` | _universal_ — 26 UCs (every authoring/CRUD use case) | `FR-SEC-authorization`, `SEC-authorization`, `SI-export-formats` | `QS-1` |
 | `BR-team-single-instructor` | `UC-INS-assign-instructors`, `UC-INS-remove-instructor` | — | — |
