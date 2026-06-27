@@ -154,45 +154,45 @@ Not all functional behaviors of Project Pulse are best expressed as use cases. T
 
 ### *Autosave and Persistence Requirements*
 
-**FR-SAVE-autosave-active (State-Driven):** While a student is actively editing an authoring destination, the system shall automatically save the authoring destination's content at the autosave cadence specified in PER-autosave-cadence.
+**FR-SAVE-autosave-active (State-Driven):** While a student is actively editing an authoring destination, the system shall automatically save the authoring destination's content at the autosave cadence specified in PER-autosave-cadence. _(Part of FEAT-requirements-authoring.)_
 
 ### *Validation and Consistency Requirements (ReqLint)*
 
-**FR-VAL-background-recheck (State-Driven, Optional):** While a student edits a document section, the system shall periodically re-evaluate that document section using the same ReqLint checks that UC-VAL-run-validation runs on demand — flagging missing required fields, ambiguous wording, and stylistic violations — so that issues surface during authoring rather than only on an explicit validation run. _(Supports BO-RAM-requirement-quality, BO-RAM-instructor-workload, BO-RAM-consistency.)_
+**FR-VAL-background-recheck (State-Driven, Optional):** While a student edits a document section, the system shall periodically re-evaluate that document section using the same ReqLint checks that UC-VAL-run-validation runs on demand — flagging missing required fields, ambiguous wording, and stylistic violations — so that issues surface during authoring rather than only on an explicit validation run. _(Part of FEAT-requirements-authoring.)_
 
 ### *AI/LLM Integration Requirements*
 
 RAM's AI assistance is delivered through Socratic assistants whose primary purpose is educational: to train students to author high-quality requirements rather than to hand them finished text. Where a design choice trades productivity against educational value, educational value governs.
 
-**FR-AI-no-auto-edit (Ubiquitous):** The system shall not modify student-authored content with assistant-generated text without an explicit confirmation action by the student. _(Supports BO-RAM-learning-outcomes.)_
+**FR-AI-no-auto-edit (Ubiquitous):** The system shall not modify student-authored content with assistant-generated text without an explicit confirmation action by the student. _(Part of FEAT-ai-assistance.)_
 
-**FR-AI-distinguish-suggestions (Ubiquitous):** The system shall visually distinguish assistant-generated suggestions from student-authored content until the student accepts them.
+**FR-AI-distinguish-suggestions (Ubiquitous):** The system shall visually distinguish assistant-generated suggestions from student-authored content until the student accepts them. _(Part of FEAT-ai-assistance.)_
 
-**FR-AI-teaching-context (Ubiquitous):** The system shall include the course section's teaching context in the context provided to every assistant so that assistant feedback reflects the standards, common mistakes, and thinking order it defines.
+**FR-AI-teaching-context (Ubiquitous):** The system shall include the course section's teaching context in the context provided to every assistant so that assistant feedback reflects the standards, common mistakes, and thinking order it defines. _(Part of FEAT-ai-assistance.)_
 
-**FR-AI-enablement (State-Driven):** While an instructor has disabled a given assistant for a course section, the system shall make that assistant's corresponding feature unavailable to that course section's students; the drafting assistant shall be disabled by default.
+**FR-AI-enablement (State-Driven):** While an instructor has disabled a given assistant for a course section, the system shall make that assistant's corresponding feature unavailable to that course section's students; the drafting assistant shall be disabled by default. _(Part of FEAT-ai-assistance.)_
 
-**FR-AI-rationale (Ubiquitous):** The system shall accompany every assistant finding or proposal with an instructive rationale phrased for student learning. _(Supports BO-RAM-requirement-quality.)_
+**FR-AI-rationale (Ubiquitous):** The system shall accompany every assistant finding or proposal with an instructive rationale phrased for student learning. _(Part of FEAT-ai-assistance.)_
 
-**FR-AI-degradation (State-Driven):** While the external LLM service is unavailable, the system shall make AI features unavailable and shall keep the rest of Project Pulse operational.
+**FR-AI-degradation (State-Driven):** While the external LLM service is unavailable, the system shall make AI features unavailable and shall keep the rest of Project Pulse operational. _(Part of FEAT-ai-assistance.)_
 
-**FR-AI-source-material-context (Ubiquitous):** Where a team has imported project source material, the system shall make it available to the AI assistants as context for elicitation, critique, and drafting.
+**FR-AI-source-material-context (Ubiquitous):** Where a team has imported project source material, the system shall make it available to the AI assistants as context for elicitation, critique, and drafting. _(Part of FEAT-ai-assistance.)_
 
-**FR-AI-assistant-instructions (Ubiquitous):** The system shall include each assistant's instructor-authored assistant instructions in the context provided to that assistant so that the assistant's role, persona, and boundaries reflect the instructor's per-assistant configuration.
+**FR-AI-assistant-instructions (Ubiquitous):** The system shall include each assistant's instructor-authored assistant instructions in the context provided to that assistant so that the assistant's role, persona, and boundaries reflect the instructor's per-assistant configuration. _(Part of FEAT-ai-assistance.)_
 
 ### *Template and Standards Enforcement Requirements*
 
-The initial release ships fixed, built-in templates, and the enforcement requirements (FR-TPL-enforce-structure, FR-TPL-section-keys) apply to them. Template customization — letting a course admin or instructor author or edit templates (FR-TPL-customize) — is **deferred to a future release and is not part of the MVP scope** (see Vision and Scope, [Template Management](vision-and-scope.md#feat-template-management-template-management)). FR-TPL-customize is retained here, with its ID, so the intent is not lost.
+The initial release ships fixed, built-in templates, and the enforcement requirements (FR-TPL-enforce-structure, FR-TPL-section-keys) apply to them. Template customization — letting a course admin or instructor author or edit templates (FR-TPL-customize) — is **deferred to a future release and is not part of the MVP scope** (see Vision and Scope, [Requirements Authoring](vision-and-scope.md#feat-requirements-authoring-requirements-authoring)). FR-TPL-customize is retained here, with its ID, so the intent is not lost.
 
-**FR-TPL-enforce-structure (Ubiquitous):** The system shall enforce the structure, required document sections, and metadata defined by the active template. _(Supports BO-RAM-requirement-quality.)_
+**FR-TPL-enforce-structure (Ubiquitous):** The system shall enforce the structure, required document sections, and metadata defined by the active template. _(Part of FEAT-requirements-authoring.)_
 
 **FR-TPL-customize (Deferred — future release):** When an authorized user (a course admin or instructor) updates a template, the system shall apply the updated structure to new documents but shall not retroactively modify existing documents without that user's approval.
 
-**FR-TPL-section-keys (Ubiquitous):** The system shall apply the numbering and section-key scheme defined by the active template to all document sections within a document. _(Supports BO-RAM-requirement-quality.)_
+**FR-TPL-section-keys (Ubiquitous):** The system shall apply the numbering and section-key scheme defined by the active template to all document sections within a document. _(Part of FEAT-requirements-authoring.)_
 
 ### *Terminology and Glossary Requirements*
 
-**FR-GLO-term-suggestion (State-Driven):** While a student is writing or editing text, the system shall suggest existing glossary terms when there is a match. _(Supports BO-RAM-consistency.)_
+**FR-GLO-term-suggestion (State-Driven):** While a student is writing or editing text, the system shall suggest existing glossary terms when there is a match. _(Part of FEAT-requirements-authoring.)_
 
 ### *Authorship Metadata and Document Versioning Requirements*
 
@@ -204,23 +204,23 @@ Authorship metadata (FR-HIS-authorship-metadata) is in scope for the initial rel
 
 **FR-HIS-retention (Deferred — future release):** The system shall preserve historical versions for at least one academic term.
 
-**FR-HIS-authorship-metadata (Ubiquitous):** The system shall record, for every authored item (glossary term, requirement artifact, use case, document section, artifact link, and comment), the identity of its creator and creation timestamp and the identity of its last editor and last-modified timestamp. For a use case, this authorship metadata is carried by the use case's paired requirement artifact audit record; the use case's constituent main steps and extensions do not carry separate authorship metadata. _(Cross-cutting; relied on by the authoring use cases — the create, edit, rename, and resolve flows across the glossary, documents, artifacts, links, and comments.)_
+**FR-HIS-authorship-metadata (Ubiquitous):** The system shall record, for every authored item (glossary term, requirement artifact, use case, document section, artifact link, and comment), the identity of its creator and creation timestamp and the identity of its last editor and last-modified timestamp. For a use case, this authorship metadata is carried by the use case's paired requirement artifact audit record; the use case's constituent main steps and extensions do not carry separate authorship metadata. _(Part of FEAT-collaboration; cross-cutting — relied on by the authoring use cases across the glossary, documents, artifacts, links, and comments.)_
 
 ### *Security and Authorization Requirements*
 
-**FR-SEC-authentication (Ubiquitous):** The system shall authenticate users via its JWT-based authentication mechanism before granting access to protected resources.
+**FR-SEC-authentication (Ubiquitous):** The system shall authenticate users via its JWT-based authentication mechanism before granting access to protected resources. _(Part of FEAT-administration.)_
 
-**FR-SEC-authorization (Ubiquitous):** The system shall enforce role-based access control across the student, instructor, and course admin roles, permitting each operation only for the roles authorized for it (per BR-role-based-access). It shall further restrict access to a user's own scope of ownership: a student to her own team's requirements graph, documents, and project source material (per BR-team-scoped-access) and to her own team's weekly activity reports — but not another team's — while restricting her peer evaluation results to her own, with private comments withheld from students (per BR-evaluation-visibility, BR-evaluation-private-comment); and an instructor or course admin to the course sections she is assigned to or owns.
+**FR-SEC-authorization (Ubiquitous):** The system shall enforce role-based access control across the student, instructor, and course admin roles, permitting each operation only for the roles authorized for it (per BR-role-based-access). It shall further restrict access to a user's own scope of ownership: a student to her own team's requirements graph, documents, and project source material (per BR-team-scoped-access) and to her own team's weekly activity reports — but not another team's — while restricting her peer evaluation results to her own, with private comments withheld from students (per BR-evaluation-visibility, BR-evaluation-private-comment); and an instructor or course admin to the course sections she is assigned to or owns. _(Part of FEAT-administration.)_
 
-**FR-SEC-deny-unauthorized (Event-Driven):** When an unauthorized user attempts to access a protected resource, the system shall deny access and provide an appropriate error message.
+**FR-SEC-deny-unauthorized (Event-Driven):** When an unauthorized user attempts to access a protected resource, the system shall deny access and provide an appropriate error message. _(Part of FEAT-administration.)_
 
-**FR-SEC-active-account (Ubiquitous):** The system shall deny authentication and access to protected resources for a deactivated student or instructor account, regardless of otherwise-valid credentials, until the account is reactivated, per BR-student-lifecycle and BR-instructor-lifecycle.
+**FR-SEC-active-account (Ubiquitous):** The system shall deny authentication and access to protected resources for a deactivated student or instructor account, regardless of otherwise-valid credentials, until the account is reactivated, per BR-student-lifecycle and BR-instructor-lifecycle. _(Part of FEAT-administration.)_
 
 ### *Notification Requirements*
 
-**FR-NOT-suppress-routine (Ubiquitous):** The system shall not raise persistent (in-app) notifications for routine authoring changes (creating, editing, or deleting glossary terms, requirement artifacts, artifact links, document sections, use cases, and comments), and shall suppress their email per CI-no-routine-email; such changes are propagated to connected collaborators in real time per the real-time collaboration model (UC-COL-collaborative-edit) instead.
+**FR-NOT-suppress-routine (Ubiquitous):** The system shall not raise persistent (in-app) notifications for routine authoring changes (creating, editing, or deleting glossary terms, requirement artifacts, artifact links, document sections, use cases, and comments), and shall suppress their email per CI-no-routine-email; such changes are propagated to connected collaborators in real time per the real-time collaboration model (UC-COL-collaborative-edit) instead. _(Part of FEAT-collaboration.)_
 
-**FR-NOT-weekly-reminder (Event-Driven):** On a course section's configured weekly due day for weekly activity reports or peer evaluations, the system shall email each student in that course section a submission reminder listing the item(s) due that day and their due times, delivered through the Gmail SMTP integration. The reminder job runs only for course sections eligible for reminders in the current week and may be disabled by configuration. _(Supports BO-PERF-submission-rate, BO-PERF-faster-completion.)_
+**FR-NOT-weekly-reminder (Event-Driven):** On a course section's configured weekly due day for weekly activity reports or peer evaluations, the system shall email each student in that course section a submission reminder listing the item(s) due that day and their due times, delivered through the Gmail SMTP integration. The reminder job runs only for course sections eligible for reminders in the current week and may be disabled by configuration. _(Part of FEAT-performance-tracking.)_
 
 # **Business Rules**
 

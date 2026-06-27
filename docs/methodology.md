@@ -62,19 +62,36 @@ Adopt the canonical sections and ordering; *drop or merge* sections that genuine
 
 Two listings sit close to each other in the requirements docs and look like they should be the same list — and aren't. Conflating them flattens both, so it's worth naming the distinction once.
 
-- In `vision-and-scope.md`, the **Major Features** are stakeholder-visible *capabilities* — "what does the product do for the user?" Typically 8–15 per product, named and written in value terms, no behavioral detail.
-- In `use-cases.md`, **use case areas** (`UC-<AREA>-*`) are *behavioral groupings* — "which actor-task interactions belong together?" Usually aligned with a bounded context in the code, so they double as the spine of the design and the traceability matrix.
+- In `vision-and-scope.md`, the **Major Features** are stakeholder-visible *capability themes* — "what does the product do for the user?" A handful per product (Project Pulse has six), named and written in value terms, no behavioral detail.
+- In `use-cases.md`, **use case areas** (`UC-<AREA>-*`) are *behavioral groupings* — "which actor-task interactions belong together?" Usually aligned with a bounded context in the code, so they double as the spine of the design and the traceability matrix. The area is also the stable namespace baked into every `UC-<AREA>-<slug>` ID.
 
-The relationship between them is **many-to-many**, not one-to-one. A single feature is usually realized by use cases across several areas (Administration & Course Management spans course-section, team, student, instructor, account); a single area can serve more than one feature (the glossary area feeds *Glossary & Terminology Consistency*, but its terms also show up under *Smart Editing and Validation* and *Full Requirements Traceability*). Forcing a 1:1 list either flattens features into a CRUD enumeration or inflates UC areas into marketing buckets — losing what each view is for.
+The relationship between them is **many-to-many**, and a feature is deliberately **coarser** than an area and **never one-to-one** with one. A single feature is usually realized by use cases across several areas (Administration & Course Setup spans course-section, team, student, instructor, account, and rubric); a single area can serve more than one feature (the glossary area lives under *Requirements Authoring*, but its terms also feed *Requirements Traceability and Navigation* and *AI-Assisted Guidance and Feedback*). The coarseness is load-bearing in two directions: forcing a 1:1 list either flattens features into a CRUD enumeration (down to substrate like account-setup and section-CRUD) or inflates UC areas into marketing buckets; and because the area is welded into every UC ID, coupling a feature 1:1 to an area would make every vision re-pitch threaten a UC-ID renumber — the exact thing the name-based ID scheme exists to prevent. Keep the two granularities visibly distinct: when a feature would land 1:1 on an area, pull it *up* to the theme that area belongs to.
 
 Two health checks keep the two lists honest:
 
-- **Coverage.** Every UC area should be reachable from at least one feature; otherwise there are use cases without a stakeholder-visible reason, and the spec has work the vision doesn't justify. (When we ran this check on Project Pulse, the glossary and document-authoring areas had no feature pointing at them — both real gaps, fixed by naming features for them.)
-- **Right altitude.** A feature should describe a capability, not enumerate use cases; a UC area should reflect the domain, not the marketing pitch. If a feature reads like "create / edit / delete X", it's a UC list mis-cast as a feature. If an area name reads like a tagline, it's a feature mis-cast as an area.
+- **Coverage.** Every UC area should be reachable from at least one feature; otherwise there are use cases without a stakeholder-visible reason, and the spec has work the vision doesn't justify. (When we first ran this check on Project Pulse, the glossary and document-authoring areas had no feature pointing at them — both real gaps, now covered by *Requirements Authoring*.)
+- **Right altitude — and never 1:1.** A feature should describe a capability theme spanning several areas, not enumerate use cases or shadow a single area; a UC area should reflect the domain, not the marketing pitch. If a feature reads like "create / edit / delete X", it's a UC list mis-cast as a feature. If a feature names exactly one area, it's an area mis-cast as a feature — coarsen it. If an area name reads like a tagline, it's a feature mis-cast as an area.
 
 A deliberate consequence: **the Major Features keep no inline UC IDs.** Each feature *does* carry its own position-independent `FEAT-<slug>` ID (so it is a first-class, citable node and the BO→feature→use-case edges are keyed by handle, not by prose name), but it does **not** enumerate the use cases under it — the feature → use-case-area map lives in `traceability.md`, keyed to the `FEAT-<slug>` ID and verified there. That separation keeps the features at value-altitude and frees the use-case catalog to organize by domain rather than by the marketing brochure.
 
 ## The traceability model
+
+**The spine at a glance.** A business objective is *realized by* a feature, which decomposes into use cases and cross-cutting FRs that are built and verified. The objective attaches **once**, at the feature; the use cases and FRs below **inherit** it (so the realization matrices carry no per-UC or per-FR objective column). Four layers hang *off* this spine, each on a single node:
+
+```text
+BO ──served by──▶ Feature ──realized by──▶ Use Case ───▶ design → code → test
+                     │                   └─▶ non-UC FR ─▶ design → code → test
+                     │
+                     └─ the objective attaches ONCE, here at the feature; UC / FR below inherit it
+
+off-spine overlays — each hangs off one node, a different question than "is it built?":
+   BO ──measured by──▶ Success Metric ──▶ evaluation route   (was it ACHIEVED? — post-deployment, not a code test)
+   Use Case / FR ──honors──▶ Business Rule                   (what policy bounds it? — cited, never restated)
+   Quality Attribute ──▶ Quality Scenario (QS) ──▶ test      (NFRs verified in parallel, never via a use case)
+   Risk ──▶ mitigation / acceptance                          (motivates the BO; off the build line)
+```
+
+The rest of this section is the full picture behind this sketch; the Mermaid diagram below renders the same graph with every edge labeled.
 
 Principle 5 calls traceability "bidirectional" and points at "a single matrix." This section makes the model *behind* that matrix explicit, because the intuitive picture most people carry — a linear chain `business objective → feature → use case → design → code` — is incomplete in three ways that matter for keeping a fallible spec and generated code honest with each other. The chain is the right **spine**; it just isn't the whole shape.
 
@@ -111,7 +128,7 @@ The nodes, grounded in this repo's identifier spaces:
 
 - **Risks / assumptions** (`RI-*`, `AS-*`) — *motivate* objectives; they are not "realized by" code, so they sit off the spine.
 - **Business objective** (`BO-<AREA>-*`) — the *why*. Its achievement is made checkable by a **success metric** (`SM-<slug>`) — a baseline, target, and evaluation route — the *outcome → objective backward edge* that answers "was it achieved?", not just "was it built?". Most routes are empirical (survey, logs, rubric), validated post-deployment rather than by a code test; the BO measurement matrix records them.
-- **Feature** (`FEAT-<slug>`) — the stakeholder-visible *capability*.
+- **Feature** (`FEAT-<slug>`) — the stakeholder-visible *capability*, and the **single anchor for the business objective**: a `BO-*` attaches to the feature(s) that serve it, and the use cases and FRs below *inherit* their objective through the feature rather than each re-declaring it. Anchoring the `BO → feature` edge once — in `traceability.md`'s *Feature → use case area* map — and composing it with feature → UC/FR is what keeps the spine clean; recording the same objective a second time directly on each use case or FR is a redundant parallel edge that drifts, so the realization matrices carry **no** per-UC or per-FR BO column.
 - **Use case = high-level FR** (`UC-<AREA>-*`) — observable behavior. Collapsing the textbook user-requirement / system-requirement split into one node (a use case *is* its detailed functional requirement — its steps + associated information) deliberately **removes a whole traceability hop and its drift**; this is the single biggest simplification the method buys.
 - **Non-use-case FR** (`FR-<AREA>-*`) — the cross-cutting subsystems (autosave, validation, AI orchestration, notifications, security) that no single use case owns. They sit *beside* the use-case layer, not below it.
 - **Design-of-record → code → tests** — the realization tail. Requirements are *allocated to* design, design is built as code, code is *verified by* tests. The verification edge is what closes the loop: a requirement with no test verifying it is not actually traced.

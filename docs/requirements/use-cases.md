@@ -2637,7 +2637,7 @@ Details:
 
 Duplication detection rules: glossary term must be unique
 
-Terminology linking: on creation, the system links occurrences of the new term across the team's requirement documents to its glossary definition, so the term is navigable from where it is used (supports BO-RAM-consistency).
+Terminology linking: on creation, the system links occurrences of the new term across the team's requirement documents to its glossary definition, so the term is navigable from where it is used.
 
 Notification: None — routine authoring changes are not notified (FR-NOT-suppress-routine); saved changes propagate to connected teammates in real time (UC-COL-collaborative-edit).
 
