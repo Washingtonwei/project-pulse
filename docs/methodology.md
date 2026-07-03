@@ -1,6 +1,6 @@
 # Spec-Driven, Agent-Assisted Development — A Methodology
 
-> **Status:** working methodology document. It captures the development process Project Pulse (and its RAM module in particular) is built with, written so it can serve three audiences at once: practitioners applying it, students learning it (senior design, Fall 2026), and a research write-up (target venues: ICSE, RE, ASE, or CSEET's educational track). Names and framing here are deliberately open — see [Open questions](#open-questions-and-where-this-is-still-provisional).
+> **Status:** working methodology document. It captures the development process Project Pulse (and its RAM module in particular) is built with, written so it can serve three audiences at once: practitioners applying it, students learning it (senior design, Fall 2026), and a research write-up (target venues: SIGCSE, CSEET or ICSE, RE, ASE's educational track). Names and framing here are deliberately open — see [Open questions](#open-questions-and-where-this-is-still-provisional).
 >
 > **Working name:** *Spec-Driven, Agent-Assisted Development* (SDAAD). A shorter handle for the central loop is **breadth-first, slice-proven, fan-out** (below). The name is a placeholder; the method is the point.
 
@@ -85,10 +85,12 @@ BO ──served by──▶ Feature ──realized by──▶ Use Case ──�
                      └─ the objective attaches ONCE, here at the feature; UC / FR below inherit it
 
 off-spine overlays — each hangs off one node, a different question than "is it built?":
+   Business problem / opportunity ──motivates──▶ BO             (why this objective exists)
    BO ──measured by──▶ Success Metric ──▶ evaluation route   (was it ACHIEVED? — post-deployment, not a code test)
    Use Case / FR ──honors──▶ Business Rule                   (what policy bounds it? — cited, never restated)
    Quality Attribute ──▶ Quality Scenario (QS) ──▶ test      (NFRs verified in parallel, never via a use case)
-   Risk ──▶ mitigation / acceptance                          (motivates the BO; off the build line)
+   Risk ──threatens / is mitigated by──▶ BO / requirement / decision
+   Assumption ──conditions──▶ BO / scope / design
 ```
 
 The rest of this section is the full picture behind this sketch; the Mermaid diagram below renders the same graph with every edge labeled.
@@ -99,16 +101,20 @@ Principle 5 calls traceability "bidirectional" and points at "a single matrix." 
 
 **2. It runs in two directions, and both are load-bearing.** *Forward* (objective → code) answers **coverage**: is every objective actually built? *Backward* (code → objective) answers **justification**: why does this artifact exist? A requirement nothing traces up to is gold-plating; a feature nothing traces down from is unimplemented promised scope. Bidirectionality is not decoration — ISO/IEC/IEEE 29148 requires it — and `/spec-build` enforces both: its forward check flags orphan scope, its backward check flags unjustified requirements.
 
-**3. It has a vertical spine and orthogonal layers.** Not every requirement type sits on the objective→code line. Business rules and quality attributes cross-cut it, and glossary terms underpin all of it:
+**3. It has a vertical spine and orthogonal layers.** Not every planning artifact sits on the objective→code line. Business problems motivate the objectives; risks and assumptions frame them; business rules and quality attributes cross-cut them; and glossary terms underpin all of it:
 
 ```mermaid
 flowchart TD
-    RIAS["Risks / assumptions (RI-*, AS-*)"] -. motivate .-> BO["Business objective (BO-*)"]
+    PROB["Business problem / opportunity"] -. motivates .-> BO["Business objective (BO-*)"]
+    RISK["Risk (RI-*)"] -. threatens / influences .-> BO
+    RISK -. mitigated by .-> FEAT["Feature (FEAT-*)"]
+    ASM["Assumption (AS-*)"] -. conditions .-> BO
+    ASM -. conditions .-> DSGN["Design-of-record"]
     BO -. measured by .-> SM["Success metric (SM-*)"]
-    BO -- realized by --> FEAT["Feature (FEAT-*)"]
+    BO -- realized by --> FEAT
     FEAT --> UC["Use case = high-level FR (UC-*)"]
     FEAT --> FR["Non-use-case FR (FR-*)"]
-    UC -- allocated to --> DSGN["Design-of-record"]
+    UC -- allocated to --> DSGN
     FR -- allocated to --> DSGN
     DSGN --> CODE["Code"]
     CODE --> TEST["Tests"]
@@ -126,9 +132,11 @@ flowchart TD
 
 The nodes, grounded in this repo's identifier spaces:
 
-- **Risks / assumptions** (`RI-*`, `AS-*`) — *motivate* objectives; they are not "realized by" code, so they sit off the spine.
+- **Business problems / opportunities** — *motivate* business objectives: they explain the pain, opportunity, or stakeholder value that makes an objective worth pursuing. They are the primary source of the "why."
+- **Risks** (`RI-*`) — *threaten or influence* objectives and project success; they are handled through mitigation requirements, design decisions, process controls, or explicit acceptance. They are not "realized by" code, so they sit off the build spine.
+- **Assumptions** (`AS-*`) — *condition* objectives, scope, and design choices: they state what must remain true for the plan to hold. If an assumption fails, the objective, scope boundary, or architecture may need to be revisited.
 - **Business objective** (`BO-<AREA>-*`) — the *why*. Its achievement is made checkable by a **success metric** (`SM-<slug>`) — a baseline, target, and evaluation route — the *outcome → objective backward edge* that answers "was it achieved?", not just "was it built?". Most routes are empirical (survey, logs, rubric), validated post-deployment rather than by a code test; the BO measurement matrix records them.
-- **Feature** (`FEAT-<slug>`) — the stakeholder-visible *capability*, and the **single anchor for the business objective**: a `BO-*` attaches to the feature(s) that serve it, and the use cases and FRs below *inherit* their objective through the feature rather than each re-declaring it. Anchoring the `BO → feature` edge once — in `traceability.md`'s *Feature → use case area* map — and composing it with feature → UC/FR is what keeps the spine clean; recording the same objective a second time directly on each use case or FR is a redundant parallel edge that drifts, so the realization matrices carry **no** per-UC or per-FR BO column.
+- **Feature** (`FEAT-<slug>`) — the stakeholder-visible *capability*, and the **single anchor for the business objective**: a `BO-*` attaches to the feature(s) that serve it, and the use cases and FRs below *inherit* their objective through the feature rather than each re-declaring it. Anchoring the `BO → feature` edge once — in `traceability.md`'s *Feature → use case area* map — and composing it with feature → UC/FR is what keeps the spine clean.
 - **Use case = high-level FR** (`UC-<AREA>-*`) — observable behavior. Collapsing the textbook user-requirement / system-requirement split into one node (a use case *is* its detailed functional requirement — its steps + associated information) deliberately **removes a whole traceability hop and its drift**; this is the single biggest simplification the method buys.
 - **Non-use-case FR** (`FR-<AREA>-*`) — the cross-cutting subsystems (autosave, validation, AI orchestration, notifications, security) that no single use case owns. They sit *beside* the use-case layer, not below it.
 - **Design-of-record → code → tests** — the realization tail. Requirements are *allocated to* design, design is built as code, code is *verified by* tests. The verification edge is what closes the loop: a requirement with no test verifying it is not actually traced.
@@ -242,6 +250,21 @@ Guardrails to design into the assignment: insist on the approval gates (no `/imp
 - **Slice selection.** What makes a use case a *good* Phase-B proving slice (most cross-cutting? highest risk? most representative?) deserves a crisp, teachable rule.
 - **Where Level-1 revision is allowed.** Currently the module architecture is agent-revisable (with review); the platform architecture is confirm-first. Whether that boundary is the right one is itself worth studying.
 - **Metrics.** The evaluation metrics above need operational definitions before they can be reported.
+
+## Publication-readiness gaps to close
+
+These are gaps surfaced by comparing this methodology write-up against the rest of the `docs/` set. They are recorded here so the paper effort does not lose them.
+
+1. **Prospective evidence is thin.** Much of the current traceability map for the foundation and performance-tracking features is retrospective "design-as-built code archaeology," not code produced through this method. A paper needs at least one clean prospective case: requirements → architecture → proving slice → design-of-record → agent implementation → tests → trace update.
+2. **No Level-2 design example exists yet.** `design/README.md` defines per-use-case-area design docs, but `docs/design/` currently has only the architecture-of-record and the design README. The `/design` → `/implement` workflow needs at least one concrete design-of-record artifact.
+3. **The challenge loop is not yet captured as evidence.** The method says the agent should challenge ambiguity, contradictions, and poor practice, but the repo does not yet preserve challenge events as data: what was challenged, what decision was made, what changed in the spec, and whether rework was avoided.
+4. **Research metrics are not operationalized.** Candidate metrics are named, but not defined precisely enough to report. Define drift, inconsistency, traceability completeness, requirements quality, rework, implementation time, review effort, defect classes, and learning gains.
+5. **Educational study design is missing.** The senior-design deployment needs a protocol: assignment structure, control or comparison condition, grading rubrics, pre/post assessment, artifact sampling, IRB/consent handling, and AI-agent-use constraints.
+6. **Tool generality needs a clearer contract.** The method is intended to work with agents such as Claude Code or Codex, but the repository instance is Claude Code-specific. Define the agent capability contract independent of tool: repo reading, spec adherence, approval gates, test execution, trace updates, and challenge-loop behavior.
+7. **Several RAM capabilities are not built or verified yet.** ReqLint, AI assistants, export, real-time collaboration, and AI configuration remain mostly unbuilt in `traceability.md`; RAM also lacks frontend automated tests. Claims should be bounded until more slices are implemented and verified.
+8. **Requirements-quality rubrics are not tied into the research evaluation.** The product docs define per-destination and whole-project review criteria, including ISO/IEC/IEEE 29148-derived quality checks, but the methodology does not yet use them as formal measurement instruments for the research questions.
+9. **The reproducibility package is undefined.** A paper artifact should include doc snapshots before/after, command specs or prompts, generated diffs, test results, traceability states, challenge-loop logs, open-issue logs, and anonymized student artifacts where applicable.
+10. **Open product/code gaps must be framed carefully.** `OPEN-ISSUES.md` shows many remaining code/template gaps and some spec completeness issues. That is acceptable for an in-progress case study, but the paper must distinguish validated method evidence from unfinished product scope.
 
 ---
 
