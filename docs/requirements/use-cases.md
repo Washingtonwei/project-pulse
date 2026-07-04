@@ -97,7 +97,7 @@ The note below is **not** the catalog. It records scope context only: a few Proj
 
 ## **Rubric**
 
-### **UC-RUB-create-rubric: The Course Admin creates a rubric**
+### **UC-RUB-create-rubric: The course admin creates a rubric**
 
 **UC ID and Name:** UC-RUB-create-rubric: Create a rubric
 **Created By:**
@@ -138,7 +138,7 @@ The note below is **not** the catalog. It records scope context only: a few Proj
 **Assumptions:**
 **Open Issues:**
 
-### **UC-RUB-find-rubrics: The Course Admin finds rubrics**
+### **UC-RUB-find-rubrics: The course admin finds rubrics**
 
 **UC ID and Name:** UC-RUB-find-rubrics: Find rubrics
 **Created By:**
@@ -187,7 +187,7 @@ Sort criteria: rubric name in ascending order
 **Assumptions:**
 **Open Issues:**
 
-### **UC-RUB-view-rubric: The Course Admin views a rubric**
+### **UC-RUB-view-rubric: The course admin views a rubric**
 
 **UC ID and Name:** UC-RUB-view-rubric: View a rubric
 **Created By:**
@@ -228,7 +228,7 @@ Details:
 **Assumptions:**
 **Open Issues:**
 
-### **UC-RUB-edit-rubric: The Course Admin edits a rubric**
+### **UC-RUB-edit-rubric: The course admin edits a rubric**
 
 **UC ID and Name:** UC-RUB-edit-rubric: Edit a rubric
 **Created By:**
@@ -274,7 +274,7 @@ Details:
 **Assumptions:**
 **Open Issues:**
 
-### **UC-RUB-delete-rubric: The Course Admin deletes a rubric**
+### **UC-RUB-delete-rubric: The course admin deletes a rubric**
 
 **UC ID and Name:** UC-RUB-delete-rubric: Delete a rubric
 **Created By:**
@@ -312,7 +312,7 @@ Details:
 **Assumptions:**
 **Open Issues:**
 
-### **UC-RUB-add-criterion: The Course Admin adds a criterion to a rubric**
+### **UC-RUB-add-criterion: The course admin adds a criterion to a rubric**
 
 **UC ID and Name:** UC-RUB-add-criterion: Add a criterion to a rubric
 **Created By:**
@@ -349,7 +349,7 @@ Details:
 **Assumptions:**
 **Open Issues:**
 
-### **UC-RUB-remove-criterion: The Course Admin removes a criterion from a rubric**
+### **UC-RUB-remove-criterion: The course admin removes a criterion from a rubric**
 
 **UC ID and Name:** UC-RUB-remove-criterion: Remove a criterion from a rubric
 **Created By:**
@@ -383,7 +383,7 @@ Details:
 **Assumptions:**
 **Open Issues:**
 
-### **UC-RUB-assign-rubric: The Course Admin assigns a rubric to a course section**
+### **UC-RUB-assign-rubric: The course admin assigns a rubric to a course section**
 
 **UC ID and Name:** UC-RUB-assign-rubric: Assign a rubric to a course section
 **Created By:**
@@ -418,7 +418,7 @@ Details:
 **Assumptions:**
 **Open Issues:**
 
-### **UC-RUB-find-criteria: The Course Admin finds criteria**
+### **UC-RUB-find-criteria: The course admin finds criteria**
 
 **UC ID and Name:** UC-RUB-find-criteria: Find criteria
 **Created By:**
@@ -467,7 +467,7 @@ Sort criteria: criterion name in ascending order
 **Assumptions:**
 **Open Issues:**
 
-### **UC-RUB-view-criterion: The Course Admin views a criterion**
+### **UC-RUB-view-criterion: The course admin views a criterion**
 
 **UC ID and Name:** UC-RUB-view-criterion: View a criterion
 **Created By:**
@@ -509,7 +509,7 @@ Details:
 **Assumptions:**
 **Open Issues:**
 
-### **UC-RUB-create-criterion: The Course Admin creates a criterion**
+### **UC-RUB-create-criterion: The course admin creates a criterion**
 
 **UC ID and Name:** UC-RUB-create-criterion: Create a criterion
 **Created By:**
@@ -556,7 +556,7 @@ Details:
 **Assumptions:**
 **Open Issues:**
 
-### **UC-RUB-edit-criterion: The Course Admin edits a criterion**
+### **UC-RUB-edit-criterion: The course admin edits a criterion**
 
 **UC ID and Name:** UC-RUB-edit-criterion: Edit a criterion
 **Created By:**
@@ -604,7 +604,7 @@ Details:
 **Assumptions:**
 **Open Issues:**
 
-### **UC-RUB-delete-criterion: The Course Admin deletes a criterion**
+### **UC-RUB-delete-criterion: The course admin deletes a criterion**
 
 **UC ID and Name:** UC-RUB-delete-criterion: Delete a criterion
 **Created By:**
@@ -644,7 +644,7 @@ Details:
 
 ## **Course Section**
 
-### **UC-SEC-find-sections: The Course Admin finds course sections**
+### **UC-SEC-find-sections: The course admin finds course sections**
 
 **UC ID and Name:** UC-SEC-find-sections: Find course sections
 **Created By:**
@@ -693,7 +693,7 @@ Sort criteria: course section name in descending order, team names are in ascend
 **Assumptions:**
 **Open Issues:**
 
-### **UC-SEC-view-section: The Course Admin views a course section**
+### **UC-SEC-view-section: The course admin views a course section**
 
 **UC ID and Name:** UC-SEC-view-section: View a course section
 **Created By:**
@@ -740,7 +740,7 @@ Details:
 **Assumptions:**
 **Open Issues:**
 
-### **UC-SEC-create-section: The Course Admin creates a course section**
+### **UC-SEC-create-section: The course admin creates a course section**
 
 **UC ID and Name:** UC-SEC-create-section: Create a course section
 **Created By:**
@@ -796,7 +796,7 @@ Details:
 **Assumptions:**
 **Open Issues:**
 
-### **UC-SEC-edit-section: The Course Admin edits a course section**
+### **UC-SEC-edit-section: The course admin edits a course section**
 
 **UC ID and Name:** UC-SEC-edit-section: Edit a course section
 **Created By:**
@@ -850,7 +850,7 @@ The course admin shall be able to cancel the use case at any time prior to submi
 **Assumptions:**
 **Open Issues:**
 
-### **UC-SEC-setup-active-weeks: The Course Admin sets up active weeks for a course section**
+### **UC-SEC-setup-active-weeks: The course admin sets up active weeks for a course section**
 
 **UC ID and Name:** UC-SEC-setup-active-weeks: Set up active weeks for a course section
 **Created By:**
@@ -889,7 +889,7 @@ The course admin shall be able to cancel the use case at any time prior to submi
 
 ## **Team**
 
-### **UC-TEA-find-teams: The Course Admin/Instructor finds teams**
+### **UC-TEA-find-teams: The course admin/instructor finds teams**
 
 **UC ID and Name:** UC-TEA-find-teams: Find teams
 **Created By:**
@@ -941,7 +941,7 @@ Sort criteria: First, section name in descending order. Then, team name in ascen
 **Assumptions:**
 **Open Issues:**
 
-### **UC-TEA-view-team: The Course Admin/Instructor views a team**
+### **UC-TEA-view-team: The course admin/instructor views a team**
 
 **UC ID and Name:** UC-TEA-view-team: View a team
 **Created By:**
@@ -986,7 +986,7 @@ Details:
 **Assumptions:**
 **Open Issues:**
 
-### **UC-TEA-create-team: The Course Admin creates a team**
+### **UC-TEA-create-team: The course admin creates a team**
 
 **UC ID and Name:** UC-TEA-create-team: Create a team
 **Created By:**
@@ -1031,7 +1031,7 @@ Details:
 **Assumptions:**
 **Open Issues:**
 
-### **UC-TEA-edit-team: The Course Admin edits a team**
+### **UC-TEA-edit-team: The course admin edits a team**
 
 **UC ID and Name:** UC-TEA-edit-team: Edit a team
 **Created By:**
@@ -1085,7 +1085,7 @@ No two teams can have the same name. The team name must be unique. The course ad
 **Assumptions:**
 **Open Issues:**
 
-### **UC-TEA-assign-students: The Course Admin assigns students to teams**
+### **UC-TEA-assign-students: The course admin assigns students to teams**
 
 **UC ID and Name:** UC-TEA-assign-students: Assign students to teams
 **Created By:**
@@ -1128,7 +1128,7 @@ No two teams can have the same name. The team name must be unique. The course ad
 **Assumptions:**
 **Open Issues:**
 
-### **UC-TEA-remove-student: The Course Admin removes a student from a team**
+### **UC-TEA-remove-student: The course admin removes a student from a team**
 
 **UC ID and Name:** UC-TEA-remove-student: Remove a student from a team
 **Created By:**
@@ -1169,7 +1169,7 @@ No two teams can have the same name. The team name must be unique. The course ad
 **Assumptions:**
 **Open Issues:**
 
-### **UC-TEA-delete-team: The Course Admin deletes a team**
+### **UC-TEA-delete-team: The course admin deletes a team**
 
 **UC ID and Name:** UC-TEA-delete-team: Delete a team
 **Created By:**
@@ -1210,7 +1210,7 @@ No two teams can have the same name. The team name must be unique. The course ad
 
 ## **Student**
 
-### **UC-STU-invite-students: The Course Admin invites students to join a course section**
+### **UC-STU-invite-students: The course admin invites students to join a course section**
 
 **UC ID and Name:** UC-STU-invite-students: Invite students to join a course section
 **Created By:**
@@ -1257,7 +1257,7 @@ No two teams can have the same name. The team name must be unique. The course ad
 **Assumptions:**
 **Open Issues:**
 
-### **UC-STU-find-students: The Course Admin/Instructor finds students**
+### **UC-STU-find-students: The course admin/instructor finds students**
 
 **UC ID and Name:** UC-STU-find-students: Find students
 **Created By:**
@@ -1312,7 +1312,7 @@ Sort criteria: First, section name in descending order. Then, student last name 
 **Assumptions:**
 **Open Issues:**
 
-### **UC-STU-view-student: The Course Admin/Instructor views a student**
+### **UC-STU-view-student: The course admin/instructor views a student**
 
 **UC ID and Name:** UC-STU-view-student: View a student
 **Created By:**
@@ -1358,7 +1358,7 @@ Details:
 **Assumptions:**
 **Open Issues:**
 
-### **UC-STU-delete-student: The Course Admin deletes a student**
+### **UC-STU-delete-student: The course admin deletes a student**
 
 **UC ID and Name:** UC-STU-delete-student: Delete a student
 **Created By:**
@@ -1396,7 +1396,7 @@ Details:
 **Assumptions:**
 **Open Issues:**
 
-### **UC-STU-deactivate-student: The Course Admin/Instructor deactivates a student**
+### **UC-STU-deactivate-student: The course admin/instructor deactivates a student**
 
 **UC ID and Name:** UC-STU-deactivate-student: Deactivate a student
 **Created By:**
@@ -1434,7 +1434,7 @@ Details:
 **Assumptions:**
 **Open Issues:**
 
-### **UC-STU-reactivate-student: The Course Admin/Instructor reactivates a student**
+### **UC-STU-reactivate-student: The course admin/instructor reactivates a student**
 
 **UC ID and Name:** UC-STU-reactivate-student: Reactivate a student
 **Created By:**
@@ -1474,7 +1474,7 @@ Details:
 
 ## **Instructor**
 
-### **UC-INS-invite-instructors: The Course Admin invites instructors to register an account**
+### **UC-INS-invite-instructors: The course admin invites instructors to register an account**
 
 **UC ID and Name:** UC-INS-invite-instructors: Invite instructors to register an account
 **Created By:**
@@ -1521,7 +1521,7 @@ Details:
 **Assumptions:**
 **Open Issues:**
 
-### **UC-INS-assign-instructors: The Course Admin assigns instructors to teams**
+### **UC-INS-assign-instructors: The course admin assigns instructors to teams**
 
 **UC ID and Name:** UC-INS-assign-instructors: Assign instructors to teams
 **Created By:**
@@ -1564,7 +1564,7 @@ Details:
 **Assumptions:** The instructor must be assigned to the course section of the team first.
 **Open Issues:**
 
-### **UC-INS-remove-instructor: The Course Admin removes an instructor from a team**
+### **UC-INS-remove-instructor: The course admin removes an instructor from a team**
 
 **UC ID and Name:** UC-INS-remove-instructor: Remove an instructor from a team
 **Created By:**
@@ -1605,7 +1605,7 @@ Details:
 **Assumptions:**
 **Open Issues:**
 
-### **UC-INS-find-instructors: The Course Admin finds instructors**
+### **UC-INS-find-instructors: The course admin finds instructors**
 
 **UC ID and Name:** UC-INS-find-instructors: Find instructors
 **Created By:**
@@ -1657,7 +1657,7 @@ Sort criteria: First, academic year in reverse chronological order. Then, instru
 **Assumptions:**
 **Open Issues:**
 
-### **UC-INS-view-instructor: The Course Admin views an instructor**
+### **UC-INS-view-instructor: The course admin views an instructor**
 
 **UC ID and Name:** UC-INS-view-instructor: View an instructor
 **Created By:**
@@ -1703,7 +1703,7 @@ Supervised teams shall be organized by section names.
 **Assumptions:**
 **Open Issues:**
 
-### **UC-INS-deactivate-instructor: The Course Admin deactivates an instructor**
+### **UC-INS-deactivate-instructor: The course admin deactivates an instructor**
 
 **UC ID and Name:** UC-INS-deactivate-instructor: Deactivate an instructor
 **Created By:**
@@ -1741,7 +1741,7 @@ Supervised teams shall be organized by section names.
 **Assumptions:**
 **Open Issues:**
 
-### **UC-INS-reactivate-instructor: The Course Admin reactivates an instructor**
+### **UC-INS-reactivate-instructor: The course admin reactivates an instructor**
 
 **UC ID and Name:** UC-INS-reactivate-instructor: Reactivate an instructor
 **Created By:**
@@ -1781,7 +1781,7 @@ Supervised teams shall be organized by section names.
 
 ## **Account**
 
-### **UC-ACC-setup-student-account: The Student sets up a student account**
+### **UC-ACC-setup-student-account: The student sets up a student account**
 
 **UC ID and Name:** UC-ACC-setup-student-account: Set up a student account
 **Created By:**
@@ -1827,7 +1827,7 @@ Supervised teams shall be organized by section names.
 **Assumptions:**
 **Open Issues:**
 
-### **UC-ACC-edit-account: The Student edits an account**
+### **UC-ACC-edit-account: The student edits an account**
 
 **UC ID and Name:** UC-ACC-edit-account: Edit an account
 **Created By:**
@@ -1881,7 +1881,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Assumptions:**
 **Open Issues:**
 
-### **UC-ACC-setup-instructor-account: The Instructor sets up an instructor account**
+### **UC-ACC-setup-instructor-account: The instructor sets up an instructor account**
 
 **UC ID and Name:** UC-ACC-setup-instructor-account: Set up an instructor account
 **Created By:**
@@ -1929,7 +1929,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 ## **Weekly Activity Report**
 
-### **UC-WAR-manage-activities: The Student manages activities in a Weekly Activity Report (WAR)**
+### **UC-WAR-manage-activities: The student manages activities in a Weekly Activity Report (WAR)**
 
 **UC ID and Name:** UC-WAR-manage-activities: Manage activities in a weekly activity report
 **Created By:**
@@ -1989,7 +1989,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Assumptions:**
 **Open Issues:**
 
-### **UC-WAR-team-war-report: The Instructor/Student generates a WAR report of a team**
+### **UC-WAR-team-war-report: The instructor/student generates a WAR report of a team**
 
 **UC ID and Name:** UC-WAR-team-war-report: Generate a WAR report of a team
 **Created By:**
@@ -2050,7 +2050,7 @@ Report generating algorithm: N/A
 **Assumptions:**
 **Open Issues:**
 
-### **UC-WAR-student-war-report: The Instructor generates a WAR report of the student**
+### **UC-WAR-student-war-report: The instructor generates a WAR report of the student**
 
 **UC ID and Name:** UC-WAR-student-war-report: Generate a WAR report of the student
 **Created By:**
@@ -2123,7 +2123,7 @@ Report generating algorithm: N/A
 
 ## **Peer Evaluation**
 
-### **UC-EVA-submit-evaluation: The Student submits a peer evaluation for the previous week**
+### **UC-EVA-submit-evaluation: The student submits a peer evaluation for the previous week**
 
 **UC ID and Name:** UC-EVA-submit-evaluation: Submit a peer evaluation for the previous week
 **Created By:**
@@ -2185,7 +2185,7 @@ Private comments are for the instructor only. Public comments will be sent to th
 **Assumptions:**
 **Open Issues:**
 
-### **UC-EVA-view-own-evaluation: The Student views her own peer evaluation report**
+### **UC-EVA-view-own-evaluation: The student views her own peer evaluation report**
 
 **UC ID and Name:** UC-EVA-view-own-evaluation: View her own peer evaluation report
 **Created By:**
@@ -2244,7 +2244,7 @@ Report generating algorithm: For each individual criterion score (e.g., Quality 
 **Assumptions:**
 **Open Issues:**
 
-### **UC-EVA-section-evaluation-report: The Instructor generates a peer evaluation report of the entire course section**
+### **UC-EVA-section-evaluation-report: The instructor generates a peer evaluation report of the entire course section**
 
 **UC ID and Name:** UC-EVA-section-evaluation-report: Generate a peer evaluation report of the entire course section
 **Created By:**
@@ -2314,7 +2314,7 @@ Details of a peer evaluation: The instructor may choose to see more details of o
 **Assumptions:**
 **Open Issues:**
 
-### **UC-EVA-student-evaluation-report: The Instructor generates a peer evaluation report of a student**
+### **UC-EVA-student-evaluation-report: The instructor generates a peer evaluation report of a student**
 
 **UC ID and Name:** UC-EVA-student-evaluation-report: Generate a peer evaluation report of a student
 **Created By:**
@@ -2380,7 +2380,7 @@ Details of a peer evaluation: The instructor may choose to see more details of o
 
 ## **Templates and Provisioning**
 
-### **UC-TPL-provision-documents: The Course Admin creates team documents from built-in templates**
+### **UC-TPL-provision-documents: The course admin creates team documents from built-in templates**
 
 **UC ID and Name:** UC-TPL-provision-documents: Create team documents from built-in templates
 **Created By:**
@@ -2432,7 +2432,7 @@ Details:
 
 ## **Glossary**
 
-### **UC-GLO-view-glossary: The Student views the Project Glossary**
+### **UC-GLO-view-glossary: The student views the Project Glossary**
 
 **UC ID and Name:** UC-GLO-view-glossary: View the Project Glossary
 **Created By:**
@@ -2472,7 +2472,7 @@ Details:
 **Assumptions:**
 **Open Issues:**
 
-### **UC-GLO-find-terms: The Student finds glossary terms**
+### **UC-GLO-find-terms: The student finds glossary terms**
 
 **UC ID and Name:** UC-GLO-find-terms: Find glossary terms
 **Created By:**
@@ -2535,7 +2535,7 @@ Sort criteria: ASC by term
 **Assumptions:**
 **Open Issues:**
 
-### **UC-GLO-view-term: The Student views a glossary term**
+### **UC-GLO-view-term: The student views a glossary term**
 
 **UC ID and Name:** UC-GLO-view-term: View a glossary term
 **Created By:**
@@ -2582,7 +2582,7 @@ Details:
 **Assumptions:**
 **Open Issues:**
 
-### **UC-GLO-create-term: The Student creates a glossary term**
+### **UC-GLO-create-term: The student creates a glossary term**
 
 **UC ID and Name:** UC-GLO-create-term: Create a glossary term
 **Created By:**
@@ -2647,7 +2647,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Assumptions:**
 **Open Issues:**
 
-### **UC-GLO-edit-term-definition: The Student changes a glossary term definition**
+### **UC-GLO-edit-term-definition: The student changes a glossary term definition**
 
 **UC ID and Name:** UC-GLO-edit-term-definition: Change a glossary term definition
 **Created By:**
@@ -2705,7 +2705,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Assumptions:**
 **Open Issues:**
 
-### **UC-GLO-rename-term: The Student renames a glossary term**
+### **UC-GLO-rename-term: The student renames a glossary term**
 
 **UC ID and Name:** UC-GLO-rename-term: Rename a glossary term
 **Created By:**
@@ -2761,7 +2761,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Assumptions:**
 **Open Issues:**
 
-### **UC-GLO-delete-term: The Student deletes a glossary term**
+### **UC-GLO-delete-term: The student deletes a glossary term**
 
 **UC ID and Name:** UC-GLO-delete-term: Delete a glossary term
 **Created By:**
@@ -2819,7 +2819,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 ## **Requirement Documents**
 
-### **UC-DOC-view-document: The Student views a section-based requirement document**
+### **UC-DOC-view-document: The student views a section-based requirement document**
 
 **UC ID and Name:** UC-DOC-view-document: View a section-based requirement document
 **Created By:**
@@ -2853,7 +2853,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Assumptions:**
 **Open Issues:**
 
-### **UC-DOC-edit-document: The Student edits a section-based requirement document**
+### **UC-DOC-edit-document: The student edits a section-based requirement document**
 
 **UC ID and Name:** UC-DOC-edit-document: Edit a section-based requirement document
 **Created By:**
@@ -2911,7 +2911,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Assumptions:**
 **Open Issues:**
 
-### **UC-DOC-view-use-cases-document: The Student views the Use Cases document**
+### **UC-DOC-view-use-cases-document: The student views the Use Cases document**
 
 **UC ID and Name:** UC-DOC-view-use-cases-document: View the Use Cases document
 **Created By:**
@@ -2952,7 +2952,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Assumptions:**
 **Open Issues:**
 
-### **UC-DOC-view-use-case: The Student views a use case**
+### **UC-DOC-view-use-case: The student views a use case**
 
 **UC ID and Name:** UC-DOC-view-use-case: View a use case
 **Created By:**
@@ -3005,7 +3005,7 @@ Details:
 **Assumptions:**
 **Open Issues:**
 
-### **UC-DOC-create-use-case: The Student creates a use case**
+### **UC-DOC-create-use-case: The student creates a use case**
 
 **UC ID and Name:** UC-DOC-create-use-case: Create a use case
 **Created By:**
@@ -3074,7 +3074,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Assumptions:**
 **Open Issues:**
 
-### **UC-DOC-edit-use-case: The Student edits a use case**
+### **UC-DOC-edit-use-case: The student edits a use case**
 
 **UC ID and Name:** UC-DOC-edit-use-case: Edit a use case
 **Created By:**
@@ -3149,7 +3149,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 ## **Requirement Artifacts**
 
-### **UC-ART-find-artifacts: The Student finds requirement artifacts**
+### **UC-ART-find-artifacts: The student finds requirement artifacts**
 
 **UC ID and Name:** UC-ART-find-artifacts: Find requirement artifacts
 **Created By:**
@@ -3208,7 +3208,7 @@ Sort criteria: default ascending by Artifact Key; the student may re-sort by Typ
 **Assumptions:**
 **Open Issues:**
 
-### **UC-ART-view-artifact: The Student views a requirement artifact**
+### **UC-ART-view-artifact: The student views a requirement artifact**
 
 **UC ID and Name:** UC-ART-view-artifact: View a requirement artifact
 **Created By:**
@@ -3271,7 +3271,7 @@ Sort criteria: default ascending by Artifact Key; the student may re-sort by Typ
 **Assumptions:**
 **Open Issues:**
 
-### **UC-ART-create-artifact: The Student creates a requirement artifact**
+### **UC-ART-create-artifact: The student creates a requirement artifact**
 
 **UC ID and Name:** UC-ART-create-artifact: Create a requirement artifact
 **Created By:**
@@ -3346,7 +3346,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Assumptions:**
 **Open Issues:**
 
-### **UC-ART-promote-selection: The Student creates a requirement artifact from document content (promote selection)**
+### **UC-ART-promote-selection: The student creates a requirement artifact from document content (promote selection)**
 
 **UC ID and Name:** UC-ART-promote-selection: Create a requirement artifact from document content (promote selection)
 **Status:** Tabled — future release
@@ -3361,7 +3361,7 @@ Core requirement artifacts (e.g., business objectives, risks, features, function
 Note:
 This use case may be revisited in future versions if free-text authoring or refactoring workflows are introduced.
 
-### **UC-ART-edit-artifact: The Student edits a requirement artifact**
+### **UC-ART-edit-artifact: The student edits a requirement artifact**
 
 **UC ID and Name:** UC-ART-edit-artifact: Edit a requirement artifact
 **Created By:**
@@ -3422,7 +3422,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Assumptions:**
 **Open Issues:**
 
-### **UC-ART-delete-artifact: The Student deletes a requirement artifact**
+### **UC-ART-delete-artifact: The student deletes a requirement artifact**
 
 **UC ID and Name:** UC-ART-delete-artifact: Delete a requirement artifact
 **Created By:**
@@ -3480,7 +3480,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 ## **Artifact Links and Tracing**
 
-### **UC-LNK-view-links: The Student views requirement artifact links**
+### **UC-LNK-view-links: The student views requirement artifact links**
 
 **UC ID and Name:** UC-LNK-view-links: View requirement artifact links
 **Created By:**
@@ -3526,7 +3526,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Assumptions:**
 **Open Issues:**
 
-### **UC-LNK-view-link: The Student views a requirement artifact link**
+### **UC-LNK-view-link: The student views a requirement artifact link**
 
 **UC ID and Name:** UC-LNK-view-link: View a requirement artifact link
 **Created By:**
@@ -3573,7 +3573,7 @@ Directionality (upstream vs downstream) must be clearly indicated.
 **Assumptions:**
 **Open Issues:**
 
-### **UC-LNK-create-link: The Student creates a requirement artifact link**
+### **UC-LNK-create-link: The student creates a requirement artifact link**
 
 **UC ID and Name:** UC-LNK-create-link: Create a requirement artifact link
 **Created By:**
@@ -3639,7 +3639,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Assumptions:**
 **Open Issues:**
 
-### **UC-LNK-edit-link: The Student edits a requirement artifact link**
+### **UC-LNK-edit-link: The student edits a requirement artifact link**
 
 **UC ID and Name:** UC-LNK-edit-link: Edit a requirement artifact link
 **Created By:**
@@ -3704,7 +3704,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Assumptions:**
 **Open Issues:**
 
-### **UC-LNK-delete-link: The Student deletes a requirement artifact link**
+### **UC-LNK-delete-link: The student deletes a requirement artifact link**
 
 **UC ID and Name:** UC-LNK-delete-link: Delete a requirement artifact link
 **Created By:**
@@ -3749,7 +3749,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Assumptions:**
 **Open Issues:**
 
-### **UC-LNK-trace-requirement: The Student traces a requirement across levels**
+### **UC-LNK-trace-requirement: The student traces a requirement across levels**
 
 **UC ID and Name:** UC-LNK-trace-requirement: Trace a requirement across levels
 **Created By:**
@@ -3797,7 +3797,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 ## **Validation**
 
-### **UC-VAL-run-validation: The Student runs validation (ReqLint) on the current document**
+### **UC-VAL-run-validation: The student runs validation (ReqLint) on the current document**
 
 **UC ID and Name:** UC-VAL-run-validation: Run validation on a requirement document
 **Created By:**
@@ -3855,7 +3855,7 @@ Details (Examples of Document-Level Checks):
 
 ## **Collaboration**
 
-### **UC-COL-collaborative-edit: The Student collaboratively edits a requirement document**
+### **UC-COL-collaborative-edit: The student collaboratively edits a requirement document**
 
 *Post-MVP — this real-time collaborative-editing session is deferred beyond the initial release. In the MVP, teammates author the same document through per-section locking (UC-DOC-edit-document, UC-DOC-edit-use-case) and coordinate via comment threads (UC-COL-add-comment, UC-COL-resolve-comment).*
 
@@ -3908,7 +3908,7 @@ Presence and synchronization:
 **Assumptions:**
 **Open Issues:**
 
-### **UC-COL-add-comment: The Student comments on a requirement document**
+### **UC-COL-add-comment: The student comments on a requirement document**
 
 **UC ID and Name:** UC-COL-add-comment: Comment on a requirement document
 **Created By:**
@@ -3956,7 +3956,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Assumptions:**
 **Open Issues:**
 
-### **UC-COL-resolve-comment: The Student resolves a comment**
+### **UC-COL-resolve-comment: The student resolves a comment**
 
 **UC ID and Name:** UC-COL-resolve-comment: Resolve a comment
 **Created By:**
@@ -3995,7 +3995,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 ## **Review and Submission**
 
-### **UC-REV-submit-for-review: The Student submits requirements for review**
+### **UC-REV-submit-for-review: The student submits requirements for review**
 
 **UC ID and Name:** UC-REV-submit-for-review: Submit requirements for review
 **Created By:**
@@ -4042,7 +4042,7 @@ Notification: Notify the course section's instructor on submission, delivered as
 **Assumptions:**
 **Open Issues:**
 
-### **UC-REV-review-documents: The Instructor reviews a team's requirement documents**
+### **UC-REV-review-documents: The instructor reviews a team's requirement documents**
 
 **UC ID and Name:** UC-REV-review-documents: Review a team's requirement documents
 **Created By:**
@@ -4089,7 +4089,7 @@ Notification: Notify the team's students of the review outcome — returned for 
 
 ## **Export**
 
-### **UC-EXP-export-document: The Student exports a requirement document**
+### **UC-EXP-export-document: The student exports a requirement document**
 
 **UC ID and Name:** UC-EXP-export-document: Export a requirement document
 **Created By:**
@@ -4141,7 +4141,7 @@ Exported documents must preserve template-defined structure and document section
 **Assumptions:**
 **Open Issues:**
 
-### **UC-EXP-export-bundle: The Student exports all the requirement documents as a bundle**
+### **UC-EXP-export-bundle: The student exports all the requirement documents as a bundle**
 
 **UC ID and Name:** UC-EXP-export-bundle: Export all requirement documents as a bundle
 **Created By:**
@@ -4192,7 +4192,7 @@ File names include document type and team identifier.
 
 ## **AI Configuration**
 
-### **UC-CFG-configure-teaching-context: The Instructor configures the teaching context for a course section**
+### **UC-CFG-configure-teaching-context: The instructor configures the teaching context for a course section**
 
 **UC ID and Name:** UC-CFG-configure-teaching-context: Configure the teaching context for a course section
 **Created By:**
@@ -4232,7 +4232,7 @@ File names include document type and team identifier.
 **Assumptions:**
 **Open Issues:**
 
-### **UC-CFG-toggle-assistants: The Instructor enables or disables AI assistants for a course section**
+### **UC-CFG-toggle-assistants: The instructor enables or disables AI assistants for a course section**
 
 **UC ID and Name:** UC-CFG-toggle-assistants: Enable or disable AI assistants for a course section
 **Created By:**
@@ -4274,7 +4274,7 @@ File names include document type and team identifier.
 **Assumptions:**
 **Open Issues:**
 
-### **UC-CFG-configure-assistant-instructions: The Instructor configures the assistant instructions for a course section**
+### **UC-CFG-configure-assistant-instructions: The instructor configures the assistant instructions for a course section**
 
 **UC ID and Name:** UC-CFG-configure-assistant-instructions: Configure the assistant instructions for a course section
 **Created By:**
@@ -4313,7 +4313,7 @@ File names include document type and team identifier.
 **Assumptions:**
 **Open Issues:**
 
-### **UC-CFG-configure-review-criteria: The Instructor configures the cross-document review criteria for a course section**
+### **UC-CFG-configure-review-criteria: The instructor configures the cross-document review criteria for a course section**
 
 **UC ID and Name:** UC-CFG-configure-review-criteria: Configure the cross-document review criteria for a course section
 **Created By:**
@@ -4357,7 +4357,7 @@ File names include document type and team identifier.
 
 ## **AI Assistants**
 
-### **UC-AI-import-source-material: The Student imports client pitch materials as project source**
+### **UC-AI-import-source-material: The student imports client pitch materials as project source**
 
 **UC ID and Name:** UC-AI-import-source-material: Import client pitch materials as project source
 **Created By:**
@@ -4402,7 +4402,7 @@ File names include document type and team identifier.
 **Assumptions:**
 **Open Issues:**
 
-### **UC-AI-elicit-requirements: The Student elicits requirements with the elicitation assistant**
+### **UC-AI-elicit-requirements: The student elicits requirements with the elicitation assistant**
 
 **UC ID and Name:** UC-AI-elicit-requirements: Elicit requirements with the elicitation assistant
 **Created By:**
@@ -4469,7 +4469,7 @@ File names include document type and team identifier.
 **Assumptions:**
 **Open Issues:**
 
-### **UC-AI-practice-interview: The Student practices a client interview with a role-playing client assistant**
+### **UC-AI-practice-interview: The student practices a client interview with a role-playing client assistant**
 
 **UC ID and Name:** UC-AI-practice-interview: Practice a client interview with a role-playing client assistant
 **Created By:**
@@ -4516,7 +4516,7 @@ File names include document type and team identifier.
 **Assumptions:**
 **Open Issues:**
 
-### **UC-AI-structure-notes: The Student turns meeting notes into structured requirements**
+### **UC-AI-structure-notes: The student turns meeting notes into structured requirements**
 
 **UC ID and Name:** UC-AI-structure-notes: Turn meeting notes into structured requirements
 **Created By:**
@@ -4568,7 +4568,7 @@ File names include document type and team identifier.
 **Assumptions:**
 **Open Issues:**
 
-### **UC-AI-critique: The Student requests a critique from the critique assistant**
+### **UC-AI-critique: The student requests a critique from the critique assistant**
 
 **UC ID and Name:** UC-AI-critique: Request a critique from the critique assistant
 **Created By:**
@@ -4618,7 +4618,7 @@ File names include document type and team identifier.
 **Assumptions:**
 **Open Issues:**
 
-### **UC-AI-tutor: The Student asks an assistant to explain a concept (Tutor Mode)**
+### **UC-AI-tutor: The student asks an assistant to explain a concept (Tutor Mode)**
 
 **UC ID and Name:** UC-AI-tutor: Ask an assistant to explain a concept (Tutor Mode)
 **Created By:**
@@ -4662,7 +4662,7 @@ File names include document type and team identifier.
 **Assumptions:**
 **Open Issues:**
 
-### **UC-AI-draft-skeleton: The Student generates a draft requirement skeleton with an assistant**
+### **UC-AI-draft-skeleton: The student generates a draft requirement skeleton with an assistant**
 
 **UC ID and Name:** UC-AI-draft-skeleton: Generate a draft requirement skeleton with an assistant
 **Created By:**
@@ -4706,7 +4706,7 @@ File names include document type and team identifier.
 **Assumptions:**
 **Open Issues:**
 
-### **UC-AI-review-proposal: The Student reviews and accepts or rejects an assistant proposal**
+### **UC-AI-review-proposal: The student reviews and accepts or rejects an assistant proposal**
 
 **UC ID and Name:** UC-AI-review-proposal: Review and accept or reject an assistant proposal
 **Created By:**
@@ -4751,7 +4751,7 @@ File names include document type and team identifier.
 **Assumptions:**
 **Open Issues:**
 
-### **UC-AI-consult-project-assistant: The Student consults the project assistant**
+### **UC-AI-consult-project-assistant: The student consults the project assistant**
 
 **UC ID and Name:** UC-AI-consult-project-assistant: Consult the project assistant
 **Created By:**
@@ -4803,7 +4803,7 @@ File names include document type and team identifier.
 **Assumptions:**
 **Open Issues:**
 
-### **UC-AI-whole-project-review: The Student requests a whole-project review from the critique assistant**
+### **UC-AI-whole-project-review: The student requests a whole-project review from the critique assistant**
 
 **UC ID and Name:** UC-AI-whole-project-review: Request a whole-project review from the critique assistant
 **Created By:**

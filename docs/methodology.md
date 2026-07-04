@@ -130,6 +130,8 @@ flowchart TD
     GLOSS["Glossary terms"] -. fix vocabulary of .-> UC
 ```
 
+**Reading the edges:** a **solid** edge is the forward build/realization spine — "X is realized by / allocated to / built into Y" (objective → feature → use case/FR → design → code → tests, plus the parallel NFR chain attribute → scenario → design). A **dotted** edge is everything *off* that spine: the backward verification edges that close the loop (test → use case, scenario → test), and the contextual, constraint, and measurement relations from the off-spine nodes (problems *motivate*, risks *threaten* / are *mitigated by*, assumptions *condition*, business rules *constrain*, success metrics *measure*, glossary terms *fix vocabulary*). Solid answers "is every objective built?"; dotted carries the loop-back, the "why," and the constraints around it.
+
 The nodes, grounded in this repo's identifier spaces:
 
 - **Business problems / opportunities** — *motivate* business objectives: they explain the pain, opportunity, or stakeholder value that makes an objective worth pursuing. They are the primary source of the "why."
