@@ -27,6 +27,8 @@ The platform's functional requirements live in the **requirements specs** under 
 | 3 | **Usability / low friction** | Non-expert students must submit WARs and peer evaluations and author requirements quickly — friction directly reduces the frequent participation the platform exists to encourage. | SPA (Vue) for a responsive single-page UX; the uniform `Result` envelope + shared Axios instance give consistent client-side error handling and transparent auth/`401` redirect; RAM autosave + section-level locking prevent lost work and edit collisions; `WeeklyReminderScheduler` emails nudge timely submission. |
 | 4 | **Reliability & low operational burden** | A single instructor runs a course section with no dev/ops team; the system must deploy and run simply and behave predictably. | One deployable unit (SPA bundled into the Spring Boot jar → one container → one Azure Web App) with nothing to orchestrate; staging slot for safe deploys; Flyway migrations applied at deploy for predictable schema; profile-scoped clocks for testable time; Testcontainers integration tests + `maven-build` PR checks guard regressions; Prometheus/Grafana/Zipkin for monitoring (local dev today; production telemetry is a gap — [TD-9](#risks-and-technical-debt)). **Accepted trade-off:** the single-instance simplicity (and the per-startup RSA key) caps horizontal scaling — deliberately traded for low ops at the current scale. |
 
+These four strategic goals are refined into the prioritized, individually-cited **architecturally significant requirements** that drive each key decision — see [Architecturally significant requirements](#architecturally-significant-requirements-the-decision-drivers) under Architecture Decisions.
+
 ### *Stakeholders*
 
 | Stakeholder | Concern |
@@ -80,7 +82,7 @@ The Level 1: Context Diagram for the Project Pulse system provides a high-level 
 The platform's strategy in a few load-bearing moves — each elaborated in [Architecture Decisions](#architecture-decisions) and serving the Quality Goals:
 
 - **One deployable, modular monolith** (KD-1) — the SPA bundled into the Spring Boot jar, one container — for low operational burden (Quality Goal #4).
-- **DDD vertical slices + uniform conventions** (the `Result` envelope, `Converter` DTOs, no Lombok — KD-5) — for maintainability and a low learning curve (Quality Goal #2).
+- **DDD vertical slices** (KD-7) **+ uniform conventions** (the `Result` envelope, `Converter` DTOs, no Lombok — KD-5) — for maintainability and a low learning curve (Quality Goal #2).
 - **RAM as a module on the shared platform** (KD-2) — reuse identity, RBAC, the org model, and email rather than build a second system.
 - **One relational store** for both modules (KD-3) — a single backup/migration/compliance surface.
 - **Stateless, self-issued JWT** (KD-4) **+ fine-grained `AuthorizationManager`s** — least-privilege access to regulated data (Quality Goal #1).
@@ -474,37 +476,65 @@ Single-tenant: one deployment serves one institution. The trust boundary is the 
 
 ## **Architecture Decisions**
 
-> The architecturally significant decisions and their rationale (context → decision → consequences, including the alternative rejected). Status is *Accepted* unless noted.
+> The architecturally significant decisions and their rationale (context → decision → consequences, including the alternative rejected). Status is *Accepted* unless noted. Each decision names the **architecturally significant requirement(s)** that drive it — the utility-tree table below.
+
+### *Architecturally significant requirements (the decision drivers)*
+
+Not every requirement shapes the architecture. The **architecturally significant requirements (ASRs)** are the few that do: the prioritized quality attributes plus the hard constraints whose cost of getting wrong is *system-wide*. They are the drivers the decisions below answer — the [Quality Goals](#quality-goals) are their strategic roll-up, and each ASR **reuses an existing SRS handle** (no new ID space). Ranked by architectural significance (importance × difficulty — a utility tree), the significant few are:
+
+| # | ASR (driver) | SRS handle(s) | Significance | Drives |
+|---|---|---|---|---|
+| 1 | Confidentiality of FERPA-regulated student records | `SEC-authorization`, `SEC-ferpa`, `CO-ferpa` | High × High | KD-2, KD-4; the two-layer ownership/membership authorization |
+| 2 | Low operational burden — one instructor, no ops team | `AVL-uptime`; organizational constraint (no ops team) | High × Medium | KD-1, KD-3 |
+| 3 | Maintainability & learnability — student contributors extend the code | `MNT-feature-locality`, `MNT-service-layer`, `INT-single-application`; Quality Goal #2 (learnability is a pedagogical driver) | High × Medium | KD-2, KD-5, KD-7 (DDD vertical slices) |
+| 4 | No lost authored work under concurrent editing | `ROB-no-overwrite`, `ROB-edit-loss-bound`, `PER-autosave-cadence` | High × Medium | KD-6 (section locking) + autosave |
+| 5 | Single self-hosted authentication, no external IdP | `CO-single-auth`, `SEC-authentication` | Medium × Medium | KD-4 |
+| 6 | Responsive graph & validation at cohort scale | `PER-graph-load`, `PER-validation-speed`, `SCA-cohort-load` | Medium × Medium | KD-3; the accepted SQL-traversal trade-off |
+| 7 | Graceful degradation when the LLM is unavailable | `AVL-llm-degradation`, `SI-llm-degradation`, `PER-ai-response-time` | Medium × Low | the AI-proxy isolation; QS-5 |
+
+The functional structure (the [component views](#building-block-view) above) is the *other* input to the architecture, decomposed from the use-case areas. This table is the bridge from requirements to architecture: **functionality can be satisfied by many structures, so the quality attributes and constraints are what pick among them** — and the reversible, local choices are deferred to per-area design rather than committed here.
 
 **KD-1 — Single deployable (modular monolith).** *Accepted.*
+- **Driving ASR(s):** #2 low operational burden — `AVL-uptime` and the no-ops-team organizational constraint — bounded by #6 cohort scale (`SCA-cohort-load`).
 - **Context:** Instructor-scale deployment, no dedicated ops team; delivery speed and operational simplicity matter more than scaling parts independently.
 - **Decision:** Build the Vue SPA into the Spring Boot jar (served from `static/`), ship one Docker image to one Azure Web App — API + SPA in one process.
 - **Consequences:** Simplest possible deploy/run (Quality Goal #4); one artifact, one pipeline. *Rejected* microservices / separate SPA hosting — network + ops complexity unjustified at this scale. *Trade-off:* the app scales only as a whole.
 
 **KD-2 — RAM as a module inside the platform.** *Accepted.*
+- **Driving ASR(s):** #3 maintainability & reuse (`MNT-service-layer`, `INT-single-application`, `CO-single-application`) and #1 reuse of the existing authorization surface (`SEC-authorization`).
 - **Context:** RAM began as a separate project but needs the same course/section/team/student/auth/email infrastructure Project Pulse already had.
 - **Decision:** Merge RAM in as `ram/*` bounded contexts on the shared base, not a separate system.
 - **Consequences:** Reuses identity, RBAC, org model, email; one deployment; uniform conventions. *Rejected* a standalone RAM service — would duplicate the org/auth model and add cross-service integration. *Trade-off:* RAM's lifecycle is coupled to the platform's.
 
 **KD-3 — Relational DB for the requirements graph.** *Accepted.*
+- **Driving ASR(s):** #2 low operational burden — one store (`CO-relational-persistence`, `DI-persist-graph`) — and #6 acceptable graph performance at cohort scale (`PER-graph-load`, `SCA-cohort-load`).
 - **Context:** RAM's data is a graph (artifacts + typed links + traceability), which hints at a graph DB — but the platform already runs MySQL with relational tooling/ops.
 - **Decision:** Store the graph relationally (artifacts as rows, links as an edge table) in the existing DB.
 - **Consequences:** The requirements graph is one relational datastore — one backup/migration/FERPA surface — and reuses JPA + conventions. *Rejected* Neo4j/graph DB — a second datastore and new ops, unjustified at typical per-team graph size. *Trade-off:* deep traversals are SQL joins / recursive queries, not native graph ops. (The graph is wholly relational; the lone exception to the single-store picture is uploaded project source material, whose large binaries live in Azure Blob Storage — see [Data architecture](#data-architecture).)
 
 **KD-4 — Self-issued, stateless JWT (RSA keypair generated at startup).** *Accepted; key handling incidental — revisit.*
+- **Driving ASR(s):** #5 single self-hosted authentication (`CO-single-auth`, `SEC-authentication`) and #1 confidentiality of student records (`SEC-authorization`, `SEC-ferpa`).
 - **Context:** Wanted stateless auth (no server-side session store); no external identity provider in scope.
 - **Decision:** Self-issue and verify JWTs rather than use sessions or an external IdP. The current implementation generates the RSA keypair at application startup.
 - **Consequences:** No session store; simple. *Rejected* external IdP / institutional SSO — beyond integration cost, institutional SSO onboarding is impractical at this scale (the institution's IT will not provision a relying-party integration for a course tool), so the platform authenticates users itself; the SRS's auth requirements (FR-SEC-authentication, CO-single-auth) accordingly delegate to *this* mechanism, not to an external IdP. *Rejected* sessions (server state). **Known limitation (incidental, not by design):** because the keypair is generated per startup and not persisted, every restart/redeploy invalidates all live tokens (users re-login) and a second instance can't verify the first's tokens — effectively capping the app at one instance. Externalizing/persisting the keys would lift this. (Drives the Scalability "accepted" trade-off and QS-6; revisit when multi-instance is needed.)
 
 **KD-5 — No Lombok / no MapStruct (pedagogical).** *Accepted.*
+- **Driving ASR(s):** #3 maintainability & learnability for student contributors (`MNT-service-layer`; learnability is a pedagogical driver — Quality Goal #2 — not a formal SRS attribute).
 - **Context:** The codebase is read and extended by students learning Spring/Java; annotation-processor "magic" can obscure what the code actually does.
 - **Decision:** Explicit getters/setters/constructors and explicit `Converter<S,T>` beans — no Lombok, no MapStruct.
 - **Consequences:** Fully explicit, debuggable code with no build-time codegen, so students see exactly what runs — a deliberate teaching choice. *Rejected* Lombok/MapStruct — less boilerplate but hidden behavior and extra tooling to learn. *Trade-off:* more verbose, hand-written conversion code.
 
 **KD-6 — Pessimistic section-level locking for collaborative editing.** *Accepted.*
+- **Driving ASR(s):** #4 no lost authored work under concurrent editing (`ROB-no-overwrite`, `ROB-edit-loss-bound`), with `PER-collab-latency` the deferred real-time trade-off.
 - **Context:** Teammates edit the same requirement document concurrently; lost updates on authored content are unacceptable, and a predictable model beats complex merge.
 - **Decision:** Lock at document-section (and use-case) granularity — one editor holds a section; others are blocked.
 - **Consequences:** No lost updates, simple mental model, fine-grained enough for parallel work on different sections. *Rejected* optimistic concurrency / OT / CRDT real-time co-editing — far more complex; real-time presence/broadcast (UC-COL-collaborative-edit) is **deferred** (not in the current release) and would be a *future layer on top*, not a replacement — until then there is no real-time push channel in the topology, and the related targets (PER-collab-latency presence-propagation, ROB-no-overwrite) are out of scope. *Trade-off:* two people can't edit the same section at once.
+
+**KD-7 — DDD bounded-context vertical slices, layered within.** *Accepted.*
+- **Driving ASR(s):** #3 maintainability & learnability (`MNT-feature-locality`, `MNT-service-layer`, `INT-single-application`; Quality Goal #2). Verified by QS-3.
+- **Context:** The codebase is extended continuously by rotating student contributors; the common change is "add or modify one feature," and it must not ripple across unrelated features.
+- **Decision:** Partition the backend by **domain** — one bounded context per package, each a full vertical slice (entity → repository → service → controller → DTO/`Converter`) — and layer *within* each slice, rather than partitioning by technical layer.
+- **Consequences:** A feature change stays inside one slice; a new bounded context is added without touching existing ones (QS-3: zero changes to other packages, delivered in ≤ 2 person-days); the uniform slice shape lets a contributor pattern-match across the codebase. *Rejected* package-by-layer (all controllers together, all services together) — it optimizes for the rare "swap a technical layer" change over the common "change one feature" change, and scatters a single feature across the package tree. *Trade-off:* cross-cutting concerns (auth, auditing, email) must be deliberately centralized in `system`/`security`/`user` so they aren't duplicated per slice.
 
 ## **Quality Requirements**
 
@@ -525,7 +555,7 @@ Single-tenant: one deployment serves one institution. The trust boundary is the 
 |---|---|---|---|---|
 | QS-1 | Security | An authenticated student requests another team's WAR/peer-eval via the API · normal op | Denied at the `AuthorizationManager` | 100% of cross-team/owner-mismatch attempts return `403`; no record fields leak; attempt is auditable |
 | QS-2 | Security | An unauthenticated client calls a protected `/api/v1` endpoint · normal op | Rejected before controller logic | `401` returned; no business logic executes; covered by integration tests |
-| QS-3 | Maintainability *(change)* | A contributor adds a new bounded context · development | Added as a vertical slice using standard conventions, no edits to existing slices | Zero changes to other bounded-context packages; new endpoints return the `Result` envelope and pass convention checks; delivered in ≤ 2 person-days |
+| QS-3 | Maintainability *(change)* | A contributor adds a new bounded context · development | Added as a vertical slice using standard conventions, no edits to existing slices | Zero changes to other bounded-context packages (`MNT-feature-locality`); new endpoints return the `Result` envelope and pass convention checks; delivered in ≤ 2 person-days |
 | QS-4 | Usability | A student is mid-edit in a RAM document section · normal op | Edits autosave; the section is locked against collisions | Autosave at least every 10 s and immediately on navigate-away (PER-autosave-cadence); ≤ 10 s of edits lost on crash/disconnect (ROB-edit-loss-bound); a second editor is blocked with a clear message |
 | QS-5 | Reliability *(availability)* | The LLM service times out or is down · degraded | AI features degrade gracefully; authoring/saving unaffected | Authoring + save unaffected; AI shows a response or a clear working/timeout indication within 15 s (PER-ai-response-time) and offers retry; no data loss |
 | QS-6 | Reliability | A new release is deployed · deploy-time | Schema migrates; one container serves API + SPA | Flyway migrations apply cleanly; staging-slot smoke check passes before swap; overall availability ≥ 99% per academic term excluding scheduled maintenance (AVL-uptime); **note:** new RSA key invalidates live JWTs → users re-login (see KD-4) |
@@ -560,6 +590,7 @@ Single-tenant: one deployment serves one institution. The trust boundary is the 
 The domain vocabulary is defined in the [project glossary](../requirements/project-glossary.md). Architecture terms used in this document:
 
 - **Architecture-of-record** — the single canonical architecture description this doc *is*; changes only when the platform architecture changes, not per feature.
+- **Architecturally significant requirement (ASR)** — a requirement (a prioritized quality attribute or a hard constraint) whose cost of getting wrong is system-wide, so it *drives* an architectural decision rather than being realized by a single component. Reuses the SRS handles (`PER-*`, `SEC-*`, `CO-*`, …); see [Architecturally significant requirements](#architecturally-significant-requirements-the-decision-drivers).
 - **Bounded context / vertical slice** — one DDD domain per package owning its entity → repository → service → controller → DTO/converter stack.
 - **`Result` envelope** — the standard response wrapper (`flag`/`code`/`message`/`data`) every controller returns.
 - **Ownership vs membership** — the two fine-grained authorization checks: *ownership* = the user created the resource; *membership* = the user belongs to the same course/section/team.

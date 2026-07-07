@@ -783,6 +783,8 @@ INT-single-application: Project Pulse shall operate as a single application acro
 
 MNT-service-layer: RAM shall access its requirements graph behind a service layer so that new artifact types and artifact link types can be added without reworking unrelated features, consistent with its module structure within Project Pulse (per CO-single-application, INT-single-application).
 
+MNT-feature-locality: Adding or modifying one feature shall require no edits to unrelated feature modules, and a new feature shall be addable as a self-contained module — its own persistence, service, and API layer — that depends only on the shared platform foundation, not on sibling feature modules (per CO-single-application, INT-single-application).
+
 **Priority of attributes:** where quality attributes conflict, the intended priority order is **security and integrity (SEC-*, ROB-*) → availability (AVL-*) → usability (USE-*) → performance (PER-*)**. Educational value governs trade-offs in the AI assistant features specifically (see [AI/LLM Integration Requirements](#aillm-integration-requirements)).
 
 # **Internationalization and Localization Requirements**
