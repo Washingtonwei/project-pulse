@@ -44,25 +44,26 @@ This map is the **single anchor for the `BO → feature` edge** and the head of 
 
 ## Functional traceability matrix
 
-> `/design` sets a use case's **Build** to `📐 Designed` and fills the **Design** column with the area's design-of-record when it is written; `/implement` fills the code columns, sets **Build**, and fills **Verify** at the end of its run (Phase 5).
+> `/design` runs in two beats: it first sets a use case's **Build** to `🔬 Problem-validated` once its challenge loop has firmed the use case (spec fixes looped back), then to `📐 Designed` — filling the **Design** column with the area's design-of-record — when the solution design is approved (trivial use cases reach `📐` in one motion); `/implement` fills the code columns, sets **Build**, and fills **Verify** at the end of its run (Phase 5).
 
 ### How to use it
 
 - **One row per use case**, in `UC-<AREA>-<slug>` order, mirroring `requirements/use-cases.md`.
-- **Build** — construction state of the code, from the Build legend below (`❌` → `📐` → `🟡` → `✅`, or `🚫` for tabled). It says nothing about tests; `✅ Built` is a claim about code only.
-- **Verify** — whether automated tests exercise and pass for the built behavior, from the Verify legend below. Deliberately **independent of Build**: a `✅ Built` use case with no test reads `🔎 None` here, so "done" can never hide an untested flow. `—` until there is built behavior to verify (Build is `❌`/`📐`/`🚫`). RAM has no frontend automated tests yet (see the matrix note), so a built RAM use case's Verify reflects its **backend** test coverage; that frontend-test gap is recorded once rather than per row.
+- **Build** — construction state of the code, from the Build legend below (`❌` → `🔬` → `📐` → `🟡` → `✅`, or `🚫` for tabled). It says nothing about tests; `✅ Built` is a claim about code only.
+- **Verify** — whether automated tests exercise and pass for the built behavior, from the Verify legend below. Deliberately **independent of Build**: a `✅ Built` use case with no test reads `🔎 None` here, so "done" can never hide an untested flow. `—` until there is built behavior to verify (Build is `❌`/`🔬`/`📐`/`🚫`). RAM has no frontend automated tests yet (see the matrix note), so a built RAM use case's Verify reflects its **backend** test coverage; that frontend-test gap is recorded once rather than per row.
 - **FR IDs** — the SRS's non-use-case, system-level functional requirements this use case **depends on / builds upon** (e.g. autosave, validation, real-time collaboration, AI), and, where relevant, the External Interface Requirements (`SI-*`) that carry the use case's interface detail (export formats/fidelity, import allowlist/extraction). The use case's own "The system …" steps are its primary acceptance criteria; this column points to the reusable cross-cutting subsystems behind it. **This column is deliberately non-exhaustive — read it as additive over a universal baseline, not as the complete FR set for the row.** The most universal behaviors — RBAC (`FR-SEC-*`) and authorship metadata (`FR-HIS-authorship-metadata`) — apply to **nearly every** row, so they are an **implicit baseline omitted from every cell** to reduce noise: their absence from a row is **never informative** — it never means the use case escapes authorization or authorship. The column therefore lists only the *additional* cross-cutting FRs a use case draws on **beyond** that baseline, and **`—` means "none beyond the baseline"** (the use case is otherwise self-contained — its own steps are the whole spec), **not** "this use case has no security or authorship dimension." Section locking is part of the editing use cases' own steps (governed by `BR-edit-lock-required` / `BR-lock-expiry`), not a separate FR.
 - **Design** — the area's design-of-record (`design/<area>.md`, optionally anchored to the use case's subsection) once `/design` has written it; `—` until then. A single area doc covers every use case in its area, so rows in the same area cite the same file.
 - **Frontend / Backend / Tests** — concrete artifacts (`file_path` or component/class names) once built; `—` until then.
 - **Extension coverage (convention).** Because tests are tagged to the **whole use case** — there are no per-step or per-extension IDs — the **Tests** cell names *which extensions* a test exercises, e.g. `…AddEvaluation… + matching extensions (E1,E3); E2 untested`. This keeps edge-case coverage visible: a `✅ Verified` row whose negative/exception flows are only partly tested shows `🟡 Partial` in Verify with the gap spelled out in Tests. `/sync-check` flags any `✅ Built` use case whose count of negative-path tests is below its number of extensions (a heuristic that surfaces likely-undertested exception behavior). Back-filling the per-extension annotation across the already-built use cases is a `/sync-check` sweep, not a precondition for the convention.
-- When a use case is added to `requirements/use-cases.md`, add its row here (Build `❌ Not started`, Verify `—`). `/design` advances Build to `📐 Designed`; when `/implement` finishes it, set Build, fill Verify, and fill the code columns.
+- When a use case is added to `requirements/use-cases.md`, add its row here (Build `❌ Not started`, Verify `—`). `/design` advances Build to `🔬 Problem-validated` once the use case is firmed, then `📐 Designed` when the solution design is approved; when `/implement` finishes it, set Build, fill Verify, and fill the code columns.
 
 ### Build legend
 
 | Symbol | Meaning |
 |--------|---------|
-| ❌ Not started | No code yet. |
-| 📐 Designed | Design-of-record exists — the area's `design/<area>.md` is written and approved (`/design`); not yet coded. |
+| ❌ Not started | No design, no code; the use case is unexamined. |
+| 🔬 Problem-validated | `/design`'s challenge loop has run against the use case — ambiguities, contradictions, and assumptions that break against the code surfaced and looped back into the spec; the problem statement is firm. No solution design yet. (The `❌ → 🔬` transition **is** a recorded challenge event; its evidence is the spec diff that produced it.) |
+| 📐 Designed | Solution approved — the area's `design/<area>.md` is written and approved (`/design`); not yet coded. |
 | 🟡 In progress | Partially built (e.g., backend complete, frontend pending). |
 | ✅ Built | Code complete for the use case's flow. **Makes no claim about tests** — see the Verify column. |
 | 🚫 Tabled | Deliberately out of MVP scope (e.g., UC-ART-promote-selection). Not a gap to fill. |
@@ -74,7 +75,7 @@ This map is the **single anchor for the `BO → feature` edge** and the head of 
 | ✅ Verified | Automated test(s) exercise the built behavior — main flow and extensions — and pass. |
 | 🟡 Partial | Some flows/extensions are tested; others are not (the Tests cell names the gap). |
 | 🔎 None | Built, but no (or insufficient) automated test exists. |
-| — | Nothing built to verify yet (Build is `❌`, `📐`, or `🚫`). |
+| — | Nothing built to verify yet (Build is `❌`, `🔬`, `📐`, or `🚫`). |
 
 > Mapped against the repository on 2026-06-20. `Frontend` cites the Vue page(s) + `apis/ram` call(s); `Backend` cites the controller (+ key method) and supporting service/entity; `Tests` cites the backend test class + methods (`—` = none yet). Frontend modules are under `frontend/src/` (`pages/ram/*.vue`, `apis/ram/`); backend modules under `backend/src/main/java/team/projectpulse/ram/`; tests under `backend/src/test/java/team/projectpulse/ram/`. No frontend automated tests exist for RAM yet, so RAM `Verify` states reflect backend coverage only. Note: the glossary endpoints (`GlossaryController`) and the requirement-artifact delete endpoint currently have **no** backend tests — see the `🔎 None` rows.
 
