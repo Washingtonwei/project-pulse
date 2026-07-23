@@ -23,34 +23,34 @@ Build each Assistant as a triple, all server-side (Spring Boot), behind the exis
 Do **not** collapse the assistants into one mega-prompt. Keep them distinct because the differences are real and product-driven:
 
 - Different **jobs** → different system prompts and different output handling.
-- The instructor **configures each one separately** (Assistant Instructions are per-assistant) and **enables/disables each individually** (FR-AI-7, UC-CFG-2). You literally cannot offer that with one blended prompt.
+- The instructor **configures each one separately** (Assistant Instructions are per-assistant) and **enables/disables each individually** (FR-AI-enablement, UC-CFG-toggle-assistants). You literally cannot offer that with one blended prompt.
 - Focused prompts are far easier to tune and reason about than one prompt trying to be six roles.
 
 "Separate" here means separate *configurations*, **not** separate services, frameworks, message buses, or running processes.
 
 ## 4. The project assistant is a router, not an orchestrator
 
-The project assistant (UC-AI-9) is the single conversational front door. Implement it as **classify → dispatch**, not as an autonomous orchestrator. The spectrum, simplest → hardest:
+The project assistant (UC-AI-consult-project-assistant) is the single conversational front door. Implement it as **classify → dispatch**, not as an autonomous orchestrator. The spectrum, simplest → hardest:
 
 1. **Explicit invocation** — context/UI picks the assistant (in-document panel = elicitation; a "Critique" button = critique). Deterministic, trivially testable.
 2. **Router (target)** — one chatbot; one LLM call classifies intent + extracts args into a *structured* output (Claude **tool/function calling**); your server code deterministically dispatches to the right assistant. Expose `run_elicitation(scope, target)`, `run_critique(target)`, etc. as tools — the model picks the tool and fills the args; **your code does the work and holds the authority.**
 3. **Autonomous orchestrator** — one LLM with the assistants as tools, looping and deciding on its own. Most flexible, least predictable, hardest to test, most expensive. **Avoid for now.**
 
-FR-AI-19 says the system shall *route* the student into the corresponding use case — that's pattern #2, not #3. And keep the direct entry points (#1) even after the router exists: they're cheaper, more testable, and more accessible than round-tripping everything through chat.
+UC-AI-consult-project-assistant (step 5) says the system shall *route* the student into the corresponding use case — that's pattern #2, not #3. And keep the direct entry points (#1) even after the router exists: they're cheaper, more testable, and more accessible than round-tripping everything through chat.
 
 ## 5. Keep authority in code, never in the prompt
 
 Three things must be enforced by application logic, not trusted to the model (prompts get jailbroken; gates don't):
 
-- **Per-course-section enablement** (FR-AI-7) — check before you ever call the model.
-- **Never author without explicit accept** (FR-AI-3, FR-AI-8) — the propose → inspect → accept loop is a server-side gate, with no "accept all."
+- **Per-course-section enablement** (FR-AI-enablement) — check before you ever call the model.
+- **Never author without explicit accept** (FR-AI-no-auto-edit, BR-explicit-acceptance) — the propose → inspect → accept loop is a server-side gate, with no "accept all."
 - **Validate model-chosen targets** — before acting on "go to section X" or "critique artifact Y," confirm X/Y are real IDs.
 
 Remember **Project Source Material and student content are untrusted input** flowing into prompts. Your guardrails must survive a malicious pitch PDF (prompt injection).
 
 ## 6. Applying a content-producing assistant's proposals to the document (Accept/Reject)
 
-Three assistants *produce content* rather than just advise — **structuring (UC-AI-4)**, **drafting (UC-AI-7)**, and a critique **rewrite** (UC-AI-5 ext 4a). For all of them the rule is identical: **the AI panel proposes; Accept applies the change through the *same* authoring path a manual edit uses — never a direct write from the AI component into the editor.** That's both the spec (FR-AI-8 / UC-AI-8: the change becomes the Student's authored edit) and the right Vue architecture.
+Three assistants *produce content* rather than just advise — **structuring (UC-AI-structure-notes)**, **drafting (UC-AI-draft-skeleton)**, and a critique **rewrite** (UC-AI-critique ext 4a). For all of them the rule is identical: **the AI panel proposes; Accept applies the change through the *same* authoring path a manual edit uses — never a direct write from the AI component into the editor.** That's both the spec (BR-explicit-acceptance / UC-AI-review-proposal: the change becomes the Student's authored edit) and the right Vue architecture.
 
 **Structured candidates, not prose.** Have the assistant return machine-usable output (tool/JSON mode). In the real editor, sections are typed — the two seen so far are **`LIST`** and **`RICH_TEXT`**. A `LIST` section (e.g., `RISKS`) holds requirement artifacts as rows (Key / Type / Title / Priority / body) behind an **Add Requirement** button; a `RICH_TEXT` section (e.g., `BACKGROUND`) is a WYSIWYG rich-text editor (headings, bold/italic, lists, quote, link…). So a candidate targets a section, and its payload depends on the section type:
 ```
@@ -59,19 +59,19 @@ Three assistants *produce content* rather than just advise — **structuring (UC
   richText: '<h3>…</h3><p>…</p>',              // for a RICH_TEXT insert (editor HTML/fragment)
   sourceNoteSpan, rationale }
 ```
-`sourceNoteSpan` gives you FR-AI-12's "traceable to its source note."
+`sourceNoteSpan` gives you UC-AI-structure-notes's "traceable to its source note" (step 3).
 
 **Accept = a store action, not a component-to-component write.** The editor today is two columns (outline | section content) with **no AI panel** — so the AI panel (chat + accept/reject cards) is the main net-new surface. Use a single client store (Pinia) as the source of truth for the open document; the section editor and the AI panel both bind to it and never poke each other. Accept dispatches:
 ```
 applyCandidate(c):                         // c.sectionId = the open, locked section
-  requireLock(c.sectionId)                 // she already holds it (UC-DOC-2)
+  requireLock(c.sectionId)                 // she already holds it (UC-DOC-edit-document)
   if c.sectionType === 'LIST':
      store.addRequirement(c.sectionId, c.fields, provenance:'assistant')   // == the "Add Requirement" op
   else: // RICH_TEXT
      editor.applyFragment(c.sectionId, c.richText, provenance:'assistant')  // via the editor's transaction API, then Save
   markAccepted(c.id)
 ```
-The editor re-renders reactively from the store; Reject just discards the candidate. This *is* UC-AI-8 — per-item, with diff + rationale, no "accept all."
+The editor re-renders reactively from the store; Reject just discards the candidate. This *is* UC-AI-review-proposal — per-item, with diff + rationale, no "accept all."
 
 **The two section types need two accept/reject UIs.** A `LIST` section is the easy case: candidates are **discrete rows**, so each card is just "add this requirement or not." A `RICH_TEXT` section is a WYSIWYG editor (the toolbar — H1–H3, bold/italic/strike/code, bullets/numbered/quote/rule, link — points to a ProseMirror/TipTap-style component), so its content is a **rich-text document model, not a plain string**: the assistant emits a rich-text fragment (HTML mapping to those marks/nodes), and acceptance applies it through the **editor's transaction/command API** (then Save), never a string splice. The natural accept/reject surface for rich text is **inline suggestion decorations** (track-changes style) rendered *in* the editor, not separate cards. That's the more involved path — another reason structuring's cleanest first target is `LIST` sections (discrete artifacts), with rich-text insert/rewrite second.
 
@@ -92,13 +92,13 @@ Structured from your notes — 12 proposed (0 applied)        [pasted notes ▸]
        ☐ UC  "Student exports a document"              ⓘ note ¶9   [Reject] [Accept]
 ```
 
-Each card shows the type, a one-line summary, priority, a link to its **source note** (`ⓘ note ¶3` — FR-AI-12 traceability), the rationale on expand, per-item **Accept/Reject**, and — since she stays the author — the option to **edit a candidate before accepting**. No "accept all" (FR-AI-8). Grouping by authoring destination also *teaches placement* (which requirement type belongs where) — UC-AI-4's actual learning goal.
+Each card shows the type, a one-line summary, priority, a link to its **source note** (`ⓘ note ¶3` — UC-AI-structure-notes traceability), the rationale on expand, per-item **Accept/Reject**, and — since she stays the author — the option to **edit a candidate before accepting**. No "accept all" (BR-explicit-acceptance). Grouping by authoring destination also *teaches placement* (which requirement type belongs where) — UC-AI-structure-notes's actual learning goal.
 
-**Decouple review from application.** The basket is the one place she triages everything the notes produced; applying still happens in the relevant editor — the section editor for a Document Section, the use-case editor for a use case — one authoring destination at a time, with the lock visible. Clicking a group navigates to that authoring destination and locks it: for a Document Section it drops the accepted candidates in as real `Add Requirement` rows (or rich-text suggestions for a `RICH_TEXT` section); for a use case it opens the use-case editor on the new (UC-DOC-5) or selected (UC-DOC-6) use case and drops the candidate in as its draft fields. She confirms, Saves, the lock releases, and the basket marks those "✓ applied." If a teammate holds an authoring destination's lock, that candidate is **deferred** ("locked by Alice — apply later") rather than blocking the batch. The fully-automated alternative — Accept applies at once while the server transactionally acquires → applies → saves → releases the lock — is a later enhancement.
+**Decouple review from application.** The basket is the one place she triages everything the notes produced; applying still happens in the relevant editor — the section editor for a Document Section, the use-case editor for a use case — one authoring destination at a time, with the lock visible. Clicking a group navigates to that authoring destination and locks it: for a Document Section it drops the accepted candidates in as real `Add Requirement` rows (or rich-text suggestions for a `RICH_TEXT` section); for a use case it opens the use-case editor on the new (UC-DOC-create-use-case) or selected (UC-DOC-edit-use-case) use case and drops the candidate in as its draft fields. She confirms, Saves, the lock releases, and the basket marks those "✓ applied." If a teammate holds an authoring destination's lock, that candidate is **deferred** ("locked by Alice — apply later") rather than blocking the batch. The fully-automated alternative — Accept applies at once while the server transactionally acquires → applies → saves → releases the lock — is a later enhancement.
 
 **Backend.** Accept ultimately calls the *same* endpoints as manual authoring — the **Add Requirement** call for a `LIST` row, or the rich-text **Save** for a `RICH_TEXT` section — on the locked section; the server enforces lock ownership, versions the change (history), and broadcasts it to teammates (real-time collaboration). The AI has no privileged write path — going through the normal path is what gives you locking, autosave, history, and collaboration for free; a direct AI→editor write would bypass all of it.
 
-**Sequencing.** These content-producing assistants (and the shared UC-AI-8 accept loop) are more involved than the advisory ones — build them after elicitation/critique/tutor, once the accept-loop infrastructure exists.
+**Sequencing.** These content-producing assistants (and the shared UC-AI-review-proposal accept loop) are more involved than the advisory ones — build them after elicitation/critique/tutor, once the accept-loop infrastructure exists.
 
 ## 7. The hard part is context assembly, not routing
 
@@ -108,8 +108,8 @@ Most of the engineering value is in the **per-assistant context builder** — pu
 
 - **Prompt caching.** Teaching Context, Assistant Instructions, and templates are large and *stable per course section* — ideal cache candidates. Caching them across calls is a big cost/latency win and painful to retrofit.
 - **Structured outputs.** Use tool calling / JSON mode for the router and for any "list of findings/proposals" output, so it's unit-testable.
-- **Observability.** Log prompts, responses, and token usage from day one (debugging, cost control, and the audit trail POST-1 records).
-- **Graceful degradation** (FR-AI-13). When the LLM service is down, AI features go unavailable and the rest of RAM keeps working.
+- **Observability.** Log prompts, responses, and token usage from day one (debugging, cost control, and the per-session conversation record the assistant use cases call for in their postconditions — e.g. UC-AI-consult-project-assistant).
+- **Graceful degradation** (FR-AI-degradation). When the LLM service is down, AI features go unavailable and the rest of RAM keeps working.
 
 ## 9. Suggested build sequence (de-risks a first-time integration)
 
@@ -117,7 +117,7 @@ Most of the engineering value is in the **per-assistant context builder** — pu
 2. **Add elicitation** — now you meet the multi-turn loop and the two scopes (focused vs. project-wide), reusing the shared infra.
 3. **Add the project assistant (router) last** — by now each assistant has a clear contract, so the classify→dispatch router is straightforward, and you're not learning LLM plumbing and routing simultaneously.
 
-The spec supports any order — each assistant is an independently-invocable use case, with UC-AI-9 sitting on top — so you can ship value (critique) before the router exists.
+The spec supports any order — each assistant is an independently-invocable use case, with UC-AI-consult-project-assistant sitting on top — so you can ship value (critique) before the router exists.
 
 ## 10. What would be over-engineering (avoid)
 
@@ -131,11 +131,13 @@ The spec supports any order — each assistant is an independently-invocable use
 | Concept here | In the docs |
 |---|---|
 | Assistant (configured role) | `Assistant` glossary term; the assistants list in `vision-and-scope.md` |
-| The specialized assistants | UC-AI-1..UC-AI-8 |
-| Project assistant (router) | UC-AI-9; FR-AI-18, FR-AI-19 |
-| Per-assistant behavior config | `Assistant Instructions`; UC-CFG-3 |
-| Enable/disable per course section | FR-AI-7; UC-CFG-2 |
-| Shared standards | `Teaching Context`; UC-CFG-1 |
-| Never-author-without-accept | FR-AI-3, FR-AI-8; UC-AI-8 |
-| LLM-down behavior | FR-AI-13 |
-| Pitch materials as context (+ staleness) | `Project Source Material`; UC-AI-1, FR-AI-14, FR-AI-15, FR-AI-17 |
+| The specialized assistants | UC-AI-import-source-material, UC-AI-elicit-requirements, UC-AI-practice-interview, UC-AI-structure-notes, UC-AI-critique, UC-AI-tutor, UC-AI-draft-skeleton, UC-AI-review-proposal |
+| Project assistant (router) | UC-AI-consult-project-assistant |
+| Whole-project (cross-document) review | UC-AI-whole-project-review; `product/cross-document-review-criteria.md` |
+| Per-assistant behavior config | `Assistant Instructions`; UC-CFG-configure-assistant-instructions |
+| Cross-document review criteria config | `Cross-Document Review Criteria` glossary term; UC-CFG-configure-review-criteria |
+| Enable/disable per course section | FR-AI-enablement; UC-CFG-toggle-assistants |
+| Shared standards | `Teaching Context`; UC-CFG-configure-teaching-context |
+| Never-author-without-accept | FR-AI-no-auto-edit, BR-explicit-acceptance; UC-AI-review-proposal |
+| LLM-down behavior | FR-AI-degradation |
+| Pitch materials as context (+ staleness) | `Project Source Material`; UC-AI-import-source-material, UC-AI-elicit-requirements (gap analysis + source-material exclusion); FR-AI-source-material-context |

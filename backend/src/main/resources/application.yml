@@ -52,7 +52,7 @@ management:
       enabled: true
   tracing:
     sampling:
-      probability: 0.1 # Only for demo purpose, change it back to 0.1 in production.
+      probability: 0.1 # Sample 10% of traces to bound trace volume; raise toward 1.0 in dev/demo for full visibility.
 info:
   app:
     name: project-pulse

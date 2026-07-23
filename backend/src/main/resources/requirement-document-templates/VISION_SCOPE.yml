@@ -6,13 +6,23 @@ sections:
     title: "Introduction"
     type: "RICH_TEXT"
     guidance: |
-      This section defines the overarching goals, purpose, and boundaries of the software project.
+      The Introduction orients the reader; it is framing, not content. In a few short paragraphs a new reader should learn what the product is and what this document is, then know where to go for the depth. Keep it brief — the substance belongs to the sections that follow.
 
-      Describe:
-      - What the software aims to achieve
-      - The business problems it will solve
-      - The context in which it will operate
-      - How this document relates to use cases and the SRS
+      Cover:
+      - Identify the product and this document — name the product, say what it is in one high-level sentence, and state the document's purpose and intended audience.
+      - Characterize the product at the highest level — its major capability areas at a glance, enough for the reader to form a mental model (a line each, not a feature list).
+      - Note the document's scope and how it relates to the companion documents (Use Cases, Business Rules, SRS) — what is defined here versus there.
+      - Give a brief roadmap of the sections that follow.
+
+      Keep out — these have their own homes, so don't describe or preview them here:
+      - History, domain context, and rationale for the product → Background
+      - The problem, pain points, and why solving it matters → Business Opportunity / Problem Statement
+      - The detailed capabilities → Major Features / Scope
+
+      Litmus test: if a sentence would still be true and necessary in Background, Business Opportunity, or Major Features, it belongs there — not in the Introduction. The Introduction should stand on identification, framing, and a roadmap alone.
+
+      **Example:**
+      "This document defines the purpose, scope, and high-level vision for the **Cafeteria Ordering System (COS)**, a web application that lets employees of Process Impact order meals online for delivery within the company campus. It is written for the project's stakeholders — the sponsor, the development team, and cafeteria staff — and establishes the shared vision that the Use Cases, Business Rules, and SRS documents build on. The Background section below describes the situation that motivated the project; the rest of this document then covers the business opportunity, major features, stakeholders, and proposed workflow."
 
   - sectionKey: "BACKGROUND"
     title: "Background"

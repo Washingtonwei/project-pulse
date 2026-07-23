@@ -1,8 +1,8 @@
-# **Requirements Authoring & Management (RAM) Tool**
+# **Project Pulse**
 
 # **Glossary**
 
-# **Version \<1.0\>**
+# **Version 1.0**
 
 # **Revision History**
 
@@ -13,84 +13,89 @@
 |               |         |             |          |
 |               |         |             |          |
 
-# **Table of Contents**
+# **Introduction**
 
-- [1. Introduction](#1-introduction)
-  - [1.1 Purpose](#11-purpose)
-  - [1.2 Scope](#12-scope)
-  - [1.3 References](#13-references)
-  - [1.4 Overview](#14-overview)
-- [2. Definitions](#2-definitions)
-  - [Requirement Artifact](#requirement-artifact)
-  - [Artifact Type](#artifact-type)
-  - [Artifact Key](#artifact-key)
-  - [Requirement Link](#requirement-link)
-  - [Artifact Link Type](#artifact-link-type)
-  - [Graph-First Model](#graph-first-model)
-  - [Requirements Graph](#requirements-graph)
-  - [Traceability](#traceability)
-  - [Graph Navigation](#graph-navigation)
-  - [Requirement Document](#requirement-document)
-  - [Document Section](#document-section)
-  - [Section Key](#section-key)
-  - [Template](#template)
-  - [Authoring Destination](#authoring-destination)
-  - [Business Objective](#business-objective)
-  - [Risk](#risk)
-  - [Business Rule](#business-rule)
-  - [Feature](#feature)
-  - [Use Case](#use-case)
-  - [Functional Requirement](#functional-requirement)
-  - [Constraint](#constraint)
-  - [Quality Attribute](#quality-attribute)
-  - [External Interface Requirement](#external-interface-requirement)
-  - [Glossary Term](#glossary-term)
-  - [Stakeholder](#stakeholder)
-  - [Assumption](#assumption)
-  - [Dependency](#dependency)
-  - [Validation (ReqLint)](#validation-reqlint)
-  - [Keyword](#keyword)
-  - [Assistant](#assistant)
-  - [Assistant Instructions](#assistant-instructions)
-  - [Teaching Context](#teaching-context)
-  - [Cross-Document Review Criteria](#cross-document-review-criteria)
-  - [Project Source Material](#project-source-material)
-  - [Team](#team)
-  - [Course](#course)
-  - [Course Section](#course-section)
-  - [Course Admin](#course-admin)
-  - [Instructor](#instructor)
-  - [Student](#student)
-  - [MVP](#mvp)
-  - [FERPA](#ferpa)
-  - [EARS](#ears)
-  - [INVEST](#invest)
-  - [Wiegers Requirement Categories](#wiegers-requirement-categories)
-  - [SSO](#sso)
-  - [LLM](#llm)
-  - [WCAG](#wcag)
-
-# **1. Introduction**
-
-## **1.1 Purpose**
+## **Purpose**
 
 This document is used to define terms used throughout the planning, design, and software development of this project. To be used by current and future software engineers as well as stakeholders to reference key terms that may cause confusion or any terms that need clarification. The glossary allows all parties involved in the project to have a standard definition of vocabulary, terms, or phrases. Also, this glossary will help define complex concepts and various abbreviations used throughout the project.
 
-## **1.2 Scope**
+## **Scope**
 
-This glossary is associated with the Requirements Authoring & Management (RAM) Tool project. The terms in this document will be used in the Vision and Scope document, the Use Cases document, the Business Rules document, the Software Requirements Specification, and other project documents.
+This glossary owns the canonical definitions of every domain term used in Project Pulse's spec docs. Each term's name *is* its identifier — name-based, stable, and unique within the glossary, so terms can be inserted into or reordered within their thematic group without renaming. The four other core docs — [vision-and-scope.md](vision-and-scope.md), [use-cases.md](use-cases.md), [business-rules.md](business-rules.md), and [software-requirements-specification.md](software-requirements-specification.md) — and the design docs use these defined terms verbatim (no synonyms, no Title-Casing for emphasis in prose) and link to a term by its anchor (e.g., `[Document Section](#document-section)`) rather than by position. Code-level enums whose value space tracks the requirements model align here as well: in particular, the SRS's Business Domain Model `RequirementArtifactType` enum maps one-to-one to the artifact-type terms defined below.
 
-## **1.3 References**
+## **References**
 
-## **1.4 Overview**
+## **Overview**
 
 The remainder of this document contains terms followed by their definitions. Terms are organized thematically and identified by name rather than number, so related terms sit together and new terms can be inserted into their group without renumbering.
 
-# **2. Definitions**
+# **Definitions**
+
+## **Team**
+
+A group of users (students or instructors) collaborating on a single project. In the senior design course a team usually consists of 5–6 students working with a real external client through the full project lifecycle, and is assigned a single instructor — its TCU instructor (see BR-team-single-instructor).
+
+Teams are the unit at which weekly activity reports are produced, and the cohort within which peer evaluations are exchanged. They are also the ownership boundary for requirement artifacts and documents.
+
+## **Course**
+
+An academic course managed in Project Pulse (e.g., COSC 40943 Senior Design). The user who creates a Course becomes its course admin; a Course contains one or more course sections.
+
+## **Course Section**
+
+A specific offering of a Course within an academic term (e.g., Fall 2026, Section 01). A course section enrolls students and instructors and groups students into teams. Distinct from document section, which is a structural division within a requirement document.
+
+## **Course Admin**
+
+A course-scoped owner role in Project Pulse. The user who creates a Course becomes its course admin; different Courses have different course admins. A course admin is also an instructor of her Course and therefore holds every instructor capability; in addition, she invites instructors to the Course, creates course sections and teams, manages instructor and student enrollment, assigns teams, configures the academic year and which weeks are active (see BR-active-weeks) for the course section's weekly activity reports and peer evaluations, and configures which built-in templates are available to each team. Provisioning a team's requirement documents from those templates is reserved to the course admin (UC-TPL-provision-documents, BR-document-creation).
+
+## **Instructor**
+
+A user role that teaches a course section, invited to the Course by its course admin (who is herself also an instructor of the Course). Instructors monitor team progress through weekly activity reports and peer evaluations, review and grade student requirement documents, provide inline feedback, and configure AI assistance settings for their course section (when permitted). Team and document provisioning, and template selection, are reserved to the course admin (BR-document-creation).
+
+## **Student**
+
+A user role enrolled in a course section as a member of a team. Each active week, students submit a weekly activity report and a peer evaluation of their teammates. They also author requirement documents collaboratively with teammates, respond to instructor feedback, and submit work for grading.
+
+## **Academic Year**
+
+The period an educational institution uses to measure study, typically spanning early fall of one year to early summer of the next and divided into semesters. In Project Pulse it frames the schedule over which a course section's weekly activity reports and peer evaluations are collected.
+
+## **Active Week**
+
+A week in which students are required to submit weekly activity reports and peer evaluations. Because a course section spans a winter holiday break, the course admin can mark some weeks inactive so that students need not submit reports during those weeks (see BR-active-weeks). A week runs Monday to Sunday; Monday's date may serve as the identifier for the week.
+
+## **TCU Online**
+
+The learning management system used by Texas Christian University. Students upload work and view grades on it; it does not support peer evaluations. It is the external system to which an instructor still manually uploads finalized grades — a step that remains outside the scope of Project Pulse.
+
+## **Weekly Activity Report (WAR)**
+
+A structured weekly overview of a project team's progress, challenges, and next steps that supports communication among team members, instructors, and stakeholders. A weekly activity report consists of multiple activities; for each activity a student records the activity category, the planned activity, a description of the activity, hours planned, actual hours taken, and the activity's status.
+
+## **Peer Evaluation**
+
+A weekly assessment in which members of a team rate each other's contributions, performance, and teamwork against a rubric. Peer evaluations build self-awareness and accountability within the team and help identify strengths and areas for improvement.
+
+### *Public Comments*
+
+Optional comments a student may add when evaluating a teammate that are shared with the evaluatee.
+
+### *Private Comments*
+
+Optional comments a student may add when evaluating a teammate that are sent only to the instructor and are not shared with the evaluatee.
+
+## **Rubric**
+
+A scoring guide used to evaluate performance, work quality, behavior, or contributions against a set of predefined criteria. A peer evaluation is scored against a rubric, which provides a rating scale (for example, 1–10 from poor to excellent) for each criterion — covering aspects such as work quality, productivity, proactiveness, respect for others, response to criticism, and meeting performance.
+
+### *Criterion*
+
+A single standard or aspect of performance, work, or behavior assessed within a rubric. The criteria together define the expectations evaluated each week (for example, clarity, depth of analysis, teamwork, participation, or technical skill).
 
 ## **Requirement Artifact**
 
-The core domain entity representing a traceable requirements engineering concept. Artifacts are modeled explicitly to enable traceability, validation, navigation, and analysis. RAM models requirements as atomic artifacts (e.g., objective, feature, use case, step, functional requirement, glossary term), each with identity, type, and explicit links.
+The core domain entity representing a traceable requirements engineering concept. Artifacts are modeled explicitly to enable traceability, validation, navigation, and analysis. RAM models requirements as atomic artifacts (e.g., objective, feature, use case, functional requirement, glossary term), each with identity, type, and explicit links.
 
 A requirement artifact may represent:
 
@@ -111,6 +116,7 @@ A requirement artifact may represent:
   - an external interface requirement
   - a constraint
   - a data requirement
+  - an operating environment
 - a non-requirement concept:
   - a glossary term
   - a stakeholder
@@ -118,7 +124,7 @@ A requirement artifact may represent:
   - an assumption
   - a dependency
 
-These map one-to-one to the `RequirementArtifactType` enumeration in the data model (SRS §7.1), which is the authoritative taxonomy; the `OTHER` enum value is an implementation fallback and is not a distinct domain concept. "Background" is document narrative (a prose document section), not a tracked artifact.
+These map one-to-one to the `RequirementArtifactType` enumeration in the data model (the SRS's Business Domain Model), which is the authoritative taxonomy; the `OTHER` enum value is an implementation fallback and is not a distinct domain concept. "Background" is document narrative (a prose document section), not a tracked artifact.
 
 Requirement artifacts are:
 
@@ -127,23 +133,9 @@ Requirement artifacts are:
 - independent of document structure
 - connected via typed traceability links
 
-| Artifact Type      | title means    | content means         |
-| :----------------- | :------------- | :-------------------- |
-| Glossary term      | term           | definition            |
-| FR                 | Short summary  | The system shall…     |
-| Business Objective | Objective name | Objective description |
-| Feature            | Feature name   | Feature description   |
-| Use Case           | Use case name  | Brief description     |
-
 ## **Artifact Type**
 
-A predefined classification that specifies the semantic role of a requirement artifact within the requirements model.
-
-Notes / Clarifications:
-
-- Artifact types are selected from a system-defined list.
-- The artifact type determines how an artifact participates in validation, traceability, and visualization.
-- Artifact types help enforce structure and consistency across requirement documents.
+A predefined classification that specifies the semantic role of a requirement artifact within the requirements model. The artifact type determines how an artifact participates in validation, traceability, and visualization. Artifact types help enforce structure and consistency across requirement documents.
 
 Examples:
 
@@ -171,7 +163,7 @@ Examples:
 - UC-5 — use case #5
 - GL-7 — glossary term #7
 
-In the MVP, artifact keys are assigned as a simple running sequence per artifact type (`FR-1`, `FR-2`, …; `UC-1`, `UC-2`, …), with the system tracking the current index per type and incrementing on each new artifact. A categorical scheme (e.g., the SRS's `FR-SAVE*` / `FR-LOCK*` families) may be adopted in a later version. These product-generated artifact keys are distinct from the area-prefixed `UC-<AREA>-<n>` identifiers (e.g., `UC-GLO-1`) used to organize the Use Cases document of this specification itself.
+In the MVP, artifact keys are assigned as a simple running sequence per artifact type (`FR-1`, `FR-2`, …; `UC-1`, `UC-2`, …), with the system tracking the current index per type and incrementing on each new artifact. A categorical scheme (e.g., the SRS's `FR-SAVE*` / `FR-VAL*` families) may be adopted in a later version. These product-generated artifact keys are distinct from the area-prefixed `UC-<AREA>-<slug>` identifiers (e.g., `UC-GLO-view-glossary`) used to organize the Use Cases document of this specification itself.
 
 ## **Requirement Link**
 
@@ -187,14 +179,14 @@ The link type is one of the values defined by artifact link type — covering de
 
 ## **Artifact Link Type**
 
-An enumeration defining the allowed semantic relationships between requirement artifacts. Each value is read source → target:
+An enumeration defining the allowed semantic relationships between requirement artifacts. Each value is read source → target; the permitted source → target artifact-type combinations are defined authoritatively by the link-type compatibility matrix under BR-link-constraints in [business-rules.md](business-rules.md), and the descriptions below are illustrative:
 
 - DERIVES_FROM — the source (lower-level) artifact is derived from a higher-level target (e.g., functional requirement → use case → feature → objective).
 - REALIZES — the source artifact realizes or implements a more abstract target (e.g., implementation → design → functional requirement / use case / feature / objective).
 - REFERENCES — the source artifact makes a general reference to the target, with no more specific relationship.
-- IMPACTS — the source (a change, quality attribute, or risk) affects the target requirement or artifact; a cross-cutting link used for impact analysis.
-- MITIGATES — the source (a control or requirement) mitigates the target risk or threat.
-- MOTIVATES — the source stakeholder motivates the target requirement.
+- IMPACTS — the source (a cross-cutting or constraining artifact) affects the target requirement or artifact; used for impact analysis.
+- MITIGATES — the source artifact mitigates the target risk.
+- MOTIVATES — the source expresses a need or driver that motivates the target requirement.
 
 ## **Graph-First Model**
 
@@ -260,7 +252,6 @@ Examples:
 
 - vision.businessObjectives
 - srs.functionalRequirements
-- glossary.terms
 
 Section keys remain stable even if document section titles or ordering change.
 
@@ -311,11 +302,15 @@ A requirement artifact describing a specific, testable behavior the system must 
 
 Examples: FR-1 (the system autosaves the active document section every 10 seconds), FR-2 (the system grants a student an exclusive lock before editing a document section), FR-3 (the system assigns a unique key to each new artifact).
 
-Note: the area-prefixed form `FR-<AREA>-<n>` (e.g., `FR-SAVE-1`, `FR-LOCK-1`) is not a product-generated artifact key — it is the organizing convention used by this specification's own SRS §5.2, parallel to the `UC-<AREA>-<n>` use-case IDs. See artifact key.
+Note: the area-prefixed form `FR-<AREA>-<slug>` (e.g., `FR-SAVE-autosave-active`, `FR-VAL-background-recheck`) is not a product-generated artifact key — it is the organizing convention used by this specification's own Non-Use Case Functional Requirements, parallel to the `UC-<AREA>-<slug>` use-case IDs. See artifact key.
 
 ## **Constraint**
 
 A requirement artifact describing a condition or restriction imposed on the system's design, implementation, or operation that limits the solution space. Constraints commonly originate from regulations, organizational policy, mandated technologies, or hardware limits.
+
+## **Operating Environment**
+
+A requirement artifact describing a characteristic of the hardware, software, network, or platform environment in which the system must operate — the browsers, runtime platforms, servers, and external services it must run within and interoperate with. In RAM, operating-environment requirements are authored in the Software Requirements Specification's Operating Environment section (`OE-*`).
 
 ## **Quality Attribute**
 
@@ -342,6 +337,8 @@ A requirement artifact describing any person, group, or organization with an int
 ## **Assumption**
 
 A requirement artifact stating a condition taken to be true for purposes of planning or specification but not yet verified. Assumptions that turn out to be false may invalidate requirements that depend on them.
+
+An assumption may be business-level (about adoption, environment, or organizational reality — authored in Vision and Scope's Business Assumptions and Dependencies section) or architecture-level (about the technical environment the system relies on, such as supported browsers or the stability of an external API contract — authored in the Software Requirements Specification's Assumptions and Dependencies section). Both are the same artifact type and share one team-wide `AS-*` key sequence across the two authoring homes.
 
 ## **Dependency**
 
@@ -389,39 +386,13 @@ Instructor-authored, course section-level standards an assistant is held to when
 
 ## **Cross-Document Review Criteria**
 
-Instructor-authored (or course admin-authored), course section-level criteria the critique assistant applies when reviewing a team's entire set of requirement documents together — a *whole-project review* (UC-AI-10) — for cross-document gaps, inconsistencies, conflicts, and broken traceability. They specify the dimensions and standards the whole-project review checks across documents (for example: every feature has a downstream use case and functional requirement; every cited term, business rule, and FR resolves; scope statements agree across documents).
+Instructor-authored (or course admin-authored), course section-level criteria the critique assistant applies when reviewing a team's entire set of requirement documents together — a *whole-project review* (UC-AI-whole-project-review) — for cross-document gaps, inconsistencies, conflicts, and broken traceability. They specify the dimensions and standards the whole-project review checks across documents (for example: every feature has a downstream use case and functional requirement; every cited term, business rule, and FR resolves; scope statements agree across documents).
 
-Distinct from the two other AI teaching artifacts: the teaching context supplies shared, per-requirement quality standards every assistant is held to, and assistant instructions supply per-assistant behavioral directives; the cross-document review criteria instead define *what the whole-project review evaluates across the document set*. They must be defined for a course section before a student can request a whole-project review (UC-AI-10), and are a first-class, instructor-controlled teaching artifact maintained per course section.
+Distinct from the two other AI teaching artifacts: the teaching context supplies shared, per-requirement quality standards every assistant is held to, and assistant instructions supply per-assistant behavioral directives; the cross-document review criteria instead define *what the whole-project review evaluates across the document set*. They must be defined for a course section before a student can request a whole-project review (UC-AI-whole-project-review), and are a first-class, instructor-controlled teaching artifact maintained per course section.
 
 ## **Project Source Material**
 
 Input materials the client provides to seed a project — typically a pitch slide deck and a short brief (PDF) covering background, stakeholders, problem statement, users, objectives, desired functionality, possible solutions, prototypes, and a candidate tech stack. The team imports these into RAM, and the assistants use them as context (for example, the elicitation assistant's gap analysis and interview-question preparation). Project source material is an input the team works from, not authored requirement content; it may become stale after the project starts; it is distinct from requirement documents and requirement artifacts.
-
-## **Team**
-
-A group of users (students or instructors) collaborating on a single project.
-
-Teams are the ownership boundary for requirement artifacts and documents.
-
-## **Course**
-
-An academic course hosted on the Project Pulse platform (e.g., COSC 40943 Senior Design I). The user who creates a Course becomes its course admin; a Course contains one or more course sections offered across terms.
-
-## **Course Section**
-
-A specific offering of a Course within an academic term (e.g., Fall 2025, Section 01). A course section enrolls students and instructors and groups students into teams. Distinct from document section, which is a structural division within a requirement document.
-
-## **Course Admin**
-
-A course-scoped owner role in Project Pulse. The user who creates a Course becomes its course admin; different Courses have different course admins. A course admin is also an instructor of her Course and therefore holds every instructor capability; in addition, she invites instructors to the Course, creates course sections and teams, manages instructor and student enrollment, assigns teams, and configures which built-in templates are available to each team. Provisioning a team's requirement documents from those templates is reserved to the course admin (UC-TPL-1, BR-3).
-
-## **Instructor**
-
-A user role that teaches a course section, invited to the Course by its course admin (who is herself also an instructor of the Course). Instructors review and grade student requirement documents, provide inline feedback, and configure AI assistance settings for their course section (when permitted). Team and document provisioning, and template selection, are reserved to the course admin (BR-3).
-
-## **Student**
-
-A user role enrolled in a course section as a member of a team. Students author requirement documents collaboratively with teammates, respond to instructor feedback, and submit work for grading.
 
 ## **MVP**
 
@@ -443,13 +414,9 @@ Independent, Negotiable, Valuable, Estimable, Small, Testable. A set of criteria
 
 The classification of requirements artifacts popularized by Karl Wiegers and Joy Beatty (e.g., business requirements, user requirements, functional requirements, quality attributes, constraints, business rules) and reflected in RAM's built-in templates. The teaching context references these categories so that assistant feedback aligns with the structure students are taught and graded against.
 
-## **SSO**
-
-Single Sign-On. An authentication mechanism that allows a user to access multiple applications with a single set of credentials. RAM relies on the host platform's (Project Pulse) institutional SSO provider for authentication.
-
 ## **LLM**
 
-Large Language Model. A class of machine-learning models trained on broad text corpora to generate, complete, or analyze natural-language content. RAM integrates with an external LLM service (e.g., OpenAI) to power its assistants — the Socratic elicitation, critique, tutor, client role-play, structuring, and drafting roles that provide AI-assisted requirement guidance. All calls are routed through the server-side AI proxy.
+Large Language Model. A class of machine-learning models trained on broad text corpora to generate, complete, or analyze natural-language content. RAM integrates with an external LLM service (e.g., OpenAI) to power its Socratic assistants, which provide AI-assisted requirement guidance. All calls are routed through the server-side AI proxy.
 
 ## **WCAG**
 

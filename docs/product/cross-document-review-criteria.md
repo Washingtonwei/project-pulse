@@ -1,16 +1,16 @@
 # Cross-Document Review Criteria & Critique-Assistant System Prompt
 
-> The criteria a reviewer (human or the **critique assistant**) applies when reviewing a team's **whole requirement set** — the team's requirement documents together — for gaps, inconsistencies, conflicts, and broken traceability. Part 1 is the methodology (human-readable checklist). Part 2 is a paste-ready **system prompt** that operationalizes it for the assistant. Part 3 is build guidance, consistent with [`ai-implementation-notes.md`](../guides/ai-implementation-notes.md).
+> The criteria a reviewer (human or the **critique assistant**) applies when reviewing a team's **whole requirement set** — the team's requirement documents together — for gaps, inconsistencies, conflicts, and broken traceability. Part 1 is the methodology (human-readable checklist). Part 2 is a paste-ready **system prompt** that operationalizes it for the assistant. Build, enforcement, and output guidance shared with the per-destination critique is in [`critique-assistant-build-notes.md`](critique-assistant-build-notes.md); Part 3 here adds only what is specific to the whole-project review.
 
 ## Scope note — this is the *project-wide* review mode
 
-The spec's critique assistant (**UC-AI-5**, FR-AI-2/FR-AI-9) reviews **one authoring destination** (a Document Section or a use case) for clarity/ambiguity/consistency/completeness/testability. The review described here is **broader**: it reads the team's requirement documents together and hunts for *cross-document* problems — drift, conflicts, coverage holes, broken traceability — that are invisible when you look at one section at a time. It is closest in spirit to the elicitation assistant's broad-mode gap analysis (FR-AI-15), but aimed at *critique/consistency* rather than elicitation.
+The spec's critique assistant (**UC-AI-critique**; honors FR-AI-rationale) reviews **one authoring destination** (a Document Section or a use case) for clarity/ambiguity/consistency/completeness/testability. The review described here is **broader**: it reads the team's requirement documents together and hunts for *cross-document* problems — drift, conflicts, coverage holes, broken traceability — that are invisible when you look at one section at a time. It is closest in spirit to the elicitation assistant's broad-mode gap analysis (**UC-AI-elicit-requirements**), but aimed at *critique/consistency* rather than elicitation.
 
 It complements, and does not replace:
 - **ReqLint** (deterministic, single-document, rule-based — missing sections, vague verbs, ID format).
-- **Per-destination critique** (UC-AI-5 — deep review of one section/use case).
+- **Per-destination critique** (UC-AI-critique — deep review of one section/use case).
 
-This whole-project mode is now a **distinct use case and FR** (resolved as OI-16): **UC-AI-10** (Request a whole-project review from the critique assistant), realized by **FR-AI-21** (the review behavior) and **FR-AI-22** (include the criteria in context), and reachable both via a "Review whole project" action and via the project assistant (UC-AI-9). The criteria the review applies are **instructor/admin-configured per course section** as the **Cross-Document Review Criteria** (glossary term), authored through **UC-CFG-4**; they must be defined before the review is available (**FR-AI-23**). Part 1 below is the methodology / default criteria set, and Part 2 the critique-assistant system prompt that operationalizes it.
+This whole-project mode is now a **distinct use case** (resolved as OI-16): **UC-AI-whole-project-review** (Request a whole-project review from the critique assistant) specifies the review behavior and the inclusion of the criteria in the assistant's context, and is reachable both via a "Review whole project" action and via the project assistant (UC-AI-consult-project-assistant). The criteria the review applies are **instructor/admin-configured per course section** as the **Cross-Document Review Criteria** (glossary term), authored through **UC-CFG-configure-review-criteria**; they must be defined before the review is available (UC-AI-whole-project-review, PRE-4 and extension 1a). Part 1 below is the methodology / default criteria set, and Part 2 the critique-assistant system prompt that operationalizes it.
 
 ---
 
@@ -31,7 +31,7 @@ Review across **seven dimensions**. For each finding, capture *where*, *what*, *
 - Every **Vision feature / BO / RI / AS** has downstream realization (a use case and/or an FR). A feature with no UC/FR is a gap.
 - **Quality attributes** are specified and measurable (not empty, not someone else's example).
 - The **data model** exists and is concrete (entities, fields, relationships) — not an external link or a stub.
-- **External interfaces** that the system depends on (LLM, email, SSO, export) are actually described.
+- **External interfaces** that the system depends on (LLM, email, export) are actually described.
 
 ### D2 — Coverage & traceability (across documents)
 - **Every use case cites FRs that exist**, and (where a traceability matrix exists) has **exactly one** matrix row.
@@ -53,9 +53,8 @@ Review across **seven dimensions**. For each finding, capture *where*, *what*, *
 - **Duplicate ID spaces with different meanings** — e.g., `AS-1` meaning one thing in Vision and another in the SRS.
 - **In-scope here / out-of-scope there** — a capability called MVP in one doc and excluded in another.
 
-### D5 — Atomicity, testability & writing quality (ReqLint-style; applies to FR "shall" statements and use cases)
-- FRs: use **"shall"**, are **atomic** (one behavior each), and are **testable/measurable**. Flag **vague verbs** (`manage`, `support`, `handle`, `process`, `deal with`), **subjective adjectives** (`fast`, `user-friendly`, `intuitive`, `easy`, `quick`, `appropriate`, `seamless`), and ambiguity.
-- Use cases: have a **trigger**, **preconditions/postconditions**, a **numbered main flow** alternating actor action / system response, and **extensions**; each carries a unique ID.
+### D5 — Per-requirement quality (defer to the per-destination criteria)
+Per-requirement quality — atomicity, testability, "shall"/voice, vague verbs, subjective adjectives, ambiguity — is **owned by [`requirement-quality-criteria.md`](requirement-quality-criteria.md)** (the ISO/IEC/IEEE 29148 §5.2 individual-requirement criteria). Apply those criteria to each requirement and use case you read; do not restate them here. In *this* review, treat a per-requirement defect as secondary and prioritize the **cross-document** dimensions (D1–D4, D6–D7). One structural reminder, because it gates the cross-document checks: a use case must have a **trigger**, **preconditions/postconditions**, a **numbered main flow**, and **extensions** — one missing these can't be cross-checked for coverage or traceability.
 
 ### D6 — ID & structure hygiene
 - ID spaces (`FR-*`, `BR-*`, `UC-*`, `BO-*`, …) are **stable and unique**, with **no duplicates** within a category, and **every cross-reference resolves**.
@@ -75,9 +74,7 @@ Review across **seven dimensions**. For each finding, capture *where*, *what*, *
 | a deferred / post-MVP capability | all three must agree: the Vision post-MVP label, the Vision MVP-exclusion list, and the FR marked *(Deferred — future release)* (if one exists) |
 
 ### Output discipline (for every review)
-- One finding = **location(s)** + **category (D1–D7)** + **severity** (`blocker` / `major` / `minor`) + **the problem** (one line) + **why it matters** (the rationale — this is the teaching) + **a suggested fix _or_ a clarifying question** when it's a judgment call.
-- **Group by category, order by severity.** Separate "I'm confident this is wrong" from "this needs a human decision."
-- **Never fabricate** an ID, citation, or requirement. **Never author** replacement content silently — propose, with rationale, for the author to accept.
+Follow the shared findings output discipline in [`critique-assistant-build-notes.md`](critique-assistant-build-notes.md). Specific to the whole-project review: the **category** is one of **D1–D7**; **group findings by category**, then order by severity; and separate "I'm confident this is wrong" from "this needs a human decision".
 
 ---
 
@@ -103,29 +100,32 @@ The current core document types and their roles:
   its Non-Use Case Functional Requirements section holds the system-level "shall" statements.
 Because the documents describe the same model, they must agree.
 
-YOUR JOB — review across these dimensions:
-1. Completeness — required content present and actually filled (flag TBD/placeholder/
+YOUR JOB — review across these dimensions (D1-D7):
+D1. Completeness — required content present and actually filled (flag TBD/placeholder/
    boilerplate); every Vision feature/BO/RI/AS has a downstream use case and/or FR;
    quality attributes are specified and measurable; the data model is concrete.
-2. Coverage & traceability — every use case cites FRs that exist; every FR is realized
+D2. Coverage & traceability — every use case cites FRs that exist; every FR is realized
    or honored by some use case (flag orphans — but an FR marked "(Deferred — future
    release)" is a parked future requirement, not an orphan); a non-use-case (system-level)
    FR must complement the use cases, not merely restate a use case's flow; every glossary term
    is used consistently (flag undefined and orphan terms); every cited BR resolves;
    actors are consistent in name AND scope (e.g., the Course Admin is course-scoped and
    also an Instructor; flag an action assigned to different actors in different docs).
-3. Consistency — one term per concept (no synonyms; watch overloaded words like
+D3. Consistency — one term per concept (no synonyms; watch overloaded words like
    "Section"); MVP vs post-MVP stated the same way everywhere; repeated lists (export
    formats, assistant set, document types) match; ID schemes used consistently.
-4. Conflicts — two documents asserting opposing things (a rule vs a use-case step; an
+D4. Conflicts — two documents asserting opposing things (a rule vs a use-case step; an
    enum vs the glossary; the same ID meaning two things; in-scope here / out there).
-5. Writing quality — FRs use "shall", are atomic and testable; flag vague verbs
-   (manage, support, handle, process), subjective adjectives (fast, user-friendly,
-   intuitive, easy, appropriate), and ambiguity. Use cases have a trigger,
-   pre/postconditions, a numbered flow, and extensions.
-6. ID & structure hygiene — IDs stable and unique, no duplicates within a category;
+D5. Per-requirement quality (SECONDARY here) — per-requirement writing quality
+   (atomicity, testability, "shall"/voice, vague verbs, subjective adjectives, ambiguity)
+   is the per-destination critique's job, NOT this cross-document review; if you notice
+   such a defect, treat it as secondary and keep your attention on the cross-document
+   dimensions (D1-D4, D6-D7). One structural prerequisite that DOES gate this review:
+   every use case must have a trigger, pre/postconditions, a numbered flow, and
+   extensions — one missing these can't be cross-checked for coverage or traceability.
+D6. ID & structure hygiene — IDs stable and unique, no duplicates within a category;
    every cross-reference resolves.
-7. Scope discipline — distinguish a real gap from a deliberate MVP exclusion; if you
+D7. Scope discipline — distinguish a real gap from a deliberate MVP exclusion; if you
    can't tell, ASK rather than assert. A deferred capability should be labeled
    consistently in every home (Vision post-MVP note, MVP-exclusion list, and the FR
    marked "(Deferred — future release)"); flag a capability committed in one doc but
@@ -150,7 +150,7 @@ OUTPUT — return JSON only, matching this shape:
   "findings": [
     {
       "id": "F1",
-      "category": "completeness | coverage | consistency | conflict | writing | hygiene | scope",
+      "category": "D1 | D2 | D3 | D4 | D5 | D6 | D7",
       "severity": "blocker | major | minor",
       "locations": ["SRS / Quality Attributes", "Use Cases / UC-2"],
       "problem": "One sentence: what is wrong.",
@@ -169,11 +169,7 @@ Order findings by severity (blocker → minor), then group mentally by category.
 
 ## Part 3 — Implementation notes
 
-Consistent with [`ai-implementation-notes.md`](../guides/ai-implementation-notes.md) (Assistant = system prompt + context builder + one Claude call, server-side, behind the AI proxy):
+The shared build, enforcement, and output guidance (assistant anatomy, deterministic-first, structured output, prompt caching, read-only, and the spec-mandated guardrails) is in [`critique-assistant-build-notes.md`](critique-assistant-build-notes.md). Specific to the whole-project review:
 
 - **Context assembly is the hard part, not the prompt.** A whole-project review needs the *content* of the team's requirement documents. Don't blindly dump everything — assemble a structured payload: each document's sections/items, the artifact/link graph (for traceability checks), the glossary term list, the BR catalog, the FR list, and the **template definitions** (for required-section checks). For large projects, send a structured coverage map plus the slices most likely to conflict, and let the model request more.
-- **Deterministic checks first.** Resolve the mechanical couplings in code before calling the model — does every cited `FR-*`/`BR-*`/`UC-*` exist? every glossary term used? one traceability row per UC? Feed the model the *results* (e.g., "these FRs are orphaned, these terms undefined") so it spends its reasoning on judgment calls (conflicts, drift, scope) rather than rediscovering broken links. This is faster, cheaper, and more reliable.
-- **Structured output.** The JSON-findings shape above is unit-testable; use tool/JSON mode.
-- **Prompt caching.** The requirement documents (or their coverage map) and the Teaching Context are large and stable within a review session — cache them.
-- **Read-only.** Like UC-AI-5, requesting a whole-project review neither locks nor modifies anything. Acting on a finding goes through the normal authoring path (a manual edit, or an accepted rewrite via UC-AI-8) — never a direct write from the assistant.
-- **Authority in code.** Enablement (FR-AI-7), the never-author-without-accept gate (FR-AI-3/FR-AI-8), and target validation stay server-side; Project Source Material and student content are untrusted input (prompt-injection surface).
+- **Project Source Material is untrusted.** Beyond the shared guardrails, treat a team's imported Project Source Material as an additional prompt-injection surface when it enters the review context.

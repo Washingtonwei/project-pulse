@@ -6,26 +6,31 @@ sections:
     title: "Introduction"
     type: "RICH_TEXT"
     guidance: |
-      The introduction of the Software Requirements Specification (SRS) provides an overview of the entire document.
+      The Introduction orients the reader and makes the SRS self-contained. It is framing, not the requirements themselves: a reader should learn what the system is, what this document covers, the conventions it uses, and where related material lives — then know where the actual requirements begin. Keep it brief; the substance belongs to the sections that follow.
 
       It includes:
-      - The purpose of the system
-      - The purpose of this document
-      - Document conventions
-      - References
+      - The Purpose of the Project — a brief summary of the system and who it serves
+      - The Purpose of this Document — what this SRS specifies and how it is organized
+      - Document Conventions — identifier schemes and notations used here
+      - References — the related documents this SRS relies on
+
+      Unlike the body, the Introduction may briefly restate context from a companion document (notably the Vision and Scope) so a developer or tester can read the SRS on its own — but only as a summary that points to the source, never a copy of it.
 
   - sectionKey: "SYSTEM_PURPOSE"
     title: "The Purpose of the Project"
     type: "RICH_TEXT"
     guidance: |
-      Describe what the system is for: who wants it and why.
+      Summarize what the system is for: who uses it and why. Keep it to a short orientation — name the product, its major capability areas, and its primary users.
 
-      Address:
+      Address briefly:
       - Who will use the system
       - The business motivation behind it
       - Why this system is needed
 
-      Even if already described in the Vision and Scope document, reiterate it here for readers who may not have read that document.
+      This is the one place the SRS deliberately reiterates the Vision and Scope, so a reader who has not seen that document still understands the system. Reiterate concisely and point to the Vision and Scope for the full problem, opportunity, objectives, and scope — summarize it here, don't reproduce the business case.
+
+      **Example:**
+      "The Cafeteria Ordering System (COS) lets employees of Process Impact order meals online for delivery within the company campus, replacing the walk-up cafeteria line and phone-in orders. Its users are employees placing orders, cafeteria staff fulfilling them, and the meal-delivery drivers. The full business motivation — the problem, opportunity, objectives, and scope — is defined in the Vision and Scope document and is referenced here rather than repeated."
 
   - sectionKey: "DOCUMENT_PURPOSE"
     title: "The Purpose of this Document"
