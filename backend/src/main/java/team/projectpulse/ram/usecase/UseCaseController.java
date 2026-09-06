@@ -29,7 +29,7 @@ public class UseCaseController {
 
     @GetMapping("/teams/{teamId}/use-cases/{useCaseId}")
     public Result findUseCaseById(@PathVariable Integer teamId, @PathVariable Long useCaseId) {
-        UseCase useCase = this.useCaseService.findUseCaseByIdWithFullGraph(useCaseId);
+        UseCase useCase = this.useCaseService.findUseCaseByIdWithFullGraph(teamId, useCaseId);
         /**
          * At this point, the use case entity graph is fully loaded in the persistence context
          * The converter will NOT trigger any lazy loading, this is important for performance
@@ -49,7 +49,7 @@ public class UseCaseController {
     @PutMapping("/teams/{teamId}/use-cases/{useCaseId}")
     public Result updateUseCase(@PathVariable Integer teamId, @PathVariable Long useCaseId, @Valid @RequestBody UseCaseDto useCaseDto) {
         UseCase update = this.useCaseDtoToUseCaseConverter.convert(useCaseDto);
-        UseCase updateUseCase = this.useCaseService.updateUseCase(useCaseId, update, useCaseDto.version());
+        UseCase updateUseCase = this.useCaseService.updateUseCase(teamId, useCaseId, update, useCaseDto.version());
         UseCaseDto updatedUseCaseDto = this.useCaseToUseCaseDtoConverter.convert(updateUseCase);
         return new Result(true, StatusCode.SUCCESS, "Update use case successfully", updatedUseCaseDto);
     }

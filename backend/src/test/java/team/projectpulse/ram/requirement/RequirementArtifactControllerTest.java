@@ -211,4 +211,14 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.data.type").value("FUNCTIONAL_REQUIREMENT"));
     }
 
+    @Test
+    void findRequirementArtifactById_OtherTeamsArtifactThroughOwnTeamUrl() throws Exception {
+        // Woody is a student on team 2; requirement artifact 9 belongs to team 1.
+        // The URL names team 2, so the membership guard passes and only service-layer
+        // scoping can stop this. This isolates the service layer from the route rules.
+        this.mockMvc.perform(get(this.baseUrl + "/teams/2/requirement-artifacts/9").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentWoodyToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND));
+    }
+
 }

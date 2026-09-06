@@ -43,7 +43,7 @@ public class DocumentSectionService {
     }
 
     public DocumentSectionLock findSectionLock(Integer teamId, Long documentId, Long documentSectionId) {
-        DocumentSection documentSection = this.documentSectionRepository.findById(documentSectionId)
+        DocumentSection documentSection = this.documentSectionRepository.findByIdAndDocumentIdAndDocumentTeamTeamId(documentSectionId, documentId, teamId)
                 .orElseThrow(() -> new ObjectNotFoundException("document section", documentSectionId));
 
         Instant now = Instant.now();
@@ -108,7 +108,7 @@ public class DocumentSectionService {
     }
 
     public DocumentSection updateDocumentSectionContent(Integer teamId, Long documentId, Long documentSectionId, DocumentSection update, Integer expectedVersion) {
-        DocumentSection oldDocumentSection = this.documentSectionRepository.findById(documentSectionId)
+        DocumentSection oldDocumentSection = this.documentSectionRepository.findByIdAndDocumentIdAndDocumentTeamTeamId(documentSectionId, documentId, teamId)
                 .orElseThrow(() -> new ObjectNotFoundException("document section", documentSectionId));
         if (expectedVersion == null) {
             throw new IllegalArgumentException("Document section version is required for update.");

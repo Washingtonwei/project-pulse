@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import team.projectpulse.ram.requirement.RequirementArtifact;
 import team.projectpulse.ram.requirement.RequirementArtifactRepository;
+import team.projectpulse.ram.requirement.RequirementArtifactType;
 import team.projectpulse.system.exception.ObjectNotFoundException;
 import team.projectpulse.team.TeamRepository;
 
@@ -20,7 +21,7 @@ public class GlossaryService {
     }
 
     public RequirementArtifact findGlossaryTermById(Integer teamId, Long glossaryTermId) {
-        return this.requirementArtifactRepository.findById(glossaryTermId).orElseThrow(() ->
+        return this.requirementArtifactRepository.findByIdAndTeamTeamIdAndType(glossaryTermId, teamId, RequirementArtifactType.GLOSSARY_TERM).orElseThrow(() ->
                 new ObjectNotFoundException("glossary term", glossaryTermId));
     }
 
@@ -32,14 +33,14 @@ public class GlossaryService {
 
 
     public RequirementArtifact updateGlossaryTermDefinition(Integer teamId, Long glossaryTermId, RequirementArtifact update) {
-        return this.requirementArtifactRepository.findById(glossaryTermId).map(oldGlossaryTerm -> {
+        return this.requirementArtifactRepository.findByIdAndTeamTeamIdAndType(glossaryTermId, teamId, RequirementArtifactType.GLOSSARY_TERM).map(oldGlossaryTerm -> {
             oldGlossaryTerm.setContent(update.getContent());
             return this.requirementArtifactRepository.save(oldGlossaryTerm);
         }).orElseThrow(() -> new ObjectNotFoundException("glossary term", glossaryTermId));
     }
 
-    public RequirementArtifact renameGlossaryTerm(Long glossaryTermId, RequirementArtifact update) {
-        return this.requirementArtifactRepository.findById(glossaryTermId).map(oldGlossaryTerm -> {
+    public RequirementArtifact renameGlossaryTerm(Integer teamId, Long glossaryTermId, RequirementArtifact update) {
+        return this.requirementArtifactRepository.findByIdAndTeamTeamIdAndType(glossaryTermId, teamId, RequirementArtifactType.GLOSSARY_TERM).map(oldGlossaryTerm -> {
             oldGlossaryTerm.setTitle(update.getTitle());
             return this.requirementArtifactRepository.save(oldGlossaryTerm);
         }).orElseThrow(() -> new ObjectNotFoundException("glossary term", glossaryTermId));

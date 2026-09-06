@@ -215,6 +215,8 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, this.baseUrl + "/evaluations/students/{studentId}/week/{week}").access(this.userOwnershipAuthorizationManager)
                         .requestMatchers(HttpMethod.GET, this.baseUrl + "/evaluations/students/{studentId}/week/{week}/details").access(this.studentInstructorAuthorizationManager)
                         .requestMatchers(HttpMethod.GET, this.baseUrl + "/evaluations/students/{studentId}").access(this.userOwnershipAuthorizationManager)
+                        // Self-service: emails a receipt to the caller's own address, so authentication is the whole check.
+                        .requestMatchers(HttpMethod.POST, this.baseUrl + "/evaluations/weeks/{week}/receipt").authenticated()
 
                         // Security rules for the /users/** endpoint.
                         .requestMatchers(HttpMethod.POST, this.baseUrl + "/users/forget-password/**").permitAll()
@@ -223,6 +225,9 @@ public class SecurityConfiguration {
 
                         // The following endpoint is used by the front-end application to check if a user exists during user registration.
                         .requestMatchers(HttpMethod.GET, this.baseUrl + "/users/exists/{email}").permitAll()
+
+                        // Authenticating here IS the login: HTTP Basic credentials are exchanged for a JWT.
+                        .requestMatchers(HttpMethod.POST, this.baseUrl + "/users/login").authenticated()
 
                         // Security rules for the RAM /teams/{teamId}/documents/** endpoint.
                         .requestMatchers(HttpMethod.POST, this.baseUrl + "/teams/{teamId}/documents/search").access(this.teamMembershipAuthorizationManager)

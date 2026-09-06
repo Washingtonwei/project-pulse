@@ -1164,6 +1164,24 @@ public class DataInitializer implements CommandLineRunner {
         artifactThread2.addComment(artifactThread2c2);
 
         this.commentThreadRepository.save(artifactThread2);
+
+        // ---- Team 2 requirement artifacts ----
+        // Team 2 owns a little requirement content of its own. Without it every cross-team
+        // test could only run in one direction, and a caller pointing at another team's
+        // artifact could not be expressed at all. Seeded last so no existing id shifts.
+        RequirementArtifact team2Stakeholder = new RequirementArtifact(team2, RequirementArtifactType.STAKEHOLDER, "Client", "The external client sponsoring team 2's project.", "");
+        RequirementArtifact team2Fr = new RequirementArtifact(team2, RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "Data export", "The system shall let the client export project data as a CSV file.", "");
+        this.requirementArtifactService.saveRequirementArtifact(2, team2Stakeholder);
+        this.requirementArtifactService.saveRequirementArtifact(2, team2Fr);
+
+        // ---- Glossary terms, one per team ----
+        // The glossary endpoints had no seeded content at all, so a cross-team glossary test
+        // could not name a real term owned by another team. One term per team makes both
+        // directions expressible. Seeded last, like the block above, so no existing id shifts.
+        RequirementArtifact team1GlossaryTerm = new RequirementArtifact(team1, RequirementArtifactType.GLOSSARY_TERM, "Artifact", "A uniquely identified requirement item that can be traced, such as a use case, a functional requirement, or a glossary term.", "");
+        RequirementArtifact team2GlossaryTerm = new RequirementArtifact(team2, RequirementArtifactType.GLOSSARY_TERM, "Deliverable", "A tangible output the team hands to the client at the end of a phase.", "");
+        this.requirementArtifactService.saveRequirementArtifact(1, team1GlossaryTerm);
+        this.requirementArtifactService.saveRequirementArtifact(2, team2GlossaryTerm);
     }
 
     private void applyTemplate(RequirementDocument doc, DocumentTemplate tpl) {

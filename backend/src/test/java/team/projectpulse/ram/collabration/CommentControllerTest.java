@@ -300,4 +300,23 @@ public class CommentControllerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.data").doesNotExist());
     }
 
+    @Test
+    void createCommentThreadForDocument_OtherTeamsDocumentThroughOwnTeamUrl() throws Exception {
+        // Woody is a student on team 2; document 1 belongs to team 1. Before scoping, the
+        // thread was stamped with the team taken from the document, injecting it into team 1.
+        String json = """
+                {
+                  "content": "Injected from another team."
+                }
+                """;
+
+        this.mockMvc.perform(post(this.baseUrl + "/teams/2/documents/1/comment-threads")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.studentWoodyToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND));
+    }
+
 }

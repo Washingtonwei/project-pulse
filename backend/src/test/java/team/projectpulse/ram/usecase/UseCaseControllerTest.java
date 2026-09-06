@@ -1171,6 +1171,96 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.message").value("No permission."));
     }
 
+    @Test
+    void findUseCaseById_OtherTeamsUseCaseThroughOwnTeamUrl() throws Exception {
+        // Woody is a student on team 2; use case 3 belongs to team 1. The URL names team 2,
+        // so the membership guard passes and only service-layer scoping stops this.
+        this.mockMvc.perform(get(this.baseUrl + "/teams/2/use-cases/3")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.studentWoodyToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND));
+    }
+
+    @Test
+    void addUseCase_PrimaryActorFromAnotherTeam() throws Exception {
+        // The actor id arrives in the request BODY, so neither the route rule nor the
+        // team-scoped lookup on the use case itself stops this. Only re-resolving the actor
+        // against the caller's team does. Pairs with addUseCase_PrimaryActorFromOwnTeam
+        // below, which sends the same payload with a team 1 actor and must succeed.
+        long foreignActorId = fetchTeam2StakeholderId();
+
+        String json = """
+                {
+                      "title": "Cross-team actor probe",
+                      "description": "A use case naming another team's stakeholder as its primary actor.",
+                      "teamId": 1,
+                      "primaryActorId": %d,
+                      "secondaryActorIds": [],
+                      "trigger": "The student references another team's artifact.",
+                      "preconditions": [],
+                      "postconditions": [],
+                      "mainSteps": []
+                }
+                """.formatted(foreignActorId);
+
+        this.mockMvc.perform(post(this.baseUrl + "/teams/1/use-cases")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND));
+    }
+
+    @Test
+    void addUseCase_PrimaryActorFromOwnTeam() throws Exception {
+        // Positive control for addUseCase_PrimaryActorFromAnotherTeam: identical payload,
+        // an actor that does belong to team 1. Proves the 404 above comes from the team
+        // check and not from the minimal payload.
+        String json = """
+                {
+                      "title": "Own-team actor control",
+                      "description": "The same minimal use case, naming a team 1 stakeholder.",
+                      "teamId": 1,
+                      "primaryActorId": 1,
+                      "secondaryActorIds": [],
+                      "trigger": "The student references an artifact on their own team.",
+                      "preconditions": [],
+                      "postconditions": [],
+                      "mainSteps": []
+                }
+                """;
+
+        this.mockMvc.perform(post(this.baseUrl + "/teams/1/use-cases")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS));
+    }
+
+    /**
+     * Looks up a team 2 artifact id through team 2's own search endpoint, as a team 2 student,
+     * rather than hard-coding a seeded id that future seed changes would silently invalidate.
+     */
+    private long fetchTeam2StakeholderId() throws Exception {
+        String searchJson = """
+                {
+                    "type": "STAKEHOLDER"
+                }
+                """;
+        MvcResult result = this.mockMvc.perform(post(this.baseUrl + "/teams/2/requirement-artifacts/search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(searchJson)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.studentWoodyToken))
+                .andReturn();
+        JSONObject json = new JSONObject(result.getResponse().getContentAsString());
+        return json.getJSONObject("data").getJSONArray("content").getJSONObject(0).getLong("id");
+    }
+
     private void lockUseCase(int teamId, int useCaseId, String token) throws Exception {
         String json = """
                 {

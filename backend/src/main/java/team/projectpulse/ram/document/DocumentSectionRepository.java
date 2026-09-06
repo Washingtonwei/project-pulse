@@ -8,6 +8,9 @@ import java.util.Optional;
 
 public interface DocumentSectionRepository extends JpaRepository<DocumentSection, Long> {
 
+    // Team-scoped lookup that also enforces the section belongs to the document in the URL.
+    Optional<DocumentSection> findByIdAndDocumentIdAndDocumentTeamTeamId(Long id, Long documentId, Integer teamId);
+
     /**
      * Full graph fetch for DocumentSection detail endpoint.
      * Validates team + document ownership and loads all DTO-required relations.
@@ -21,7 +24,7 @@ public interface DocumentSectionRepository extends JpaRepository<DocumentSection
               left join fetch ds.lock l
               left join fetch ds.createdBy cb
               left join fetch ds.updatedBy ub
-            where ds.id = :documentSectionId
+              where ds.id = :documentSectionId
               and d.id  = :documentId
               and t.teamId  = :teamId
             """)
