@@ -470,4 +470,28 @@ class SectionIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.message").value("No permission."));
     }
 
+    @Test
+    void adminBingyangGetInstructors() throws Exception {
+        this.mockMvc.perform(get(this.baseUrl + "/sections/2/instructors").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.message").value("Get instructors successfully"))
+                .andExpect(jsonPath("$.data").isArray());
+    }
+
+    @Test
+    void instructorBillGetInstructors() throws Exception {
+        this.mockMvc.perform(get(this.baseUrl + "/sections/2/instructors").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.instructorBillToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
+                .andExpect(jsonPath("$.message").value("No permission."));
+    }
+
+    @Test
+    void studentJohnGetInstructors() throws Exception {
+        this.mockMvc.perform(get(this.baseUrl + "/sections/2/instructors").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
+                .andExpect(jsonPath("$.message").value("No permission."));
+    }
 }

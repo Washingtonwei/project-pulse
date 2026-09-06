@@ -83,6 +83,14 @@ public class DocumentSectionControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void findDocumentSectionById_NotSameTeam() throws Exception {
+        this.mockMvc.perform(get(this.baseUrl + "/teams/1/documents/1/document-sections/1").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentWoodyToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
+                .andExpect(jsonPath("$.message").value("No permission."));
+    }
+
+    @Test
 
     void updateDocumentSectionContent1() throws Exception {
         String json = """

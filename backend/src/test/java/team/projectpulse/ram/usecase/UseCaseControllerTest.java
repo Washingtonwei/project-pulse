@@ -1133,6 +1133,44 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.message").value("Unlock use case successfully"));
     }
 
+    @Test
+    void getUseCaseLockStatus_NotSameTeam() throws Exception {
+        this.mockMvc.perform(get(this.baseUrl + "/teams/1/use-cases/3/lock")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.studentWoodyToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
+                .andExpect(jsonPath("$.message").value("No permission."));
+    }
+
+    @Test
+    void lockUseCase_NotSameTeam() throws Exception {
+        String json = """
+                {
+                    "reason": "Locking use case for editing"
+                }
+                """;
+
+        this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3/lock")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.studentWoodyToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
+                .andExpect(jsonPath("$.message").value("No permission."));
+    }
+
+    @Test
+    void unlockUseCase_NotSameTeam() throws Exception {
+        this.mockMvc.perform(delete(this.baseUrl + "/teams/1/use-cases/3/lock")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.studentWoodyToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
+                .andExpect(jsonPath("$.message").value("No permission."));
+    }
+
     private void lockUseCase(int teamId, int useCaseId, String token) throws Exception {
         String json = """
                 {

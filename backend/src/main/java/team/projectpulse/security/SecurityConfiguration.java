@@ -167,6 +167,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.PUT, this.baseUrl + "/sections/{sectionId}/rubrics/{rubricId}").access(this.assignRubricToSectionAuthorizationManager)
                         .requestMatchers(HttpMethod.PUT, this.baseUrl + "/sections/{sectionId}/instructors/{instructorId}").access(this.assignInstructorToSectionAuthorizationManager)
                         .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/sections/{sectionId}/instructors/{instructorId}").access(this.assignInstructorToSectionAuthorizationManager)
+                        .requestMatchers(HttpMethod.GET, this.baseUrl + "/sections/{sectionId}/instructors").access(this.sectionOwnershipAuthorizationManager)
                         .requestMatchers(HttpMethod.POST, this.baseUrl + "/sections/{sectionId}/students/email-invitations").access(this.sectionOwnershipAuthorizationManager)
                         .requestMatchers(HttpMethod.POST, this.baseUrl + "/sections/{sectionId}/instructors/invite-or-add").access(this.sectionOwnershipAuthorizationManager)
 
@@ -231,6 +232,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/teams/{teamId}/documents/{documentId}").access(this.teamOwnershipAuthorizationManager)
 
                         // Security rules for the RAM /teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}/** endpoint.
+                        .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}").access(this.teamMembershipAuthorizationManager)
                         .requestMatchers(HttpMethod.PUT, this.baseUrl + "/teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}").access(this.teamMembershipAuthorizationManager)
                         .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}/lock").access(this.teamMembershipAuthorizationManager)
                         .requestMatchers(HttpMethod.PUT, this.baseUrl + "/teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}/lock").access(this.teamMembershipAuthorizationManager)
@@ -257,6 +259,9 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/use-cases/{useCaseId}").access(this.teamMembershipAuthorizationManager)
                         .requestMatchers(HttpMethod.PUT, this.baseUrl + "/teams/{teamId}/use-cases/{useCaseId}").access(this.teamMembershipAuthorizationManager)
                         .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/teams/{teamId}/use-cases/{useCaseId}").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/use-cases/{useCaseId}/lock").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.PUT, this.baseUrl + "/teams/{teamId}/use-cases/{useCaseId}/lock").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/teams/{teamId}/use-cases/{useCaseId}/lock").access(this.teamMembershipAuthorizationManager)
 
                         // Security rules for the RAM comment endpoint.
                         .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/documents/{documentId}/comment-threads").access(this.teamMembershipAuthorizationManager)
