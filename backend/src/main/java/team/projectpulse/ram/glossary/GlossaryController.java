@@ -49,7 +49,7 @@ public class GlossaryController {
     @PatchMapping("/teams/{teamId}/glossary-terms/{glossaryTermId}/rename")
     public Result renameGlossaryTerm(@PathVariable Integer teamId, @PathVariable Long glossaryTermId, @RequestBody RequirementArtifactDto glossaryTermDto) {
         RequirementArtifact update = this.requirementArtifactDtoToRequirementArtifactConverter.convert(glossaryTermDto);
-        RequirementArtifact updatedGlossaryTerm = this.glossaryService.renameGlossaryTerm(glossaryTermId, update);
+        RequirementArtifact updatedGlossaryTerm = this.glossaryService.renameGlossaryTerm(teamId, glossaryTermId, update);
         RequirementArtifactDto updatedGlossaryTermDto = this.requirementArtifactToRequirementArtifactDtoConverter.convert(updatedGlossaryTerm);
         return new Result(true, StatusCode.SUCCESS, "Rename glossary term successfully", updatedGlossaryTermDto);
     }

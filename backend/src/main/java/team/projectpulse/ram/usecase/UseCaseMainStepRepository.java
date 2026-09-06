@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface UseCaseMainStepRepository extends JpaRepository<UseCaseMainStep, Long> {
+    
     @Query("""
                 select distinct ms
                 from UseCaseMainStep ms
@@ -15,4 +16,5 @@ public interface UseCaseMainStepRepository extends JpaRepository<UseCaseMainStep
                 where ms.useCase.id = :useCaseId
             """)
     List<UseCaseMainStep> fetchMainStepsGraph(@Param("useCaseId") Long useCaseId);
+
 }

@@ -167,6 +167,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.PUT, this.baseUrl + "/sections/{sectionId}/rubrics/{rubricId}").access(this.assignRubricToSectionAuthorizationManager)
                         .requestMatchers(HttpMethod.PUT, this.baseUrl + "/sections/{sectionId}/instructors/{instructorId}").access(this.assignInstructorToSectionAuthorizationManager)
                         .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/sections/{sectionId}/instructors/{instructorId}").access(this.assignInstructorToSectionAuthorizationManager)
+                        .requestMatchers(HttpMethod.GET, this.baseUrl + "/sections/{sectionId}/instructors").access(this.sectionOwnershipAuthorizationManager)
                         .requestMatchers(HttpMethod.POST, this.baseUrl + "/sections/{sectionId}/students/email-invitations").access(this.sectionOwnershipAuthorizationManager)
                         .requestMatchers(HttpMethod.POST, this.baseUrl + "/sections/{sectionId}/instructors/invite-or-add").access(this.sectionOwnershipAuthorizationManager)
 
@@ -214,6 +215,8 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, this.baseUrl + "/evaluations/students/{studentId}/week/{week}").access(this.userOwnershipAuthorizationManager)
                         .requestMatchers(HttpMethod.GET, this.baseUrl + "/evaluations/students/{studentId}/week/{week}/details").access(this.studentInstructorAuthorizationManager)
                         .requestMatchers(HttpMethod.GET, this.baseUrl + "/evaluations/students/{studentId}").access(this.userOwnershipAuthorizationManager)
+                        // Self-service: emails a receipt to the caller's own address, so authentication is the whole check.
+                        .requestMatchers(HttpMethod.POST, this.baseUrl + "/evaluations/weeks/{week}/receipt").authenticated()
 
                         // Security rules for the /users/** endpoint.
                         .requestMatchers(HttpMethod.POST, this.baseUrl + "/users/forget-password/**").permitAll()
@@ -223,6 +226,9 @@ public class SecurityConfiguration {
                         // The following endpoint is used by the front-end application to check if a user exists during user registration.
                         .requestMatchers(HttpMethod.GET, this.baseUrl + "/users/exists/{email}").permitAll()
 
+                        // Authenticating here IS the login: HTTP Basic credentials are exchanged for a JWT.
+                        .requestMatchers(HttpMethod.POST, this.baseUrl + "/users/login").authenticated()
+
                         // Security rules for the RAM /teams/{teamId}/documents/** endpoint.
                         .requestMatchers(HttpMethod.POST, this.baseUrl + "/teams/{teamId}/documents/search").access(this.teamMembershipAuthorizationManager)
                         .requestMatchers(HttpMethod.POST, this.baseUrl + "/teams/{teamId}/documents").access(this.teamOwnershipAuthorizationManager)
@@ -231,6 +237,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/teams/{teamId}/documents/{documentId}").access(this.teamOwnershipAuthorizationManager)
 
                         // Security rules for the RAM /teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}/** endpoint.
+                        .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}").access(this.teamMembershipAuthorizationManager)
                         .requestMatchers(HttpMethod.PUT, this.baseUrl + "/teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}").access(this.teamMembershipAuthorizationManager)
                         .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}/lock").access(this.teamMembershipAuthorizationManager)
                         .requestMatchers(HttpMethod.PUT, this.baseUrl + "/teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}/lock").access(this.teamMembershipAuthorizationManager)
@@ -257,6 +264,9 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/use-cases/{useCaseId}").access(this.teamMembershipAuthorizationManager)
                         .requestMatchers(HttpMethod.PUT, this.baseUrl + "/teams/{teamId}/use-cases/{useCaseId}").access(this.teamMembershipAuthorizationManager)
                         .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/teams/{teamId}/use-cases/{useCaseId}").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/use-cases/{useCaseId}/lock").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.PUT, this.baseUrl + "/teams/{teamId}/use-cases/{useCaseId}/lock").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/teams/{teamId}/use-cases/{useCaseId}/lock").access(this.teamMembershipAuthorizationManager)
 
                         // Security rules for the RAM comment endpoint.
                         .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/documents/{documentId}/comment-threads").access(this.teamMembershipAuthorizationManager)

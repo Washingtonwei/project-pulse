@@ -38,25 +38,24 @@ public class CommentService {
     public List<CommentThread> listThreadsForDocument(Integer teamId, Long documentId) {
 //        authz.assertCanViewThreads(teamId);
 
-        // optionally validate document belongs to team
-        documentRepository.findById(documentId).orElseThrow(() -> new ObjectNotFoundException("document", documentId));
+        // The document must belong to this team; an out-of-scope id is simply not found.
+        documentRepository.findByIdAndTeamTeamId(documentId, teamId).orElseThrow(() -> new ObjectNotFoundException("document", documentId));
         return commentThreadRepository.findCommentThreadsForDocumentWithComments(teamId, documentId);
     }
 
     public List<CommentThread> listThreadsForDocumentSection(Integer teamId, Long documentId, Long documentSectionId) {
 //        authz.assertCanViewThreads(teamId);
 
-        DocumentSection section = documentSectionRepository.findById(documentSectionId).orElseThrow(() -> new ObjectNotFoundException("document section", documentSectionId));
+        // The section must belong to this document and this team.
+        documentSectionRepository.findByIdAndDocumentIdAndDocumentTeamTeamId(documentSectionId, documentId, teamId).orElseThrow(() -> new ObjectNotFoundException("document section", documentSectionId));
 
-        // Optional: enforce section belongs to documentId
-        // if (!section.getDocument().getId().equals(documentId)) throw new NotFoundException(...)
         return commentThreadRepository.findCommentThreadsForDocumentSectionWithComments(teamId, documentSectionId);
     }
 
     public List<CommentThread> listThreadsForArtifact(Integer teamId, Long artifactId) {
 //        authz.assertCanViewThreads(teamId);
 
-        requirementArtifactRepository.findById(artifactId).orElseThrow(() -> new ObjectNotFoundException("artifact", artifactId));
+        requirementArtifactRepository.findByIdAndTeamTeamId(artifactId, teamId).orElseThrow(() -> new ObjectNotFoundException("artifact", artifactId));
         return commentThreadRepository.findCommentThreadsForRequirementArtifactWithComments(teamId, artifactId);
     }
 
@@ -64,7 +63,7 @@ public class CommentService {
     public CommentThread createThreadForDocument(Integer teamId, Long documentId, CommentDto firstCommentDto) {
 //        authz.assertCanComment(teamId);
 
-        RequirementDocument doc = documentRepository.findById(documentId).orElseThrow(() -> new ObjectNotFoundException("document", documentId));
+        RequirementDocument doc = documentRepository.findByIdAndTeamTeamId(documentId, teamId).orElseThrow(() -> new ObjectNotFoundException("document", documentId));
 
 //        var user = currentUserService.getCurrentUserOrThrow();
 
@@ -83,10 +82,7 @@ public class CommentService {
     public CommentThread createThreadForSection(Integer teamId, Long documentId, Long sectionId, CommentDto firstCommentDto) {
 //        authz.assertCanComment(teamId);
 
-        DocumentSection section = documentSectionRepository.findById(sectionId).orElseThrow(() -> new ObjectNotFoundException("section", sectionId));
-
-        // Optional: ensure section belongs to documentId
-        // if (!section.getDocument().getId().equals(documentId)) throw new NotFoundException(...)
+        DocumentSection section = documentSectionRepository.findByIdAndDocumentIdAndDocumentTeamTeamId(sectionId, documentId, teamId).orElseThrow(() -> new ObjectNotFoundException("section", sectionId));
 
 //        var user = currentUserService.getCurrentUserOrThrow();
 
@@ -106,7 +102,7 @@ public class CommentService {
     public CommentThread createThreadForArtifact(Integer teamId, Long artifactId, CommentDto firstCommentDto) {
 //        authz.assertCanComment(teamId);
 
-        RequirementArtifact artifact = requirementArtifactRepository.findById(artifactId).orElseThrow(() -> new ObjectNotFoundException("artifact", artifactId));
+        RequirementArtifact artifact = requirementArtifactRepository.findByIdAndTeamTeamId(artifactId, teamId).orElseThrow(() -> new ObjectNotFoundException("artifact", artifactId));
 
 //        var user = currentUserService.getCurrentUserOrThrow();
 

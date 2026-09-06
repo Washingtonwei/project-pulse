@@ -55,7 +55,7 @@ public class RequirementArtifactService {
     }
 
     public RequirementArtifact findRequirementArtifactById(Integer teamId, Long requirementArtifactId) {
-        return this.requirementArtifactRepository.findById(requirementArtifactId).orElseThrow(() ->
+        return this.requirementArtifactRepository.findByIdAndTeamTeamId(requirementArtifactId, teamId).orElseThrow(() ->
                 new ObjectNotFoundException("requirement artifact", requirementArtifactId));
     }
 
@@ -76,7 +76,7 @@ public class RequirementArtifactService {
     }
 
     public RequirementArtifact updateRequirementArtifact(Integer teamId, Long requirementArtifactId, RequirementArtifact update) {
-        return this.requirementArtifactRepository.findById(requirementArtifactId).map(oldRequirementArtifact -> {
+        return this.requirementArtifactRepository.findByIdAndTeamTeamId(requirementArtifactId, teamId).map(oldRequirementArtifact -> {
             oldRequirementArtifact.setTitle(update.getTitle());
             oldRequirementArtifact.setContent(update.getContent());
             oldRequirementArtifact.setPriority(update.getPriority());

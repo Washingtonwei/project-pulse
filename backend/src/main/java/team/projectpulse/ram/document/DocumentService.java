@@ -63,7 +63,7 @@ public class DocumentService {
      */
     public RequirementDocument findDocumentByIdWithFullGraph(Integer teamId, Long documentId) {
         // Query 1: Load RequirementDocument with scalar relationships
-        RequirementDocument document = this.documentRepository.findByIdWithScalars(documentId)
+        RequirementDocument document = this.documentRepository.findByIdWithScalars(documentId, teamId)
                 .orElseThrow(() -> new ObjectNotFoundException("document", documentId));
 
         // Query 2: Load the sections hierarchy
@@ -75,7 +75,7 @@ public class DocumentService {
     }
 
     public RequirementDocument findDocumentByIdBasic(Integer teamId, Long documentId) {
-        return this.documentRepository.findByIdWithScalars(documentId)
+        return this.documentRepository.findByIdWithScalars(documentId, teamId)
                 .orElseThrow(() -> new ObjectNotFoundException("document", documentId));
     }
 
@@ -127,7 +127,7 @@ public class DocumentService {
 
     // Only status can be updated for now
     public RequirementDocument updateRequirementDocument(Integer teamId, Long documentId, RequirementDocument update) {
-        return this.documentRepository.findById(documentId)
+        return this.documentRepository.findByIdAndTeamTeamId(documentId, teamId)
                 .map(oldDocument -> {
                     oldDocument.setStatus(update.getStatus());
                     return this.documentRepository.save(oldDocument);

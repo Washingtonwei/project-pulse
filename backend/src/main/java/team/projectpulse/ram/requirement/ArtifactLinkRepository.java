@@ -5,8 +5,11 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ArtifactLinkRepository extends JpaRepository<ArtifactLink, Long>, JpaSpecificationExecutor<ArtifactLink> {
+
+    Optional<ArtifactLink> findByIdAndTeamTeamId(Long id, Integer teamId);
 
     /**
      * Outgoing links (source = current artifact).

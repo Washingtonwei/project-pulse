@@ -182,4 +182,13 @@ public class ArtifactLinkControllerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.message").value("No permission."));
     }
 
+    @Test
+    void getArtifactLinkById_OtherTeamsLinkThroughOwnTeamUrl() throws Exception {
+        // Woody is a student on team 2; artifact link 1 belongs to team 1. The URL names
+        // team 2, so the membership guard passes and only service-layer scoping stops this.
+        this.mockMvc.perform(get(this.baseUrl + "/teams/2/artifact-links/1").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentWoodyToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND));
+    }
+
 }

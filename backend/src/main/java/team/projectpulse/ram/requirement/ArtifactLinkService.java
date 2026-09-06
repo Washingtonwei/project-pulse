@@ -42,16 +42,16 @@ public class ArtifactLinkService {
     }
 
     public ArtifactLink getArtifactLinkById(Integer teamId, Long artifactLinkId) {
-        return this.artifactLinkRepository.findById(artifactLinkId)
+        return this.artifactLinkRepository.findByIdAndTeamTeamId(artifactLinkId, teamId)
                 .orElseThrow(() -> new ObjectNotFoundException("artifact link", artifactLinkId));
     }
 
     public ArtifactLink createArtifactLink(Integer teamId, CreateArtifactLinkRequest createArtifactLinkRequest) {
         Team team = this.teamRepository.findById(teamId)
                 .orElseThrow(() -> new ObjectNotFoundException("team", teamId));
-        RequirementArtifact sourceArtifact = this.requirementArtifactRepository.findById(createArtifactLinkRequest.sourceArtifactId())
+        RequirementArtifact sourceArtifact = this.requirementArtifactRepository.findByIdAndTeamTeamId(createArtifactLinkRequest.sourceArtifactId(), teamId)
                 .orElseThrow(() -> new ObjectNotFoundException("requirement artifact", createArtifactLinkRequest.sourceArtifactId()));
-        RequirementArtifact targetArtifact = this.requirementArtifactRepository.findById(createArtifactLinkRequest.targetArtifactId())
+        RequirementArtifact targetArtifact = this.requirementArtifactRepository.findByIdAndTeamTeamId(createArtifactLinkRequest.targetArtifactId(), teamId)
                 .orElseThrow(() -> new ObjectNotFoundException("requirement artifact", createArtifactLinkRequest.targetArtifactId()));
 
         ArtifactLink artifactLink = new ArtifactLink();
@@ -67,7 +67,7 @@ public class ArtifactLinkService {
     }
 
     public ArtifactLink updateArtifactLink(Integer teamId, Long artifactLinkId, UpdateArtifactLinkRequest updateArtifactLinkRequest) {
-        return this.artifactLinkRepository.findById(artifactLinkId).map(oldArtifactLink -> {
+        return this.artifactLinkRepository.findByIdAndTeamTeamId(artifactLinkId, teamId).map(oldArtifactLink -> {
             oldArtifactLink.setType(updateArtifactLinkRequest.type());
             oldArtifactLink.setNotes(updateArtifactLinkRequest.notes());
             return this.artifactLinkRepository.save(oldArtifactLink);
@@ -75,7 +75,7 @@ public class ArtifactLinkService {
     }
 
     public void deleteArtifactLink(Integer teamId, Long artifactLinkId) {
-        ArtifactLink artifactLink = this.artifactLinkRepository.findById(artifactLinkId)
+        ArtifactLink artifactLink = this.artifactLinkRepository.findByIdAndTeamTeamId(artifactLinkId, teamId)
                 .orElseThrow(() -> new ObjectNotFoundException("artifact link", artifactLinkId));
 
         // Remove bi-directional relationships

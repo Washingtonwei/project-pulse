@@ -83,6 +83,14 @@ public class DocumentSectionControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void findDocumentSectionById_NotSameTeam() throws Exception {
+        this.mockMvc.perform(get(this.baseUrl + "/teams/1/documents/1/document-sections/1").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentWoodyToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
+                .andExpect(jsonPath("$.message").value("No permission."));
+    }
+
+    @Test
 
     void updateDocumentSectionContent1() throws Exception {
         String json = """
@@ -406,6 +414,26 @@ public class DocumentSectionControllerTest extends AbstractIntegrationTest {
         String content = result.getResponse().getContentAsString();
         JSONObject json = new JSONObject(content);
         return json.getJSONObject("data").getInt("version");
+    }
+
+
+    @Test
+    void findDocumentSectionById_OtherTeamsSectionThroughOwnTeamUrl() throws Exception {
+        // Woody is a student on team 2; document 1 and section 1 belong to team 1. The URL
+        // names team 2, so the membership guard passes and only the scoped query stops this.
+        this.mockMvc.perform(get(this.baseUrl + "/teams/2/documents/1/document-sections/1").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentWoodyToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND));
+    }
+
+
+    @Test
+    void getDocumentSectionLockStatus_OtherTeamsSectionThroughOwnTeamUrl() throws Exception {
+        // Woody is a student on team 2; document 1 and section 1 belong to team 1. The lock
+        // lookup used to load the section by primary key, leaking another team's lock state.
+        this.mockMvc.perform(get(this.baseUrl + "/teams/2/documents/1/document-sections/1/lock").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentWoodyToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND));
     }
 
 }
