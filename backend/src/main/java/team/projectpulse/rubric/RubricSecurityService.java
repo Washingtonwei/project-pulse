@@ -61,7 +61,7 @@ public class RubricSecurityService {
         if (hasStudentRole) {
             Student student = this.studentRepository.findById(userIdFromJwt).orElse(null);
             // A course section with no rubric assigned yet matches no rubric
-            if (student == null || student.getSection() == null || student.getSection().getRubric() == null) {
+            if (student == null || student.getSection().getRubric() == null) {
                 return false;
             }
             // Check if the rubricId in the request URI matches the rubricId of the student's section

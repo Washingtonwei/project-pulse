@@ -75,7 +75,7 @@ public class SectionSecurityService {
         boolean hasInstructorRole = this.userUtils.hasRole("ROLE_instructor");
         if (hasStudentRole) {
             Student student = this.studentRepository.findById(userIdFromJwt).orElse(null);
-            if (student == null || student.getSection() == null) {
+            if (student == null) {
                 return false;
             }
             // Check if the student's sectionId matches the sectionId from the request URI

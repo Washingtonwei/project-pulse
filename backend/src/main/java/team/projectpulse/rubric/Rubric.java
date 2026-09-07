@@ -20,7 +20,7 @@ public class Rubric {
             joinColumns = @JoinColumn(name = "rubric_id"),
             inverseJoinColumns = @JoinColumn(name = "criterion_id"))
     private Set<Criterion> criteria = new HashSet<>();
-    @ManyToOne
+    @ManyToOne(optional = false)
     private Course course; // the course that this rubric belongs to
 
 

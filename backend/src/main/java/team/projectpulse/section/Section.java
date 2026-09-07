@@ -37,7 +37,7 @@ public class Section {
             joinColumns = @JoinColumn(name = "section_id"),
             inverseJoinColumns = @JoinColumn(name = "instructor_id"))
     private Set<Instructor> instructors = new HashSet<>();
-    @ManyToOne
+    @ManyToOne(optional = false)
     private Course course;
 
     private boolean isActive = true; // Indicates if the section is currently active

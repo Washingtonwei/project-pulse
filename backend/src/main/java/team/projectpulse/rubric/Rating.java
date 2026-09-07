@@ -9,10 +9,10 @@ public class Rating {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer ratingId;
-    @ManyToOne
+    @ManyToOne(optional = false)
     private Criterion criterion;
     private Double actualScore;
-    @ManyToOne
+    @ManyToOne(optional = false)
     private PeerEvaluation peerEvaluation;
 
 

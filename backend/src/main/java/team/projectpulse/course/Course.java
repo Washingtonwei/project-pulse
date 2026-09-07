@@ -20,7 +20,7 @@ public class Course {
     private String courseDescription;
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
     private List<Section> sections = new ArrayList<>();
-    @ManyToOne
+    @ManyToOne(optional = false)
     private Instructor courseAdmin; // the instructor who is the admin of this course
     @ManyToMany
     @JoinTable(name = "course_instructor",

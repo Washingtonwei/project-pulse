@@ -17,7 +17,7 @@ public class Team {
     private String teamName;
     private String description;
     private String teamWebsiteUrl;
-    @ManyToOne
+    @ManyToOne(optional = false)
     private Section section;
     @OneToMany(mappedBy = "team")
     private List<Student> students = new ArrayList<>();

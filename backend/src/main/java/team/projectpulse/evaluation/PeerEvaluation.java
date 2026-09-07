@@ -19,9 +19,9 @@ public class PeerEvaluation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer peerEvaluationId;
     private String week;
-    @ManyToOne
+    @ManyToOne(optional = false)
     private Student evaluator;
-    @ManyToOne
+    @ManyToOne(optional = false)
     private Student evaluatee;
     @OneToMany(mappedBy = "peerEvaluation", cascade = CascadeType.ALL)
     // automatically persist ratings when persisting peer evaluation

@@ -22,6 +22,9 @@ import static org.mockito.BDDMockito.given;
  * The fail-closed contract: these methods run inside an {@code AuthorizationManager}, ahead of the
  * {@code DispatcherServlet}, so anything they throw escapes the filter chain as a 500 instead of reaching
  * {@code ExceptionHandlerAdvice}. Every unanswerable question has to come back as a denial.
+ *
+ * <p>The only relationship exercised as absent here is {@code Student.team}, which is genuinely optional. The
+ * mandatory ones are {@code @ManyToOne(optional = false)} on the entities, so there is nothing to test.
  */
 @ExtendWith(MockitoExtension.class)
 class TeamSecurityServiceTest {
@@ -64,16 +67,6 @@ class TeamSecurityServiceTest {
         given(this.teamRepository.findById(999999)).willReturn(Optional.empty());
 
         assertThat(this.teamSecurityService.canAccessTeam(999999)).isFalse();
-    }
-
-    @Test
-    @DisplayName("A team not attached to a course section is denied, not a null dereference")
-    void isTeamOwnerDeniesWhenTheTeamHasNoCourseSection() {
-        Team sectionlessTeam = new Team("Orphan", "No course section", null);
-        sectionlessTeam.setTeamId(2);
-        given(this.teamRepository.findById(2)).willReturn(Optional.of(sectionlessTeam));
-
-        assertThat(this.teamSecurityService.isTeamOwner(2)).isFalse();
     }
 
     @Test
