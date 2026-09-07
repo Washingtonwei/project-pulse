@@ -1,6 +1,16 @@
 scrape_configs:
-  - job_name: "hogwarts-artifacts-online"
+  - job_name: "project-pulse"
     metrics_path: "/actuator/prometheus"
-    scrape_interval: 3s # how often to scrape
+    scrape_interval: 15s # how often to scrape
     static_configs:
-      - targets: ["docker.for.mac.localhost:80"] # This is for demo purpose. During  production, change this to the production host address.
+      # host.docker.internal resolves to the host from inside the container on Docker Desktop
+      # (Windows and macOS). The backend runs on port 80 on the host, not in compose.
+      - targets: ["host.docker.internal:80"]
+# Two caveats for local scraping, both deliberate:
+#   1. /actuator/prometheus is not a registered endpoint in this build even though
+#      micrometer-registry-prometheus is a dependency, so this target currently 404s. Hit
+#      /actuator with an admin token to see the endpoints that are actually registered.
+#   2. Actuator endpoints other than health and info now require ROLE_admin, so an anonymous
+#      scrape would be refused. Wire a credential here before relying on this locally.
+# Production is not scraped from here at all: nothing scrapes it yet, which is why the deployed
+# profiles do not expose the prometheus endpoint. See TD-1 in docs/design/architectural-design.md.

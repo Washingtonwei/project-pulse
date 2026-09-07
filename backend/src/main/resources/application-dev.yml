@@ -18,3 +18,26 @@ app:
   reminders:
     enabled: false # Disable email reminders in the dev profile
     cron: "0 0 8 * * *"  # 8am local time
+
+# Dev runs on localhost against seeded data and throwaway credentials, so the full actuator surface
+# is open here for teaching and debugging. Deployed profiles inherit the safe baseline in
+# application.yml instead. Never copy this block into prod or staging.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env,beans,configprops,heapdump,httpexchanges,loggers,mappings,custom-beans,prometheus
+  endpoint:
+    health:
+      show-details: always
+    env:
+      show-values: always
+    configprops:
+      show-values: always
+  info:
+    git:
+      mode: full
+    java:
+      enabled: true
+    os:
+      enabled: true

@@ -24,20 +24,28 @@ api:
 ram:
   lock:
     default-lock-ttl: PT15M # 15 minutes, adjust as needed based on expected operation duration and load.
+# Baseline for every profile: expose only what a deployed environment has a consumer for.
+# The platform health probe needs `health`; `info` carries the build and version. Everything else
+# (env, configprops, heapdump, loggers, httpexchanges, beans, mappings, metrics, prometheus) is
+# opened per profile, so a profile that forgets to override this inherits the safe set rather than
+# the full one. The dev profile opens the rest. See TD-1 in docs/design/architectural-design.md.
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,env,beans,configprops,heapdump,httpexchanges,loggers,mappings,custom-beans,prometheus
+        include: health,info
   endpoint:
     health:
-      show-details: always
+      show-details: when-authorized # Anonymous callers (the platform probe) see only {"status":"UP"}.
+      roles: admin # Who counts as "authorized" for the line above.
       probes:
         enabled: true # Since Spring Boot 4, liveness and readiness probes are enabled by default.
-    env:
-      show-values: always
-    configprops:
-      show-values: always
+  # /actuator/info is anonymous (the only exposed endpoint besides health), so it is trimmed to what
+  # is safe to publish. `simple` git mode is branch, commit id and commit time, enough to identify the
+  # deployed build; `full` publishes the whole git.properties, including committer and build-user
+  # names and emails, the remote URL and the build host. The java and os blocks are off because an
+  # exact JVM and OS version tells an anonymous caller which CVEs to try. The dev profile restores
+  # all three. `env` here exposes only the `info.*` properties below, which are deliberately public.
   info:
     build:
       enabled: true
@@ -45,11 +53,11 @@ management:
       enabled: true
     git:
       enabled: true
-      mode: full
+      mode: simple
     java:
-      enabled: true
+      enabled: false
     os:
-      enabled: true
+      enabled: false
   tracing:
     sampling:
       probability: 0.1 # Sample 10% of traces to bound trace volume; raise toward 1.0 in dev/demo for full visibility.

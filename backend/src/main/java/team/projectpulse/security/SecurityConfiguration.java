@@ -7,6 +7,9 @@ import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.actuate.info.InfoEndpoint;
+import org.springframework.boot.health.actuate.endpoint.HealthEndpoint;
+import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -283,7 +286,20 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.PATCH, this.baseUrl + "/teams/{teamId}/comment-threads/{commentThreadId}/comments/{commentId}").access(this.teamMembershipAuthorizationManager)
                         .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/teams/{teamId}/comment-threads/{commentThreadId}/comments/{commentId}").access(this.teamMembershipAuthorizationManager)
                         
-                        .requestMatchers(this.baseUrl + "/**").authenticated() // This is the default rule for all other endpoints.
+                        // Deny by default. Any API route without an explicit rule above is refused outright
+                        // rather than falling through to a bare authentication check, so a new endpoint is
+                        // unreachable until a rule is written for it instead of being silently readable and
+                        // writable by every logged-in user. Adding an endpoint therefore fails closed, loudly.
+                        .requestMatchers(this.baseUrl + "/**").denyAll()
+
+                        // Security rules for the actuator endpoints. These sit outside the API base URL,
+                        // so without a rule of their own they would fall to .anyRequest().permitAll() below
+                        // and be readable by anonymous callers (TD-1). EndpointRequest resolves the actual
+                        // actuator base path, so these keep working if management.endpoints.web.base-path
+                        // changes. Health stays anonymous because the platform probe cannot authenticate;
+                        // it discloses nothing, since health.show-details is when-authorized.
+                        .requestMatchers(EndpointRequest.to(HealthEndpoint.class, InfoEndpoint.class)).permitAll()
+                        .requestMatchers(EndpointRequest.toAnyEndpoint()).hasAuthority("ROLE_admin")
 
                         .anyRequest().permitAll()
                 )
