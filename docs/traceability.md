@@ -207,8 +207,8 @@ Two conventions keep this from duplicating the other matrices: a cross-cutting F
 | FR-NOT-suppress-routine | — | Holds by construction (no routine-edit notification code; `CI-no-routine-email`) | — (no negative test) | ✅ Built | 🔎 None |
 | FR-NOT-weekly-reminder | — | `WeeklyReminderScheduler` (`system/`) → `EmailService.sendReminderEmail`, `SectionService` | — (no scheduler test) | ✅ Built | 🔎 None |
 | FR-SEC-authentication | — | `SecurityConfiguration` + JWT (`AuthService`, `CustomBearerTokenAuthenticationEntryPoint`) | integration `isUnauthorized` cases → see NFR matrix `QS-2` | ✅ Built | ✅ Verified |
-| FR-SEC-authorization | — | `*AuthorizationManager` family + `*SecurityService` (RBAC + team scoping) | `*_NotSameTeam` / `*NotInSameCourse` / `*NotSameSection` → see NFR matrix `QS-1` | ✅ Built | ✅ Verified |
-| FR-SEC-deny-unauthorized | — | `CustomBearerTokenAccessDeniedHandler` + `CustomBasicAuthenticationEntryPoint` + `SecurityConfiguration` | integration `isForbidden` / `isUnauthorized` cases → see NFR matrix `QS-1`/`QS-2` | ✅ Built | ✅ Verified |
+| FR-SEC-authorization | — | `*AuthorizationManager` family (ids read from `RequestAuthorizationContext.getVariables()` via `PathVariables`) + `*SecurityService` (RBAC + team scoping, fail-closed) | `*_NotSameTeam` / `*NotInSameCourse` / `*NotSameSection`; `AuthorizationRuleIntegrationTest`, `TeamSecurityServiceTest`, `TeamMembershipAuthorizationManagerTest` (unresolvable id denied, not 500) → see NFR matrix `QS-1` | ✅ Built | ✅ Verified |
+| FR-SEC-deny-unauthorized | — | `CustomBearerTokenAccessDeniedHandler` + `CustomBasicAuthenticationEntryPoint` + `SecurityConfiguration` | integration `isForbidden` / `isUnauthorized` cases; `AuthorizationRuleIntegrationTest` (denial returns the `Result` envelope, not a container error) → see NFR matrix `QS-1`/`QS-2` | ✅ Built | ✅ Verified |
 | FR-SEC-active-account | — | `MyUserPrincipal.isEnabled()` → Spring Security `enabled` contract (`DisabledException` at auth); `enabled` flag toggled by `StudentService` / `InstructorService` deactivate/reactivate | — (no disabled-login test) | ✅ Built | 🔎 None |
 
 ## Non-functional traceability matrix

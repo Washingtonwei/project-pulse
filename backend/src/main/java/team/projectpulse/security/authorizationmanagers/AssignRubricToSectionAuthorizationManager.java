@@ -1,22 +1,25 @@
 package team.projectpulse.security.authorizationmanagers;
 
 import org.jspecify.annotations.Nullable;
-import org.springframework.security.authorization.AuthorizationResult;
-import team.projectpulse.section.SectionSecurityService;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
+import org.springframework.security.authorization.AuthorizationResult;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.UriTemplate;
+import team.projectpulse.section.SectionSecurityService;
 
-import java.util.Map;
 import java.util.function.Supplier;
 
+/**
+ * Guards assigning a rubric to a course section, admitting the section's course admin and only when the rubric belongs
+ * to the same course.
+ *
+ * <p>Reads {@code sectionId} and {@code rubricId} and delegates to {@link SectionSecurityService}.
+ */
 @Component
 public class AssignRubricToSectionAuthorizationManager implements AuthorizationManager<RequestAuthorizationContext> {
 
-    private static final UriTemplate SECTION_URI_TEMPLATE = new UriTemplate("/sections/{sectionId}/rubrics/{rubricId}");
     private final SectionSecurityService sectionSecurityService;
 
 
@@ -26,14 +29,14 @@ public class AssignRubricToSectionAuthorizationManager implements AuthorizationM
 
     @Override
     public @Nullable AuthorizationResult authorize(Supplier<? extends @Nullable Authentication> authentication, RequestAuthorizationContext context) {
-        // Extract the sectionId and rubricId from the request URI: /sections/{sectionId}/rubrics/{rubricId}
-        Map<String, String> uriVariables = SECTION_URI_TEMPLATE.match(context.getRequest().getRequestURI());
-        Integer sectionIdFromRequestUri = Integer.parseInt(uriVariables.get("sectionId"));
-        Integer rubricIdFromRequestUri = Integer.parseInt(uriVariables.get("rubricId"));
+        Integer sectionId = PathVariables.readId(context, "sectionId");
+        Integer rubricId = PathVariables.readId(context, "rubricId");
+        if (sectionId == null || rubricId == null) {
+            return new AuthorizationDecision(false);
+        }
         return new AuthorizationDecision(
-                this.sectionSecurityService.isSectionOwner(sectionIdFromRequestUri) &&
-                        this.sectionSecurityService.isSectionAndRubricInSameCourse(sectionIdFromRequestUri, rubricIdFromRequestUri)
-        );
+                this.sectionSecurityService.isSectionOwner(sectionId)
+                        && this.sectionSecurityService.isSectionAndRubricInSameCourse(sectionId, rubricId));
     }
 
 }

@@ -1,10 +1,18 @@
 package team.projectpulse.student;
 
 import team.projectpulse.system.UserUtils;
-import team.projectpulse.system.exception.ObjectNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+/**
+ * Answers the questions a route asks about one named student: is that student the caller herself
+ * ({@code isStudentSelf}), and is the caller an instructor of that student's course section
+ * ({@code isCurrentUserInstructorOfStudentSection}).
+ *
+ * <p>Every check fails closed: an id that names no row, or a link not yet established, is denied rather than
+ * throwing. These methods run inside an {@code AuthorizationManager}, upstream of the {@code DispatcherServlet},
+ * so an exception thrown here escapes the filter chain as a 500 that also tells the caller which ids exist.
+ */
 @Service
 @Transactional
 public class StudentSecurityService {
@@ -31,8 +39,10 @@ public class StudentSecurityService {
      */
     public boolean isCurrentUserInstructorOfStudentSection(Integer studentId) {
         Integer instructorIdFromJwt = this.userUtils.getUserId();
-        Student student = this.studentRepository.findById(studentId)
-                .orElseThrow(() -> new ObjectNotFoundException("student", studentId));
+        Student student = this.studentRepository.findById(studentId).orElse(null);
+        if (student == null || student.getSection() == null) {
+            return false;
+        }
         return student.getSection().getInstructors().stream()
                 .anyMatch(instructor -> instructor.getId().equals(instructorIdFromJwt));
     }

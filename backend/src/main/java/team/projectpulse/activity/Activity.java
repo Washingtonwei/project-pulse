@@ -16,10 +16,10 @@ public class Activity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer activityId;
-    @ManyToOne
+    @ManyToOne(optional = false)
     private Student student;
     String week;
-    @ManyToOne
+    @ManyToOne(optional = false)
     private Team team;
     ActivityCategory category;
     String activity;
