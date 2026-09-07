@@ -43,9 +43,6 @@ public class ActivitySecurityService {
         if (activity == null) {
             return false;
         }
-        if (activity.getStudent() == null) {
-            return false;
-        }
         Integer ownerId = activity.getStudent().getId();
         Integer userIdFromJwt = this.userUtils.getUserId();
         return ownerId.equals(userIdFromJwt);
@@ -57,11 +54,8 @@ public class ActivitySecurityService {
         if (activityToBeAccessed == null) {
             return false;
         }
-        // An activity submitted by a student who is not on a team yet belongs to no course section, so it matches none
-        Section activitySection = activityToBeAccessed.getTeam() == null ? null : activityToBeAccessed.getTeam().getSection();
-        if (activitySection == null) {
-            return false;
-        }
+        // Activity.team and Activity.student are @ManyToOne(optional = false): an activity always has both
+        Section activitySection = activityToBeAccessed.getTeam().getSection();
         Integer userIdFromJwt = this.userUtils.getUserId();
         boolean hasStudentRole = this.userUtils.hasRole("ROLE_student");
         boolean hasInstructorRole = this.userUtils.hasRole("ROLE_instructor");
