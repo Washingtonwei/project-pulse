@@ -1,22 +1,24 @@
 package team.projectpulse.security.authorizationmanagers;
 
 import org.jspecify.annotations.Nullable;
-import org.springframework.security.authorization.AuthorizationResult;
-import team.projectpulse.evaluation.EvaluationSecurityService;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
+import org.springframework.security.authorization.AuthorizationResult;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.UriTemplate;
+import team.projectpulse.evaluation.EvaluationSecurityService;
 
-import java.util.Map;
 import java.util.function.Supplier;
 
+/**
+ * Guards editing one peer evaluation, admitting only the student who wrote it.
+ *
+ * <p>Reads {@code evaluationId} and delegates to {@link EvaluationSecurityService#isEvaluationOwner}.
+ */
 @Component
 public class EvaluationOwnershipAuthorizationManager implements AuthorizationManager<RequestAuthorizationContext> {
 
-    private static final UriTemplate EVALUATION_URI_TEMPLATE = new UriTemplate("/evaluations/{evaluationId}");
     private final EvaluationSecurityService evaluationSecurityService;
 
 
@@ -26,10 +28,12 @@ public class EvaluationOwnershipAuthorizationManager implements AuthorizationMan
 
     @Override
     public @Nullable AuthorizationResult authorize(Supplier<? extends @Nullable Authentication> authentication, RequestAuthorizationContext context) {
-        // Extract the evaluationId from the request URI: /evaluations/{evaluationId}
-        Map<String, String> uriVariables = EVALUATION_URI_TEMPLATE.match(context.getRequest().getRequestURI());
-        Integer evaluationIdFromRequestUri = Integer.parseInt(uriVariables.get("evaluationId"));
-        return new AuthorizationDecision(this.evaluationSecurityService.isEvaluationOwner(evaluationIdFromRequestUri));
+        Integer evaluationId = PathVariables.readId(context, "evaluationId");
+        if (evaluationId == null) {
+            return new AuthorizationDecision(false);
+        }
+        return new AuthorizationDecision(
+                this.evaluationSecurityService.isEvaluationOwner(evaluationId));
     }
 
 }

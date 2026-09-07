@@ -224,7 +224,6 @@ public class SecurityConfiguration {
                         // Security rules for the /users/** endpoint.
                         .requestMatchers(HttpMethod.POST, this.baseUrl + "/users/forget-password/**").permitAll()
                         .requestMatchers(HttpMethod.PATCH, this.baseUrl + "/users/reset-password/**").permitAll()
-                        .requestMatchers(HttpMethod.PATCH, this.baseUrl + "/users/{userId}").access(this.userOwnershipAuthorizationManager)
 
                         // The following endpoint is used by the front-end application to check if a user exists during user registration.
                         .requestMatchers(HttpMethod.GET, this.baseUrl + "/users/exists/{email}").permitAll()

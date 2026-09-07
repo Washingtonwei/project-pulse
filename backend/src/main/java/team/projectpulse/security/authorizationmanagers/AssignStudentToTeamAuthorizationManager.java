@@ -1,22 +1,25 @@
 package team.projectpulse.security.authorizationmanagers;
 
 import org.jspecify.annotations.Nullable;
-import org.springframework.security.authorization.AuthorizationResult;
-import team.projectpulse.team.TeamSecurityService;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
+import org.springframework.security.authorization.AuthorizationResult;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.UriTemplate;
+import team.projectpulse.team.TeamSecurityService;
 
-import java.util.Map;
 import java.util.function.Supplier;
 
+/**
+ * Guards adding and removing a student on a team, admitting the team's course admin and only when that student is
+ * enrolled in the team's course section.
+ *
+ * <p>Reads {@code teamId} and {@code studentId} and delegates to {@link TeamSecurityService}.
+ */
 @Component
 public class AssignStudentToTeamAuthorizationManager implements AuthorizationManager<RequestAuthorizationContext> {
 
-    private static final UriTemplate TEAM_URI_TEMPLATE = new UriTemplate("/teams/{teamId}/students/{studentId}");
     private final TeamSecurityService teamSecurityService;
 
 
@@ -26,14 +29,14 @@ public class AssignStudentToTeamAuthorizationManager implements AuthorizationMan
 
     @Override
     public @Nullable AuthorizationResult authorize(Supplier<? extends @Nullable Authentication> authentication, RequestAuthorizationContext context) {
-        // Extract the teamId and studentId from the request URI: /teams/{teamId}/students/{studentId}
-        Map<String, String> uriVariables = TEAM_URI_TEMPLATE.match(context.getRequest().getRequestURI());
-        Integer teamIdFromRequestUri = Integer.parseInt(uriVariables.get("teamId"));
-        Integer studentIdFromRequestUri = Integer.parseInt(uriVariables.get("studentId"));
+        Integer teamId = PathVariables.readId(context, "teamId");
+        Integer studentId = PathVariables.readId(context, "studentId");
+        if (teamId == null || studentId == null) {
+            return new AuthorizationDecision(false);
+        }
         return new AuthorizationDecision(
-                this.teamSecurityService.isTeamOwner(teamIdFromRequestUri) &&
-                        this.teamSecurityService.isTeamAndStudentInSameSection(teamIdFromRequestUri, studentIdFromRequestUri)
-        );
+                this.teamSecurityService.isTeamOwner(teamId)
+                        && this.teamSecurityService.isTeamAndStudentInSameSection(teamId, studentId));
     }
 
 }

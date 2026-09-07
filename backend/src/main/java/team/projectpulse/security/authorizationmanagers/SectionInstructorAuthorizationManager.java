@@ -1,23 +1,27 @@
 package team.projectpulse.security.authorizationmanagers;
 
 import org.jspecify.annotations.Nullable;
-import org.springframework.security.authorization.AuthorizationResult;
-import team.projectpulse.section.SectionSecurityService;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
+import org.springframework.security.authorization.AuthorizationResult;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.UriTemplate;
+import team.projectpulse.section.SectionSecurityService;
 
-import java.util.Map;
 import java.util.function.Supplier;
 
+/**
+ * Guards the course-section-wide weekly peer evaluation report, admitting only an instructor assigned to that course
+ * section.
+ *
+ * <p>Reads {@code sectionId} and delegates to {@link SectionSecurityService#isSectionInstructor}.
+ */
 @Component
 public class SectionInstructorAuthorizationManager implements AuthorizationManager<RequestAuthorizationContext> {
 
-    private static final UriTemplate SECTION_URI_TEMPLATE = new UriTemplate("/sections/{sectionId}");
     private final SectionSecurityService sectionSecurityService;
+
 
     public SectionInstructorAuthorizationManager(SectionSecurityService sectionSecurityService) {
         this.sectionSecurityService = sectionSecurityService;
@@ -25,10 +29,12 @@ public class SectionInstructorAuthorizationManager implements AuthorizationManag
 
     @Override
     public @Nullable AuthorizationResult authorize(Supplier<? extends @Nullable Authentication> authentication, RequestAuthorizationContext context) {
-        // Extract the sectionId from the request URI: /sections/{sectionId}
-        Map<String, String> uriVariables = SECTION_URI_TEMPLATE.match(context.getRequest().getRequestURI());
-        Integer sectionIdFromRequestUri = Integer.parseInt(uriVariables.get("sectionId"));
-        return new AuthorizationDecision(this.sectionSecurityService.isSectionInstructor(sectionIdFromRequestUri));
+        Integer sectionId = PathVariables.readId(context, "sectionId");
+        if (sectionId == null) {
+            return new AuthorizationDecision(false);
+        }
+        return new AuthorizationDecision(
+                this.sectionSecurityService.isSectionInstructor(sectionId));
     }
 
 }
