@@ -8,7 +8,7 @@ import jakarta.persistence.*;
 @Entity
 public class Student extends PeerEvaluationUser {
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     private Section section;
     @ManyToOne
     private Team team;

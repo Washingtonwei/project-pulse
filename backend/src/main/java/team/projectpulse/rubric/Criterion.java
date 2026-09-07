@@ -17,7 +17,7 @@ public class Criterion {
     private String description;
     @NotNull(message = "maxScore is required.")
     private Double maxScore;
-    @ManyToOne
+    @ManyToOne(optional = false)
     private Course course; // the course that this criterion belongs to
 
 

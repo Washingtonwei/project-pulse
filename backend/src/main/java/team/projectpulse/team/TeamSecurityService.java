@@ -40,7 +40,7 @@ public class TeamSecurityService {
 
     public boolean isTeamOwner(Integer teamId) {
         Team teamToBeAccessed = this.teamRepository.findById(teamId).orElse(null);
-        if (teamToBeAccessed == null || teamToBeAccessed.getSection() == null) {
+        if (teamToBeAccessed == null) {
             return false;
         }
         Integer adminId = teamToBeAccessed.getSection().getCourse().getCourseAdmin().getId();
@@ -50,7 +50,7 @@ public class TeamSecurityService {
 
     public boolean canAccessTeam(Integer teamId) {
         Team teamToBeAccessed = this.teamRepository.findById(teamId).orElse(null);
-        if (teamToBeAccessed == null || teamToBeAccessed.getSection() == null) {
+        if (teamToBeAccessed == null) {
             return false;
         }
         Integer userIdFromJwt = this.userUtils.getUserId();
@@ -79,7 +79,7 @@ public class TeamSecurityService {
     public boolean isTeamAndInstructorInSameSection(Integer teamId, Integer instructorId) {
         Team team = this.teamRepository.findById(teamId).orElse(null);
         Instructor instructor = this.instructorRepository.findById(instructorId).orElse(null);
-        if (team == null || team.getSection() == null || instructor == null) {
+        if (team == null || instructor == null) {
             return false;
         }
         return instructor.getSections().contains(team.getSection());
@@ -89,7 +89,7 @@ public class TeamSecurityService {
     public boolean isTeamAndStudentInSameSection(Integer teamId, Integer studentId) {
         Team team = this.teamRepository.findById(teamId).orElse(null);
         Student student = this.studentRepository.findById(studentId).orElse(null);
-        if (team == null || team.getSection() == null || student == null || student.getSection() == null) {
+        if (team == null || student == null) {
             return false;
         }
         return team.getSection().getSectionId().equals(student.getSection().getSectionId());

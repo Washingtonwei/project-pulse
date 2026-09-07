@@ -40,7 +40,7 @@ public class StudentSecurityService {
     public boolean isCurrentUserInstructorOfStudentSection(Integer studentId) {
         Integer instructorIdFromJwt = this.userUtils.getUserId();
         Student student = this.studentRepository.findById(studentId).orElse(null);
-        if (student == null || student.getSection() == null) {
+        if (student == null) {
             return false;
         }
         return student.getSection().getInstructors().stream()
