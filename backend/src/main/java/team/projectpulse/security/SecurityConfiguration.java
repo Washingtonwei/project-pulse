@@ -283,7 +283,11 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.PATCH, this.baseUrl + "/teams/{teamId}/comment-threads/{commentThreadId}/comments/{commentId}").access(this.teamMembershipAuthorizationManager)
                         .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/teams/{teamId}/comment-threads/{commentThreadId}/comments/{commentId}").access(this.teamMembershipAuthorizationManager)
                         
-                        .requestMatchers(this.baseUrl + "/**").authenticated() // This is the default rule for all other endpoints.
+                        // Deny by default. Any API route without an explicit rule above is refused outright
+                        // rather than falling through to a bare authentication check, so a new endpoint is
+                        // unreachable until a rule is written for it instead of being silently readable and
+                        // writable by every logged-in user. Adding an endpoint therefore fails closed, loudly.
+                        .requestMatchers(this.baseUrl + "/**").denyAll()
 
                         .anyRequest().permitAll()
                 )
