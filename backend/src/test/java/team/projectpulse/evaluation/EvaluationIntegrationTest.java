@@ -57,6 +57,8 @@ public class EvaluationIntegrationTest extends AbstractIntegrationTest {
 
     String studentJohnToken;
 
+    String studentTracyToken; // Tracy is in section 2 but is not assigned to any team
+
     @Value("${api.endpoint.base-url}")
     String baseUrl;
 
@@ -80,6 +82,12 @@ public class EvaluationIntegrationTest extends AbstractIntegrationTest {
         contentAsString = mvcResult.getResponse().getContentAsString();
         json = new JSONObject(contentAsString);
         this.studentJohnToken = "Bearer " + json.getJSONObject("data").getString("token");
+
+        resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("t.nicholson@abc.edu", "123456")));
+        mvcResult = resultActions.andDo(print()).andReturn();
+        contentAsString = mvcResult.getResponse().getContentAsString();
+        json = new JSONObject(contentAsString);
+        this.studentTracyToken = "Bearer " + json.getJSONObject("data").getString("token");
     }
 
     @Test
@@ -195,6 +203,53 @@ public class EvaluationIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.flag").value(false))
                 .andExpect(jsonPath("$.code").value(StatusCode.INVALID_ARGUMENT))
                 .andExpect(jsonPath("$.message").value("The evaluator and evaluatee must be on the same team."));
+    }
+
+    @Test
+    @DisplayName("A student on no team cannot submit a peer evaluation, and is told which condition is unmet")
+    void testStudentTracyWithNoTeamCannotAddEvaluation() throws Exception {
+        List<RatingDto> ratingDtos = List.of(
+                new RatingDto(null, 1, 4.0),
+                new RatingDto(null, 2, 9.0),
+                new RatingDto(null, 3, 7.0),
+                new RatingDto(null, 4, 10.0),
+                new RatingDto(null, 5, 5.0),
+                new RatingDto(null, 6, 6.0)
+        );
+
+        LocalDate fixedDate = LocalDate.of(2023, 8, 8);
+        Clock fixedClock = Clock.fixed(fixedDate.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault());
+        given(this.clock.instant()).willReturn(fixedClock.instant());
+        given(this.clock.getZone()).willReturn(fixedClock.getZone());
+
+        PeerEvaluationDto peerEvaluationDto = new PeerEvaluationDto(null, "2023-W31", 16, "Tracy Nicholson", 4, "John Smith", ratingDtos, 41.0, "Good job", "Keep it up", null, null);
+        String json = this.jsonMapper.writeValueAsString(peerEvaluationDto);
+
+        this.mockMvc.perform(post(this.baseUrl + "/evaluations").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentTracyToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_ARGUMENT))
+                .andExpect(jsonPath("$.message").value("You must be assigned to a team before submitting a peer evaluation."));
+    }
+
+    @Test
+    @DisplayName("An instructor does not author peer evaluations, and no longer sees a missing-student error")
+    void testAdminBingyangCannotAddEvaluation() throws Exception {
+        List<RatingDto> ratingDtos = List.of(
+                new RatingDto(null, 1, 4.0),
+                new RatingDto(null, 2, 9.0),
+                new RatingDto(null, 3, 7.0),
+                new RatingDto(null, 4, 10.0),
+                new RatingDto(null, 5, 5.0),
+                new RatingDto(null, 6, 6.0)
+        );
+
+        PeerEvaluationDto peerEvaluationDto = new PeerEvaluationDto(null, "2023-W31", 1, "Bingyang Wei", 4, "John Smith", ratingDtos, 41.0, "Good job", "Keep it up", null, null);
+        String json = this.jsonMapper.writeValueAsString(peerEvaluationDto);
+
+        this.mockMvc.perform(post(this.baseUrl + "/evaluations").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_ARGUMENT))
+                .andExpect(jsonPath("$.message").value("Only a student may submit a peer evaluation."));
     }
 
     @Test

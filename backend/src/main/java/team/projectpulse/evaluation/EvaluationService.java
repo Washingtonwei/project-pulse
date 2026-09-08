@@ -7,6 +7,7 @@ import team.projectpulse.system.exception.ObjectNotFoundException;
 import team.projectpulse.rubric.Rating;
 import team.projectpulse.student.Student;
 import team.projectpulse.student.StudentRepository;
+import team.projectpulse.team.Team;
 import jakarta.transaction.Transactional;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -64,8 +65,18 @@ public class EvaluationService {
             throw new PeerEvaluationIllegalArgumentException("You can only submit evaluations for the previous week.");
         }
 
-        // Make sure the evaluator and evaluatee are on the same team
-        if (!newPeerEvaluation.getEvaluator().getTeam().equals(newPeerEvaluation.getEvaluatee().getTeam())) {
+        // Make sure the evaluator is on a team at all (BR-team-assignment-required): Student.team is optional,
+        // because a student is enrolled in a course section before she is assigned to a team
+        Team evaluatorTeam = newPeerEvaluation.getEvaluator().getTeam();
+        if (evaluatorTeam == null) {
+            throw new PeerEvaluationIllegalArgumentException("You must be assigned to a team before submitting a peer evaluation.");
+        }
+
+        // Make sure the evaluator and evaluatee are on the same team. Compare team ids: Team does not override
+        // equals, so comparing the entities is identity comparison and only happens to hold within one session.
+        Integer evaluatorTeamId = evaluatorTeam.getTeamId();
+        Team evaluateeTeam = newPeerEvaluation.getEvaluatee().getTeam();
+        if (evaluatorTeamId == null || evaluateeTeam == null || !evaluatorTeamId.equals(evaluateeTeam.getTeamId())) {
             throw new PeerEvaluationIllegalArgumentException("The evaluator and evaluatee must be on the same team.");
         }
 

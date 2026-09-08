@@ -4,6 +4,7 @@ import team.projectpulse.instructor.Instructor;
 import team.projectpulse.section.Section;
 import team.projectpulse.student.Student;
 import team.projectpulse.system.UserUtils;
+import team.projectpulse.system.exception.ActivityIllegalArgumentException;
 import team.projectpulse.team.Team;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -176,6 +178,32 @@ class ActivityServiceTest {
     }
 
     @Test
+    void testSaveActivityRejectsASubmitterWithNoTeam() {
+        // Given
+        Student tracy = new Student("t.nicholson@abc.edu", "Tracy", "Nicholson", "t.nicholson@abc.edu", "123456", true, "student");
+        given(this.userUtils.hasRole("ROLE_student")).willReturn(true);
+        given(this.userUtils.getStudent()).willReturn(tracy);  // enrolled in a course section, on no team
+
+        // When and then
+        assertThatThrownBy(() -> this.activityService.saveActivity(new Activity()))
+                .isInstanceOf(ActivityIllegalArgumentException.class)
+                .hasMessage("You must be assigned to a team before submitting a weekly activity report.");
+        verify(this.activityRepository, never()).save(any(Activity.class));
+    }
+
+    @Test
+    void testSaveActivityRejectsASubmitterWhoIsNotAStudent() {
+        // Given
+        given(this.userUtils.hasRole("ROLE_student")).willReturn(false);
+
+        // When and then
+        assertThatThrownBy(() -> this.activityService.saveActivity(new Activity()))
+                .isInstanceOf(ActivityIllegalArgumentException.class)
+                .hasMessage("Only a student may submit a weekly activity report.");
+        verify(this.activityRepository, never()).save(any(Activity.class));
+    }
+
+    @Test
     void testFindActivityById() {
         // Given
         given(this.activityRepository.findById(1)).willReturn(Optional.of(this.week31Activities.get(0)));
@@ -196,10 +224,15 @@ class ActivityServiceTest {
     @Test
     void testSaveActivity() {
         // Given
+        Team team = new Team("Team1", "Team 1 description", "https://www.team1.com");
+        team.setTeamId(1);
+        Student submitter = new Student("j.smith@abc.edu", "John", "Smith", "j.smith@abc.edu", "123456", true, "student");
+        submitter.setTeam(team);
+        given(this.userUtils.hasRole("ROLE_student")).willReturn(true);
+        given(this.userUtils.getStudent()).willReturn(submitter);
+
         Activity newActivity = new Activity();
-        newActivity.setStudent(new Student());
         newActivity.setWeek("2023-W31");
-        newActivity.setTeam(new Team());
         newActivity.setCategory(ActivityCategory.DEPLOYMENT);
         newActivity.setActivity("Develop Login Feature");
         newActivity.setDescription("Implement login functionality for the application");

@@ -1,6 +1,8 @@
 package team.projectpulse.activity;
 
+import team.projectpulse.student.Student;
 import team.projectpulse.system.UserUtils;
+import team.projectpulse.system.exception.ActivityIllegalArgumentException;
 import team.projectpulse.system.exception.ObjectNotFoundException;
 import team.projectpulse.team.Team;
 import jakarta.transaction.Transactional;
@@ -69,6 +71,17 @@ public class ActivityService {
     }
 
     public Activity saveActivity(Activity newActivity) {
+        // Who may submit, per BR-team-assignment-required: a student, and only once she is on a team. Answering here
+        // rather than in a route rule lets each violation say which condition is unmet instead of "No permission."
+        if (!this.userUtils.hasRole("ROLE_student")) {
+            throw new ActivityIllegalArgumentException("Only a student may submit a weekly activity report.");
+        }
+        Student submitter = this.userUtils.getStudent();
+        if (submitter.getTeam() == null) {
+            throw new ActivityIllegalArgumentException("You must be assigned to a team before submitting a weekly activity report.");
+        }
+        newActivity.setStudent(submitter);
+        newActivity.setTeam(submitter.getTeam());
         return this.activityRepository.save(newActivity);
     }
 

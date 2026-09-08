@@ -37,7 +37,10 @@ public class PeerEvaluationDtoToPeerEvaluationConverter implements Converter<Pee
         Integer evaluatorId = this.userUtils.getUserId();
 
         // Find the evaluator and evaluatee
-        Student evaluator = this.studentRepository.findById(evaluatorId).orElseThrow(() -> new ObjectNotFoundException("student", evaluatorId));
+        // Not a student, so not an evaluator: an instructor or course admin does not author peer evaluations
+        // (BR-team-assignment-required). Say that, rather than reporting the caller's own id as a missing student.
+        Student evaluator = this.studentRepository.findById(evaluatorId)
+                .orElseThrow(() -> new PeerEvaluationIllegalArgumentException("Only a student may submit a peer evaluation."));
         Student evaluatee = this.studentRepository.findById(peerEvaluationDto.evaluateeId()).orElseThrow(() -> new ObjectNotFoundException("student", peerEvaluationDto.evaluateeId()));
 
         // Convert the list of ratingDtos to a list of ratings
