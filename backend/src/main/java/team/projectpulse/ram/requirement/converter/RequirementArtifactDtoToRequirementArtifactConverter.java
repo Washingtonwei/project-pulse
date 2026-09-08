@@ -19,8 +19,10 @@ public class RequirementArtifactDtoToRequirementArtifactConverter implements Con
 
     @Override
     public RequirementArtifact convert(RequirementArtifactDto source) {
+        // The id is not read from the payload: a create has the server assign it, and an update takes it from
+        // the URL. Mapping it here would let a create carry an existing id, which turns save() into a merge over
+        // that artifact and reassigns it to the caller's team.
         RequirementArtifact requirementArtifact = new RequirementArtifact();
-        requirementArtifact.setId(source.id());
         requirementArtifact.setType(source.type());
         requirementArtifact.setArtifactKey(source.artifactKey());
         requirementArtifact.setTitle(source.title());
