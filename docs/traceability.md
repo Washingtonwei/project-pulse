@@ -318,7 +318,7 @@ A business rule (`BR-*`, owned by [business-rules.md](requirements/business-rule
 
 > ⚙️ **Generated, do not hand-edit.** This table is a *projection* of the forward citations — the use cases' **Business Rules** fields, the SRS's rule citations, and the NFR matrix's `QS-n` rows — not a second authored copy of them (that would violate "cited, never restated" and drift). `/spec-build` **regenerates and verifies** it against the live citations; a row that disagrees with them is a flagged defect, and edits belong in the citing artifacts, not here. The two universal access rules (`BR-role-based-access`, `BR-team-scoped-access`) are cited by essentially every authoring/CRUD use case and are summarized by count rather than enumerated (the same noise-reduction convention as the functional matrix's omitted `FR-SEC-*` column). This index is the **spec-level** backward view (which requirements *cite* a rule); its **code-level** companion — which `file:method` *enforces* each rule — lives in `/sync-check`'s `BR → enforcement-point` map. Together they trace a rule → requirements → code.
 >
-> **Last regenerated:** 2026-09-07 (against the citations as of this commit).
+> **Last regenerated:** 2026-09-08 (against the citations as of this commit).
 
 | Business rule | Cited by use cases | SRS | QS |
 |---|---|---|---|
@@ -353,8 +353,9 @@ A business rule (`BR-*`, owned by [business-rules.md](requirements/business-rule
 | `BR-source-material-import` | `UC-AI-import-source-material` | — | — |
 | `BR-student-lifecycle` | `UC-STU-deactivate-student`, `UC-STU-delete-student`, `UC-STU-reactivate-student` | `FR-SEC-active-account` | — |
 | `BR-team-admin-only` | `UC-INS-assign-instructors`, `UC-INS-remove-instructor`, `UC-TEA-assign-students`, `UC-TEA-create-team`, `UC-TEA-delete-team`, `UC-TEA-edit-team`, `UC-TEA-remove-student` | — | — |
+| `BR-team-assignment-required` | `UC-EVA-submit-evaluation`, `UC-WAR-manage-activities` | — | — |
 | `BR-team-scoped-access` | _universal_ — 30 UCs (every authoring/CRUD use case) | `DI-team-scoping`, `FR-SEC-authorization`, `SEC-authorization`, `SI-export-formats`, (prose) | `QS-1` |
 | `BR-team-single-instructor` | `UC-INS-assign-instructors`, `UC-INS-remove-instructor` | — | — |
 | `BR-use-case-name-unique` | `UC-DOC-create-use-case` | — | — |
 
-> **Readout.** All 34 rules have at least one enforcer, so the backward view confirms the forward coverage check from the other direction. Two rules are load-bearing (`BR-role-based-access` 40 UCs, `BR-team-scoped-access` 30 UCs), so touching either is a project-wide change, which is exactly what the index makes visible. `BR-team-scoped-access` grew from 26 to 30 citing use cases on 2026-09-07, when OI-50 widened it from requirement content to all team-owned student work and the weekly-activity-report and peer-evaluation use cases began citing it; `BR-section-scoped-access` is its instructor-side companion, added in the same change. The `(prose)` SRS entries are rules the SRS cites in narrative (for example the locking rules in the autosave/persistence discussion) rather than from a specific `FR-*`.
+> **Readout.** All 35 rules have at least one enforcer, so the backward view confirms the forward coverage check from the other direction. Two rules are load-bearing (`BR-role-based-access` 40 UCs, `BR-team-scoped-access` 30 UCs), so touching either is a project-wide change, which is exactly what the index makes visible. `BR-team-scoped-access` grew from 26 to 30 citing use cases on 2026-09-07, when OI-50 widened it from requirement content to all team-owned student work and the weekly-activity-report and peer-evaluation use cases began citing it; `BR-section-scoped-access` is its instructor-side companion, added in the same change. The `(prose)` SRS entries are rules the SRS cites in narrative (for example the locking rules in the autosave/persistence discussion) rather than from a specific `FR-*`.
