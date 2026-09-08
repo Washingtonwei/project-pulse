@@ -159,6 +159,23 @@ class ActivityServiceTest {
     }
 
     @Test
+    void testFindByCriteriaForAStudentWithNoTeamReturnsNothing() {
+        // Given
+        Student tracy = new Student("t.hall@abc.edu", "Tracy", "Hall", "t.hall@abc.edu", "123456", true, "student");
+        tracy.setId(99);  // Tracy is enrolled in a course section but is on no team
+
+        given(this.userUtils.hasRole("ROLE_student")).willReturn(true);
+        given(this.userUtils.getStudent()).willReturn(tracy);
+
+        // When
+        Page<Activity> result = this.activityService.findByCriteria(Map.of("week", "2023-W31"), PageRequest.of(0, 20));
+
+        // Then
+        assertThat(result.getContent()).isEmpty();
+        verify(this.activityRepository, never()).findAll(any(Specification.class), any(Pageable.class));
+    }
+
+    @Test
     void testFindActivityById() {
         // Given
         given(this.activityRepository.findById(1)).willReturn(Optional.of(this.week31Activities.get(0)));
