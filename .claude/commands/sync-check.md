@@ -4,7 +4,7 @@ Detect **drift between the requirements docs and the actual codebase** — where
 
 **`/spec-build` vs `/sync-check` — two different jobs, don't conflate them:**
 - **`/spec-build`** = *do the docs agree with each other?* Intra-doc consistency (anchors, slugs, FR/BR refs, UC↔traceability). Mechanical, deterministic, cheap, **auto-fixes**. Run it freely after doc edits.
-- **`/sync-check`** (this) = *do the docs agree with the code?* Spec↔code conformance. Mostly **semantic** (read code, judge whether a rule is enforced), expensive, somewhat non-deterministic, and **report-mostly** — every finding needs a human fix-code-vs-amend-doc decision, so it never edits code and never "auto-fixes" a divergence. Its only write is appending **draft `OI-n`** items to `docs/requirements/OPEN-ISSUES.md`.
+- **`/sync-check`** (this) = *do the docs agree with the code?* Spec↔code conformance. Mostly **semantic** (read code, judge whether a rule is enforced), expensive, somewhat non-deterministic, and **report-mostly** — every finding needs a human fix-code-vs-amend-doc decision, so it never edits code and never "auto-fixes" a divergence. Its only write is appending **draft `OI-n`** items to `docs/requirements/OPEN-ISSUES.md`. If a finding is an unfixed **security** defect, the `OI-n` item there stays terse and the reproduction detail goes in the untracked `SECURITY-BACKLOG.md` at the repo root instead — the repo is public (see `docs/CLAUDE.md`).
 
 **Run `/spec-build` first** (or assume it passes) — `/sync-check` relies on the docs being internally consistent and the traceability matrix being current. This command **reuses**, does not duplicate, `/spec-build`'s UC↔traceability coverage check.
 
