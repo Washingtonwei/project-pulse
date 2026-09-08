@@ -375,6 +375,29 @@ class EvaluationServiceTest {
     }
 
     @Test
+    void testAddPeerEvaluationEvaluatorHasNoTeam() {
+        // Given
+        LocalDate fixedDate = LocalDate.of(2023, 8, 8);
+        Clock fixedClock = Clock.fixed(fixedDate.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault());
+        given(this.clock.instant()).willReturn(fixedClock.instant());
+        given(this.clock.getZone()).willReturn(fixedClock.getZone());
+
+        // Tracy is enrolled in the course section but has not been assigned to a team
+        Student tracy = new Student("tracy", "Tracy", "Nicholson", "t.nicholson@abc.edu", "123456", true, "student");
+        this.eric.getSection().addStudent(tracy);
+
+        PeerEvaluation newPeerEvaluation = new PeerEvaluation("2023-W31", tracy, this.eric, List.of(), "public comment", "private comment");
+
+        // When
+        Throwable throwable = catchThrowable(() -> this.evaluationService.addPeerEvaluation(newPeerEvaluation));
+
+        // Then
+        assertThat(throwable)
+                .isInstanceOf(PeerEvaluationIllegalArgumentException.class)
+                .hasMessage("You must be assigned to a team before submitting a peer evaluation.");
+    }
+
+    @Test
     void testAddPeerEvaluationDuplicatedEvaluation() {
         // Given
         LocalDate fixedDate = LocalDate.of(2023, 8, 8);

@@ -134,6 +134,12 @@ public class ExceptionHandlerAdvice {
         return new Result(false, StatusCode.INVALID_ARGUMENT, ex.getMessage());
     }
 
+    @ExceptionHandler(ActivityIllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    Result handleActivityIllegalArgumentException(ActivityIllegalArgumentException ex) {
+        return new Result(false, StatusCode.INVALID_ARGUMENT, ex.getMessage());
+    }
+
     @ExceptionHandler(PeerEvaluationIllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     Result handleEvaluationRatingIllegalArgumentException(PeerEvaluationIllegalArgumentException ex) {
