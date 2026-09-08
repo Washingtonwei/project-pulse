@@ -1981,7 +1981,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 **Priority:** High
 **Frequency of Use:** Approximately 35-40 users, average of 3 usages per week.
-**Business Rules:**
+**Business Rules:** BR-team-scoped-access, BR-role-based-access (a student manages activities only in her own weekly activity report, within a team she belongs to).
 
 **Associated Information:**
 - Details: The student can add activities to a WAR. For each activity, the student shall provide the following: Activity category: DEVELOPMENT, TESTING, BUGFIX, COMMUNICATION, DOCUMENTATION, DESIGN, PLANNING, LEARNING, DEPLOYMENT, SUPPORT, MISCELLANEOUS Activity Description Planned hours Actual hours Status: In progress, Under testing, Done. The above properties are editable. The student shall be able to cancel the use case at any time prior to submitting it.
@@ -2024,11 +2024,12 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 **Priority:** High
 **Frequency of Use:** Approximately 37 users, average of 1 usage per week.
-**Business Rules:**
+**Business Rules:** BR-team-scoped-access (a student may generate the report only for a team she belongs to), BR-section-scoped-access (an instructor may generate it only for a team in a course section she is assigned to), BR-role-based-access.
 
 **Associated Information:**
 
 Report generating parameters:
+- Team: The team the report covers. A student may generate the report only for a team she belongs to, so the system binds the parameter to her own team rather than accepting a caller-supplied one (BR-team-scoped-access). An instructor may select any team in a course section she is assigned to (BR-section-scoped-access).
 - Active week: Each WAR report is associated with a week. The instructor shall first indicate for which active week she wants to generate a WAR. E.g., "02-12-2024 to 02-18-2024"; by default, it shall be the previous week.
 - Columns to include: student name, Activity category, Planned activity, Description, Planned hours, Actual hours, Status. See the example below.
 - Sorting criteria: by default, sort by last name in ascending order.
@@ -2087,7 +2088,7 @@ Report generating algorithm: N/A
 
 **Priority:** High
 **Frequency of Use:** 2 users, average of 10 usage per week.
-**Business Rules:**
+**Business Rules:** BR-section-scoped-access, BR-role-based-access (the instructor may generate the report only for a student in a course section she is assigned to).
 
 **Associated Information:**
 
@@ -2164,7 +2165,7 @@ Report generating algorithm: N/A
 
 **Priority:** High
 **Frequency of Use:** Approximately 35-40 users, 1 usage per week.
-**Business Rules:** BR-active-weeks, BR-evaluation-editable-until-close, BR-evaluation-submission-window, BR-evaluation-private-comment
+**Business Rules:** BR-team-scoped-access (the student evaluates the members of a team she belongs to, and no other team), BR-active-weeks, BR-evaluation-editable-until-close, BR-evaluation-submission-window, BR-evaluation-private-comment
 
 **Associated Information:**
 
@@ -2220,7 +2221,7 @@ Private comments are for the instructor only. Public comments will be sent to th
 
 **Priority:** High
 **Frequency of Use:** Approximately 35-40 users, average of 1 usage per week.
-**Business Rules:** BR-evaluation-visibility, BR-evaluation-private-comment
+**Business Rules:** BR-team-scoped-access, BR-evaluation-visibility, BR-evaluation-private-comment (the student sees only her own results, and never another team's)
 
 **Associated Information:**
 
@@ -2279,7 +2280,7 @@ Report generating algorithm: For each individual criterion score (e.g., Quality 
 
 **Priority:** High
 **Frequency of Use:** Approximately 2 users, average of 1 usage per week.
-**Business Rules:** BR-evaluation-private-comment
+**Business Rules:** BR-section-scoped-access (the instructor may generate the report only for a course section she is assigned to), BR-evaluation-private-comment
 
 **Associated Information:**
 
@@ -2351,7 +2352,7 @@ Details of a peer evaluation: The instructor may choose to see more details of o
 
 **Priority:** High
 **Frequency of Use:** 2 users, average of 10 usage per week.
-**Business Rules:** BR-evaluation-private-comment
+**Business Rules:** BR-section-scoped-access (the instructor may generate the report only for a student in a course section she is assigned to), BR-evaluation-private-comment
 
 **Associated Information:**
 

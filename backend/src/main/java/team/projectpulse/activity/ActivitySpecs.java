@@ -14,6 +14,12 @@ public class ActivitySpecs {
                 criteriaBuilder.equal(root.get("team").get("teamId"), providedTeamId);
     }
 
+    // Same predicate, for a team id the server resolved itself rather than one parsed out of the search criteria.
+    public static Specification<Activity> hasTeamId(Integer providedTeamId) {
+        return (root, query, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("team").get("teamId"), providedTeamId);
+    }
+
     public static Specification<Activity> hasStudentId(String providedStudentId) {
         return (root, query, criteriaBuilder) ->
                 criteriaBuilder.equal(root.get("student").get("id"), providedStudentId);
