@@ -48,25 +48,35 @@ public class PeerEvaluationDtoToPeerEvaluationConverter implements Converter<Pee
                 .map(this.ratingDtoToRatingConverter::convert)
                 .collect(Collectors.toList());
 
-        // Check if all criteria in the rubric are rated and each criterion is rated only once
+        // Check that all criteria in the rubric are rated and that each criterion is rated only once
         Section section = evaluator.getSection(); // Get the section of the evaluator
-        Set<Integer> sectionRubricCriterionIdList = section.getRubric().getCriteria().stream().map(Criterion::getCriterionId).collect(Collectors.toSet());
-        Set<Integer> ratedCriterionIdList = ratings.stream().map(Rating::getCriterion).map(Criterion::getCriterionId).collect(Collectors.toSet());
-        if (!sectionRubricCriterionIdList.equals(ratedCriterionIdList)) {
+        Set<Integer> sectionRubricCriterionIds = section.getRubric().getCriteria().stream().map(Criterion::getCriterionId).collect(Collectors.toSet());
+        Set<Integer> ratedCriterionIds = ratings.stream().map(Rating::getCriterion).map(Criterion::getCriterionId).collect(Collectors.toSet());
+        // Two questions, and neither comparison answers the other. The set equality asks *which* criteria were
+        // rated, catching one that is missing or one that belongs to another rubric. The size comparison asks
+        // *how many times* each was rated: `ratings` is the submitted list and `ratedCriterionIds` is that same
+        // list deduplicated, so any difference between the two counts means some criterion was rated more than
+        // once. Set equality cannot see a repeat, because the duplicate is already gone by the time the set is
+        // built (seven ratings covering six criteria compare equal to a six-criterion rubric), and the size
+        // comparison cannot see a missing criterion, because five ratings for five criteria have matching
+        // counts. Both halves are needed to make this message true.
+        if (ratings.size() != ratedCriterionIds.size() || !sectionRubricCriterionIds.equals(ratedCriterionIds)) {
             throw new PeerEvaluationIllegalArgumentException("The ratings are not valid. Please make sure all criteria in the rubric are rated and each criterion is rated only once.");
         }
 
-        // If everything is valid, create a peer evaluation object for adding or updating
+        // If everything is valid, create a peer evaluation object for adding or updating.
+        // The id is not read from the payload: a create has the server assign it, and an update takes it from the
+        // URL. Mapping it here would let a create carry an existing id, which turns save() into a merge over that
+        // evaluation. The evaluator and evaluatee are therefore always stamped from the caller rather than behind
+        // a payload-id guard; EvaluationService.updatePeerEvaluation reads neither, since it updates the
+        // evaluation the URL names.
         PeerEvaluation peerEvaluation = new PeerEvaluation();
-        peerEvaluation.setPeerEvaluationId(peerEvaluationDto.evaluationId());
         peerEvaluation.setWeek(peerEvaluationDto.week());
         peerEvaluation.setRatings(ratings);
         peerEvaluation.setPublicComment(peerEvaluationDto.publicComment());
         peerEvaluation.setPrivateComment(peerEvaluationDto.privateComment());
-        if (peerEvaluationDto.evaluationId() == null) { // If it is a new evaluation, set the evaluator and evaluatee; for updating, the evaluator and evaluatee are not changed
-            peerEvaluation.setEvaluator(evaluator);
-            peerEvaluation.setEvaluatee(evaluatee);
-        }
+        peerEvaluation.setEvaluator(evaluator);
+        peerEvaluation.setEvaluatee(evaluatee);
         return peerEvaluation;
     }
 
