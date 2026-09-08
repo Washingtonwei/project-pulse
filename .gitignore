@@ -75,3 +75,8 @@ docker/prometheus/*
 # Keep only the main configuration file
 !docker/prometheus/prometheus.yml
 
+
+### Security backlog ###
+# Detailed write-ups of unfixed security defects. The repo is public; OPEN-ISSUES.md
+# keeps the terse OI-n item and points here for the reproduction detail.
+/SECURITY-BACKLOG.md
