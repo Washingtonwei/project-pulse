@@ -28,6 +28,8 @@ import java.util.stream.Collectors;
 @Transactional
 public class EvaluationService {
 
+    private static final String RUBRIC_MISMATCH_MESSAGE = "This evaluation was scored against a different set of criteria and can no longer be updated.";
+
     private final PeerEvaluationRepository evaluationRepository;
     private final StudentRepository studentRepository;
     private final SectionRepository sectionRepository;
@@ -91,12 +93,53 @@ public class EvaluationService {
     public PeerEvaluation updatePeerEvaluation(Integer evaluationId, PeerEvaluation update) {
         return this.evaluationRepository.findById(evaluationId)
                 .map(oldEvaluation -> {
-                    oldEvaluation.setRatings(update.getRatings()); // Replace the ratings list. This is fine because each rating object has a ratingId so Spring Data JPA can update the existing ratings. Cascade type is set to ALL in the PeerEvaluation entity.
+                    rescore(oldEvaluation, update.getRatings());
                     oldEvaluation.setPublicComment(update.getPublicComment());
                     oldEvaluation.setPrivateComment(update.getPrivateComment());
                     return this.evaluationRepository.save(oldEvaluation);
                 })
                 .orElseThrow(() -> new ObjectNotFoundException("evaluation", evaluationId));
+    }
+
+    /**
+     * Re-scores an evaluation's own rating rows from a submitted set of ratings, matching the two by criterion.
+     *
+     * <p><strong>Why the evaluation's own rows, rather than the submitted ones.</strong> This used to hand the
+     * submitted ratings straight to {@code setRatings}. Those objects carried whatever {@code ratingId} the
+     * request body named, and {@code PeerEvaluation} cascades to its ratings, so the save re-parented the named
+     * rows onto this evaluation: a student could paste another student's rating ids into an update of her own
+     * evaluation, take ownership of those rows, and strip the victim's evaluation of its scores. The converter no
+     * longer maps a {@code ratingId}, so the submitted ratings arrive transient and are read here only for their
+     * criterion and score. The rows written are the ones already hanging off {@code evaluation}, which the caller
+     * has been authorized against by the route rule.
+     *
+     * <p><strong>Matching by criterion.</strong> An evaluation holds exactly one rating per criterion in its
+     * section's rubric, and the converter has checked the same of the submission, so the two line up one for one
+     * and no criterion can appear twice in the lookup map below. That map does double duty: each criterion is
+     * removed as it is consumed, so anything left over at the end is a criterion the submission scored that the
+     * evaluation has no row for. Either direction of mismatch means the rubric changed after this evaluation was
+     * submitted, which is rejected rather than guessed at. The alternative, creating rows for the new criteria,
+     * would leave the superseded ones behind, since the association has no {@code orphanRemoval}.
+     *
+     * <p>{@code totalScore} is a stored column, not a derived getter, and mutating the ratings does not run the
+     * setter that used to keep it current, so it is recalculated explicitly at the end.
+     */
+    private void rescore(PeerEvaluation evaluation, List<Rating> submittedRatings) {
+        Map<Integer, Double> submittedScoresByCriterionId = submittedRatings.stream()
+                .collect(Collectors.toMap(rating -> rating.getCriterion().getCriterionId(), Rating::getActualScore));
+
+        for (Rating rating : evaluation.getRatings()) {
+            Double submittedScore = submittedScoresByCriterionId.remove(rating.getCriterion().getCriterionId());
+            if (submittedScore == null) { // A criterion this evaluation was scored on that the submission does not cover
+                throw new PeerEvaluationIllegalArgumentException(RUBRIC_MISMATCH_MESSAGE);
+            }
+            rating.setActualScore(submittedScore); // Validates the score against the criterion's max
+        }
+        if (!submittedScoresByCriterionId.isEmpty()) { // A criterion the submission covers that this evaluation has no row for
+            throw new PeerEvaluationIllegalArgumentException(RUBRIC_MISMATCH_MESSAGE);
+        }
+
+        evaluation.calculateTotalScore();
     }
 
     public PeerEvaluationAverage getPeerEvaluationAverage(String week, Student student) {
