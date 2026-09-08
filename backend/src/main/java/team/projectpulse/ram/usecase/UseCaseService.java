@@ -236,7 +236,7 @@ public class UseCaseService {
      * <p>
      * Covers the primary and secondary actors only. Preconditions and postconditions are rebuilt from
      * the body by {@code ConditionDtoToRequirementArtifactConverter}, which copies {@code id} straight
-     * from the payload; that is a separate defect class, tracked as OI-46, and is not handled here.
+     * from the payload; that is a separate defect class and is not handled here.
      */
     private void requireActorsInTeam(Integer teamId, UseCase useCase) {
         RequirementArtifact primaryActor = useCase.getPrimaryActor();

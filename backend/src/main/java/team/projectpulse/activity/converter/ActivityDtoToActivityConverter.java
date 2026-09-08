@@ -12,7 +12,7 @@ public class ActivityDtoToActivityConverter implements Converter<ActivityDto, Ac
     public Activity convert(ActivityDto activityDto) {
         // The id is not read from the payload: a create has the server assign it, and an update takes it from the
         // URL. Mapping it here would let a create carry an existing id, which turns save() into a merge over that
-        // activity (see OI-46 on ids arriving in a request body).
+        // activity.
         Activity activity = new Activity();
         activity.setWeek(activityDto.week());
         activity.setCategory(activityDto.category());
