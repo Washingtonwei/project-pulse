@@ -236,7 +236,7 @@ The second axis: **quality attribute → quality scenario → verifying test**. 
 
 | Quality attribute(s) | QS | Verifying test (today) | State |
 |---|---|---|---|
-| `SEC-authorization` (honors `BR-team-scoped-access`, `BR-role-based-access`) | [QS-1](design/architectural-design.md#quality-requirements) | Cross-scope denial: `*_NotSameTeam` / `*NotInSameCourse` / `*NotSameSection` methods + `isForbidden` assertions across `RequirementArtifactControllerTest`, `DocumentControllerTest`, `ArtifactLinkControllerTest`, `ActivityIntegrationTest`, `CriterionIntegrationTest`, … | ✅ Verified |
+| `SEC-authorization` (honors `BR-team-scoped-access`, `BR-section-scoped-access`, `BR-role-based-access`) | [QS-1](design/architectural-design.md#quality-requirements) | Cross-scope denial: `*_NotSameTeam` / `*NotInSameCourse` / `*NotSameSection` methods + `isForbidden` assertions across `RequirementArtifactControllerTest`, `DocumentControllerTest`, `ArtifactLinkControllerTest`, `ActivityIntegrationTest`, `CriterionIntegrationTest`, … | ✅ Verified |
 | `SEC-authentication` | [QS-2](design/architectural-design.md#quality-requirements) | `isUnauthorized` cases on protected `/api/v1` endpoints in the integration suite (`CourseIntegrationTest`, `EvaluationIntegrationTest`, `InstructorIntegrationTest`, …) | ✅ Verified |
 | `MNT-service-layer`, `MNT-feature-locality`, `INT-single-application` | [QS-3](design/architectural-design.md#quality-requirements) | — (no architecture-conformance test; convention is review-enforced) | ⚠️ Process-verified |
 | `PER-autosave-cadence`, `ROB-edit-loss-bound`, `ROB-autosave-retry` | [QS-4](design/architectural-design.md#quality-requirements) | Collision half: `DocumentSectionControllerTest.*_LockedByAnotherUser` / `*_NotLocked`, `UseCaseControllerTest.lock*` / `unlock*` (✅). Autosave-cadence / edit-loss / retry half: client-side, **no test** (no RAM frontend test) | 🟡 Half-verified |
@@ -318,21 +318,21 @@ A business rule (`BR-*`, owned by [business-rules.md](requirements/business-rule
 
 > ⚙️ **Generated, do not hand-edit.** This table is a *projection* of the forward citations — the use cases' **Business Rules** fields, the SRS's rule citations, and the NFR matrix's `QS-n` rows — not a second authored copy of them (that would violate "cited, never restated" and drift). `/spec-build` **regenerates and verifies** it against the live citations; a row that disagrees with them is a flagged defect, and edits belong in the citing artifacts, not here. The two universal access rules (`BR-role-based-access`, `BR-team-scoped-access`) are cited by essentially every authoring/CRUD use case and are summarized by count rather than enumerated (the same noise-reduction convention as the functional matrix's omitted `FR-SEC-*` column). This index is the **spec-level** backward view (which requirements *cite* a rule); its **code-level** companion — which `file:method` *enforces* each rule — lives in `/sync-check`'s `BR → enforcement-point` map. Together they trace a rule → requirements → code.
 >
-> **Last regenerated:** 2026-06-27 (against the citations as of this commit).
+> **Last regenerated:** 2026-09-07 (against the citations as of this commit).
 
 | Business rule | Cited by use cases | SRS | QS |
 |---|---|---|---|
 | `BR-account-self-setup` | `UC-ACC-setup-instructor-account`, `UC-ACC-setup-student-account` | — | — |
 | `BR-active-weeks` | `UC-EVA-submit-evaluation`, `UC-SEC-setup-active-weeks` | — | — |
-| `BR-artifact-key-unique` | `UC-ART-create-artifact` | (prose) | — |
+| `BR-artifact-key-unique` | `UC-ART-create-artifact` | `DI-artifact-key-assignment`, (prose) | — |
 | `BR-assistant-enablement` | `UC-AI-consult-project-assistant`, `UC-AI-draft-skeleton`, `UC-AI-elicit-requirements`, `UC-AI-practice-interview`, `UC-CFG-toggle-assistants` | — | — |
 | `BR-assistant-socratic` | `UC-AI-consult-project-assistant`, `UC-AI-critique`, `UC-AI-draft-skeleton`, `UC-AI-elicit-requirements`, `UC-AI-practice-interview`, `UC-AI-review-proposal`, `UC-AI-structure-notes`, `UC-AI-tutor`, `UC-AI-whole-project-review` | — | — |
 | `BR-authored-prevails` | `UC-AI-elicit-requirements` | — | — |
 | `BR-collab-no-overwrite` | `UC-COL-collaborative-edit` | `ROB-no-overwrite` | — |
 | `BR-comment-access` | `UC-COL-add-comment`, `UC-COL-resolve-comment` | — | — |
-| `BR-deletion-integrity` | `UC-ART-delete-artifact`, `UC-GLO-delete-term` | (prose), `FR-HIS-authorship-metadata` | — |
+| `BR-deletion-integrity` | `UC-ART-delete-artifact`, `UC-GLO-delete-term` | `DI-artifact-key-assignment`, `DI-referential-integrity`, `DI-soft-delete-retention`, (prose) | — |
 | `BR-document-creation` | `UC-TPL-provision-documents` | — | — |
-| `BR-edit-lock-required` | `UC-COL-collaborative-edit`, `UC-DOC-edit-document`, `UC-DOC-edit-use-case` | (prose) | — |
+| `BR-edit-lock-required` | `UC-COL-collaborative-edit`, `UC-DOC-edit-document`, `UC-DOC-edit-use-case` | `DI-concurrency-control`, (prose) | — |
 | `BR-evaluation-editable-until-close` | `UC-EVA-submit-evaluation` | — | — |
 | `BR-evaluation-private-comment` | `UC-EVA-section-evaluation-report`, `UC-EVA-student-evaluation-report`, `UC-EVA-submit-evaluation`, `UC-EVA-view-own-evaluation` | `FR-SEC-authorization` | — |
 | `BR-evaluation-submission-window` | `UC-EVA-submit-evaluation` | — | — |
@@ -342,18 +342,19 @@ A business rule (`BR-*`, owned by [business-rules.md](requirements/business-rule
 | `BR-instructor-lifecycle` | `UC-INS-deactivate-instructor`, `UC-INS-reactivate-instructor` | `FR-SEC-active-account` | — |
 | `BR-invitations-admin-only` | `UC-INS-invite-instructors`, `UC-STU-invite-students` | — | — |
 | `BR-link-constraints` | `UC-LNK-create-link`, `UC-LNK-edit-link` | — | — |
-| `BR-lock-expiry` | `UC-DOC-edit-document`, `UC-DOC-edit-use-case` | (prose) | — |
+| `BR-lock-expiry` | `UC-DOC-edit-document`, `UC-DOC-edit-use-case` | `DI-concurrency-control`, (prose) | — |
 | `BR-review-authority` | `UC-REV-review-documents` | (prose) | — |
 | `BR-review-lock` | `UC-REV-submit-for-review` | (prose) | — |
-| `BR-role-based-access` | _universal_ — 37 UCs (every authoring/CRUD use case) | `FR-SEC-authorization`, `SEC-authorization` | `QS-1` |
+| `BR-role-based-access` | _universal_ — 40 UCs (every authoring/CRUD use case) | `FR-SEC-authorization`, `SEC-authorization` | `QS-1` |
 | `BR-rubric-admin-only` | `UC-RUB-add-criterion`, `UC-RUB-create-criterion`, `UC-RUB-create-rubric`, `UC-RUB-delete-criterion`, `UC-RUB-delete-rubric`, `UC-RUB-edit-criterion`, `UC-RUB-edit-rubric`, `UC-RUB-remove-criterion` | — | — |
 | `BR-section-admin-only` | `UC-RUB-assign-rubric`, `UC-SEC-create-section`, `UC-SEC-edit-section`, `UC-SEC-setup-active-weeks` | — | — |
 | `BR-section-config-access` | `UC-CFG-configure-assistant-instructions`, `UC-CFG-configure-review-criteria`, `UC-CFG-configure-teaching-context`, `UC-CFG-toggle-assistants` | — | — |
+| `BR-section-scoped-access` | `UC-EVA-section-evaluation-report`, `UC-EVA-student-evaluation-report`, `UC-WAR-student-war-report`, `UC-WAR-team-war-report` | `FR-SEC-authorization`, `SEC-authorization` | `QS-1` |
 | `BR-source-material-import` | `UC-AI-import-source-material` | — | — |
 | `BR-student-lifecycle` | `UC-STU-deactivate-student`, `UC-STU-delete-student`, `UC-STU-reactivate-student` | `FR-SEC-active-account` | — |
 | `BR-team-admin-only` | `UC-INS-assign-instructors`, `UC-INS-remove-instructor`, `UC-TEA-assign-students`, `UC-TEA-create-team`, `UC-TEA-delete-team`, `UC-TEA-edit-team`, `UC-TEA-remove-student` | — | — |
-| `BR-team-scoped-access` | _universal_ — 26 UCs (every authoring/CRUD use case) | `FR-SEC-authorization`, `SEC-authorization`, `SI-export-formats` | `QS-1` |
+| `BR-team-scoped-access` | _universal_ — 30 UCs (every authoring/CRUD use case) | `DI-team-scoping`, `FR-SEC-authorization`, `SEC-authorization`, `SI-export-formats`, (prose) | `QS-1` |
 | `BR-team-single-instructor` | `UC-INS-assign-instructors`, `UC-INS-remove-instructor` | — | — |
 | `BR-use-case-name-unique` | `UC-DOC-create-use-case` | — | — |
 
-> **Readout.** All 33 rules have at least one enforcer — the backward view confirms the forward coverage check from the other direction. Two rules are load-bearing (`BR-role-based-access` 37 UCs, `BR-team-scoped-access` 26 UCs) — touching either is a project-wide change, which is exactly what the index makes visible. The `(prose)` SRS entries are rules the SRS cites in narrative (e.g. the locking rules in the autosave/persistence discussion) rather than from a specific `FR-*`.
+> **Readout.** All 34 rules have at least one enforcer, so the backward view confirms the forward coverage check from the other direction. Two rules are load-bearing (`BR-role-based-access` 40 UCs, `BR-team-scoped-access` 30 UCs), so touching either is a project-wide change, which is exactly what the index makes visible. `BR-team-scoped-access` grew from 26 to 30 citing use cases on 2026-09-07, when OI-50 widened it from requirement content to all team-owned student work and the weekly-activity-report and peer-evaluation use cases began citing it; `BR-section-scoped-access` is its instructor-side companion, added in the same change. The `(prose)` SRS entries are rules the SRS cites in narrative (for example the locking rules in the autosave/persistence discussion) rather than from a specific `FR-*`.

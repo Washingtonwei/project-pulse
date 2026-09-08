@@ -210,7 +210,7 @@ Authorship metadata (FR-HIS-authorship-metadata) is in scope for the initial rel
 
 **FR-SEC-authentication (Ubiquitous):** The system shall authenticate users via its JWT-based authentication mechanism before granting access to protected resources. _(Part of FEAT-administration.)_
 
-**FR-SEC-authorization (Ubiquitous):** The system shall enforce role-based access control across the student, instructor, and course admin roles, permitting each operation only for the roles authorized for it (per BR-role-based-access). It shall further restrict access to a user's own scope of ownership: a student to her own team's requirements graph, documents, and project source material (per BR-team-scoped-access) and to her own team's weekly activity reports — but not another team's — while restricting her peer evaluation results to her own, with private comments withheld from students (per BR-evaluation-visibility, BR-evaluation-private-comment); and an instructor or course admin to the course sections she is assigned to or owns. _(Part of FEAT-administration.)_
+**FR-SEC-authorization (Ubiquitous):** The system shall enforce role-based access control across the student, instructor, and course admin roles, permitting each operation only for the roles authorized for it (per BR-role-based-access). It shall further restrict access to a user's own scope of ownership: a student to the work of a team she belongs to, covering that team's requirements graph, documents, project source material, and weekly activity reports, and never another team's (per BR-team-scoped-access), while restricting her peer evaluation results to her own, with private comments withheld from students (per BR-evaluation-visibility, BR-evaluation-private-comment); and an instructor or course admin to the course sections she is assigned to or owns (per BR-section-scoped-access). _(Part of FEAT-administration.)_
 
 **FR-SEC-deny-unauthorized (Event-Driven):** When an unauthorized user attempts to access a protected resource, the system shall deny access and provide an appropriate error message. _(Part of FEAT-administration.)_
 
@@ -745,7 +745,7 @@ PER-ai-response-time: RAM shall present an AI assistant response, or a clear "wo
 
 SEC-authentication: Project Pulse shall authenticate every user through its JWT-based authentication mechanism before granting access to any protected resource, per CO-single-auth and FR-SEC-authentication.
 
-SEC-authorization: Project Pulse shall enforce role-based access control across the course admin, instructor, and student roles, and the RAM environment shall restrict each student to her own team's requirements graph, documents, and project source material, per BR-team-scoped-access, BR-role-based-access, and FR-SEC-authorization.
+SEC-authorization: Project Pulse shall enforce role-based access control across the course admin, instructor, and student roles, shall restrict each student to the work of a team she belongs to (that team's requirements graph, documents, project source material, and weekly activity reports), and shall restrict each instructor or course admin to the course sections she is assigned to or owns, per BR-team-scoped-access, BR-section-scoped-access, BR-role-based-access, and FR-SEC-authorization.
 
 SEC-ferpa: Project Pulse shall store and transmit student educational records in compliance with FERPA, per CO-ferpa.
 
