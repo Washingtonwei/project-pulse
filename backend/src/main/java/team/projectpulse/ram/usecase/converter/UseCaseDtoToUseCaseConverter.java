@@ -34,9 +34,11 @@ public class UseCaseDtoToUseCaseConverter implements Converter<UseCaseDto, UseCa
         // The id is not read from the payload: a create has the server assign it, and an update takes it from
         // the URL. UseCase.artifact is @OneToOne(cascade = ALL) @MapsId, so the two share an id, and mapping it
         // here would let a create merge over the artifact that id names and reassign it to the caller's team.
-        // Note that the team below is still resolved from the body, which is a separate problem and separate
-        // work: a converter has no path variables, so scoping it needs the route's teamId passed to the service.
-        // UseCaseService.requireActorsInTeam re-resolves the actors through a team-scoped finder meanwhile.
+        //
+        // A converter has no path variables, so it is the wrong layer to resolve any reference at. The target
+        // shape is pure field mapping here, with UseCaseService resolving every reference against the teamId in
+        // the route. Getting the rest of the way there is tracked as OI-46; do not extend what this class
+        // resolves in the meantime.
         UseCase useCase = new UseCase();
         useCase.setUseCaseTrigger(source.trigger());
 

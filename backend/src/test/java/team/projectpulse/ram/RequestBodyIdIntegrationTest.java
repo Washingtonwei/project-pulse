@@ -240,10 +240,9 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
     @DisplayName("A use-case update naming another team's artifact as a precondition must not overwrite it")
     void testStudentJohnCannotOverwriteAnotherTeamsArtifactThroughUseCaseUpdate() throws Exception {
         // The update path, not the create path. UseCase.preconditions and .postconditions are
-        // @ManyToMany(cascade = {MERGE, PERSIST, REFRESH}), and updateUseCase adds the submitted condition
-        // artifacts straight into the loaded use case's collections, so a condition carrying an existing id used
-        // to be a detached row handed to a cascaded merge, rewritten with the caller's text and given the team
-        // that UseCaseDtoToUseCaseConverter read from the request body.
+        // @ManyToMany(cascade = {MERGE, PERSIST, REFRESH}) and updateUseCase adds the submitted condition
+        // artifacts into the loaded use case's collections, so a condition carrying an existing id used to reach
+        // a cascaded merge. The converter no longer maps that id, and this probe holds that line.
         //
         // Worth probing separately from the create even though the same converter feeds both: on the peer
         // evaluations the create was refused and the update was the exploitable one, because a managed parent

@@ -218,13 +218,8 @@ public class UseCaseService {
     }
 
     /**
-     * Re-resolves the use case's actors against {@code teamId}, so a caller cannot point their own
-     * use case at another team's artifacts and surface that team's content inside it.
-     * <p>
-     * This has to happen here rather than at the point of load. The actor ids arrive in the request
-     * body, and {@code UseCaseDtoToUseCaseConverter} has already turned them into entities before the
-     * service is called, with no team context of any kind. By the time this method runs there is no
-     * id left to scope a query by, only an object that was loaded unscoped.
+     * Requires the use case's actors to belong to {@code teamId}, the team named in the route, so that a use case
+     * cannot reference artifacts outside its own team.
      * <p>
      * <strong>The returned artifact is discarded on purpose: these calls are made for their exception,
      * not for their value.</strong> {@code findRequirementArtifactById} is team-scoped and throws
@@ -234,9 +229,8 @@ public class UseCaseService {
      * looks discardable to a reader who does not know that. An {@code existsByIdAndTeamTeamId}
      * returning a boolean would read more plainly, and would be the thing to change to.
      * <p>
-     * Covers the primary and secondary actors only. Preconditions and postconditions are rebuilt from
-     * the body by {@code ConditionDtoToRequirementArtifactConverter}, which copies {@code id} straight
-     * from the payload; that is a separate defect class and is not handled here.
+     * This covers the actors. Resolving every reference here rather than in the converter, so that the check is
+     * the resolution rather than a second pass after it, is the direction of travel; it is tracked as OI-46.
      */
     private void requireActorsInTeam(Integer teamId, UseCase useCase) {
         RequirementArtifact primaryActor = useCase.getPrimaryActor();
