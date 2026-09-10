@@ -25,11 +25,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * {@code GlossaryService}, which is type-scoped, but visible to the use-case listings, and a body-chosen key such
  * as {@code UC-1} collides with a real key the team's sequence has already minted or will mint later.
  *
- * <p><strong>Why these probes call the service rather than the endpoint.</strong> The four glossary routes still
- * match no rule in {@code SecurityConfiguration} and so fall to the API catch-all {@code denyAll()} (OI-47), which
- * refuses them for every caller. A MockMvc probe would therefore be answered {@code 403} by the filter chain and
- * would prove nothing about what the service does with the body. Promote these to full-stack probes in
- * {@code RequestBodyIdIntegrationTest} once the route rules land.
+ * <p><strong>Why these probes call the service rather than the endpoint.</strong> They were written on 2026-09-08,
+ * when the four glossary routes matched no rule in {@code SecurityConfiguration} and so fell to the API catch-all
+ * {@code denyAll()} (OI-47), which refused them for every caller. A MockMvc probe would have been answered
+ * {@code 403} by the filter chain and would have proved nothing about what the service does with the body. The
+ * rules landed on 2026-09-09 (see {@code GlossaryControllerTest}), so that reason has expired: these can now be
+ * promoted to full-stack probes in {@code RequestBodyIdIntegrationTest}, where the equivalents for the other
+ * create paths live. Until they are, they still cover the service, which is where the type and key are decided.
  */
 @DisplayName("The glossary create path owns the artifact type and key, not the request body")
 public class GlossaryTermCreationIntegrationTest extends AbstractIntegrationTest {
