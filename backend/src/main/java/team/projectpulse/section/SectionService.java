@@ -20,6 +20,7 @@ import team.projectpulse.user.userinvitation.UserInvitationService;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Service
@@ -173,7 +174,13 @@ public class SectionService {
         List<String> alreadyExistsEmails = new ArrayList<>(); // Emails of instructors already in the section, no need to add or invite
         List<String> failedEmails = new ArrayList<>(); // Emails that are invited but whose invitation email could not be delivered
 
-        for (String email : emails) {
+        for (String rawEmail : emails) {
+            // Normalized exactly as the invitation path normalizes, so the account lookup here, the invitation
+            // written there, and the buckets reported back all speak about the same string. Without this the
+            // comparison below misses: the service answers with the normalized address while this loop still
+            // holds what the course admin typed, and a successful invitation is reported as a failure.
+            String email = rawEmail.trim().toLowerCase(Locale.ROOT);
+
             // Check if user with this email already exists
             PeerEvaluationUser existingUser = this.userRepository.findByEmail(email).orElse(null);
 
@@ -198,8 +205,11 @@ public class SectionService {
             } else {
                 // User doesn't exist - send invitation. An address whose email could not be delivered is reported
                 // separately rather than counted as invited, so the course admin knows to retry it.
+                // Branch on what the callee says it invited. An empty "failed" is not the same statement: the
+                // service also skips an address that already has an account, and reporting that as invited would
+                // tell the course admin an email went out when none did.
                 Map<String, List<String>> invitationResult = this.userInvitationService.sendEmailInvitations(courseId, sectionId, List.of(email), "instructor");
-                if (invitationResult.get("failed").isEmpty()) {
+                if (invitationResult.get("invited").contains(email)) {
                     invitedEmails.add(email);
                 } else {
                     failedEmails.add(email);

@@ -161,7 +161,7 @@ public class EvaluationIntegrationTest extends AbstractIntegrationTest {
         this.mockMvc.perform(post(this.baseUrl + "/evaluations").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(false))
                 .andExpect(jsonPath("$.code").value(StatusCode.INVALID_ARGUMENT))
-                .andExpect(jsonPath("$.message").value("The submission week is not in the active weeks for the section."));
+                .andExpect(jsonPath("$.message").value("That week is not one of the course section's active weeks."));
     }
 
     @Test

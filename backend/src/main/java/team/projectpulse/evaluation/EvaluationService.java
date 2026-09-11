@@ -106,7 +106,7 @@ public class EvaluationService {
      */
     private void requireOpenSubmissionWindow(Section section, String week, String outOfWindowMessage) {
         if (!section.getActiveWeeks().contains(week)) {
-            throw new PeerEvaluationIllegalArgumentException("The submission week is not in the active weeks for the section.");
+            throw new PeerEvaluationIllegalArgumentException("That week is not one of the course section's active weeks.");
         }
 
         if (!previousWeek().equals(week)) {

@@ -331,7 +331,7 @@ class EvaluationServiceTest {
         // Then
         assertThat(throwable)
                 .isInstanceOf(PeerEvaluationIllegalArgumentException.class)
-                .hasMessage("The submission week is not in the active weeks for the section.");
+                .hasMessage("That week is not one of the course section's active weeks.");
     }
 
     @Test
@@ -490,7 +490,7 @@ class EvaluationServiceTest {
         // Then
         assertThat(throwable)
                 .isInstanceOf(PeerEvaluationIllegalArgumentException.class)
-                .hasMessage("The submission week is not in the active weeks for the section.");
+                .hasMessage("That week is not one of the course section's active weeks.");
         verify(this.evaluationRepository, times(0)).save(any(PeerEvaluation.class));
     }
 

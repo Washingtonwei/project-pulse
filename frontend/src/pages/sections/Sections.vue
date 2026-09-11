@@ -89,6 +89,15 @@
             v-if="isAdmin"
           ></el-button>
           <el-button
+            icon="Message"
+            circle
+            plain
+            type="primary"
+            @click="showPendingInvitationsDialog(row)"
+            title="Pending Invitations"
+            v-if="isAdmin"
+          ></el-button>
+          <el-button
             icon="User"
             circle
             plain
@@ -256,6 +265,37 @@
         @close-dialog="closeInviteUsersDialog"
       ></InviteUsersForm>
     </el-dialog>
+    <!-- Dialog for students who were invited but have not registered yet -->
+    <el-dialog
+      title="Pending Invitations"
+      v-model="pendingInvitationsDialogVisible"
+      width="50%"
+      destroy-on-close
+    >
+      <el-text size="small" type="info">
+        Students invited to this section who have not created an account yet. Anyone who has
+        registered disappears from this list.
+      </el-text>
+      <el-table
+        :data="pendingInvitations"
+        style="width: 100%; margin-top: 12px"
+        v-loading="pendingInvitationsLoading"
+      >
+        <el-table-column type="index" label="#" width="60"></el-table-column>
+        <el-table-column label="Email" prop="email" min-width="250"></el-table-column>
+        <template #empty>
+          <el-empty description="Everyone invited to this section has registered." />
+        </template>
+      </el-table>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-text size="small" type="info" style="margin-right: 12px">
+            {{ pendingInvitations.length }} pending
+          </el-text>
+          <el-button @click="pendingInvitationsDialogVisible = false"> Close </el-button>
+        </span>
+      </template>
+    </el-dialog>
     <!-- Dialog for managing instructors -->
     <el-dialog
       title="Manage Instructors"
@@ -304,11 +344,13 @@ import {
   assignRubricToSection,
   setUpActiveWeeks,
   getInstructors,
+  getPendingInvitations,
   removeInstructorFromSection
 } from '@/apis/section'
 import type { FormInstance } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type {
+  GetPendingInvitationsResponse,
   SearchSectionByCriteriaResponse,
   Section,
   SectionSearchCriteria,
@@ -654,6 +696,28 @@ function closeInviteUsersDialog() {
 
   // Reload sections to update instructor list if needed
   loadSections()
+}
+
+// Pending Invitations Dialog
+const pendingInvitationsDialogVisible = ref(false)
+const pendingInvitations = ref<{ email: string }[]>([])
+const pendingInvitationsLoading = ref(false)
+
+async function showPendingInvitationsDialog(section: Section) {
+  pendingInvitationsDialogVisible.value = true
+  pendingInvitations.value = []
+  pendingInvitationsLoading.value = true
+  try {
+    const result: GetPendingInvitationsResponse = await getPendingInvitations(
+      section.sectionId as number
+    )
+    // The endpoint answers with bare email addresses; el-table wants one object per row.
+    pendingInvitations.value = result.data.map((email) => ({ email }))
+  } catch (error) {
+    ElMessage.error('Failed to load pending invitations')
+  } finally {
+    pendingInvitationsLoading.value = false
+  }
 }
 
 // Instructors Dialog

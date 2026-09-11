@@ -220,6 +220,10 @@ AS-llm-cost-effective: LLM APIs (e.g., OpenAI) remain available and cost-effecti
 
 AS-faculty-buy-in: Faculty buy-in will be sufficient for pilot use.
 
+AS-new-student-accounts: Every student invited to Project Pulse is new to it and registers a fresh account; the product does not enroll an account that already exists into a course section.
+
+AS-one-section-per-student: A student is invited to exactly one course section and belongs to exactly one at a time.
+
 AS-maintainable-stack: The system uses technologies the client already knows and can maintain after the product is delivered.
 
 # **Stakeholder Profiles and User Descriptions**

@@ -60,6 +60,10 @@ public class WeeklyReminderScheduler {
         // section (a lazy-load that fails, a row with an unexpected null), which would otherwise skip every course
         // section after it just as silently.
         for (Section section : reminderEligibleSections) {
+            // Read outside the try: if the body failed because this Section cannot be read, calling the same
+            // getter from the handler throws again, the exception escapes the loop, and every course section after
+            // this one is skipped, which is precisely what the outer catch exists to prevent.
+            String sectionName = section.getSectionName();
             try {
                 boolean isWarDueToday = todayDay.equals(section.getWarWeeklyDueDay());
                 boolean isPeerEvaluationDueToday = todayDay.equals(section.getPeerEvaluationWeeklyDueDay());
@@ -83,7 +87,7 @@ public class WeeklyReminderScheduler {
                 }
                 LOGGER.info("Sent {} of {} weekly reminders for section {}", sent, section.getStudents().size(), section.getSectionName());
             } catch (RuntimeException e) {
-                LOGGER.error("Could not send the weekly reminders for section {}", section.getSectionName(), e);
+                LOGGER.error("Could not send the weekly reminders for section {}", sectionName, e);
             }
         }
     }

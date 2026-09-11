@@ -172,6 +172,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/sections/{sectionId}/instructors/{instructorId}").access(this.assignInstructorToSectionAuthorizationManager)
                         .requestMatchers(HttpMethod.GET, this.baseUrl + "/sections/{sectionId}/instructors").access(this.sectionOwnershipAuthorizationManager)
                         .requestMatchers(HttpMethod.POST, this.baseUrl + "/sections/{sectionId}/students/email-invitations").access(this.sectionOwnershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.GET, this.baseUrl + "/sections/{sectionId}/students/pending-invitations").access(this.sectionOwnershipAuthorizationManager)
                         .requestMatchers(HttpMethod.POST, this.baseUrl + "/sections/{sectionId}/instructors/invite-or-add").access(this.sectionOwnershipAuthorizationManager)
 
                         // Security rules for the /teams/** endpoint.

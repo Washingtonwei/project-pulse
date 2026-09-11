@@ -50,7 +50,7 @@
         </ul>
       </div>
       <div v-if="summaryData.alreadyExists && summaryData.alreadyExists.length > 0">
-        <h4>Already exists:</h4>
+        <h4>Already has an account (not invited again):</h4>
         <ul>
           <li v-for="email in summaryData.alreadyExists" :key="email">{{ email }}</li>
         </ul>

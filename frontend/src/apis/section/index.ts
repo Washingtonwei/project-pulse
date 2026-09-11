@@ -10,6 +10,7 @@ import type {
   UpdateSectionResponse,
   AssignRubricToSectionResponse,
   SetUpActiveWeeksResponse,
+  GetPendingInvitationsResponse,
   SendEmailInvitationsResponse,
   InviteOrAddInstructorsResponse,
   GetInstructorsResponse,
@@ -71,6 +72,11 @@ export const sendEmailInvitationsToStudents = (
       },
       timeout: INVITATION_TIMEOUT_MS
     }
+  )
+
+export const getPendingInvitations = (sectionId: number) =>
+  request.get<any, GetPendingInvitationsResponse>(
+    `${API.SECTIONS_ENDPOINT}/${sectionId}/students/pending-invitations`
   )
 
 export const inviteOrAddInstructors = (courseId: number, sectionId: number, emails: string[]) =>
