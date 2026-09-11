@@ -53,32 +53,38 @@ public class WeeklyReminderScheduler {
         // DB returns only sections eligible for reminders this week; students preloaded via @EntityGraph
         List<Section> reminderEligibleSections = this.sectionService.findReminderEligibleSectionsForWeek(currentWeek);
 
+        // Two levels of isolation, because FR-NOT-weekly-reminder promises a reminder to *each* student in *each*
+        // eligible course section, and this run is unattended: whatever fails has to be logged and stepped over
+        // rather than surfaced to a caller. The inner catch covers an address the mail server rejects, which used
+        // to abort the whole morning at the first bad one. The outer catch covers everything else about a course
+        // section (a lazy-load that fails, a row with an unexpected null), which would otherwise skip every course
+        // section after it just as silently.
         for (Section section : reminderEligibleSections) {
-            boolean isWarDueToday = todayDay.equals(section.getWarWeeklyDueDay());
-            boolean isPeerEvaluationDueToday = todayDay.equals(section.getPeerEvaluationWeeklyDueDay());
+            try {
+                boolean isWarDueToday = todayDay.equals(section.getWarWeeklyDueDay());
+                boolean isPeerEvaluationDueToday = todayDay.equals(section.getPeerEvaluationWeeklyDueDay());
 
-            if (!isWarDueToday && !isPeerEvaluationDueToday) continue; // Nothing due today for this section
+                if (!isWarDueToday && !isPeerEvaluationDueToday) continue; // Nothing due today for this section
 
-            String warTime = isWarDueToday ? formatDue(section.getWarDueTime(), today) : null;
-            String peerTime = isPeerEvaluationDueToday ? formatDue(section.getPeerEvaluationDueTime(), today) : null;
+                String warTime = isWarDueToday ? formatDue(section.getWarDueTime(), today) : null;
+                String peerTime = isPeerEvaluationDueToday ? formatDue(section.getPeerEvaluationDueTime(), today) : null;
 
-            String sharedBody = buildSharedBody(section.getSectionName(), warTime, peerTime);
+                String sharedBody = buildSharedBody(section.getSectionName(), warTime, peerTime);
 
-            // Each student's send is isolated, because FR-NOT-weekly-reminder requires a reminder for *each*
-            // student in the course section: an address the mail server rejects used to abort this run, so every
-            // student after it in the list, and every course section after this one, silently got no reminder that
-            // morning. The run is unattended, so a failure has to be logged rather than surfaced to a caller.
-            int sent = 0;
-            for (Student student : section.getStudents()) {
-                String html = "Hello %s,<br><br>%s".formatted(student.getFirstName(), sharedBody);
-                try {
-                    this.emailService.sendReminderEmail(student.getEmail(), "ProjectPulse Submission Reminder", html);
-                    sent++;
-                } catch (RuntimeException e) {
-                    LOGGER.error("Could not send the weekly reminder to {} in section {}", student.getEmail(), section.getSectionName(), e);
+                int sent = 0;
+                for (Student student : section.getStudents()) {
+                    String html = "Hello %s,<br><br>%s".formatted(student.getFirstName(), sharedBody);
+                    try {
+                        this.emailService.sendReminderEmail(student.getEmail(), "ProjectPulse Submission Reminder", html);
+                        sent++;
+                    } catch (RuntimeException e) {
+                        LOGGER.error("Could not send the weekly reminder to {} in section {}", student.getEmail(), section.getSectionName(), e);
+                    }
                 }
+                LOGGER.info("Sent {} of {} weekly reminders for section {}", sent, section.getStudents().size(), section.getSectionName());
+            } catch (RuntimeException e) {
+                LOGGER.error("Could not send the weekly reminders for section {}", section.getSectionName(), e);
             }
-            LOGGER.info("Sent {} of {} weekly reminders for section {}", sent, section.getStudents().size(), section.getSectionName());
         }
     }
 

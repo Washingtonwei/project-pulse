@@ -4,8 +4,8 @@
     <el-form-item label="Email(s):" prop="email">
       <input name="input" ref="emailInputBox" />
       <el-text size="small" type="info">
-        Separate multiple emails with semicolons. Each address is emailed one at a time, so invite a
-        large course section in batches of about 20.
+        Separate multiple emails with semicolons. Each address is emailed individually, so a whole
+        course section can take a minute or two. Batches of about 20 keep each attempt short.
       </el-text>
     </el-form-item>
 

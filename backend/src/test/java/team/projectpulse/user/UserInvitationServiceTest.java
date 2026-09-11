@@ -7,6 +7,7 @@ import team.projectpulse.user.userinvitation.UserInvitationRepository;
 import team.projectpulse.user.userinvitation.UserInvitationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -160,6 +161,25 @@ class UserInvitationServiceTest {
         assertThat(result.get("failed")).isEmpty();
         verify(this.userInvitationRepository, times(4)).save(any());
         verify(this.emailService, times(4)).sendInvitationEmail(any());
+    }
+
+    @Test
+    void testSendEmailInvitationsKeepsTheTokenOfAnExistingInvitation() {
+        // Given
+        // Re-inviting an address that already holds an invitation, which is what a course admin does when a batch
+        // looks like it failed. The link already in that inbox has to keep working, so the token is not re-minted.
+        String email = "v.gordon@abc.edu";
+        given(this.userInvitationRepository.findById(email))
+                .willReturn(Optional.of(new UserInvitation(email, 1, 2, "the-token-already-emailed", "student")));
+
+        // When
+        this.userInvitationService.sendEmailInvitations(1, 2, List.of(email), "student");
+
+        // Then
+        ArgumentCaptor<UserInvitation> saved = ArgumentCaptor.forClass(UserInvitation.class);
+        verify(this.userInvitationRepository).save(saved.capture());
+        assertThat(saved.getValue().getToken()).isEqualTo("the-token-already-emailed");
+        verify(this.emailService).sendInvitationEmail(saved.getValue());
     }
 
     @Test

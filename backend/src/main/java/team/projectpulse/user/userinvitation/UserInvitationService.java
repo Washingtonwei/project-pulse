@@ -28,8 +28,24 @@ public class UserInvitationService {
         this.emailService = emailService;
     }
 
+    /**
+     * Builds an invitation for an address, keeping the token of whatever invitation that address already holds.
+     *
+     * <p><strong>Why the token is reused.</strong> An invitation row is keyed by email, so a second invitation to
+     * the same address overwrites the first. Minting a fresh token there silently invalidates the link already
+     * sitting in the recipient's inbox, and re-inviting is exactly what a course admin does when a batch appears
+     * to have failed: she sends the same list again and breaks every link that had in fact been delivered.
+     * Reusing the token makes a re-invite idempotent, so both the old link and the new one work.
+     *
+     * <p>The course, course section and role are still taken from the new invitation, so re-inviting an address to
+     * a different course section repoints it. The row is deleted once the account registers, so the next
+     * invitation to that address mints a fresh token.
+     */
     public UserInvitation createUserInvitation(String email, Integer courseId, Integer sectionId, String role) {
-        return new UserInvitation(email, courseId, sectionId, UUID.randomUUID().toString(), role);
+        String token = this.userInvitationRepository.findById(email)
+                .map(UserInvitation::getToken)
+                .orElseGet(() -> UUID.randomUUID().toString());
+        return new UserInvitation(email, courseId, sectionId, token, role);
     }
 
     public void saveUserInvitation(UserInvitation userInvitation) {
@@ -78,9 +94,13 @@ public class UserInvitationService {
      * email, so a retry overwrites it with a fresh token. The summary returned here is what tells the course
      * admin which addresses to retry (extension 10a of the use case).
      *
-     * <p>Known limit: the rows commit when this method returns rather than one at a time, so a failure of the
-     * commit itself would still strand links that were already delivered. Closing that needs a transaction per
-     * address, which is not worth the complexity while the only realistic failure in this loop is the send.
+     * <p><strong>Known limit: each email goes out before its own row is committed.</strong> This method is
+     * transactional and sends inside the loop, so for a large course section the first recipient holds a
+     * live-looking link for as long as the rest of the batch takes. A recipient who clicks during that window is
+     * validated by a separate request that cannot see the uncommitted row, and is told she was not invited;
+     * clicking again once the batch finishes works. A failure of the commit itself would strand those links for
+     * good. Both want the same fix, a transaction per address or a send that runs after the commit, tracked as
+     * OI-53.
      *
      * @return the addresses invited, under "invited", and the addresses whose email could not be sent, under "failed"
      */

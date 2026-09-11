@@ -22,6 +22,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -76,6 +77,23 @@ class WeeklyReminderSchedulerTest {
         ArgumentCaptor<String> recipients = ArgumentCaptor.forClass(String.class);
         verify(this.emailService, times(3)).sendReminderEmail(recipients.capture(), anyString(), anyString());
         assertThat(recipients.getAllValues()).containsExactly("s1@abc.edu", "s2@abc.edu", "s3@abc.edu");
+    }
+
+    @Test
+    void testSendWeeklyRemindersContinuesAfterOneSectionFails() {
+        // Given
+        // Isolation has to be per course section as well as per student. Anything thrown while reading a section
+        // used to skip every section after it, and nobody is watching an unattended 8am run to notice.
+        Section broken = mock(Section.class);
+        willThrow(new RuntimeException("Could not read the course section")).given(broken).getWarWeeklyDueDay();
+        Section healthy = sectionDueOnMonday("Fall 2026", List.of("s1@abc.edu"));
+        given(this.sectionService.findReminderEligibleSectionsForWeek("2026-W38")).willReturn(List.of(broken, healthy));
+
+        // When
+        scheduler(LocalDate.of(2026, 9, 14), true).sendWeeklyReminders();
+
+        // Then
+        verify(this.emailService, times(1)).sendReminderEmail(eq("s1@abc.edu"), anyString(), anyString());
     }
 
     @Test

@@ -446,10 +446,14 @@ class SectionIntegrationTest extends AbstractIntegrationTest {
         String json = this.jsonMapper.writeValueAsString(emails);
 
         // When and then
+        // The payload is asserted, not just the envelope: a delivery failure is now reported in "failed" rather
+        // than thrown, so without these two lines this test would go green against a completely broken mail path.
         this.mockMvc.perform(post(this.baseUrl + "/sections/2/students/email-invitations").contentType(MediaType.APPLICATION_JSON).content(json).params(requestParams).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
                 .andExpect(jsonPath("$.flag").value(true))
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
-                .andExpect(jsonPath("$.message").value("Send email invitation successfully"));
+                .andExpect(jsonPath("$.message").value("Send email invitation successfully"))
+                .andExpect(jsonPath("$.data.invited").value(Matchers.contains("l.santos@abc.edu", "m.sharp@abc.edu")))
+                .andExpect(jsonPath("$.data.failed").isEmpty());
     }
 
     @Test

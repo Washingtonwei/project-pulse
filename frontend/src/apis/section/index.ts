@@ -50,6 +50,13 @@ export const setUpActiveWeeks = (sectionId: number, activeWeeks: string[]) => {
   )
 }
 
+// The two invite routes send one email per address before they answer, so a course section's worth of
+// invitations takes far longer than the shared 10-second timeout allows. That timeout does not stop the server:
+// it abandons the response while the backend finishes, commits every invitation and delivers every email, which
+// leaves the course admin looking at a failure toast for a batch that in fact went out. Three minutes covers a
+// large course section and still sits under the platform's own request timeout.
+const INVITATION_TIMEOUT_MS = 180_000
+
 export const sendEmailInvitationsToStudents = (
   courseId: number,
   sectionId: number,
@@ -61,7 +68,8 @@ export const sendEmailInvitationsToStudents = (
     {
       params: {
         courseId
-      }
+      },
+      timeout: INVITATION_TIMEOUT_MS
     }
   )
 
@@ -72,7 +80,8 @@ export const inviteOrAddInstructors = (courseId: number, sectionId: number, emai
     {
       params: {
         courseId
-      }
+      },
+      timeout: INVITATION_TIMEOUT_MS
     }
   )
 
