@@ -171,6 +171,7 @@ public class SectionService {
         List<String> addedEmails = new ArrayList<>(); // Emails of instructors added directly, no need to send invitation
         List<String> invitedEmails = new ArrayList<>(); // Emails of instructors invited, need to send invitation email
         List<String> alreadyExistsEmails = new ArrayList<>(); // Emails of instructors already in the section, no need to add or invite
+        List<String> failedEmails = new ArrayList<>(); // Emails that are invited but whose invitation email could not be delivered
 
         for (String email : emails) {
             // Check if user with this email already exists
@@ -195,9 +196,14 @@ public class SectionService {
                     throw new IllegalArgumentException("User with email " + email + " exists but is not an instructor");
                 }
             } else {
-                // User doesn't exist - send invitation
-                this.userInvitationService.sendEmailInvitations(courseId, sectionId, List.of(email), "instructor");
-                invitedEmails.add(email);
+                // User doesn't exist - send invitation. An address whose email could not be delivered is reported
+                // separately rather than counted as invited, so the course admin knows to retry it.
+                Map<String, List<String>> invitationResult = this.userInvitationService.sendEmailInvitations(courseId, sectionId, List.of(email), "instructor");
+                if (invitationResult.get("failed").isEmpty()) {
+                    invitedEmails.add(email);
+                } else {
+                    failedEmails.add(email);
+                }
             }
         }
 
@@ -207,6 +213,7 @@ public class SectionService {
         result.put("added", addedEmails);
         result.put("invited", invitedEmails);
         result.put("alreadyExists", alreadyExistsEmails);
+        result.put("failed", failedEmails);
         return result;
     }
 

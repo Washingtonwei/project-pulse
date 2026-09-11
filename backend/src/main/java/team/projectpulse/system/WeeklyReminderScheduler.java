@@ -1,5 +1,7 @@
 package team.projectpulse.system;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -14,6 +16,8 @@ import java.util.List;
 
 @Component
 public class WeeklyReminderScheduler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(WeeklyReminderScheduler.class);
 
     private final EmailService emailService;
     private final SectionService sectionService;
@@ -60,10 +64,21 @@ public class WeeklyReminderScheduler {
 
             String sharedBody = buildSharedBody(section.getSectionName(), warTime, peerTime);
 
+            // Each student's send is isolated, because FR-NOT-weekly-reminder requires a reminder for *each*
+            // student in the course section: an address the mail server rejects used to abort this run, so every
+            // student after it in the list, and every course section after this one, silently got no reminder that
+            // morning. The run is unattended, so a failure has to be logged rather than surfaced to a caller.
+            int sent = 0;
             for (Student student : section.getStudents()) {
                 String html = "Hello %s,<br><br>%s".formatted(student.getFirstName(), sharedBody);
-                this.emailService.sendReminderEmail(student.getEmail(), "ProjectPulse Submission Reminder", html);
+                try {
+                    this.emailService.sendReminderEmail(student.getEmail(), "ProjectPulse Submission Reminder", html);
+                    sent++;
+                } catch (RuntimeException e) {
+                    LOGGER.error("Could not send the weekly reminder to {} in section {}", student.getEmail(), section.getSectionName(), e);
+                }
             }
+            LOGGER.info("Sent {} of {} weekly reminders for section {}", sent, section.getStudents().size(), section.getSectionName());
         }
     }
 

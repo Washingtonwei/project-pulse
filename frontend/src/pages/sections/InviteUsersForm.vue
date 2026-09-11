@@ -3,7 +3,10 @@
     <!-- Email input with Tagify and helper text -->
     <el-form-item label="Email(s):" prop="email">
       <input name="input" ref="emailInputBox" />
-      <el-text size="small" type="info"> Separate multiple emails with semicolons. </el-text>
+      <el-text size="small" type="info">
+        Separate multiple emails with semicolons. Each address is emailed one at a time, so invite a
+        large course section in batches of about 20.
+      </el-text>
     </el-form-item>
 
     <!-- Invite role -->
@@ -40,6 +43,12 @@
           <li v-for="email in summaryData.invited" :key="email">{{ email }}</li>
         </ul>
       </div>
+      <div v-if="summaryData.failed && summaryData.failed.length > 0">
+        <h4>Could not be emailed (please invite these again):</h4>
+        <ul>
+          <li v-for="email in summaryData.failed" :key="email">{{ email }}</li>
+        </ul>
+      </div>
       <div v-if="summaryData.alreadyExists && summaryData.alreadyExists.length > 0">
         <h4>Already exists:</h4>
         <ul>
@@ -59,7 +68,10 @@ import Tagify from '@yaireo/tagify'
 import '@yaireo/tagify/dist/tagify.css' // Don't forget to import the CSS file
 import { sendEmailInvitationsToStudents, inviteOrAddInstructors } from '@/apis/section'
 import { ElMessage } from 'element-plus'
-import type { InviteOrAddInstructorsResponse } from '@/apis/section/types'
+import type {
+  InviteOrAddInstructorsResponse,
+  SendEmailInvitationsResponse
+} from '@/apis/section/types'
 
 const { courseId, sectionId } = defineProps<{
   courseId: number
@@ -117,8 +129,15 @@ async function sendInvitations() {
 
   try {
     if (inviteRole.value === 'student') {
-      await sendEmailInvitationsToStudents(courseId, sectionId, invitationEmails.value)
-      ElMessage.success('Students invited successfully')
+      // The summary is shown for students too, because an address the mail server rejects is reported here
+      // rather than failing the whole batch, and the course admin has to see which ones to invite again.
+      const response: SendEmailInvitationsResponse = await sendEmailInvitationsToStudents(
+        courseId,
+        sectionId,
+        invitationEmails.value
+      )
+      summaryData.value = response.data
+      showSummary.value = true
     } else {
       const response: InviteOrAddInstructorsResponse = await inviteOrAddInstructors(
         courseId,

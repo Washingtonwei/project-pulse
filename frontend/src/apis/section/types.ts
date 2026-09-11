@@ -113,6 +113,10 @@ export interface SendEmailInvitationsResponse {
   flag: boolean
   code: number
   message: string
+  data: {
+    invited: string[]
+    failed: string[] // Addresses whose invitation email could not be delivered, to be retried
+  }
 }
 
 export interface InviteOrAddInstructorsResponse {
@@ -123,6 +127,7 @@ export interface InviteOrAddInstructorsResponse {
     added: string[]
     invited: string[]
     alreadyExists: string[]
+    failed: string[] // Addresses whose invitation email could not be delivered, to be retried
   }
 }
 

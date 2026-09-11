@@ -1246,6 +1246,10 @@ No two teams can have the same name. The team name must be unique. The course ad
 - **6a. The course admin indicates to personalize the default email message:**
   - 6a1. The course admin customizes the email content and confirms the message.
   - 6a2. Returns to step 6 of the normal flow.
+- **10a. The system cannot email one or more of the addresses:**
+  - 10a1. The system continues with the remaining addresses rather than abandoning the batch, so that a single undeliverable address does not cost the other students their invitation.
+  - 10a2. The system reports to the course admin which addresses it could not email, so that she can invite those again.
+  - 10a3. Use case ends.
 
 **Priority:** High
 **Frequency of Use:** 1 user, 1 usage per year.
@@ -1510,6 +1514,10 @@ Details:
 - **6a. The course admin indicates to personalize the default email message:**
   - 6a1. The course admin customizes the email content and confirms the message.
   - 6a2. Returns to step 6 of the normal flow.
+- **10a. The system cannot email one or more of the addresses:**
+  - 10a1. The system continues with the remaining addresses rather than abandoning the batch, so that a single undeliverable address does not cost the other instructors their invitation.
+  - 10a2. The system reports to the course admin which addresses it could not email, so that she can invite those again.
+  - 10a3. Use case ends.
 
 **Priority:** High
 **Frequency of Use:** 1 user, 1 usage per year.

@@ -107,8 +107,10 @@ public class SectionController {
 
     @PostMapping("/{sectionId}/students/email-invitations")
     public Result sendEmailInvitationsToStudents(@RequestParam Integer courseId, @PathVariable Integer sectionId, @RequestBody List<String> emails) {
-        this.userInvitationService.sendEmailInvitations(courseId, sectionId, emails, "student");
-        return new Result(true, StatusCode.SUCCESS, "Send email invitation successfully", null);
+        // The payload names which addresses were emailed and which could not be, so that the course admin can
+        // retry the ones that failed instead of being told the whole batch succeeded (UC-STU-invite-students, 10a).
+        Map<String, List<String>> invitationResult = this.userInvitationService.sendEmailInvitations(courseId, sectionId, emails, "student");
+        return new Result(true, StatusCode.SUCCESS, "Send email invitation successfully", invitationResult);
     }
 
     @PostMapping("/{sectionId}/instructors/invite-or-add")
