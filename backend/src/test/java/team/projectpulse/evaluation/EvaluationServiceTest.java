@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
@@ -318,10 +319,7 @@ class EvaluationServiceTest {
     @Test
     void testAddPeerEvaluationNotInActiveWeeks() {
         // Given
-        LocalDate fixedDate = LocalDate.of(2023, 8, 8); // 2023-W32
-        Clock fixedClock = Clock.fixed(fixedDate.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault());
-        given(this.clock.instant()).willReturn(fixedClock.instant());
-        given(this.clock.getZone()).willReturn(fixedClock.getZone());
+        // No clock is needed here: an inactive week is refused before the previous-week check reads the clock
 
         // Active weeks are "2023-W31", "2023-W32", "2023-W33", "2023-W34", "2023-W35", "2023-W36", "2023-W37", "2023-W38", "2023-W39", "2023-W40"
         // 2023-W19 is not in the active weeks for the section
@@ -333,7 +331,7 @@ class EvaluationServiceTest {
         // Then
         assertThat(throwable)
                 .isInstanceOf(PeerEvaluationIllegalArgumentException.class)
-                .hasMessage("The submission week is not in the active weeks for the section.");
+                .hasMessage("That week is not one of the course section's active weeks.");
     }
 
     @Test
@@ -420,10 +418,16 @@ class EvaluationServiceTest {
     @Test
     void testUpdatePeerEvaluation() {
         // Given
-        PeerEvaluation oldPeerEvaluation = new PeerEvaluation("2023-W31", new Student(), new Student(), List.of(), "public comment", "private comment");
+        // Aug 8, 2023 falls in 2023-W32, which makes 2023-W31 the previous week and this evaluation's window open
+        LocalDate fixedDate = LocalDate.of(2023, 8, 8);
+        Clock fixedClock = Clock.fixed(fixedDate.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault());
+        given(this.clock.instant()).willReturn(fixedClock.instant());
+        given(this.clock.getZone()).willReturn(fixedClock.getZone());
+
+        PeerEvaluation oldPeerEvaluation = new PeerEvaluation("2023-W31", this.john, this.eric, List.of(), "public comment", "private comment");
         oldPeerEvaluation.setPeerEvaluationId(1);
 
-        PeerEvaluation update = new PeerEvaluation("2023-W31", new Student(), new Student(), List.of(), "new public comment", "new private comment");
+        PeerEvaluation update = new PeerEvaluation("2023-W31", this.john, this.eric, List.of(), "new public comment", "new private comment");
         update.setPeerEvaluationId(1);
 
         given(this.evaluationRepository.findById(1)).willReturn(Optional.of(oldPeerEvaluation));
@@ -438,6 +442,56 @@ class EvaluationServiceTest {
         assertThat(updatedPeerEvaluation.getPrivateComment()).isEqualTo(update.getPrivateComment());
         verify(this.evaluationRepository, times(1)).findById(1);
         verify(this.evaluationRepository, times(1)).save(oldPeerEvaluation);
+    }
+
+    @Test
+    void testUpdatePeerEvaluationAfterTheSubmissionWindowClosed() {
+        // Given
+        // Sep 15, 2023 falls in 2023-W37, so the only week still open is 2023-W36 and this evaluation's has closed
+        LocalDate fixedDate = LocalDate.of(2023, 9, 15);
+        Clock fixedClock = Clock.fixed(fixedDate.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault());
+        given(this.clock.instant()).willReturn(fixedClock.instant());
+        given(this.clock.getZone()).willReturn(fixedClock.getZone());
+
+        PeerEvaluation oldPeerEvaluation = new PeerEvaluation("2023-W31", this.john, this.eric, List.of(), "public comment", "private comment");
+        oldPeerEvaluation.setPeerEvaluationId(1);
+
+        PeerEvaluation update = new PeerEvaluation("2023-W31", this.john, this.eric, List.of(), "new public comment", "new private comment");
+        update.setPeerEvaluationId(1);
+
+        given(this.evaluationRepository.findById(1)).willReturn(Optional.of(oldPeerEvaluation));
+
+        // When
+        Throwable throwable = catchThrowable(() -> this.evaluationService.updatePeerEvaluation(1, update));
+
+        // Then
+        assertThat(throwable)
+                .isInstanceOf(PeerEvaluationIllegalArgumentException.class)
+                .hasMessage("The submission window for this peer evaluation has closed, so it can no longer be changed.");
+        assertThat(oldPeerEvaluation.getPublicComment()).isEqualTo("public comment"); // The stored evaluation is untouched
+        verify(this.evaluationRepository, times(0)).save(any(PeerEvaluation.class));
+    }
+
+    @Test
+    void testUpdatePeerEvaluationOfAWeekThatIsNoLongerActive() {
+        // Given
+        // 2023-W25 is outside the section's active weeks, which is what an instructor shortening them looks like
+        PeerEvaluation oldPeerEvaluation = new PeerEvaluation("2023-W25", this.john, this.eric, List.of(), "public comment", "private comment");
+        oldPeerEvaluation.setPeerEvaluationId(1);
+
+        PeerEvaluation update = new PeerEvaluation("2023-W25", this.john, this.eric, List.of(), "new public comment", "new private comment");
+        update.setPeerEvaluationId(1);
+
+        given(this.evaluationRepository.findById(1)).willReturn(Optional.of(oldPeerEvaluation));
+
+        // When
+        Throwable throwable = catchThrowable(() -> this.evaluationService.updatePeerEvaluation(1, update));
+
+        // Then
+        assertThat(throwable)
+                .isInstanceOf(PeerEvaluationIllegalArgumentException.class)
+                .hasMessage("That week is not one of the course section's active weeks.");
+        verify(this.evaluationRepository, times(0)).save(any(PeerEvaluation.class));
     }
 
     @Test

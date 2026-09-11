@@ -29,6 +29,8 @@ import java.util.stream.Collectors;
 public class EvaluationService {
 
     private static final String RUBRIC_MISMATCH_MESSAGE = "This evaluation was scored against a different set of criteria and can no longer be updated.";
+    private static final String NOT_PREVIOUS_WEEK_MESSAGE = "You can only submit evaluations for the previous week.";
+    private static final String WINDOW_CLOSED_MESSAGE = "The submission window for this peer evaluation has closed, so it can no longer be changed.";
 
     private final PeerEvaluationRepository evaluationRepository;
     private final StudentRepository studentRepository;
@@ -44,28 +46,8 @@ public class EvaluationService {
     }
 
     public PeerEvaluation addPeerEvaluation(PeerEvaluation newPeerEvaluation) {
-        String submissionWeek = newPeerEvaluation.getWeek(); // Get the submission week from the new peer evaluation
-        LocalDate currentDate = LocalDate.now(clock);
-        LocalDate previousWeekDate = currentDate.minusWeeks(1);
-
-        // Use ISO-8601 week fields, where the week starts on Monday
-        WeekFields weekFields = WeekFields.ISO;
-
-        // Get the correct week number using ISO week fields
-        int weekNumber = previousWeekDate.get(weekFields.weekOfWeekBasedYear());
-        int year = previousWeekDate.get(weekFields.weekBasedYear());
-        String formattedPreviousWeek = String.format("%d-W%02d", year, weekNumber);
-
-        // Make sure the submission week is in the active weeks
-        Section currentSection = newPeerEvaluation.getEvaluator().getSection();
-        if (!currentSection.getActiveWeeks().contains(submissionWeek)) {
-            throw new PeerEvaluationIllegalArgumentException("The submission week is not in the active weeks for the section.");
-        }
-
-        // Make sure the submission week is the previous week
-        if (!formattedPreviousWeek.equals(submissionWeek)) {
-            throw new PeerEvaluationIllegalArgumentException("You can only submit evaluations for the previous week.");
-        }
+        // Make sure the submission week is one of the course section's active weeks and is still open for submission
+        requireOpenSubmissionWindow(newPeerEvaluation.getEvaluator().getSection(), newPeerEvaluation.getWeek(), NOT_PREVIOUS_WEEK_MESSAGE);
 
         // Make sure the evaluator is on a team at all (BR-team-assignment-required): Student.team is optional,
         // because a student is enrolled in a course section before she is assigned to a team
@@ -93,12 +75,54 @@ public class EvaluationService {
     public PeerEvaluation updatePeerEvaluation(Integer evaluationId, PeerEvaluation update) {
         return this.evaluationRepository.findById(evaluationId)
                 .map(oldEvaluation -> {
+                    // The week is read off the stored evaluation rather than off the update, because the caller
+                    // writes the payload and could otherwise name an open week to reopen a closed evaluation.
+                    requireOpenSubmissionWindow(oldEvaluation.getEvaluator().getSection(), oldEvaluation.getWeek(), WINDOW_CLOSED_MESSAGE);
                     rescore(oldEvaluation, update.getRatings());
                     oldEvaluation.setPublicComment(update.getPublicComment());
                     oldEvaluation.setPrivateComment(update.getPrivateComment());
                     return this.evaluationRepository.save(oldEvaluation);
                 })
                 .orElseThrow(() -> new ObjectNotFoundException("evaluation", evaluationId));
+    }
+
+    /**
+     * Refuses a submission, or an edit of one, whose week lies outside the course section's open submission window.
+     *
+     * <p><strong>What the window is.</strong> A peer evaluation covers the previous week and the evaluator has
+     * that one week to complete it (BR-evaluation-submission-window), and the week has to be one the course admin
+     * marked active for the course section (BR-active-weeks). Both conditions are read against the clock at the
+     * moment of the request, so the window closes by itself when the calendar week rolls over.
+     *
+     * <p><strong>Why an edit runs the same check.</strong> The close of the window is itself the lock that makes
+     * an evaluation read-only (BR-evaluation-editable-until-close). There is no separate finalize action and
+     * {@code PeerEvaluation} carries no submitted or completed flag, so an evaluation is editable exactly while
+     * its own week is still the previous week. Until this check was shared with {@link #updatePeerEvaluation}
+     * only the create path checked anything, and a student could rewrite the scores and comments of any past
+     * evaluation of hers indefinitely, which is the code half of OI-24.
+     *
+     * @param outOfWindowMessage what to tell the caller when the week is not the previous week, which reads
+     *                           differently for a first submission than for an edit
+     */
+    private void requireOpenSubmissionWindow(Section section, String week, String outOfWindowMessage) {
+        if (!section.getActiveWeeks().contains(week)) {
+            throw new PeerEvaluationIllegalArgumentException("That week is not one of the course section's active weeks.");
+        }
+
+        if (!previousWeek().equals(week)) {
+            throw new PeerEvaluationIllegalArgumentException(outOfWindowMessage);
+        }
+    }
+
+    /**
+     * The one week a peer evaluation may currently be submitted or edited for, as an ISO-8601 week key such as
+     * "2026-W37". The week fields are ISO, so a week starts on Monday and the week-based year is the year the
+     * week belongs to, which at a year boundary is not always the calendar year of its days.
+     */
+    private String previousWeek() {
+        LocalDate previousWeekDate = LocalDate.now(this.clock).minusWeeks(1);
+        WeekFields weekFields = WeekFields.ISO;
+        return String.format("%d-W%02d", previousWeekDate.get(weekFields.weekBasedYear()), previousWeekDate.get(weekFields.weekOfWeekBasedYear()));
     }
 
     /**

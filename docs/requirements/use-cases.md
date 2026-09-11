@@ -1224,7 +1224,8 @@ No two teams can have the same name. The team name must be unique. The course ad
 - PRE-1. The course admin is logged into the system.
 
 **Postconditions:**
-- POST-1. Invitation emails are sent to all the students.
+- POST-1. An invitation email is sent to each invited address that does not already have an account.
+- POST-2. The course admin is told which addresses were skipped as already having an account, and which could not be emailed.
 
 **Main Success Scenario:**
 1. The course admin indicates to invite students to join a course section.
@@ -1246,6 +1247,14 @@ No two teams can have the same name. The team name must be unique. The course ad
 - **6a. The course admin indicates to personalize the default email message:**
   - 6a1. The course admin customizes the email content and confirms the message.
   - 6a2. Returns to step 6 of the normal flow.
+- **10a. The system cannot email one or more of the addresses:**
+  - 10a1. The system continues with the remaining addresses rather than abandoning the batch, so that a single undeliverable address does not cost the other students their invitation.
+  - 10a2. The system reports to the course admin which addresses it could not email, so that she can invite those again.
+  - 10a3. Use case ends.
+- **10b. One or more of the addresses already has an account:**
+  - 10b1. The system creates no invitation for that address and sends it no email, since a registration link cannot be used by someone who has already registered.
+  - 10b2. The system reports those addresses to the course admin alongside the ones it invited, so that re-inviting a whole roster reports where the course section stands.
+  - 10b3. Use case ends.
 
 **Priority:** High
 **Frequency of Use:** 1 user, 1 usage per year.
@@ -1254,7 +1263,48 @@ No two teams can have the same name. The team name must be unique. The course ad
 **Associated Information:**
 - Email format: emails shall be separated by semicolon and the system shall ignore spaces in between. E.g., Good: john.doe@tcu.edu; f.smith@tcu.edu; tim.johnson@tcu.edu; lily.p.lee@tcu.edu Good: john.doe@tcu.edu;f.smith@tcu.edu Bad: john.doe@tcu.edu; f.smith@tcu.edu; Bad: john.doe@tcu.edu f.smith@tcu.edu Default email message: *Subject: Welcome to Project Pulse - Complete Your Registration Hello, [Name of the course admin] has invited you to join Project Pulse. To complete your registration, please use the link below: [Registration link] If you have any questions or need assistance, feel free to contact [course admin's email] or our team directly. Please note: This email is not monitored, so do not reply directly to this message. Best regards, Project Pulse Team*  The invitation link shall be unique for each student. The course admin shall be able to cancel the use case at any time prior to submitting it.
 
-**Assumptions:**
+**Assumptions:** AS-new-student-accounts (an address that already has an account is skipped rather than invited, per extension 10b), AS-one-section-per-student
+**Open Issues:**
+
+### **UC-STU-view-pending-invitations: The course admin views the students who have not registered yet**
+
+**UC ID and Name:** UC-STU-view-pending-invitations: View the students who have not registered yet
+**Created By:**
+**Date Created:**
+**Primary Actor:** course admin
+**Secondary Actors:**
+**Trigger:** The course admin indicates to view the outstanding student invitations of a course section.
+**Description:** The course admin wants to see which invited students have not created an account yet, so that she can follow up with those students instead of re-inviting the whole course section.
+
+**Preconditions:**
+- PRE-1. The course admin is logged into the system.
+- PRE-2. The course admin owns the course section (BR-invitations-admin-only).
+
+**Postconditions:**
+- POST-1. The course admin is shown the invited students who have not registered.
+- POST-2. The course admin is shown how many such students there are.
+
+**Main Success Scenario:**
+1. The course admin indicates to view the outstanding student invitations of a course section.
+2. The system displays every address invited to that course section as a student that has not registered an account.
+3. The system displays how many such addresses there are.
+4. Use case ends.
+
+**Extensions:**
+- **2a. Every invited student has registered:**
+  - 2a1. The system informs the course admin that no student invitation is outstanding.
+  - 2a2. Use case ends.
+
+**Priority:** Medium
+**Frequency of Use:** 1 user, a few usages per course section per semester.
+**Business Rules:** BR-invitations-admin-only
+
+**Associated Information:**
+- The listing shows email addresses only. An invitation also carries the registration token that its email delivers, and that token is never included in a listing.
+- Registering deletes the invitation that was used, so a student leaves this listing by signing up, and no invitation is created for an address that already has an account (UC-STU-invite-students, extension 10b), so re-inviting a whole course section adds nobody to this listing who has already joined.
+- Instructor invitations (UC-INS-invite-instructors) are not shown here; this listing is about students joining a course section.
+
+**Assumptions:** AS-one-section-per-student (an invitation is keyed by the invited address alone, which is unambiguous only because a student is invited to one course section)
 **Open Issues:**
 
 ### **UC-STU-find-students: The course admin/instructor finds students**
@@ -1488,7 +1538,8 @@ Details:
 - PRE-1. The course admin is logged into the system.
 
 **Postconditions:**
-- POST-1. Invitation emails are sent to instructors.
+- POST-1. An invitation email is sent to each invited instructor address.
+- POST-2. The course admin is told which addresses could not be emailed.
 
 **Main Success Scenario:**
 1. The course admin indicates to invite instructors to register an account.
@@ -1510,6 +1561,10 @@ Details:
 - **6a. The course admin indicates to personalize the default email message:**
   - 6a1. The course admin customizes the email content and confirms the message.
   - 6a2. Returns to step 6 of the normal flow.
+- **10a. The system cannot email one or more of the addresses:**
+  - 10a1. The system continues with the remaining addresses rather than abandoning the batch, so that a single undeliverable address does not cost the other instructors their invitation.
+  - 10a2. The system reports to the course admin which addresses it could not email, so that she can invite those again.
+  - 10a3. Use case ends.
 
 **Priority:** High
 **Frequency of Use:** 1 user, 1 usage per year.

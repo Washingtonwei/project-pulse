@@ -109,10 +109,22 @@ export interface SetUpActiveWeeksResponse {
   message: string
 }
 
+export interface GetPendingInvitationsResponse {
+  flag: boolean
+  code: number
+  message: string
+  data: string[] // Email addresses invited as students that have not registered yet
+}
+
 export interface SendEmailInvitationsResponse {
   flag: boolean
   code: number
   message: string
+  data: {
+    invited: string[]
+    failed: string[] // Addresses whose invitation email could not be delivered, to be retried
+    alreadyExists: string[] // Addresses skipped because they already have an account
+  }
 }
 
 export interface InviteOrAddInstructorsResponse {
@@ -123,6 +135,7 @@ export interface InviteOrAddInstructorsResponse {
     added: string[]
     invited: string[]
     alreadyExists: string[]
+    failed: string[] // Addresses whose invitation email could not be delivered, to be retried
   }
 }
 

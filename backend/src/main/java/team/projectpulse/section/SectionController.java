@@ -107,8 +107,17 @@ public class SectionController {
 
     @PostMapping("/{sectionId}/students/email-invitations")
     public Result sendEmailInvitationsToStudents(@RequestParam Integer courseId, @PathVariable Integer sectionId, @RequestBody List<String> emails) {
-        this.userInvitationService.sendEmailInvitations(courseId, sectionId, emails, "student");
-        return new Result(true, StatusCode.SUCCESS, "Send email invitation successfully", null);
+        // The payload names which addresses were emailed, which could not be, and which were skipped as already
+        // having an account, so that the course admin can act on each group rather than being told the whole batch
+        // succeeded (UC-STU-invite-students, extensions 10a and 10b).
+        Map<String, List<String>> invitationResult = this.userInvitationService.sendEmailInvitations(courseId, sectionId, emails, "student");
+        return new Result(true, StatusCode.SUCCESS, "Send email invitation successfully", invitationResult);
+    }
+
+    @GetMapping("/{sectionId}/students/pending-invitations")
+    public Result findPendingStudentInvitations(@PathVariable Integer sectionId) {
+        List<String> pendingEmails = this.userInvitationService.findPendingStudentInvitations(sectionId);
+        return new Result(true, StatusCode.SUCCESS, "Find pending invitations successfully", pendingEmails);
     }
 
     @PostMapping("/{sectionId}/instructors/invite-or-add")

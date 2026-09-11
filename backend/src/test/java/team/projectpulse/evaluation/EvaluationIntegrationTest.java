@@ -161,7 +161,7 @@ public class EvaluationIntegrationTest extends AbstractIntegrationTest {
         this.mockMvc.perform(post(this.baseUrl + "/evaluations").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(false))
                 .andExpect(jsonPath("$.code").value(StatusCode.INVALID_ARGUMENT))
-                .andExpect(jsonPath("$.message").value("The submission week is not in the active weeks for the section."));
+                .andExpect(jsonPath("$.message").value("That week is not one of the course section's active weeks."));
     }
 
     @Test
@@ -321,6 +321,13 @@ public class EvaluationIntegrationTest extends AbstractIntegrationTest {
                 new RatingDto(5, 5, 5.0),
                 new RatingDto(6, 6, 6.0)
         );
+
+        // Aug 8, 2023 falls in 2023-W32, which makes 2023-W31 the previous week, so evaluation 1 is still editable
+        LocalDate fixedDate = LocalDate.of(2023, 8, 8);
+        Clock fixedClock = Clock.fixed(fixedDate.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault());
+        given(this.clock.instant()).willReturn(fixedClock.instant());
+        given(this.clock.getZone()).willReturn(fixedClock.getZone());
+
         PeerEvaluationDto peerEvaluationDto = new PeerEvaluationDto(1, "2023-W31", 4, "John Smith", 5, "Eric Hudson", ratingDtos, 41.0, "Good job", "Keep it up", null, null);
         String json = this.jsonMapper.writeValueAsString(peerEvaluationDto);
 
@@ -336,6 +343,35 @@ public class EvaluationIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.data.privateComment").value("Keep it up"))
                 .andExpect(jsonPath("$.data.createdAt").isNotEmpty())
                 .andExpect(jsonPath("$.data.updatedAt").isNotEmpty());
+    }
+
+    @Test
+    @DisplayName("An evaluation can no longer be changed once its submission window has closed")
+    void testEvaluatorJohnUpdatesOwnEvaluationAfterTheSubmissionWindowClosed() throws Exception {
+        List<RatingDto> ratingDtos = List.of(
+                new RatingDto(1, 1, 4.0),
+                new RatingDto(2, 2, 9.0),
+                new RatingDto(3, 3, 7.0),
+                new RatingDto(4, 4, 10.0),
+                new RatingDto(5, 5, 5.0),
+                new RatingDto(6, 6, 6.0)
+        );
+
+        // Sep 15, 2023 is weeks past evaluation 1's week of 2023-W31. An evaluation stays editable only while its
+        // own week is the previous week (BR-evaluation-submission-window, BR-evaluation-editable-until-close);
+        // the request is otherwise entirely legitimate, since John owns evaluation 1 and the route rule passes.
+        LocalDate fixedDate = LocalDate.of(2023, 9, 15);
+        Clock fixedClock = Clock.fixed(fixedDate.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault());
+        given(this.clock.instant()).willReturn(fixedClock.instant());
+        given(this.clock.getZone()).willReturn(fixedClock.getZone());
+
+        PeerEvaluationDto peerEvaluationDto = new PeerEvaluationDto(1, "2023-W31", 4, "John Smith", 5, "Eric Hudson", ratingDtos, 41.0, "Rewritten long after the fact", "Rewritten long after the fact", null, null);
+        String json = this.jsonMapper.writeValueAsString(peerEvaluationDto);
+
+        this.mockMvc.perform(put(this.baseUrl + "/evaluations/1").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_ARGUMENT))
+                .andExpect(jsonPath("$.message").value("The submission window for this peer evaluation has closed, so it can no longer be changed."));
     }
 
     @Test
@@ -616,6 +652,14 @@ public class EvaluationIntegrationTest extends AbstractIntegrationTest {
                 new RatingDto(ericsRatingIds.get(4), 5, 5.0),
                 new RatingDto(ericsRatingIds.get(5), 6, 6.0)
         );
+
+        // The clock is moved into 2023-W32 so that evaluation 1's submission window is open. Without this the
+        // window guard refuses the update before it reaches the ratings, and the probe would pass while proving
+        // nothing about rating ownership.
+        LocalDate fixedDate = LocalDate.of(2023, 8, 8);
+        Clock fixedClock = Clock.fixed(fixedDate.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault());
+        given(this.clock.instant()).willReturn(fixedClock.instant());
+        given(this.clock.getZone()).willReturn(fixedClock.getZone());
 
         // This is the request that was exploitable: it returned 200 with rating rows 19-24 owned by evaluation 1,
         // so Eric's evaluation lost its scores and John could read them back through his own. Nothing incidental

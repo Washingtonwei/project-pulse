@@ -45,6 +45,12 @@ class SectionServiceTest {
     @Mock
     UserUtils userUtils;
 
+    @Mock
+    team.projectpulse.user.UserRepository userRepository;
+
+    @Mock
+    team.projectpulse.user.userinvitation.UserInvitationService userInvitationService;
+
     @InjectMocks
     SectionService sectionService;
 
@@ -276,6 +282,25 @@ class SectionServiceTest {
 
         // Then
         assertThat(result).hasSize(2);
+    }
+
+    @Test
+    void testInviteOrAddInstructorsReportsAnInvitedAddressAsInvited() {
+        // Given
+        // Typed in a casing the course admin happens to use. The invitation service normalizes before it answers,
+        // so this loop has to normalize too; comparing its own raw string against the service's answer reported a
+        // successful invitation as a failure.
+        given(this.sectionRepository.findById(1)).willReturn(Optional.of(this.sections.get(0)));
+        given(this.userRepository.findByEmail("new.ta@abc.edu")).willReturn(Optional.empty());
+        given(this.userInvitationService.sendEmailInvitations(1, 1, List.of("new.ta@abc.edu"), "instructor"))
+                .willReturn(Map.of("invited", List.of("new.ta@abc.edu"), "failed", List.of(), "alreadyExists", List.of()));
+
+        // When
+        Map<String, Object> result = this.sectionService.inviteOrAddInstructors(1, 1, List.of(" New.TA@abc.edu "));
+
+        // Then
+        assertThat((List<String>) result.get("invited")).containsExactly("new.ta@abc.edu");
+        assertThat((List<String>) result.get("failed")).isEmpty();
     }
 
 }
