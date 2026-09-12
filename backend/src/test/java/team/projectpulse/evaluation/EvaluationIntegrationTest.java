@@ -524,6 +524,51 @@ public class EvaluationIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("A student on no team reads her own summaries and gets empty ones, not an error")
+    void testStudentTracyWithNoTeamGeneratesOwnWeeklyPeerEvaluationSummaries() throws Exception {
+        MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
+        requestParams.add("startWeek", "2023-W31");
+        requestParams.add("endWeek", "2023-W32");
+
+        // Tracy has never been on a team, so no one has evaluated her: every week is an empty summary with no team
+        // name. This used to be a 500 on her own My Peer Evaluations page, from dereferencing her absent team.
+        this.mockMvc.perform(get(this.baseUrl + "/evaluations/students/15").params(requestParams).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentTracyToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.data", Matchers.hasSize(2)))
+                .andExpect(jsonPath("$.data[0].teamName").value(Matchers.nullValue()))
+                .andExpect(jsonPath("$.data[0].averageTotalScore").value(Matchers.closeTo(0.0, 0.01)))
+                .andExpect(jsonPath("$.data[0].publicComments", Matchers.empty()))
+                .andExpect(jsonPath("$.data[0].ratingAverages", Matchers.empty()));
+    }
+
+    @Test
+    @DisplayName("An instructor opens the performance dashboard of a student on no team")
+    void testAdminBingyangGeneratesWeeklyPeerEvaluationSummariesForStudentTracyWithNoTeam() throws Exception {
+        MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
+        requestParams.add("startWeek", "2023-W31");
+        requestParams.add("endWeek", "2023-W32");
+
+        this.mockMvc.perform(get(this.baseUrl + "/evaluations/students/15").params(requestParams).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.data", Matchers.hasSize(2)))
+                .andExpect(jsonPath("$.data[0].teamName").value(Matchers.nullValue()))
+                .andExpect(jsonPath("$.data[0].averageTotalScore").value(Matchers.closeTo(0.0, 0.01)));
+    }
+
+    @Test
+    @DisplayName("The single-week summary of a student on no team is empty too")
+    void testStudentTracyWithNoTeamGeneratesOwnWeeklyPeerEvaluationSummary() throws Exception {
+        this.mockMvc.perform(get(this.baseUrl + "/evaluations/students/15/week/2023-W31").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentTracyToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.data.studentId").value(15))
+                .andExpect(jsonPath("$.data.teamName").value(Matchers.nullValue()))
+                .andExpect(jsonPath("$.data.averageTotalScore").value(Matchers.closeTo(0.0, 0.01)));
+    }
+
+    @Test
     void testStudentJohnGenerateAnotherStudentsWeeklyPeerEvaluationSummaries() throws Exception {
         MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
         requestParams.add("startWeek", "2023-W31");
