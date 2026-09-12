@@ -63,7 +63,7 @@ export const createFoo = (foo: Foo) =>
 
 ### State Management
 - Pinia stores in `src/stores/`
-- `token.ts` — JWT string, persisted to localStorage
+- `token.ts` — JWT string. On login, it is persisted to `localStorage` when Remember me is checked; otherwise it is persisted to `sessionStorage` for the current browser session only.
 - `userInfo.ts` — decoded user details and role list
 - Access stores with `useXxxStore()` composables
 
