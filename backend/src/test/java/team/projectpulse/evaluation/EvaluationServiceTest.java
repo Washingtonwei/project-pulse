@@ -521,6 +521,46 @@ class EvaluationServiceTest {
     }
 
     @Test
+    void testGetPeerEvaluationAverageForStudentOnNoTeam() {
+        // Given
+        // Tracy is enrolled in the course section but has never been on a team, so no one has evaluated her. Her
+        // summary is empty and her absent team is not a failure. A student who was removed from a team would reach
+        // this same path with evaluations to report, which is why the team is only read for its name.
+        Student tracy = new Student("tracy", "Tracy", "Nicholson", "t.nicholson@abc.edu", "123456", true, "student");
+        tracy.setId(15);
+        given(this.evaluationRepository.findByWeekAndEvaluateeId("2023-W31", 15)).willReturn(List.of());
+
+        // When
+        PeerEvaluationAverage peerEvaluationAverage = this.evaluationService.getPeerEvaluationAverage("2023-W31", tracy);
+
+        // Then
+        assertThat(peerEvaluationAverage.getStudentId()).isEqualTo(15);
+        assertThat(peerEvaluationAverage.getWeek()).isEqualTo("2023-W31");
+        assertThat(peerEvaluationAverage.getTeamName()).isNull();
+        assertThat(peerEvaluationAverage.getAverageTotalScore()).isCloseTo(0.0, within(0.01));
+        assertThat(peerEvaluationAverage.getPublicComments()).isEmpty();
+        assertThat(peerEvaluationAverage.getRatingAverages()).isEmpty();
+    }
+
+    @Test
+    void testGetPeerEvaluationAverageForStudentRemovedFromHerTeam() {
+        // Given
+        // Removing a student from a team nulls her back-reference (Team.removeStudent) and leaves every evaluation
+        // her teammates wrote of her, so an absent team is not an empty report: Eric still reads his own results.
+        this.eric.getTeam().removeStudent(this.eric);
+        given(this.evaluationRepository.findByWeekAndEvaluateeId("2023-W31", 4)).willReturn(this.ericsW31Evaluations);
+
+        // When
+        PeerEvaluationAverage peerEvaluationAverage = this.evaluationService.getPeerEvaluationAverage("2023-W31", this.eric);
+
+        // Then
+        assertThat(peerEvaluationAverage.getTeamName()).isNull();
+        assertThat(peerEvaluationAverage.getAverageTotalScore()).isCloseTo(50.0, within(0.01));
+        assertThat(peerEvaluationAverage.getPublicComments()).hasSize(3);
+        assertThat(peerEvaluationAverage.getRatingAverages()).hasSize(6);
+    }
+
+    @Test
     void testGenerateWeeklyPeerEvaluationReportForSection() {
         // Given
         given(this.sectionRepository.findById(anyInt())).willReturn(Optional.of(new Section("2023-2024", LocalDate.of(2023, 8, 14), LocalDate.of(2024, 4, 29), true, DayOfWeek.MONDAY, LocalTime.of(23, 59), DayOfWeek.TUESDAY, LocalTime.of(23, 59))));

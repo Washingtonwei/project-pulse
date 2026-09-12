@@ -177,7 +177,14 @@ public class EvaluationService {
         peerEvaluationAverage.setFirstName(student.getFirstName());
         peerEvaluationAverage.setLastName(student.getLastName());
         peerEvaluationAverage.setEmail(student.getEmail());
-        peerEvaluationAverage.setTeamName(student.getTeam().getTeamName());
+        // Student.team is optional: a student is enrolled in a course section before she is assigned to a team, and
+        // BR-team-assignment-required keeps her from authoring until she is, so the team name is simply absent for
+        // her. Dereferencing it here was a 500 on her own results page and on the instructor's performance dashboard
+        // for her. Absent team does not mean absent evaluations, so do not shortcut the rest of this method: a
+        // student removed from a team (Team.removeStudent nulls the back-reference) keeps every evaluation her
+        // teammates wrote of her while she was on it, and this report is where she reads them.
+        Team team = student.getTeam();
+        peerEvaluationAverage.setTeamName(team == null ? null : team.getTeamName());
 
         // 1. Convert the evaluations list to a stream; 2. Map each evaluation object to its total score (resulting in a DoubleStream); 3. Compute the average of the total scores.
         peerEvaluationAverage.setAverageTotalScore(evaluations.stream().mapToDouble(PeerEvaluation::getTotalScore).average().orElse(0.0));
