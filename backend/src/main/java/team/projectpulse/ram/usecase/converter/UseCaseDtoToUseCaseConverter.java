@@ -31,17 +31,24 @@ public class UseCaseDtoToUseCaseConverter implements Converter<UseCaseDto, UseCa
 
     @Override
     public UseCase convert(UseCaseDto source) {
+        // The id is not read from the payload: a create has the server assign it, and an update takes it from
+        // the URL. UseCase.artifact is @OneToOne(cascade = ALL) @MapsId, so the two share an id, and mapping it
+        // here would let a create merge over the artifact that id names and reassign it to the caller's team.
+        //
+        // A converter has no path variables, so it is the wrong layer to resolve any reference at. The target
+        // shape is pure field mapping here, with UseCaseService resolving every reference against the teamId in
+        // the route. Getting the rest of the way there is tracked as OI-46; do not extend what this class
+        // resolves in the meantime.
         UseCase useCase = new UseCase();
-        useCase.setId(source.id());
         useCase.setUseCaseTrigger(source.trigger());
 
         RequirementArtifact useCaseArtifact = new RequirementArtifact();
 
-        useCaseArtifact.setId(source.id());
         Team team = this.teamRepository.findById(source.teamId()).orElseThrow(() -> new ObjectNotFoundException("team", source.teamId()));
         useCaseArtifact.setTeam(team);
         useCaseArtifact.setType(RequirementArtifactType.USE_CASE);
-        useCaseArtifact.setArtifactKey("UC-" + source.id());
+        // No artifact key: it used to be built from the payload id, and the real one is minted server-side by
+        // RequirementArtifactService.saveRequirementArtifact.
         useCaseArtifact.setTitle(source.title());
         useCaseArtifact.setContent(source.description());
         useCaseArtifact.setPriority(source.priority());

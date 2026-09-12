@@ -1,5 +1,7 @@
 package team.projectpulse.system;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -14,6 +16,8 @@ import java.util.List;
 
 @Component
 public class WeeklyReminderScheduler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(WeeklyReminderScheduler.class);
 
     private final EmailService emailService;
     private final SectionService sectionService;
@@ -49,20 +53,41 @@ public class WeeklyReminderScheduler {
         // DB returns only sections eligible for reminders this week; students preloaded via @EntityGraph
         List<Section> reminderEligibleSections = this.sectionService.findReminderEligibleSectionsForWeek(currentWeek);
 
+        // Two levels of isolation, because FR-NOT-weekly-reminder promises a reminder to *each* student in *each*
+        // eligible course section, and this run is unattended: whatever fails has to be logged and stepped over
+        // rather than surfaced to a caller. The inner catch covers an address the mail server rejects, which used
+        // to abort the whole morning at the first bad one. The outer catch covers everything else about a course
+        // section (a lazy-load that fails, a row with an unexpected null), which would otherwise skip every course
+        // section after it just as silently.
         for (Section section : reminderEligibleSections) {
-            boolean isWarDueToday = todayDay.equals(section.getWarWeeklyDueDay());
-            boolean isPeerEvaluationDueToday = todayDay.equals(section.getPeerEvaluationWeeklyDueDay());
+            // Read outside the try: if the body failed because this Section cannot be read, calling the same
+            // getter from the handler throws again, the exception escapes the loop, and every course section after
+            // this one is skipped, which is precisely what the outer catch exists to prevent.
+            String sectionName = section.getSectionName();
+            try {
+                boolean isWarDueToday = todayDay.equals(section.getWarWeeklyDueDay());
+                boolean isPeerEvaluationDueToday = todayDay.equals(section.getPeerEvaluationWeeklyDueDay());
 
-            if (!isWarDueToday && !isPeerEvaluationDueToday) continue; // Nothing due today for this section
+                if (!isWarDueToday && !isPeerEvaluationDueToday) continue; // Nothing due today for this section
 
-            String warTime = isWarDueToday ? formatDue(section.getWarDueTime(), today) : null;
-            String peerTime = isPeerEvaluationDueToday ? formatDue(section.getPeerEvaluationDueTime(), today) : null;
+                String warTime = isWarDueToday ? formatDue(section.getWarDueTime(), today) : null;
+                String peerTime = isPeerEvaluationDueToday ? formatDue(section.getPeerEvaluationDueTime(), today) : null;
 
-            String sharedBody = buildSharedBody(section.getSectionName(), warTime, peerTime);
+                String sharedBody = buildSharedBody(section.getSectionName(), warTime, peerTime);
 
-            for (Student student : section.getStudents()) {
-                String html = "Hello %s,<br><br>%s".formatted(student.getFirstName(), sharedBody);
-                this.emailService.sendReminderEmail(student.getEmail(), "ProjectPulse Submission Reminder", html);
+                int sent = 0;
+                for (Student student : section.getStudents()) {
+                    String html = "Hello %s,<br><br>%s".formatted(student.getFirstName(), sharedBody);
+                    try {
+                        this.emailService.sendReminderEmail(student.getEmail(), "ProjectPulse Submission Reminder", html);
+                        sent++;
+                    } catch (RuntimeException e) {
+                        LOGGER.error("Could not send the weekly reminder to {} in section {}", student.getEmail(), section.getSectionName(), e);
+                    }
+                }
+                LOGGER.info("Sent {} of {} weekly reminders for section {}", sent, section.getStudents().size(), section.getSectionName());
+            } catch (RuntimeException e) {
+                LOGGER.error("Could not send the weekly reminders for section {}", sectionName, e);
             }
         }
     }

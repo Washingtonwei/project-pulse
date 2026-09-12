@@ -1,5 +1,6 @@
 package team.projectpulse.ram.glossary;
 
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import team.projectpulse.ram.requirement.RequirementArtifact;
 import team.projectpulse.ram.requirement.converter.RequirementArtifactDtoToRequirementArtifactConverter;
@@ -30,7 +31,7 @@ public class GlossaryController {
     }
 
     @PostMapping("/teams/{teamId}/glossary-terms")
-    public Result createGlossaryTerm(@PathVariable Integer teamId, @RequestBody RequirementArtifactDto glossaryTermDto) {
+    public Result createGlossaryTerm(@PathVariable Integer teamId, @Valid @RequestBody RequirementArtifactDto glossaryTermDto) {
         RequirementArtifact newGlossaryTerm = this.requirementArtifactDtoToRequirementArtifactConverter.convert(glossaryTermDto);
         RequirementArtifact saveGlossaryTerm = this.glossaryService.saveGlossaryTerm(teamId, newGlossaryTerm);
         RequirementArtifactDto savedGlossaryTermDto = this.requirementArtifactToRequirementArtifactDtoConverter.convert(saveGlossaryTerm);
@@ -38,7 +39,7 @@ public class GlossaryController {
     }
 
     @PatchMapping("/teams/{teamId}/glossary-terms/{glossaryTermId}")
-    public Result updateGlossaryTermDefinition(@PathVariable Integer teamId, @PathVariable Long glossaryTermId, @RequestBody RequirementArtifactDto glossaryTermDto) {
+    public Result updateGlossaryTermDefinition(@PathVariable Integer teamId, @PathVariable Long glossaryTermId, @Valid @RequestBody RequirementArtifactDto glossaryTermDto) {
         RequirementArtifact update = this.requirementArtifactDtoToRequirementArtifactConverter.convert(glossaryTermDto);
         RequirementArtifact updatedGlossaryTerm = this.glossaryService.updateGlossaryTermDefinition(teamId, glossaryTermId, update);
         RequirementArtifactDto updatedGlossaryTermDto = this.requirementArtifactToRequirementArtifactDtoConverter.convert(updatedGlossaryTerm);
@@ -47,7 +48,7 @@ public class GlossaryController {
 
     // Rename glossary term endpoint
     @PatchMapping("/teams/{teamId}/glossary-terms/{glossaryTermId}/rename")
-    public Result renameGlossaryTerm(@PathVariable Integer teamId, @PathVariable Long glossaryTermId, @RequestBody RequirementArtifactDto glossaryTermDto) {
+    public Result renameGlossaryTerm(@PathVariable Integer teamId, @PathVariable Long glossaryTermId, @Valid @RequestBody RequirementArtifactDto glossaryTermDto) {
         RequirementArtifact update = this.requirementArtifactDtoToRequirementArtifactConverter.convert(glossaryTermDto);
         RequirementArtifact updatedGlossaryTerm = this.glossaryService.renameGlossaryTerm(teamId, glossaryTermId, update);
         RequirementArtifactDto updatedGlossaryTermDto = this.requirementArtifactToRequirementArtifactDtoConverter.convert(updatedGlossaryTerm);

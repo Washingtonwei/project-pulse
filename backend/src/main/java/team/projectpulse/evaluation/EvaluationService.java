@@ -7,6 +7,7 @@ import team.projectpulse.system.exception.ObjectNotFoundException;
 import team.projectpulse.rubric.Rating;
 import team.projectpulse.student.Student;
 import team.projectpulse.student.StudentRepository;
+import team.projectpulse.team.Team;
 import jakarta.transaction.Transactional;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,6 +28,10 @@ import java.util.stream.Collectors;
 @Transactional
 public class EvaluationService {
 
+    private static final String RUBRIC_MISMATCH_MESSAGE = "This evaluation was scored against a different set of criteria and can no longer be updated.";
+    private static final String NOT_PREVIOUS_WEEK_MESSAGE = "You can only submit evaluations for the previous week.";
+    private static final String WINDOW_CLOSED_MESSAGE = "The submission window for this peer evaluation has closed, so it can no longer be changed.";
+
     private final PeerEvaluationRepository evaluationRepository;
     private final StudentRepository studentRepository;
     private final SectionRepository sectionRepository;
@@ -41,31 +46,21 @@ public class EvaluationService {
     }
 
     public PeerEvaluation addPeerEvaluation(PeerEvaluation newPeerEvaluation) {
-        String submissionWeek = newPeerEvaluation.getWeek(); // Get the submission week from the new peer evaluation
-        LocalDate currentDate = LocalDate.now(clock);
-        LocalDate previousWeekDate = currentDate.minusWeeks(1);
+        // Make sure the submission week is one of the course section's active weeks and is still open for submission
+        requireOpenSubmissionWindow(newPeerEvaluation.getEvaluator().getSection(), newPeerEvaluation.getWeek(), NOT_PREVIOUS_WEEK_MESSAGE);
 
-        // Use ISO-8601 week fields, where the week starts on Monday
-        WeekFields weekFields = WeekFields.ISO;
-
-        // Get the correct week number using ISO week fields
-        int weekNumber = previousWeekDate.get(weekFields.weekOfWeekBasedYear());
-        int year = previousWeekDate.get(weekFields.weekBasedYear());
-        String formattedPreviousWeek = String.format("%d-W%02d", year, weekNumber);
-
-        // Make sure the submission week is in the active weeks
-        Section currentSection = newPeerEvaluation.getEvaluator().getSection();
-        if (!currentSection.getActiveWeeks().contains(submissionWeek)) {
-            throw new PeerEvaluationIllegalArgumentException("The submission week is not in the active weeks for the section.");
+        // Make sure the evaluator is on a team at all (BR-team-assignment-required): Student.team is optional,
+        // because a student is enrolled in a course section before she is assigned to a team
+        Team evaluatorTeam = newPeerEvaluation.getEvaluator().getTeam();
+        if (evaluatorTeam == null) {
+            throw new PeerEvaluationIllegalArgumentException("You must be assigned to a team before submitting a peer evaluation.");
         }
 
-        // Make sure the submission week is the previous week
-        if (!formattedPreviousWeek.equals(submissionWeek)) {
-            throw new PeerEvaluationIllegalArgumentException("You can only submit evaluations for the previous week.");
-        }
-
-        // Make sure the evaluator and evaluatee are on the same team
-        if (!newPeerEvaluation.getEvaluator().getTeam().equals(newPeerEvaluation.getEvaluatee().getTeam())) {
+        // Make sure the evaluator and evaluatee are on the same team. Compare team ids: Team does not override
+        // equals, so comparing the entities is identity comparison and only happens to hold within one session.
+        Integer evaluatorTeamId = evaluatorTeam.getTeamId();
+        Team evaluateeTeam = newPeerEvaluation.getEvaluatee().getTeam();
+        if (evaluatorTeamId == null || evaluateeTeam == null || !evaluatorTeamId.equals(evaluateeTeam.getTeamId())) {
             throw new PeerEvaluationIllegalArgumentException("The evaluator and evaluatee must be on the same team.");
         }
 
@@ -80,12 +75,95 @@ public class EvaluationService {
     public PeerEvaluation updatePeerEvaluation(Integer evaluationId, PeerEvaluation update) {
         return this.evaluationRepository.findById(evaluationId)
                 .map(oldEvaluation -> {
-                    oldEvaluation.setRatings(update.getRatings()); // Replace the ratings list. This is fine because each rating object has a ratingId so Spring Data JPA can update the existing ratings. Cascade type is set to ALL in the PeerEvaluation entity.
+                    // The week is read off the stored evaluation rather than off the update, because the caller
+                    // writes the payload and could otherwise name an open week to reopen a closed evaluation.
+                    requireOpenSubmissionWindow(oldEvaluation.getEvaluator().getSection(), oldEvaluation.getWeek(), WINDOW_CLOSED_MESSAGE);
+                    rescore(oldEvaluation, update.getRatings());
                     oldEvaluation.setPublicComment(update.getPublicComment());
                     oldEvaluation.setPrivateComment(update.getPrivateComment());
                     return this.evaluationRepository.save(oldEvaluation);
                 })
                 .orElseThrow(() -> new ObjectNotFoundException("evaluation", evaluationId));
+    }
+
+    /**
+     * Refuses a submission, or an edit of one, whose week lies outside the course section's open submission window.
+     *
+     * <p><strong>What the window is.</strong> A peer evaluation covers the previous week and the evaluator has
+     * that one week to complete it (BR-evaluation-submission-window), and the week has to be one the course admin
+     * marked active for the course section (BR-active-weeks). Both conditions are read against the clock at the
+     * moment of the request, so the window closes by itself when the calendar week rolls over.
+     *
+     * <p><strong>Why an edit runs the same check.</strong> The close of the window is itself the lock that makes
+     * an evaluation read-only (BR-evaluation-editable-until-close). There is no separate finalize action and
+     * {@code PeerEvaluation} carries no submitted or completed flag, so an evaluation is editable exactly while
+     * its own week is still the previous week. Until this check was shared with {@link #updatePeerEvaluation}
+     * only the create path checked anything, and a student could rewrite the scores and comments of any past
+     * evaluation of hers indefinitely, which is the code half of OI-24.
+     *
+     * @param outOfWindowMessage what to tell the caller when the week is not the previous week, which reads
+     *                           differently for a first submission than for an edit
+     */
+    private void requireOpenSubmissionWindow(Section section, String week, String outOfWindowMessage) {
+        if (!section.getActiveWeeks().contains(week)) {
+            throw new PeerEvaluationIllegalArgumentException("That week is not one of the course section's active weeks.");
+        }
+
+        if (!previousWeek().equals(week)) {
+            throw new PeerEvaluationIllegalArgumentException(outOfWindowMessage);
+        }
+    }
+
+    /**
+     * The one week a peer evaluation may currently be submitted or edited for, as an ISO-8601 week key such as
+     * "2026-W37". The week fields are ISO, so a week starts on Monday and the week-based year is the year the
+     * week belongs to, which at a year boundary is not always the calendar year of its days.
+     */
+    private String previousWeek() {
+        LocalDate previousWeekDate = LocalDate.now(this.clock).minusWeeks(1);
+        WeekFields weekFields = WeekFields.ISO;
+        return String.format("%d-W%02d", previousWeekDate.get(weekFields.weekBasedYear()), previousWeekDate.get(weekFields.weekOfWeekBasedYear()));
+    }
+
+    /**
+     * Re-scores an evaluation's own rating rows from a submitted set of ratings, matching the two by criterion.
+     *
+     * <p><strong>Why the evaluation's own rows, rather than the submitted ones.</strong> This used to hand the
+     * submitted ratings straight to {@code setRatings}. Those objects carried whatever {@code ratingId} the
+     * request body named, and {@code PeerEvaluation} cascades to its ratings, so the save re-parented the named
+     * rows onto this evaluation: a student could paste another student's rating ids into an update of her own
+     * evaluation, take ownership of those rows, and strip the victim's evaluation of its scores. The converter no
+     * longer maps a {@code ratingId}, so the submitted ratings arrive transient and are read here only for their
+     * criterion and score. The rows written are the ones already hanging off {@code evaluation}, which the caller
+     * has been authorized against by the route rule.
+     *
+     * <p><strong>Matching by criterion.</strong> An evaluation holds exactly one rating per criterion in its
+     * section's rubric, and the converter has checked the same of the submission, so the two line up one for one
+     * and no criterion can appear twice in the lookup map below. That map does double duty: each criterion is
+     * removed as it is consumed, so anything left over at the end is a criterion the submission scored that the
+     * evaluation has no row for. Either direction of mismatch means the rubric changed after this evaluation was
+     * submitted, which is rejected rather than guessed at. The alternative, creating rows for the new criteria,
+     * would leave the superseded ones behind, since the association has no {@code orphanRemoval}.
+     *
+     * <p>{@code totalScore} is a stored column, not a derived getter, and mutating the ratings does not run the
+     * setter that used to keep it current, so it is recalculated explicitly at the end.
+     */
+    private void rescore(PeerEvaluation evaluation, List<Rating> submittedRatings) {
+        Map<Integer, Double> submittedScoresByCriterionId = submittedRatings.stream()
+                .collect(Collectors.toMap(rating -> rating.getCriterion().getCriterionId(), Rating::getActualScore));
+
+        for (Rating rating : evaluation.getRatings()) {
+            Double submittedScore = submittedScoresByCriterionId.remove(rating.getCriterion().getCriterionId());
+            if (submittedScore == null) { // A criterion this evaluation was scored on that the submission does not cover
+                throw new PeerEvaluationIllegalArgumentException(RUBRIC_MISMATCH_MESSAGE);
+            }
+            rating.setActualScore(submittedScore); // Validates the score against the criterion's max
+        }
+        if (!submittedScoresByCriterionId.isEmpty()) { // A criterion the submission covers that this evaluation has no row for
+            throw new PeerEvaluationIllegalArgumentException(RUBRIC_MISMATCH_MESSAGE);
+        }
+
+        evaluation.calculateTotalScore();
     }
 
     public PeerEvaluationAverage getPeerEvaluationAverage(String week, Student student) {
@@ -99,7 +177,14 @@ public class EvaluationService {
         peerEvaluationAverage.setFirstName(student.getFirstName());
         peerEvaluationAverage.setLastName(student.getLastName());
         peerEvaluationAverage.setEmail(student.getEmail());
-        peerEvaluationAverage.setTeamName(student.getTeam().getTeamName());
+        // Student.team is optional: a student is enrolled in a course section before she is assigned to a team, and
+        // BR-team-assignment-required keeps her from authoring until she is, so the team name is simply absent for
+        // her. Dereferencing it here was a 500 on her own results page and on the instructor's performance dashboard
+        // for her. Absent team does not mean absent evaluations, so do not shortcut the rest of this method: a
+        // student removed from a team (Team.removeStudent nulls the back-reference) keeps every evaluation her
+        // teammates wrote of her while she was on it, and this report is where she reads them.
+        Team team = student.getTeam();
+        peerEvaluationAverage.setTeamName(team == null ? null : team.getTeamName());
 
         // 1. Convert the evaluations list to a stream; 2. Map each evaluation object to its total score (resulting in a DoubleStream); 3. Compute the average of the total scores.
         peerEvaluationAverage.setAverageTotalScore(evaluations.stream().mapToDouble(PeerEvaluation::getTotalScore).average().orElse(0.0));

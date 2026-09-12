@@ -50,14 +50,22 @@
         </template>
       </el-table-column>
       <template #empty>
-        <el-empty description="No data is available." />
+        <el-empty description="No data is available.">
+          <!-- A student is enrolled in a course section before she is assigned to a team, and no one but a teammate
+               evaluates her, so not being on a team yet is the usual reason the report comes back empty. It is only
+               the usual reason, not the only one: a student removed from a team keeps the evaluations written of
+               her while she was on it, so this is a hint under an empty report rather than a gate over the form. -->
+          <p v-if="!hasTeam" class="empty-hint">
+            You have not been assigned a team yet. Ask your instructor to assign you to one.
+          </p>
+        </el-empty>
       </template>
     </el-table>
   </el-card>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import type { Student } from '@/apis/student/types'
 import { findSectionById } from '@/apis/section'
 import { findRubricById } from '@/apis/rubric'
@@ -72,7 +80,6 @@ import type {
   RatingAverage
 } from '@/apis/evaluation/types'
 import SearchPeriod from '@/components/SearchPeriod.vue'
-import { ElMessage } from 'element-plus'
 
 const peerEvalutionAverages = ref<PeerEvaluationAverage[]>()
 const sectionId = ref<number>() // Section ID of the team
@@ -87,14 +94,15 @@ const period = ref<PeriodParams>({
 
 const userInfoStore = useUserInfoStore() // Need team ID to search for students
 
+// Whether the student has been assigned to a team yet, used only to explain an empty report. It reads the stored
+// user info, which is a login-time snapshot, so it can say "no team" for a student who has since been assigned one.
+// That is why nothing on this page is gated on it.
+const hasTeam = computed(() => Boolean((userInfoStore.userInfo as Student | null)?.teamId))
+
 // Load data when the component is mounted
 onMounted(async () => {
   sectionId.value = (userInfoStore.userInfo as Student).sectionId as number
   await loadCriteria()
-  if (!(userInfoStore.userInfo as Student).teamId) {
-    ElMessage.error('You have not been assigned a team yet.')
-    return
-  }
 })
 
 // Load criteria information
@@ -126,6 +134,10 @@ async function loadPeerEvaluationAverages() {
     display: flex;
     align-items: center;
     justify-content: space-between;
+  }
+  .empty-hint {
+    margin: 0;
+    color: var(--el-text-color-secondary);
   }
 }
 </style>

@@ -1,7 +1,10 @@
 package team.projectpulse.activity;
 
+import team.projectpulse.student.Student;
 import team.projectpulse.system.UserUtils;
+import team.projectpulse.system.exception.ActivityIllegalArgumentException;
 import team.projectpulse.system.exception.ObjectNotFoundException;
+import team.projectpulse.team.Team;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -35,6 +38,8 @@ public class ActivityService {
             spec = spec.and(ActivitySpecs.hasWeekBetween(searchCriteria.get("startWeek"), searchCriteria.get("endWeek")));
         }
 
+        // Caller-supplied, so this is a filter and never the boundary: the scope below is applied on top of it,
+        // which is what stops a student from reading another team by naming it here.
         if (StringUtils.hasLength(searchCriteria.get("teamId"))) {
             spec = spec.and(ActivitySpecs.hasTeamId(searchCriteria.get("teamId")));
         }
@@ -43,9 +48,19 @@ public class ActivityService {
             spec = spec.and(ActivitySpecs.hasStudentId(searchCriteria.get("studentId")));
         }
 
-        Integer sectionId = this.userUtils.getUserSectionId();
-
-        spec = spec.and(ActivitySpecs.hasSectionId(sectionId));
+        // The scope, resolved from the caller and not from the request: a student sees her own team's weekly activity
+        // reports and no other team's (BR-team-scoped-access), while an instructor or course admin sees her course
+        // section (BR-section-scoped-access). A student naming another team above therefore matches nothing rather
+        // than reading that team, and naming her own team is simply redundant with the scope.
+        if (this.userUtils.hasRole("ROLE_student")) {
+            Team team = this.userUtils.getStudent().getTeam();
+            if (team == null) {  // Student.team is optional: a student on no team owns no weekly activity reports
+                return Page.empty(pageable);
+            }
+            spec = spec.and(ActivitySpecs.hasTeamId(team.getTeamId()));
+        } else {
+            spec = spec.and(ActivitySpecs.hasSectionId(this.userUtils.getUserSectionId()));
+        }
 
         return this.activityRepository.findAll(spec, pageable);
     }
@@ -56,6 +71,17 @@ public class ActivityService {
     }
 
     public Activity saveActivity(Activity newActivity) {
+        // Who may submit, per BR-team-assignment-required: a student, and only once she is on a team. Answering here
+        // rather than in a route rule lets each violation say which condition is unmet instead of "No permission."
+        if (!this.userUtils.hasRole("ROLE_student")) {
+            throw new ActivityIllegalArgumentException("Only a student may submit a weekly activity report.");
+        }
+        Student submitter = this.userUtils.getStudent();
+        if (submitter.getTeam() == null) {
+            throw new ActivityIllegalArgumentException("You must be assigned to a team before submitting a weekly activity report.");
+        }
+        newActivity.setStudent(submitter);
+        newActivity.setTeam(submitter.getTeam());
         return this.activityRepository.save(newActivity);
     }
 

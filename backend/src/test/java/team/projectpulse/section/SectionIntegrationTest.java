@@ -446,10 +446,65 @@ class SectionIntegrationTest extends AbstractIntegrationTest {
         String json = this.jsonMapper.writeValueAsString(emails);
 
         // When and then
+        // The payload is asserted, not just the envelope: a delivery failure is now reported in "failed" rather
+        // than thrown, so without these two lines this test would go green against a completely broken mail path.
         this.mockMvc.perform(post(this.baseUrl + "/sections/2/students/email-invitations").contentType(MediaType.APPLICATION_JSON).content(json).params(requestParams).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
                 .andExpect(jsonPath("$.flag").value(true))
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
-                .andExpect(jsonPath("$.message").value("Send email invitation successfully"));
+                .andExpect(jsonPath("$.message").value("Send email invitation successfully"))
+                .andExpect(jsonPath("$.data.invited").value(Matchers.contains("l.santos@abc.edu", "m.sharp@abc.edu")))
+                .andExpect(jsonPath("$.data.failed").isEmpty())
+                .andExpect(jsonPath("$.data.alreadyExists").isEmpty());
+    }
+
+    @Test
+    @DisplayName("An address that already has an account is skipped rather than invited again")
+    void adminBingyangInvitesAStudentWhoHasAlreadyRegistered() throws Exception {
+        // j.smith@abc.edu is a seeded student who has registered; v.gordon@abc.edu has not. This is what
+        // re-inviting a roster looks like, and the registered student must not be emailed a link she cannot use.
+        // Submitted in a casing the roster happens to use, which the service normalizes before it does anything.
+        // The stored account still carries whatever casing registration wrote, so the column collation is what
+        // matches the two here; this exercises that against real MySQL, where the unit test stubs the repository
+        // and so proves nothing about the query at all.
+        List<String> emails = List.of("J.Smith@abc.edu", "v.gordon@abc.edu");
+
+        MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
+        requestParams.add("courseId", "1");
+
+        String json = this.jsonMapper.writeValueAsString(emails);
+
+        this.mockMvc.perform(post(this.baseUrl + "/sections/2/students/email-invitations").contentType(MediaType.APPLICATION_JSON).content(json).params(requestParams).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.data.alreadyExists").value(Matchers.contains("j.smith@abc.edu")))
+                .andExpect(jsonPath("$.data.invited").value(Matchers.contains("v.gordon@abc.edu")))
+                .andExpect(jsonPath("$.data.failed").isEmpty());
+
+        // And the skipped address left no invitation behind, so it cannot surface in the pending listing
+        this.mockMvc.perform(get(this.baseUrl + "/sections/2/students/pending-invitations").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(jsonPath("$.data").value(Matchers.not(Matchers.hasItem("j.smith@abc.edu"))))
+                .andExpect(jsonPath("$.data").value(Matchers.hasItem("v.gordon@abc.edu")));
+    }
+
+    @Test
+    @DisplayName("The course admin sees the students she invited who have not registered yet")
+    void adminBingyangFindsPendingStudentInvitations() throws Exception {
+        // The seeded data invites l.santos@abc.edu to section 2 as a student and e.musk@abc.edu as an instructor,
+        // and neither has registered. Only the student invitation belongs in this listing.
+        this.mockMvc.perform(get(this.baseUrl + "/sections/2/students/pending-invitations").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.message").value("Find pending invitations successfully"))
+                .andExpect(jsonPath("$.data").value(Matchers.contains("l.santos@abc.edu")));
+    }
+
+    @Test
+    @DisplayName("A course admin who does not own the section cannot see its pending invitations")
+    void adminTimFindsPendingStudentInvitations() throws Exception {
+        this.mockMvc.perform(get(this.baseUrl + "/sections/2/students/pending-invitations").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminTimToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
+                .andExpect(jsonPath("$.message").value("No permission."));
     }
 
     @Test

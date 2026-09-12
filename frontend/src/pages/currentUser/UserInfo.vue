@@ -50,8 +50,8 @@ import { ElMessage } from 'element-plus'
 import { useUserInfoStore } from '@/stores/userInfo'
 import { updateStudent } from '@/apis/student'
 import { updateInstructor } from '@/apis/instructor'
-import type { Student } from '@/apis/student/types'
-import type { Instructor } from '@/apis/instructor/types'
+import type { Student, UpdateStudentResponse } from '@/apis/student/types'
+import type { Instructor, UpdateInstructorResponse } from '@/apis/instructor/types'
 
 const userInfoStore = useUserInfoStore()
 
@@ -87,16 +87,21 @@ const rules = {
 async function updateCurrentUser() {
   await userForm.value.validate()
 
-  // Call the API to update the user, the user might be a student or an instructor
+  // Call the API to update the user, the user might be a student or an instructor.
+  // Store what the server returns, not the form object: the form carries only the four editable fields plus the
+  // three it echoes, while the response is the whole user. Storing the form object used to overwrite the stored
+  // user info with that shorter object, dropping a student's teamId and sectionId (and an instructor's default
+  // course and course section) from a persisted store nothing else refreshes, which locked her out of every page
+  // that needs a team until she logged in again.
   if (userInfoStore.isStudent) {
-    await updateStudent(userInfo.value as Student)
+    const result: UpdateStudentResponse = await updateStudent(userInfo.value as Student)
+    ElMessage.success('User updated successfully')
+    userInfoStore.setUserInfo(result.data)
   } else if (userInfoStore.isInstructor) {
-    await updateInstructor(userInfo.value as Instructor)
+    const result: UpdateInstructorResponse = await updateInstructor(userInfo.value as Instructor)
+    ElMessage.success('User updated successfully')
+    userInfoStore.setUserInfo(result.data)
   }
-
-  ElMessage.success('User updated successfully')
-  // Update the user info in the store
-  userInfoStore.setUserInfo(userInfo.value)
 }
 </script>
 <style lang="scss" scoped></style>

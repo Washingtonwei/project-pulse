@@ -172,6 +172,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/sections/{sectionId}/instructors/{instructorId}").access(this.assignInstructorToSectionAuthorizationManager)
                         .requestMatchers(HttpMethod.GET, this.baseUrl + "/sections/{sectionId}/instructors").access(this.sectionOwnershipAuthorizationManager)
                         .requestMatchers(HttpMethod.POST, this.baseUrl + "/sections/{sectionId}/students/email-invitations").access(this.sectionOwnershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.GET, this.baseUrl + "/sections/{sectionId}/students/pending-invitations").access(this.sectionOwnershipAuthorizationManager)
                         .requestMatchers(HttpMethod.POST, this.baseUrl + "/sections/{sectionId}/instructors/invite-or-add").access(this.sectionOwnershipAuthorizationManager)
 
                         // Security rules for the /teams/** endpoint.
@@ -251,6 +252,12 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/requirement-artifacts/{artifactId}").access(this.teamMembershipAuthorizationManager)
                         .requestMatchers(HttpMethod.PUT, this.baseUrl + "/teams/{teamId}/requirement-artifacts/{artifactId}").access(this.teamMembershipAuthorizationManager)
                         .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/teams/{teamId}/requirement-artifacts/{artifactId}").access(this.teamMembershipAuthorizationManager)
+
+                        // Security rules for the RAM /teams/{teamId}/glossary-terms/** endpoint.
+                        .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/glossary-terms/{glossaryTermId}").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.POST, this.baseUrl + "/teams/{teamId}/glossary-terms").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.PATCH, this.baseUrl + "/teams/{teamId}/glossary-terms/{glossaryTermId}").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.PATCH, this.baseUrl + "/teams/{teamId}/glossary-terms/{glossaryTermId}/rename").access(this.teamMembershipAuthorizationManager)
 
                         // Security rules for the RAM /teams/{teamId}/artifact-links/** endpoint.
                         .requestMatchers(HttpMethod.POST, this.baseUrl + "/teams/{teamId}/artifact-links/search").access(this.teamMembershipAuthorizationManager)

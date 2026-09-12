@@ -44,6 +44,12 @@ public class ActivityIntegrationTest extends AbstractIntegrationTest {
 
     String studentJanaToken; // Jana is in section 3
 
+    String studentTracyToken; // Tracy is in section 2 but is not assigned to any team
+
+    Integer studentJohnId; // The SPA reads these two off the login response and sends them as search criteria
+
+    Integer studentJohnTeamId;
+
     @Value("${api.endpoint.base-url}")
     String baseUrl;
 
@@ -66,12 +72,20 @@ public class ActivityIntegrationTest extends AbstractIntegrationTest {
         contentAsString = mvcResult.getResponse().getContentAsString();
         json = new JSONObject(contentAsString);
         this.studentJohnToken = "Bearer " + json.getJSONObject("data").getString("token");
+        this.studentJohnId = json.getJSONObject("data").getJSONObject("userInfo").getInt("id");
+        this.studentJohnTeamId = json.getJSONObject("data").getJSONObject("userInfo").getInt("teamId");
 
         resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("j.norton@abc.edu", "123456"))); // httpBasic() is from spring-security-test.
         mvcResult = resultActions.andDo(print()).andReturn();
         contentAsString = mvcResult.getResponse().getContentAsString();
         json = new JSONObject(contentAsString);
         this.studentJanaToken = "Bearer " + json.getJSONObject("data").getString("token");
+
+        resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("t.nicholson@abc.edu", "123456")));
+        mvcResult = resultActions.andDo(print()).andReturn();
+        contentAsString = mvcResult.getResponse().getContentAsString();
+        json = new JSONObject(contentAsString);
+        this.studentTracyToken = "Bearer " + json.getJSONObject("data").getString("token");
     }
 
     @Test
@@ -93,6 +107,46 @@ public class ActivityIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.message").value("Find activities successfully"))
                 .andExpect(jsonPath("$.data.content", Matchers.hasSize(4)));
+    }
+
+    @Test
+    @DisplayName("A student's search is bound to her own team, whatever the criteria ask for (BR-team-scoped-access)")
+    void testStudentJohnFindActivitiesByCriteriaWithoutTeamId() throws Exception {
+        // No teamId at all: the search must still return only Team1's week-31 activities (4), not the
+        // whole course section's (which would also include Team2's and Team3's).
+        Map<String, String> searchCriteria = new HashMap<>();
+        searchCriteria.put("week", "2023-W31");
+        String json = this.jsonMapper.writeValueAsString(searchCriteria);
+
+        MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
+        requestParams.add("page", "0");
+        requestParams.add("size", "10");
+        requestParams.add("sort", "category,asc");
+
+        this.mockMvc.perform(post(this.baseUrl + "/activities/search").contentType(MediaType.APPLICATION_JSON).content(json).params(requestParams).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.data.content", Matchers.hasSize(4)));
+    }
+
+    @Test
+    @DisplayName("A student searching another team's activities gets nothing back")
+    void testStudentJohnFindActivitiesByCriteriaForAnotherTeam() throws Exception {
+        // Team2 is in John's own course section, and its week-31 activities exist (6 and 7).
+        Map<String, String> searchCriteria = new HashMap<>();
+        searchCriteria.put("teamId", "2");
+        searchCriteria.put("week", "2023-W31");
+        String json = this.jsonMapper.writeValueAsString(searchCriteria);
+
+        MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
+        requestParams.add("page", "0");
+        requestParams.add("size", "10");
+        requestParams.add("sort", "category,asc");
+
+        this.mockMvc.perform(post(this.baseUrl + "/activities/search").contentType(MediaType.APPLICATION_JSON).content(json).params(requestParams).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.data.content", Matchers.hasSize(0)));
     }
 
     @Test
@@ -159,6 +213,59 @@ public class ActivityIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("MyActivities.vue: a student searching her own studentId and week gets her own activities")
+    void testStudentJohnFindActivitiesLikeTheMyActivitiesPage() throws Exception {
+        Map<String, String> searchCriteria = new HashMap<>();
+        searchCriteria.put("studentId", String.valueOf(this.studentJohnId));
+        searchCriteria.put("week", "2023-W31");
+
+        searchActivities(searchCriteria, this.studentJohnToken)
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.data.content", Matchers.hasSize(2)))
+                .andExpect(jsonPath("$.data.content[*].studentId", Matchers.everyItem(Matchers.is(this.studentJohnId))));
+    }
+
+    @Test
+    @DisplayName("TeamsActivities.vue: a student searching her own teamId and week gets her whole team")
+    void testStudentJohnFindActivitiesLikeTheTeamsActivitiesPage() throws Exception {
+        Map<String, String> searchCriteria = new HashMap<>();
+        searchCriteria.put("teamId", String.valueOf(this.studentJohnTeamId));
+        searchCriteria.put("week", "2023-W31");
+
+        searchActivities(searchCriteria, this.studentJohnToken)
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.data.content", Matchers.hasSize(4)))
+                .andExpect(jsonPath("$.data.content[*].teamId", Matchers.everyItem(Matchers.is(this.studentJohnTeamId))));
+    }
+
+    @Test
+    @DisplayName("SectionsActivities.vue: an instructor searching a week alone still gets every team in her course section")
+    void testAdminBingyangFindActivitiesLikeTheSectionsActivitiesPage() throws Exception {
+        Map<String, String> searchCriteria = new HashMap<>();
+        searchCriteria.put("week", "2023-W31");
+
+        searchActivities(searchCriteria, this.adminBingyangToken)
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.data.content", Matchers.hasSize(7)))
+                // The page groups by team, so it needs more than one team back
+                .andExpect(jsonPath("$.data.content[*].teamId", Matchers.hasItems(1, 2, 3)));
+    }
+
+    @Test
+    @DisplayName("StudentActivities.vue: an instructor searching one student over a week range gets that student")
+    void testAdminBingyangFindActivitiesLikeTheStudentActivitiesPage() throws Exception {
+        Map<String, String> searchCriteria = new HashMap<>();
+        searchCriteria.put("studentId", String.valueOf(this.studentJohnId));
+        searchCriteria.put("startWeek", "2023-W31");
+        searchCriteria.put("endWeek", "2023-W33");
+
+        searchActivities(searchCriteria, this.adminBingyangToken)
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.data.content", Matchers.hasSize(7)))
+                .andExpect(jsonPath("$.data.content[*].studentId", Matchers.everyItem(Matchers.is(this.studentJohnId))));
+    }
+
+    @Test
     void testAdminBingyangFindActivityById() throws Exception {
         this.mockMvc.perform(get(this.baseUrl + "/activities/1").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
                 .andExpect(jsonPath("$.flag").value(true))
@@ -190,14 +297,26 @@ public class ActivityIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void testStudentJohnFindActivityById6() throws Exception {
+    @DisplayName("A student cannot read another team's activity, even one in her own course section (BR-team-scoped-access)")
+    void testStudentJohnFindActivityById6InAnotherTeam() throws Exception {
+        // Activity 6 belongs to Team2; John is on Team1. Both teams are in course section 2.
         this.mockMvc.perform(get(this.baseUrl + "/activities/6").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
+                .andExpect(jsonPath("$.message").value("No permission."))
+                .andExpect(jsonPath("$.data").value("Access Denied"));
+    }
+
+    @Test
+    @DisplayName("A student reads a teammate's activity in her own team")
+    void testStudentJohnFindActivityById3InOwnTeam() throws Exception {
+        // Activity 3 is Eric's; Eric and John are both on Team1.
+        this.mockMvc.perform(get(this.baseUrl + "/activities/3").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(true))
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.message").value("Find activity successfully"))
-                .andExpect(jsonPath("$.data.activityId").value(6))
-                .andExpect(jsonPath("$.data.category").value("BUGFIX"))
-                .andExpect(jsonPath("$.data.activity").value("Fix Navigation Bugs"));
+                .andExpect(jsonPath("$.data.activityId").value(3))
+                .andExpect(jsonPath("$.data.category").value("DOCUMENTATION"));
     }
 
     @Test
@@ -237,6 +356,47 @@ public class ActivityIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.data.status").value("COMPLETED"))
                 .andExpect(jsonPath("$.data.createdAt").isNotEmpty())
                 .andExpect(jsonPath("$.data.updatedAt").isNotEmpty());
+    }
+
+    @Test
+    @DisplayName("A student on no team cannot submit a weekly activity report, and is told which condition is unmet")
+    void testStudentTracyWithNoTeamCannotAddActivity() throws Exception {
+        this.mockMvc.perform(post(this.baseUrl + "/activities").contentType(MediaType.APPLICATION_JSON).content(anActivityPayload()).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentTracyToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_ARGUMENT))
+                .andExpect(jsonPath("$.message").value("You must be assigned to a team before submitting a weekly activity report."));
+    }
+
+    @Test
+    @DisplayName("An instructor does not author weekly activity reports, and no longer sees a missing-student error")
+    void testAdminBingyangCannotAddActivity() throws Exception {
+        this.mockMvc.perform(post(this.baseUrl + "/activities").contentType(MediaType.APPLICATION_JSON).content(anActivityPayload()).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_ARGUMENT))
+                .andExpect(jsonPath("$.message").value("Only a student may submit a weekly activity report."));
+    }
+
+    @Test
+    @DisplayName("An activityId in a create payload cannot turn the create into an overwrite of another activity")
+    void testStudentJohnCannotOverwriteATeammatesActivityThroughCreate() throws Exception {
+        // Activity 3 is Eric's, on John's own team, so every guard on the update route would be satisfied
+        Map<String, Object> activityDto = new HashMap<>();
+        activityDto.put("activityId", 3);
+        activityDto.put("week", "2023-W31");
+        activityDto.put("category", "DEVELOPMENT");
+        activityDto.put("activity", "Overwritten");
+        activityDto.put("description", "Overwritten description");
+        activityDto.put("plannedHours", 1.0);
+        activityDto.put("actualHours", 1.0);
+        activityDto.put("status", "COMPLETED");
+
+        this.mockMvc.perform(post(this.baseUrl + "/activities").contentType(MediaType.APPLICATION_JSON).content(this.jsonMapper.writeValueAsString(activityDto)).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andExpect(jsonPath("$.data.activityId").value(Matchers.not(3)));
+
+        // Eric's activity is untouched
+        this.mockMvc.perform(get(this.baseUrl + "/activities/3").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andExpect(jsonPath("$.data.activity").value("Create API Documentation"))
+                .andExpect(jsonPath("$.data.studentName").value(Matchers.not("John Smith")));
     }
 
     @Test
@@ -307,7 +467,23 @@ public class ActivityIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void testStudentJohnAddActivityCommentInSameSection() throws Exception {
+    @DisplayName("A student cannot comment on another team's activity in her own course section")
+    void testStudentJohnAddActivityCommentInAnotherTeam() throws Exception {
+        Map<String, Object> comment = new HashMap<>();
+        comment.put("comment", "Good job! Keep up the good work!");
+
+        String json = this.jsonMapper.writeValueAsString(comment);
+
+        // Activity 6 belongs to Team2; John is on Team1.
+        this.mockMvc.perform(patch(this.baseUrl + "/activities/6/comments").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
+                .andExpect(jsonPath("$.message").value("No permission."))
+                .andExpect(jsonPath("$.data").value("Access Denied"));
+    }
+
+    @Test
+    void testStudentJohnAddActivityCommentInSameTeam() throws Exception {
         Map<String, Object> comment = new HashMap<>();
         comment.put("comment", "Good job! Keep up the good work!");
 
@@ -331,6 +507,28 @@ public class ActivityIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
                 .andExpect(jsonPath("$.message").value("No permission."))
                 .andExpect(jsonPath("$.data").value("Access Denied"));
+    }
+
+    private String anActivityPayload() throws Exception {
+        Map<String, Object> activityDto = new HashMap<>();
+        activityDto.put("week", "2023-W31");
+        activityDto.put("category", "DEVELOPMENT");
+        activityDto.put("activity", "Integrate Payment Gateway");
+        activityDto.put("description", "Integrate Stripe payment gateway into the application");
+        activityDto.put("plannedHours", 8.0);
+        activityDto.put("actualHours", 7.5);
+        activityDto.put("status", "COMPLETED");
+        return this.jsonMapper.writeValueAsString(activityDto);
+    }
+
+    private ResultActions searchActivities(Map<String, String> searchCriteria, String token) throws Exception {
+        String json = this.jsonMapper.writeValueAsString(searchCriteria);
+
+        MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
+        requestParams.add("page", "0");
+        requestParams.add("size", "200");
+
+        return this.mockMvc.perform(post(this.baseUrl + "/activities/search").contentType(MediaType.APPLICATION_JSON).content(json).params(requestParams).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, token));
     }
 
 }
