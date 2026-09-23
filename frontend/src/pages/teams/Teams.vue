@@ -358,6 +358,9 @@ async function loadTeams() {
   pageNumber.value = result.data.number + 1 // The page number starts from 0 on the back end, so add 1 here
   pageSize.value = result.data.size
   totalElements.value = result.data.totalElements
+
+  // The fetched teams carry no students, so fill them from the already-loaded student list
+  attachStudentsToTeams()
 }
 
 // Load all students (assigned and unassigned) in the section
@@ -369,7 +372,11 @@ async function loadStudents() {
 
   students.value = result.data.content
 
-  // Put students in their teams
+  attachStudentsToTeams()
+}
+
+// Put students in their teams
+function attachStudentsToTeams() {
   teams.value.forEach((team) => {
     team.students = students.value.filter((student) => student.teamId === team.teamId)
   })
@@ -377,7 +384,8 @@ async function loadStudents() {
 
 function resetSearchCriteria() {
   teamSearchCriteria.value = {
-    teamName: ''
+    teamName: '',
+    sectionId: defaultSectionId.value
   }
   loadTeams()
 }
