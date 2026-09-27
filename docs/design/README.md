@@ -21,7 +21,7 @@ requirements/use-cases.md  +  software-requirements-specification.md   (what —
 traceability.md                                              (the spec→code map)
 ```
 
-A design doc is the **design of record** for what it covers. The Level-2 docs are written or updated by `/design` (see [`../../.claude/commands/design.md`](../../.claude/commands/design.md)) when an area's use case is designed — before any code — and each is what `/implement` builds from and what the next person reads to understand the existing implementation before extending it.
+A Level-2 design doc is the **design-of-record** for its area. The Level-2 docs are written or updated by `/design` (see [`../../.claude/commands/design.md`](../../.claude/commands/design.md)) when an area's use case is designed (before any code), and each is what `/implement` builds from and what the next person reads to understand the existing implementation before extending it.
 
 ---
 

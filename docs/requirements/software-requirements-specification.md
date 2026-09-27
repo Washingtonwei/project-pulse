@@ -102,6 +102,10 @@ OE-fixed-deployment: Project Pulse is deployed as a single hosted application on
 
 CO-single-application: Project Pulse shall be a single application sharing one Vue.js single-page application, one Java/Spring Boot REST API, and one relational database across both capability areas; the RAM environment shall be implemented as a module within that codebase rather than as a separate system.
 
+CO-no-ops-team: Project Pulse shall be deployable and operable by one person without dedicated operations staff: releases shall deploy through the automated pipeline, and routine operation shall require no manual server administration.
+
+CO-single-tenant: In release 1.0, each Project Pulse deployment shall serve a single institution. Serving multiple institutions from one deployment (multi-tenancy) is out of scope for this release and planned for a future one.
+
 CO-vue-spring-stack: The client shall be implemented in Vue.js and the backend in Java using the Spring Boot framework.
 
 CO-relational-persistence: Requirement artifacts, links, documents, and document sections shall be persisted in the Project Pulse relational database.
