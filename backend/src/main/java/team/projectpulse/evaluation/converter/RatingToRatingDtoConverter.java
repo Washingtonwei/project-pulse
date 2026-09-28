@@ -1,7 +1,7 @@
 package team.projectpulse.evaluation.converter;
 
 import team.projectpulse.evaluation.dto.RatingDto;
-import team.projectpulse.rubric.Rating;
+import team.projectpulse.evaluation.Rating;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 

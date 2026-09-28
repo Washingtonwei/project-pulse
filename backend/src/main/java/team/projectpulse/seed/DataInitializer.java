@@ -1,4 +1,4 @@
-package team.projectpulse.system;
+package team.projectpulse.seed;
 
 import team.projectpulse.activity.Activity;
 import team.projectpulse.activity.ActivityCategory;
@@ -8,6 +8,7 @@ import team.projectpulse.course.Course;
 import team.projectpulse.course.CourseRepository;
 import team.projectpulse.evaluation.PeerEvaluation;
 import team.projectpulse.evaluation.PeerEvaluationRepository;
+import team.projectpulse.evaluation.Rating;
 import team.projectpulse.instructor.Instructor;
 import team.projectpulse.instructor.InstructorRepository;
 import team.projectpulse.ram.collaboration.Comment;

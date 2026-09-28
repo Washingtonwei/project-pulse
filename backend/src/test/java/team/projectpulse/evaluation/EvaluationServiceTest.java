@@ -3,7 +3,6 @@ package team.projectpulse.evaluation;
 import org.junit.jupiter.api.AfterEach;
 import team.projectpulse.instructor.Instructor;
 import team.projectpulse.rubric.Criterion;
-import team.projectpulse.rubric.Rating;
 import team.projectpulse.rubric.Rubric;
 import team.projectpulse.section.Section;
 import team.projectpulse.section.SectionRepository;

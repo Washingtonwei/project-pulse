@@ -12,9 +12,10 @@ When developing new features, follow the same modeling approach used throughout 
 
 Each bounded context is a self-contained vertical-slice package under `team.projectpulse.<domain>` (`activity`, `evaluation`, `course`, `student`, `team`, `section`, `rubric`, `instructor`). Cross-cutting packages:
 
-- `system/` — `Result` (the API response envelope; see Conventions below), `StatusCode` constants, `ExceptionHandlerAdvice` (global `@RestControllerAdvice`), `DataInitializer` (dev-profile seed data), `EmailService`, clock configs
+- `system/` — `Result` (the API response envelope; see Conventions below), `StatusCode` constants, `ExceptionHandlerAdvice` (global `@RestControllerAdvice`), `EmailService`, clock configs
 - `security/` — JWT auth (RSA key pair generated at startup), `SecurityConfiguration` (URL-level rules), `authorizationmanagers/` (fine-grained ownership/membership `AuthorizationManager`s)
 - `user/` — shared `PeerEvaluationUser` base class, password reset, user invitation flows
+- `seed/`: `DataInitializer` (dev-profile seed data), kept outside `system` because it depends on every feature; the one package exempt from the feature-locality rule
 
 **RAM module** (`ram/`) — Requirements Authoring & Management, merged in to reuse the course/section/team/student infrastructure. Sub-packages: `document/` (requirement documents with section-level pessimistic locking), `requirement/` (artifacts, traceability links), `usecase/`, `glossary/`, `collaboration/` (comment threads). Extend these packages — don't fork the architecture for RAM.
 

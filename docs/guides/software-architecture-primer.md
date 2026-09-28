@@ -57,7 +57,7 @@ A quality attribute written as "the system shall be modifiable" or "the system s
 Now "maintainable" is something you can actually check. Compare the two ways to write the same concern:
 
 - ❌ "The system shall be modifiable." — untestable wish.
-- ✅ `MNT-feature-locality`: "adding or modifying one feature shall require no edits to unrelated bounded-context packages." — a dependency-analysis test can verify this.
+- ✅ `MNT-feature-locality`: "adding or modifying one feature shall require no edits to unrelated feature modules," and a feature module may reach a sibling only through its service layer, never its repositories. A dependency-analysis test can verify this.
 
 **That difference — from a wish to a measurable statement — is the single most important skill in this primer.**
 

@@ -65,10 +65,10 @@ The constraints the architecture must honor. Each is owned by the requirements (
 C4Context
     title System Context Diagram for Project Pulse
 
-    Person(instructor, "Instructor", "Senior design course instructor")
-    Person(student, "Senior Design Student", "Enrolled in the course")
+    Person(instructor, "Instructor", "Teaches a course section; a course admin is an instructor who also runs the course")
+    Person(student, "Senior Design Student", "Member of a team in a course section")
 
-    System(pulse, "Project Pulse", "Hosts WARs, peer evaluations, and the RAM requirements module")
+    System(pulse, "Project Pulse", "Tracks team performance and supports requirements authoring")
 
     System_Ext(gmail, "Gmail", "Email system")
     System_Ext(llm, "LLM Service", "AI-assisted requirement review")
@@ -77,12 +77,13 @@ C4Context
     Rel_R(student, pulse, "Submits work;<br/>authors requirements")
     Rel_R(pulse, gmail, "Sends emails using")
     Rel_D(gmail, student, "Sends emails to")
+    Rel_D(gmail, instructor, "Sends emails to")
     Rel_D(pulse, llm, "Requests AI review")
 
     UpdateLayoutConfig($c4ShapeInRow="2", $c4BoundaryInRow="1")
 ```
 
-The Level 1: Context Diagram for the Project Pulse system provides a high-level overview of its interactions with users and external systems. Project Pulse is the central platform for senior-design course delivery: instructors create courses, author Weekly Activity Report (WAR) and peer evaluation templates, and review submissions, while students submit WARs, complete peer evaluations, and view scores and feedback. The Requirements Authoring & Management (RAM) module runs inside this same platform, where students and instructors author, link, and validate requirements as a connected graph of atomic artifacts. Project Pulse integrates with two external systems: the Gmail system, which delivers automated email notifications (reminders, updates) to students and instructors — the context diagram shows the student notification path as representative — and an external LLM service (e.g., OpenAI), which the RAM module calls for AI-assisted requirement review. This diagram highlights the instructor and student as primary users, the central functionality of Project Pulse including the RAM module, and the platform's reliance on Gmail for communication and the LLM service for AI assistance, offering a clear picture of the system's operational scope and interactions.
+The Level 1: Context Diagram for the Project Pulse system provides a high-level overview of its interactions with users and external systems. Project Pulse is the central platform for senior-design course delivery: instructors create courses, author Weekly Activity Report (WAR) and peer evaluation templates, and review submissions, while students submit WARs, complete peer evaluations, and view scores and feedback. The Requirements Authoring & Management (RAM) module runs inside this same platform, where students and instructors author, link, and validate requirements as a connected graph of atomic artifacts. Project Pulse integrates with two external systems: the Gmail system, which delivers automated email notifications (reminders, updates) to students and instructors, and an external LLM service (e.g., OpenAI), which the RAM module calls for AI-assisted requirement review. A course admin is not drawn separately because the role is an instructor with course-level rights, not a distinct kind of user. This diagram highlights the instructor and student as primary users, the central functionality of Project Pulse including the RAM module, and the platform's reliance on Gmail for communication and the LLM service for AI assistance, offering a clear picture of the system's operational scope and interactions.
 
 ## **Solution Strategy**
 
@@ -112,147 +113,171 @@ The platform's building blocks at two levels: the **containers**, and the **comp
 C4Container
     title Container Diagram for Project Pulse
 
-    Person(student, "Senior Design Student", "Enrolled in the course")
+    Person(instructor, "Instructor", "Teaches a course section; a course admin is an instructor who also runs the course")
+    Person(student, "Senior Design Student", "Member of a team in a course section")
 
-    Container_Boundary(pulse, "Project Pulse") {
-        Container(spa, "SPA", "Vue.js", "Course-management UI + RAM authoring views (graph, editor, ReqLint, AI panel)")
-        Container(api, "REST API Application", "Java / Spring Boot", "Course-management & RAM APIs (graph, ReqLint, AI proxy)")
-        ContainerDb(db, "Database", "Relational DB", "WARs, peer evals, and RAM artifacts/links/documents")
+    System_Boundary(pulse, "Project Pulse") {
+        Container(spa, "SPA", "Vue 3 / TypeScript", "Runs in the browser; the user interface for performance tracking and requirements authoring")
+        Container(api, "REST API Application", "Java 21 / Spring Boot", "Delivers the SPA; serves the performance-tracking and RAM APIs")
+        ContainerDb(db, "Database", "MySQL 8", "Courses, teams, WARs, peer evaluations, and RAM artifacts, links, and documents")
         ContainerDb(blob, "Blob Storage", "Azure Blob Storage", "Uploaded project source material (PDF/PPTX)")
     }
 
     System_Ext(gmail, "Gmail", "Email system")
     System_Ext(llm, "LLM Service", "AI-assisted requirement review")
 
+    Rel_R(instructor, spa, "Uses", "HTTPS")
     Rel_R(student, spa, "Uses", "HTTPS")
+    Rel_U(api, spa, "Delivers", "HTTPS")
     Rel_D(spa, api, "API calls", "JSON/HTTPS")
     Rel_D(api, db, "Reads & writes", "JDBC")
     Rel_D(api, blob, "Stores & reads files", "HTTPS")
     Rel_R(api, gmail, "Sends email", "SMTP")
     Rel_R(api, llm, "Requests AI review", "HTTPS")
+    Rel_D(gmail, student, "Sends emails to")
+    Rel_D(gmail, instructor, "Sends emails to")
 ```
 
-The Level 2: Container Diagram for the Project Pulse system provides a detailed view of its internal architecture, illustrating how the system components interact. The system is composed of four containers (the **SPA (Single Page Application)**, the **REST API Application**, the **Database**, and **Azure Blob Storage**), supported by integration with the **Gmail System** for email communication and an external **LLM Service** (e.g., OpenAI) for AI-assisted requirement review. The **SPA**, built with Vue.js, is delivered to users' browsers and provides the interface for both the course-management workflows (submitting WARs and peer evaluations) and the RAM module's requirements authoring views: graph navigation, document editing, the ReqLint validation sidebar, and the AI assistant panel. The **REST API Application**, implemented using Java and Spring Boot, delivers the SPA, processes REST API calls, and manages interactions with the **Database**; for the RAM module it exposes endpoints for the requirements graph, ReqLint validation, and an AI proxy to the LLM service. The **Database**, a relational database, stores course-management data (WARs and peer evaluation submissions) alongside the RAM module's requirement artifacts, links, documents, and document sections, with CRUD operations executed through the REST API. **Azure Blob Storage** holds one kind of data the relational database deliberately does not — the large binary files of uploaded **project source material** (PDF/PowerPoint); the database keeps only a reference to each blob plus the server-side-extracted text (see the Data architecture section). The REST API integrates with the **Gmail System** over SMTP to send automated notifications and with the external **LLM Service** to support AI-assisted review.
+The Level 2: Container Diagram for the Project Pulse system provides a detailed view of its internal architecture, illustrating how its containers (the separately running applications and data stores) interact. The system is composed of four containers (the **SPA (Single Page Application)**, the **REST API Application**, the **Database**, and **Azure Blob Storage**), supported by integration with the **Gmail System** for email communication and an external **LLM Service** (e.g., OpenAI) for AI-assisted requirement review. The **SPA**, built with Vue 3 and TypeScript, is delivered to users' browsers and provides the interface for both the course-management workflows (submitting WARs and peer evaluations) and the RAM module's requirements authoring views: graph navigation, document editing, the ReqLint validation sidebar, and the AI assistant panel. The **REST API Application**, implemented using Java 21 and Spring Boot, delivers the SPA, processes REST API calls, and manages interactions with the **Database**. The SPA and the REST API are drawn as two containers even though both ship in one jar (KD-1): a C4 container is a separately running unit, and the SPA runs in the browser while the API runs on the server. For the RAM module, the REST API exposes endpoints for the requirements graph, ReqLint validation, and an AI proxy to the LLM service. The **Database**, a MySQL 8 relational database, stores course-management data (WARs and peer evaluation submissions) alongside the RAM module's requirement artifacts, links, documents, and document sections, with CRUD operations executed through the REST API. **Azure Blob Storage** holds one kind of data the relational database deliberately does not: the large binary files of uploaded **project source material** (PDF/PowerPoint); the database keeps only a reference to each blob plus the server-side-extracted text (see the Data architecture section). The REST API integrates with the **Gmail System** over SMTP to send automated notifications and with the external **LLM Service** to support AI-assisted review.
 
 ### *Shared foundation components*
 
-This view zooms into the **REST API Application** to show the **shared foundation** — the org/enrollment model and the cross-cutting packages every feature area builds on. Each maps to a package under `backend/src/main/java/team/projectpulse/`. The two feature areas, [performance tracking](#performance-tracking-components) and [RAM](#ram-components), add their own components on top of this base.
+This view zooms into the **REST API Application** to show the **shared foundation**: the org/enrollment model, rubrics, identity and security, and notifications, which every feature area builds on. Each component maps to one or more packages under `backend/src/main/java/team/projectpulse/`. The two feature areas, [performance tracking](#performance-tracking-components) and [RAM](#ram-components), add their own components on top of this base.
 
 ```mermaid
 C4Component
-    title Component Diagram — Project Pulse shared foundation inside the REST API Application
+    title Component Diagram: shared foundation inside the REST API Application
 
-    Container(spa, "SPA", "Vue.js", "Course & team administration UI")
+    Container(spa, "SPA", "Vue 3 / TypeScript", "Course and team administration UI")
 
     Container_Boundary(api, "REST API Application (Spring Boot)") {
-        Component(org, "course · section · team", "Controller / Service / Repository", "Courses, course sections, teams — the org/enrollment model")
-        Component(people, "student · instructor", "Controller / Service / Repository", "Course participants & roles")
-        Component(shared, "Shared platform packages", "system · security · user", "Result / StatusCode / ExceptionHandlerAdvice, JWT auth + AuthorizationManagers, JPA auditing, EmailService, clock & profile config")
+        Component(security, "security", "Spring Security filter chain", "JWT login and request authentication; AuthorizationManagers check ownership and membership")
+        Component(web, "SPA serving", "Spring MVC static resources", "Serves the bundled SPA; forwards UI routes to index.html")
+        Component(actuator, "actuator", "Spring Boot Actuator", "Health and info management endpoints")
+        Component(user, "user", "Spring MVC + Spring Data JPA", "User accounts, invitations, password reset")
+        Component(org, "course · section · team", "Spring MVC + Spring Data JPA", "Courses, course sections, teams: the org/enrollment model")
+        Component(people, "student · instructor", "Spring MVC + Spring Data JPA", "Course participants and their roles")
+        Component(rubric, "rubric", "Spring MVC + Spring Data JPA", "Rubrics and criteria: owned by a course, assigned to course sections")
+        Component(notify, "notifications", "Spring Mail + @Scheduled", "EmailService; WeeklyReminderScheduler sends each week's reminders")
     }
 
-    ContainerDb(db, "Database", "Relational DB", "Courses/sections/teams, users")
+    ContainerDb(db, "Database", "MySQL 8", "Users, courses, course sections, teams, rubrics")
     System_Ext(gmail, "Gmail", "Email system")
 
-    Rel_D(spa, org, "JSON/HTTPS")
-    Rel_D(spa, people, "JSON/HTTPS")
-    Rel(org, shared, "builds on")
-    Rel(people, shared, "builds on")
-    Rel_D(org, db, "JDBC")
-    Rel_D(people, db, "JDBC")
-    Rel(shared, gmail, "Sends email", "SMTP")
+    Rel(web, spa, "Delivers", "HTTPS")
+    Rel(spa, security, "Logs in; sends every API request through", "JSON/HTTPS")
+    Rel(security, user, "Loads the authenticated user from; passes authorized requests to")
+    Rel(security, org, "Checks ownership and membership in; passes authorized requests to")
+    Rel(security, people, "Passes authorized requests to")
+    Rel(security, rubric, "Checks rubric ownership in; passes authorized requests to")
+    Rel(org, rubric, "Owns and assigns rubrics")
+    Rel(security, actuator, "Guards")
+    Rel(user, notify, "Sends invitation and reset emails via")
+    Rel(notify, org, "Finds course sections due a reminder in")
+    Rel(user, db, "Reads & writes", "JDBC")
+    Rel(org, db, "Reads & writes", "JDBC")
+    Rel(people, db, "Reads & writes", "JDBC")
+    Rel(rubric, db, "Reads & writes", "JDBC")
+    Rel(notify, gmail, "Sends email", "SMTP")
 ```
 
-The shared cross-cutting packages (`system` · `security` · `user`) are the base every feature area builds on; the org/enrollment model (`course` · `section` · `team` · `student` · `instructor`) is the data backbone that performance tracking and RAM both reuse (RAM scopes its requirements content to a `team`).
+The REST API has four entry points, and the diagram draws all of them because together they are its attack surface: API requests from the SPA, the static files that deliver the SPA itself, the actuator management endpoints, and the reminder schedule, which fires with no request at all. Every HTTP entry point except static SPA serving passes through the `security` filter chain before reaching a component. The org/enrollment model (`course` · `section` · `team` · `student` · `instructor`) is the data backbone that performance tracking and RAM both reuse (RAM scopes its requirements content to a `team`). `rubric` belongs to the foundation, not to performance tracking, because a `Course` owns its rubrics and criteria (it is the aggregate root; see [Data architecture](#data-architecture)) and each course section is assigned one. `security`'s `AuthorizationManager`s answer ownership and membership questions by looking up courses, course sections, teams, and rubrics; three of them also reach into the `activity` and `evaluation` feature packages, which `MNT-feature-locality` forbids ([TD-13](#risks-and-technical-debt)). `notifications` is the one component triggered by the clock instead of a request. Most arrows between components are direct repository reads (for example, `section` reads students and instructors through their repositories), so the components share tables rather than each owning its own. The shared conventions (the `Result` envelope, `ExceptionHandlerAdvice`, JPA auditing, profile-scoped clocks) are not components; they are described under [Crosscutting Concepts](#crosscutting-concepts). `dev`-profile seed data (`DataInitializer`) lives in its own `seed` package outside the foundation: it must know every feature to seed it, so it is the one package the dependency rule exempts, and it is not drawn.
 
 ### *Performance-tracking components*
 
-This view zooms into the **REST API Application** to show the **performance-tracking** feature area — weekly activity reports, peer evaluations, and rubrics — on top of the [shared foundation](#shared-foundation-components). Each maps to a package under `backend/src/main/java/team/projectpulse/`.
+This view zooms into the **REST API Application** to show the **performance-tracking** feature area (weekly activity reports and peer evaluations) on top of the [shared foundation](#shared-foundation-components), whose components appear here in grey. Each maps to a package under `backend/src/main/java/team/projectpulse/`.
 
 ```mermaid
 C4Component
-    title Component Diagram — Project Pulse performance-tracking components inside the REST API Application
+    title Component Diagram: performance-tracking components inside the REST API Application
 
-    Container(spa, "SPA", "Vue.js", "Course management UI: WARs, peer evaluations, dashboards")
+    Container(spa, "SPA", "Vue 3 / TypeScript", "Course management UI: WARs, peer evaluations, dashboards")
 
     Container_Boundary(api, "REST API Application (Spring Boot)") {
-        Component(activity, "activity", "Controller / Service / Repository", "Weekly Activity Reports")
-        Component(evaluation, "evaluation", "Controller / Service / Repository", "Peer evaluations")
-        Component(rubric, "rubric", "Controller / Service / Repository", "Evaluation rubrics")
-        Component(foundation, "Shared foundation", "org model · system · security · user", "Courses/sections/teams/users, auth, Result envelope, auditing, email — see Shared foundation components")
+        Component(activity, "activity", "Spring MVC + Spring Data JPA", "Weekly activity reports")
+        Component(evaluation, "evaluation", "Spring MVC + Spring Data JPA", "Peer evaluations and their scoring")
+        Component_Ext(security, "security", "Shared foundation", "Authenticates and authorizes every API request")
+        Component_Ext(org, "course · section · team · student", "Shared foundation", "The org/enrollment model")
+        Component_Ext(rubric, "rubric", "Shared foundation", "Rubrics and criteria")
+        Component_Ext(notify, "notifications", "Shared foundation", "Email; weekly WAR and peer evaluation reminders")
     }
 
-    ContainerDb(db, "Database", "Relational DB", "WARs, peer evals")
+    ContainerDb(db, "Database", "MySQL 8", "WARs, peer evaluations")
 
-    Rel_D(spa, activity, "JSON/HTTPS")
-    Rel_D(spa, evaluation, "JSON/HTTPS")
-    Rel_D(spa, rubric, "JSON/HTTPS")
-    Rel(activity, foundation, "builds on")
-    Rel(evaluation, foundation, "builds on")
-    Rel(rubric, foundation, "builds on")
-    Rel_D(activity, db, "JDBC")
-    Rel_D(evaluation, db, "JDBC")
-    Rel_D(rubric, db, "JDBC")
+    Rel(spa, security, "Submits and reviews WARs and peer evaluations", "JSON/HTTPS")
+    Rel(security, activity, "Checks WAR ownership and team membership in; passes authorized requests to")
+    Rel(security, evaluation, "Checks evaluation ownership in; passes authorized requests to")
+    Rel(evaluation, rubric, "Scores peer evaluations against criteria from")
+    Rel(activity, org, "Reads team members and instructors from")
+    Rel(evaluation, org, "Reads course sections and students from")
+    Rel(evaluation, notify, "Sends confirmation email via")
+    Rel(activity, db, "Reads & writes", "JDBC")
+    Rel(evaluation, db, "Reads & writes", "JDBC")
 ```
+
+Every arrow here points into the foundation, which `MNT-feature-locality` allows, and several are direct repository reads (for example, `evaluation` loads rubric criteria through `rubric`'s repository). The one remaining violation in this area runs the other way: three `security` managers import the `activity` and `evaluation` security services ([TD-13](#risks-and-technical-debt)).
 
 On the **SPA** side the layering is uniform across the app: feature pages call a per-domain API client (`frontend/src/apis/<feature>/`) over a shared Axios instance that attaches the JWT Bearer token, unwraps the `Result` envelope, and redirects to login on `401`. Pinia stores (`token`, `userInfo`, …) hold cross-cutting state; the router enforces `requiresAuth` / role guards.
 
 ### *RAM components*
 
-This view zooms into the **REST API Application** to show the **RAM module's** internal structure: one component per DDD bounded context, sitting on the same [shared foundation](#shared-foundation-components) the performance-tracking components also build on. Each maps to a package under `backend/src/main/java/team/projectpulse/ram/` — a Level-2 area design doc designs the inside of one of these boxes; this diagram fixes the boxes and how they relate.
+This view zooms into the **REST API Application** to show the **RAM module's** internal structure: one component per DDD bounded context, sitting on the same [shared foundation](#shared-foundation-components) the performance-tracking components also build on. Each maps to a package under `backend/src/main/java/team/projectpulse/ram/`. A Level-2 area design doc designs the inside of one of these boxes; this diagram fixes the boxes and how they relate.
 
 ```mermaid
 C4Component
-    title Component Diagram — RAM components inside the REST API Application
+    title Component Diagram: RAM components inside the REST API Application
 
-    Container(spa, "SPA", "Vue.js", "RAM authoring views: Documents, Document Editor, Use Cases, Glossary, graph & traceability, ReqLint, Collaboration, Review, Export, AI panels")
+    Container(spa, "SPA", "Vue 3 / TypeScript", "RAM authoring views; calls each component's REST API over JSON/HTTPS")
 
     Container_Boundary(api, "REST API Application (Spring Boot)") {
-        Component(doc, "document", "Controller / Service / Repository", "Requirement documents & document sections, templates/provisioning, section-level pessimistic locking, autosave")
-        Component(req, "requirement", "Controller / Service / Repository", "Requirement artifacts, artifact links & tracing, key-prefix sequences")
-        Component(uc, "usecase", "Controller / Service / Repository", "Use case artifacts: main steps, extensions, locking")
-        Component(glo, "glossary", "Controller / Service", "Glossary terms & terminology invariants")
-        Component(val, "validation", "Controller / Service", "ReqLint structural & consistency checks")
-        Component(col, "collaboration", "Controller / Service / Repository", "Comment threads (built); real-time presence/broadcast is a deferred future layer")
-        Component(rev, "review", "Controller / Service / Repository", "Review & submission workflow")
-        Component(exp, "export", "Controller / Service", "Export rendering (PDF/DOCX/Markdown); project-source-material upload, storage & text extraction")
-        Component(ai, "ai", "Controller / Service", "AI configuration, AI assistants & LLM proxy")
-        Component(shared, "Shared foundation", "org model · system · security · user", "Courses/sections/teams/users, auth, Result envelope, JPA auditing (authorship), email — see Shared foundation components")
+        Component(req, "requirement", "Spring MVC + Spring Data JPA", "Requirement artifacts, artifact links and tracing, key-prefix sequences: the requirements graph")
+        Component(doc, "document", "Spring MVC + Spring Data JPA", "Requirement documents and document sections, templates and provisioning, section locking, autosave")
+        Component(uc, "usecase", "Spring MVC + Spring Data JPA", "Use cases: main steps, extensions, locking")
+        Component(glo, "glossary", "Spring MVC", "Glossary terms and terminology invariants")
+        Component(val, "validation", "Spring MVC", "ReqLint structural and consistency checks")
+        Component(col, "collaboration", "Spring MVC + Spring Data JPA", "Comment threads; real-time presence and broadcast are a deferred layer")
+        Component(rev, "review", "Spring MVC + Spring Data JPA", "Review and submission workflow")
+        Component(exp, "export", "Spring MVC", "Renders documents to PDF, DOCX, and Markdown")
+        Component(src, "sourcematerial", "Spring MVC + Spring Data JPA", "Project source material: upload, storage, server-side text extraction")
+        Component(ai, "ai", "Spring MVC + Spring Data JPA", "AI configuration, AI assistants, LLM proxy")
+        Component_Ext(security, "security", "Shared foundation", "Authenticates every API request")
+        Component_Ext(org, "team · user", "Shared foundation", "Teams that own RAM content; users as authors")
     }
 
-    ContainerDb(db, "Database", "Relational DB", "RAM artifacts, links, documents, sections, comments, AI config")
+    ContainerDb(db, "Database", "MySQL 8", "RAM artifacts, links, documents, document sections, comments, AI configuration")
     ContainerDb(blob, "Blob Storage", "Azure Blob Storage", "Uploaded project source material")
     System_Ext(llm, "LLM Service", "AI-assisted requirement review")
 
-    Rel_D(spa, doc, "JSON/HTTPS")
-    Rel_D(spa, req, "JSON/HTTPS")
-    Rel_D(spa, uc, "JSON/HTTPS")
-    Rel_D(spa, glo, "JSON/HTTPS")
-    Rel_D(spa, val, "JSON/HTTPS")
-    Rel_D(spa, col, "JSON/HTTPS")
-    Rel_D(spa, rev, "JSON/HTTPS")
-    Rel_D(spa, exp, "JSON/HTTPS")
-    Rel_D(spa, ai, "JSON/HTTPS")
-    Rel(doc, shared, "builds on")
-    Rel(req, shared, "builds on")
-    Rel(uc, shared, "builds on")
-    Rel(glo, shared, "builds on")
-    Rel(val, shared, "builds on")
-    Rel(col, shared, "builds on")
-    Rel(rev, shared, "builds on")
-    Rel(exp, shared, "builds on")
-    Rel(ai, shared, "builds on")
-    Rel_D(doc, db, "JDBC")
-    Rel_D(req, db, "JDBC")
-    Rel_D(uc, db, "JDBC")
-    Rel_D(col, db, "JDBC")
-    Rel_D(rev, db, "JDBC")
-    Rel_D(exp, db, "JDBC")
-    Rel_R(exp, blob, "Stores & reads files", "HTTPS")
-    Rel_D(ai, db, "JDBC")
-    Rel_R(ai, llm, "AI proxy", "HTTPS")
+    Rel(spa, security, "Sends every RAM request through", "JSON/HTTPS")
+    Rel(security, req, "Passes authenticated requests to (and to every other RAM component)")
+    BiRel(doc, req, "Places artifacts in document sections")
+    Rel(uc, req, "Is a requirement artifact in")
+    Rel(glo, req, "Derives glossary terms from")
+    Rel(col, doc, "Anchors comment threads to")
+    Rel(col, req, "Anchors comment threads to")
+    Rel(val, req, "Checks artifacts and links in")
+    Rel(val, glo, "Checks terminology against")
+    Rel(rev, doc, "Locks and submits")
+    Rel(exp, doc, "Renders")
+    Rel(ai, doc, "Reads context from; proposes edits to")
+    Rel(ai, src, "Reads extracted text from")
+    Rel(doc, org, "Scopes documents to a team in")
+    Rel(req, db, "Reads & writes", "JDBC")
+    Rel(doc, db, "Reads & writes", "JDBC")
+    Rel(uc, db, "Reads & writes", "JDBC")
+    Rel(col, db, "Reads & writes", "JDBC")
+    Rel(rev, db, "Reads & writes", "JDBC")
+    Rel(src, db, "Stores references and extracted text", "JDBC")
+    Rel(ai, db, "Reads & writes", "JDBC")
+    Rel(src, blob, "Stores & reads files", "HTTPS")
+    Rel(ai, llm, "Proxies AI requests", "HTTPS")
 ```
 
-These are the RAM module's bounded contexts — each maps to a package under `ram/` and is the subject of a Level-2 area design doc that designs the inside of one box. The boundaries for areas not yet designed are **provisional**: they are drawn here from the use-case areas so the map is complete, but the first `/design` of an area validates a boundary against the code and **may revise this diagram** (splitting, merging, or re-homing a component, or moving a subsystem owner), recording the change as part of that run. The `ai` component is the only one that reaches a third-party service: it proxies to the external LLM service for AI-assisted review. The `exp` component reaches the platform's own **Azure Blob Storage** to store and read uploaded project source material (see [Data architecture](#data-architecture)); every other component persists only through the relational database. On the **SPA** side the layering mirrors the rest of Project Pulse: RAM pages (`frontend/src/pages/ram/`) call a per-domain API client (`frontend/src/apis/ram/`) over the shared Axios instance that attaches the Bearer token and unwraps the `Result` envelope; that layering is a platform convention (see [Crosscutting Concepts](#crosscutting-concepts)), not redrawn per area. The build status of each component and subsystem is not tracked here — that is [`../traceability.md`](../traceability.md)'s job, per use case.
+These are the RAM module's bounded contexts. Each maps to a package under `ram/` and is the subject of a Level-2 area design doc that designs the inside of one box. The boundaries for areas not yet designed are **provisional**: they are drawn here from the use-case areas so the map is complete, but the first `/design` of an area validates a boundary against the code and **may revise this diagram** (splitting, merging, or re-homing a component, or moving a subsystem owner), recording the change as part of that run.
+
+`requirement` is the hub: the requirements graph lives there, and most other components are views over it or checks against it. `glossary`, `validation`, and `export` own no tables; they read through the components they point at. Every RAM request passes through the `security` filter chain, but RAM defines no `AuthorizationManager`s: each service scopes its lookups to the caller's team itself. Only one `security` arrow and one team-scoping arrow are drawn, to keep the view legible. Unlike the other two views, where direct repository reads point into the foundation and are allowed, several RAM arrows are repository reads between siblings, which `MNT-feature-locality` forbids: `glossary`, `usecase`, and `collaboration` all read `RequirementArtifactRepository` (OI-58, OI-59). The diagram also shows the intended dependency direction where one is decided, not every edge in today's code: `document` and `requirement` still point back at `collaboration` through inverse comment-thread collections (OI-60), so those two pairs are cycles in the code although they are drawn one-way. `document` ↔ `requirement` is drawn two-way because its direction is still open (OI-61). All of these are tracked in [TD-13](#risks-and-technical-debt). Two components reach outside the relational database. `sourcematerial` stores the large project source material files in the platform's own **Azure Blob Storage** and keeps only a reference plus the extracted text in MySQL (see [Data architecture](#data-architecture)). `ai` is the only component that reaches a third-party service: it proxies to the external LLM service, reading the extracted source material as context.
+
+On the **SPA** side the layering mirrors the rest of Project Pulse: RAM pages (`frontend/src/pages/ram/`) call a per-domain API client (`frontend/src/apis/ram/`) over the shared Axios instance that attaches the Bearer token and unwraps the `Result` envelope; that layering is a platform convention (see [Crosscutting Concepts](#crosscutting-concepts)), not redrawn per area. The build status of each component and subsystem is not tracked here; that is [`../traceability.md`](../traceability.md)'s job, per use case.
 
 ## **Runtime View**
 
@@ -279,7 +304,7 @@ sequenceDiagram
 ### *WAR submission (representative course-management flow)*
 
 1. Visit the Project Pulse Website: The Senior Design student begins by accessing the Project Pulse system through their browser at the URL https://projectpulse.team.
-2. Deliver the SPA to the student's Browser: The REST API Application (built using Java and Spring Boot) serves the Single Page Application (SPA, built with Vue.js) to the student's browser. This provides the user interface that students interact with.
+2. Deliver the SPA to the student's Browser: The REST API Application (built using Java 21 and Spring Boot) serves the Single Page Application (SPA, built with Vue 3 and TypeScript) to the student's browser. This provides the user interface that students interact with.
 3. Submit WARs and Peer Evaluations: The student uses the SPA to complete and submit Weekly Activity Reports (WARs) and peer evaluations through the interface.
 4. Make REST API Calls to the Backend: The SPA communicates with the REST API Application by making REST API calls to process and handle the submissions from the student. These calls allow the backend to manage the application's logic and facilitate data processing.
 5. CRUD Operations with the Database: The REST API Application performs CRUD (Create, Read, Update, Delete) operations on the Database, which is a relational database. The database securely stores the submitted WARs and peer evaluations.
@@ -347,7 +372,7 @@ Conventions, shared machinery, and platform-wide concerns that cut across all bu
 These are the **canonical** platform conventions — the normative source the root [`CLAUDE.md`](../../CLAUDE.md) and the spec-doc [`CLAUDE.md`](../CLAUDE.md) point to. Every module follows them.
 
 - **API shape** — all endpoints under `/api/v1` (`api.endpoint.base-url`); every controller method returns the `Result` envelope (`flag`, `code`, `message`, `data`) — never a raw entity; errors are translated centrally by a global `@RestControllerAdvice` (`ExceptionHandlerAdvice`) into the same envelope with `StatusCode` constants.
-- **Domain structure** — Domain-Driven Design: one bounded context per package, each owning its full vertical slice (entity → repository → service → controller → DTOs → `Converter<S,T>` → a `*SecurityService` or `*Specs` for dynamic queries). **No Lombok** — explicit getters/setters/constructors. **No MapStruct** — bidirectional DTO conversion via Spring `Converter<S,T>` beans.
+- **Domain structure** — Domain-Driven Design: one bounded context per package, each owning its full vertical slice (entity → repository → service → controller → DTOs → `Converter<S,T>` → a `*SecurityService` or `*Specs` for dynamic queries). Packages depend on one another only as `MNT-feature-locality` allows: on the shared foundation and on a sibling's service layer, with no cycles, and never the reverse from the foundation (see KD-7 for which packages form the foundation). **No Lombok** — explicit getters/setters/constructors. **No MapStruct** — bidirectional DTO conversion via Spring `Converter<S,T>` beans.
 - **Authorization** — JWT-based auth (RSA key pair generated at startup); URL-level rules in `SecurityConfiguration`'s filter chain **plus** fine-grained `AuthorizationManager` beans for ownership/membership checks. Role hierarchy `admin > instructor > student`.
 - **Persistence & migrations** — relational DB via JPA. Schema is delivered as **Flyway** migrations (`backend/src/main/resources/db/migration/`). The `dev` profile uses `ddl-auto: create` + `DataInitializer` seed data; `staging`/`prod` use Flyway only (`prod` pulls secrets from Azure Key Vault).
 - **SPA serving** — in production the Spring Boot app serves both the API and the built SPA from `static/`; `WebConfig` forwards non-API UI routes (registered for one-, two-, and three-segment paths) to `index.html` for client-side routing.
@@ -364,7 +389,7 @@ Shared machinery every module reuses rather than reimplements — owned by the c
 | Authorship & auditing | `system` (JPA auditing, `PeerEvaluationUserAuditorAware`) | Created/modified-by metadata applied automatically across entities |
 | Email / notifications | `system` (`EmailService`, `WeeklyReminderScheduler`) | Gmail over SMTP; scheduled reminders |
 | Time & profiles | `system` (`DevClockConfig` / `StagingClockConfig` / `ProdClockConfig`) | Profile-scoped clocks for testable time |
-| Dev seed data | `system` (`DataInitializer`) | `dev`-profile fixtures (the dev credentials) |
+| Dev seed data | `seed` (`DataInitializer`) | `dev`-profile fixtures (the dev credentials) |
 
 ### *RAM cross-cutting subsystems*
 
@@ -382,7 +407,8 @@ Beyond the platform-wide machinery above, each **RAM** area builds on a small se
 | Autosave | `FR-SAVE-*` | `ram/document` (section save) + client-side debounce | Persist edits through the document-section save endpoint |
 | Validation (ReqLint) | `FR-VAL-*` | `ram/validation` | Deterministic structural checks (UC-VAL-run-validation) |
 | AI assistants | `FR-AI-*` | `ram/ai` (LLM proxy) | Proxy to the external LLM service |
-| Export / Import | `SI-export-formats`/`SI-export-fidelity` / `SI-import-allowlist`/`SI-import-extraction` | `ram/export` | Export rendering to PDF/DOCX/Markdown preserving template structure (UC-EXP-export-document, UC-EXP-export-bundle); project-source-material upload (PDF/PPTX, allowlisted, ≤ 25 MB), storage, and server-side text extraction for AI context (UC-AI-import-source-material). Binary storage & extraction: see [Data architecture](#data-architecture) |
+| Export | `SI-export-formats`/`SI-export-fidelity` | `ram/export` | Export rendering to PDF/DOCX/Markdown preserving template structure (UC-EXP-export-document, UC-EXP-export-bundle) |
+| Project source material | `SI-import-allowlist`/`SI-import-extraction` | `ram/sourcematerial` | Upload (PDF/PPTX, allowlisted, ≤ 25 MB), storage, and server-side text extraction for AI context (UC-AI-import-source-material). Binary storage & extraction: see [Data architecture](#data-architecture) |
 
 ### *Security & Compliance*
 
@@ -551,7 +577,7 @@ The functional structure (the [component views](#building-block-view) above) is 
 **KD-7 — DDD bounded-context vertical slices, layered within.** *Accepted.*
 - **Driving ASR(s):** #3 maintainability & learnability (`MNT-feature-locality`, `MNT-service-layer`, `INT-single-application`; Quality Goal #2). Verified by QS-3.
 - **Context:** The codebase is extended continuously by rotating student contributors; the common change is "add or modify one feature," and it must not ripple across unrelated features.
-- **Decision:** Partition the backend by **domain** — one bounded context per package, each a full vertical slice (entity → repository → service → controller → DTO/`Converter`) — and layer *within* each slice, rather than partitioning by technical layer.
+- **Decision:** Partition the backend by **domain** — one bounded context per package, each a full vertical slice (entity → repository → service → controller → DTO/`Converter`) — and layer *within* each slice, rather than partitioning by technical layer. A slice may use a sibling slice only through that sibling's service layer, never its repositories; slices form no dependency cycles; and the shared foundation (`system`, `security`, `user`, `rubric`, and the org model: `course`, `section`, `team`, `student`, `instructor`) depends on no feature slice (`MNT-feature-locality`). The `dev` seed package (`seed`) is the one exemption. The code does not yet meet this rule; see TD-13.
 - **Consequences:** A feature change stays inside one slice; a new bounded context is added without touching existing ones (QS-3: zero changes to other packages, delivered in ≤ 2 person-days); the uniform slice shape lets a contributor pattern-match across the codebase. *Rejected* package-by-layer (all controllers together, all services together) — it optimizes for the rare "swap a technical layer" change over the common "change one feature" change, and scatters a single feature across the package tree. *Trade-off:* cross-cutting concerns (auth, auditing, email) must be deliberately centralized in `system`/`security`/`user` so they aren't duplicated per slice.
 
 ## **Quality Requirements**
@@ -573,7 +599,7 @@ The functional structure (the [component views](#building-block-view) above) is 
 |---|---|---|---|---|
 | QS-1 | Security | An authenticated student requests another team's WAR/peer-eval via the API · normal op | Denied at the `AuthorizationManager`, or by the team-scoped query when the caller supplies their own `teamId` beside another team's object id | 100% of cross-team/owner-mismatch attempts are refused: `403` where the route guard rejects a non-member, `404` where the scoped query finds no such object for that team; no record fields leak; attempt is auditable |
 | QS-2 | Security | An unauthenticated client calls a protected `/api/v1` endpoint · normal op | Rejected before controller logic | `401` returned; no business logic executes; covered by integration tests |
-| QS-3 | Maintainability *(change)* | A contributor adds a new bounded context · development | Added as a vertical slice using standard conventions, no edits to existing slices | Zero changes to other bounded-context packages (`MNT-feature-locality`); new endpoints return the `Result` envelope and pass convention checks; delivered in ≤ 2 person-days |
+| QS-3 | Maintainability *(change)* | A contributor adds a new bounded context · development | Added as a vertical slice using standard conventions, no edits to existing slices | Zero changes to other feature modules, and no new sibling-repository or cyclic dependency (`MNT-feature-locality`); new endpoints return the `Result` envelope and pass convention checks; delivered in ≤ 2 person-days |
 | QS-4 | Usability | A student is mid-edit in a RAM document section · normal op | Edits autosave; the section is locked against collisions | Autosave at least every 10 s and immediately on navigate-away (PER-autosave-cadence); ≤ 10 s of edits lost on crash/disconnect (ROB-edit-loss-bound); a second editor is blocked with a clear message |
 | QS-5 | Reliability *(availability)* | The LLM service times out or is down · degraded | AI features degrade gracefully; authoring/saving unaffected | Authoring + save unaffected; AI shows a response or a clear working/timeout indication within 15 s (PER-ai-response-time) and offers retry; no data loss |
 | QS-6 | Reliability | A new release is deployed · deploy-time | Schema migrates; one container serves API + SPA | Flyway migrations apply cleanly; staging-slot smoke check passes before swap; overall availability ≥ 99% per academic term excluding scheduled maintenance (AVL-uptime); **note:** new RSA key invalidates live JWTs → users re-login (see KD-4) |
@@ -600,6 +626,7 @@ The functional structure (the [component views](#building-block-view) above) is 
 | TD-9 | P2 | Debt (ops) | No production observability backend — the Prometheus/Grafana/Zipkin stack is dev-only | Wire prod telemetry (Azure Monitor / App Insights / Managed Grafana) | Observability |
 | TD-11 | P2 | Debt (accessibility) | No accessibility architecture: WCAG 2.1 AA (keyboard operability, contrast, screen-reader support) is required by USE-wcag-aa/UI-wcag-aa (risk RI-accessibility) but is not reflected in component choices or verified anywhere | Set an accessibility baseline (component-library a11y audit, keyboard-nav + focus management) and add automated checks (e.g. axe) to CI; verify against WCAG 2.1 AA | Quality Requirements; SRS USE-wcag-aa/UI-wcag-aa |
 | TD-12 | P2 | Debt (network) | The MySQL flexible server has **Allow public access from any Azure service within Azure** enabled, which Azure implements as a `0.0.0.0` firewall rule admitting connections from **any** Azure IP in any tenant, bypassing the two named client-IP rules. This is what made the credentials disclosed in TD-1 reachable in practice: the bar was "have an Azure account", not "be on the allowlist". No wide-open internet rule exists, and TLS is enforced | Untick the setting, but **not on its own**: App Service reaches the database through it, so add firewall rules for the app's `possibleOutboundIpAddresses` first, or better, use VNet integration plus a private endpoint (the Premium v3 plan supports it) and turn public access off. Also prune the stale client-IP rule dating from 2024. Lower priority now that the credentials are rotated | Security, Deployment |
+| TD-13 | P2 | Debt (maintainability) | The code does not yet meet `MNT-feature-locality` (QS-3); the boundaries are enforced by review only. Remaining violations: (1) **sibling repositories**, 6 imports: `ram/collaboration/CommentService` reads `DocumentRepository`, `DocumentSectionRepository` and `RequirementArtifactRepository`; `ram/glossary/GlossaryService` reads `RequirementArtifactRepository`; the requirement and use-case DTO converters read `DocumentSectionRepository` and `RequirementArtifactRepository`; (2) **cycles**, 3 pairs, all in RAM and mostly from JPA entity associations: `document` ↔ `requirement`, `document` ↔ `collaboration`, `requirement` ↔ `collaboration`; (3) **foundation depends on a feature**, 3 imports: three `security` `AuthorizationManager`s import `ActivitySecurityService` or `EvaluationSecurityService`. A schema change in one component can break its siblings, and no component can be separated out on its own. `seed/DataInitializer` depends on every feature by design and is exempt | Call the sibling's service instead of its repository (the two converters overlap OI-46, so decide that approach first); make the RAM entity associations one-way or id-based to break the cycles; move feature-specific `AuthorizationManager`s next to the feature they guard; guard the boundaries with an ArchUnit test that uses `FreezingArchRule`, so these violations become a baseline and new ones fail the build (OI-45). Each fix is tracked as its own item: OI-57 (`security` managers), OI-58 (service repository reads), OI-59 (converter repository reads), OI-60 (comment-thread cycles), OI-61 (`document` ↔ `requirement` cycle) | [Building Block View](#building-block-view), KD-7, QS-3 |
 | RISK-1 | P2 | Risk | Single instance = single point of failure; downtime on failure/restart | Move to multi-instance once TD-7/TD-8 clear; rely on staging-slot swap meanwhile | Deployment |
 | RISK-2 | P3 | Risk | External LLM dependency (availability, cost, latency, vendor change) | Timeouts + graceful degradation (QS-5); a provider abstraction | Runtime, QS-5 |
 | TD-10 | P3 | Debt (ops) | No alerting/SLOs and no centralized log aggregation | Define SLOs + alerts + ship logs to an aggregator | Observability |

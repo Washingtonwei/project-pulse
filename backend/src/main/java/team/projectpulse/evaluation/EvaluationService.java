@@ -4,7 +4,6 @@ import team.projectpulse.section.Section;
 import team.projectpulse.section.SectionRepository;
 import team.projectpulse.system.exception.PeerEvaluationIllegalArgumentException;
 import team.projectpulse.system.exception.ObjectNotFoundException;
-import team.projectpulse.rubric.Rating;
 import team.projectpulse.student.Student;
 import team.projectpulse.student.StudentRepository;
 import team.projectpulse.team.Team;

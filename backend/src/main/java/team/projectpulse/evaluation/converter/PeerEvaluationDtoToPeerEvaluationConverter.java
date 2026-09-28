@@ -3,7 +3,7 @@ package team.projectpulse.evaluation.converter;
 import team.projectpulse.evaluation.PeerEvaluation;
 import team.projectpulse.evaluation.dto.PeerEvaluationDto;
 import team.projectpulse.rubric.Criterion;
-import team.projectpulse.rubric.Rating;
+import team.projectpulse.evaluation.Rating;
 import team.projectpulse.section.Section;
 import team.projectpulse.student.Student;
 import team.projectpulse.student.StudentRepository;
