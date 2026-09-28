@@ -1,6 +1,6 @@
-package team.projectpulse.rubric;
+package team.projectpulse.evaluation;
 
-import team.projectpulse.evaluation.PeerEvaluation;
+import team.projectpulse.rubric.Criterion;
 import jakarta.persistence.*;
 
 @Entity
