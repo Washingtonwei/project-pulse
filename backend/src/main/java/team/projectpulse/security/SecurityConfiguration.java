@@ -300,7 +300,7 @@ public class SecurityConfiguration {
 
                         // Security rules for the actuator endpoints. These sit outside the API base URL,
                         // so without a rule of their own they would fall to .anyRequest().permitAll() below
-                        // and be readable by anonymous callers (TD-1). EndpointRequest resolves the actual
+                        // and be readable by anonymous callers (TD-actuator-exposure). EndpointRequest resolves the actual
                         // actuator base path, so these keep working if management.endpoints.web.base-path
                         // changes. Health stays anonymous because the platform probe cannot authenticate;
                         // it discloses nothing, since health.show-details is when-authorized.
