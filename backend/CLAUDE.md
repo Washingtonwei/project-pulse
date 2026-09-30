@@ -38,22 +38,22 @@ The backend follows the **DDD** approach described above. Each domain (bounded c
 
 ## Domain Model Hierarchy
 
-`Course` is the aggregate root. Cascading flows downward:
+Quick reference; the normative version, with the associations and the user inheritance, is the architecture-of-record's [Domain & aggregate model](../docs/design/architectural-design.md#domain--aggregate-model). Check it before adding an entity or a cascade.
 
 ```
 Course (aggregate root)
 ├── Criterion[]        (CascadeType.ALL)
-├── Rubric[]           (CascadeType.ALL, a rubric groups criteria)
-└── Section[]          (CascadeType.ALL)
+├── Rubric[]           (CascadeType.ALL; a rubric groups criteria)
+└── Section[]          (CascadeType.ALL; each references one of its course's rubrics)
     ├── Team[]         (CascadeType.ALL)
-    │   └── Student[]  (no cascade — students belong to section, assigned to team)
+    │   └── Student[]  (no cascade; students belong to the course section and are assigned to a team)
     └── Student[]      (CascadeType.ALL)
 ```
 
-- **Instructor** is independent (saved separately), associated at multiple levels: `Course` (ManyToMany + courseAdmin), `Section` (ManyToMany), `Team` (ManyToOne). Each instructor has a `defaultCourse` and `defaultSection` preference.
-- **Student** and **Instructor** both extend `PeerEvaluationUser` (abstract `@Entity` with shared fields: username, name, email, password, roles).
-- **Activity** and **PeerEvaluation** are independent entities (not cascaded from Course) — they reference Student and Team.
-- **RAM entities** (documents, requirement artifacts, use cases, glossary, comments) are scoped to a Team.
+- `Instructor`, `Activity`, and `PeerEvaluation` sit outside the cascade and are saved separately.
+- `Student` and `Instructor` extend the abstract `PeerEvaluationUser` (username, name, email, password, roles).
+- `Student.team` is optional (teams are assigned after registration), so null-check it; `Student.section` is not.
+- RAM entities are scoped to a `Team`.
 
 ## Conventions
 
@@ -75,14 +75,14 @@ Error handling is centralized in `ExceptionHandlerAdvice` — services throw exc
 
 ### Services
 - Constructor injection (no `@Autowired` on fields)
-- Use `ObjectNotFoundException(entityName, id)` when findById fails. The one exception is a `*SecurityService`, which returns `false` instead, because it runs inside the filter chain where nothing maps the exception (see **Security** below)
+- Throw `ObjectNotFoundException(entityName, id)` when a lookup finds nothing, except in a `*SecurityService`, which returns `false` (see **Security** below)
 - Dynamic queries built with `Specification` pattern (`*Specs` class)
-- Use `UserUtils` (`system/UserUtils.java`) to get the current authenticated user's ID, role, course, or section from the JWT. Services use it to scope queries (e.g., filtering by the user's section). Don't extract user context from `SecurityContextHolder` directly — use `UserUtils` instead.
+- Get the current user's id, roles, course, or course section from `UserUtils` (`system/UserUtils.java`), never from `SecurityContextHolder`. Services use it to scope queries (e.g., filtering by the user's course section).
 
 ### Time Handling
-- All time-dependent code must inject the `Clock` bean and use `LocalDateTime.now(clock)`, never `LocalDateTime.now()`.
-- The dev profile uses a **fixed clock** (frozen at Aug 20, 2023 23:30, `America/Chicago`) so seed data weeks align. Calling `LocalDateTime.now()` directly would bypass this and break dev/test behavior.
-- Prod and staging profiles use a real system clock configured to the `app.timezone` property.
+- **Calendar time** (weeks, deadlines, reminders, audit stamps): inject the `Clock` bean and use `LocalDateTime.now(clock)`, never `LocalDateTime.now()`.
+- **Elapsed time** (JWT expiry, edit-lock leases): use `Instant.now()`. The dev clock is fixed at 2023-08-20 23:30, so a lease timed by it would never lapse.
+- Why the two differ, and the per-profile clocks: [Architectural conventions › Time](../docs/design/architectural-design.md#architectural-conventions).
 
 ### DTOs and Converters
 - DTO naming: `EntityDto` (e.g., `ActivityDto`, `CourseDto`)
@@ -91,34 +91,31 @@ Error handling is centralized in `ExceptionHandlerAdvice` — services throw exc
 
 ### Security
 
-Authorization has **two enforcement points**. A request that reaches data has to pass both, and each answers a different question. Most of the bugs in this area come from assuming one of them covers the other's question.
+Authorization has **two enforcement points**, and every request that reaches data must pass both: the route rule (*may this caller call this URL at all?*) and the scoped query (*is the object this request names in the caller's scope?*). The rules, why neither point is enough alone, and the September 2026 defects that proved it are normative in the architecture-of-record's [Authorization](../docs/design/architectural-design.md#authorization). Read it before adding an endpoint or touching `security/`. What follows is how to apply it in this codebase.
 
-**Point 1, the route rule** (`SecurityConfiguration.securityFilterChain()`) answers *"may this caller call this URL at all?"*. Every endpoint needs one. Three ways to write it, in increasing order of what it knows:
-  - a plain check with no domain knowledge: `.hasAuthority("ROLE_admin")`, `.authenticated()`, `.permitAll()`
-  - `.access(someAuthorizationManager)` when the answer depends on the domain. The manager (in `security/authorizationmanagers/`) is a thin wrapper: it reads the path variables the matched rule already bound and delegates to a `*SecurityService` (in the domain package) that holds the actual logic, e.g. `TeamSecurityService.canAccessTeam`, `ActivitySecurityService.isActivityOwner`. **That pair is how point 1 is built, not a second defence.** Two rules keep the pair honest. **Take the id from `context.getVariables()`**, through `PathVariables.readId(context, "teamId")`, and never by re-parsing `getRequestURI()`: a manager that parses the path itself is a second, uncoupled parse of it, over a different string with a different algorithm, free to drift from the `requestMatchers` pattern beside it and with nothing to detect the drift. (It had drifted. `PATCH /users/{userId}` was bound to a manager that recognised only `/students/`, `/instructors/` and `/evaluations/evaluators/`, so it denied every request from the day it was written.) And **fail closed rather than throw**: an id that names no row, an id that is not a number, or a relationship that is genuinely optional and not yet established (a student not yet assigned to a team, a course section with no rubric) is `false`, not an `ObjectNotFoundException`. Only those two are null-checked: where an association is mandatory it is declared `@ManyToOne(optional = false)` on the entity, so the check would be dead code guarding a state the object model forbids. Managers run inside the filter chain, ahead of the `DispatcherServlet`, so `ExceptionHandlerAdvice` never sees what they throw and the exception escapes into the container's error dispatch as a 500 that also tells the caller which ids exist. Denying instead makes a stale id a `403`, the same answer as an id belonging to someone else.
-  - an endpoint with no rule at all is a **bug**, and since the catch-all under the API base URL is `.denyAll()`, it now fails closed: the route is refused for everyone until you write its rule, rather than silently becoming callable by any logged-in user. A 403 on a brand-new endpoint usually means you forgot the rule, not that the caller lacks permission. Note the scope of that catch-all: it covers `${api.endpoint.base-url}/**` only. Everything outside it (the SPA `index.html` forwards from `WebConfig`, static assets, `/error`) is still matched by the trailing `.anyRequest().permitAll()`. `/actuator/**` is outside it too, and has its own rules: health and info are anonymous for the platform probe, every other endpoint requires `ROLE_admin`, and the deployed profiles expose only health and info in the first place (the full surface is dev-only). Adding an actuator endpoint means checking both the exposure list and those rules.
+**Point 1, the route rule** (`SecurityConfiguration.securityFilterChain()`). Every endpoint needs one.
+- Use a plain check (`.hasAuthority("ROLE_admin")`, `.authenticated()`, `.permitAll()`) when the answer needs no domain knowledge, and `.access(someAuthorizationManager)` when it does. The manager (in `security/authorizationmanagers/`) is a thin wrapper that delegates to a `*SecurityService` in the domain package, e.g. `TeamSecurityService.canAccessTeam`, `ActivitySecurityService.isActivityOwner`.
+- Read ids with `PathVariables.readId(context, "teamId")`, which reads `context.getVariables()`. Never parse `getRequestURI()`.
+- A `*SecurityService` returns `false` for anything it cannot resolve and never throws. Null-check only associations that are genuinely optional; declare mandatory ones `@ManyToOne(optional = false)`.
+- A `403` on a brand-new endpoint usually means you forgot its rule: the catch-all under the API base URL is `.denyAll()`.
+- Adding an actuator endpoint means checking both the per-profile exposure list and the `/actuator/**` rules (see [Observability & operations](../docs/design/architectural-design.md#observability--operations)).
 
-**Point 2, the scoped query** (in the service) answers *"is the object this request names actually in the caller's scope?"*. Load by id **and** owning team together: `findByIdAndTeamTeamId(id, teamId)`, never `findById(id)`.
+**Point 2, the scoped query** (in the service).
+- Load by id and owning team in one query: `findByIdAndTeamTeamId(id, teamId)`, never `findById(id)` followed by a `getTeam()` comparison. Spring Data derives it from the method name; `Team`'s primary key field is `teamId`, hence the doubled word. Precedents to copy: `RequirementArtifactRepository`, `CommentRepository.findByIdAndCommentThreadIdAndCommentThreadTeamTeamId`, and `DocumentSectionRepository.findByIdAndDocumentIdAndDocumentTeamTeamId`, which also binds the child to the parent named in the URL.
+- When the URL carries no container id (a flat route such as `/activities/{activityId}`, or `POST /activities/search`), derive the scope from the caller through `UserUtils`, and let a `teamId` in the search criteria filter inside that scope, never set it. See `ActivityService.findByCriteria`.
+- Re-resolve every id in a request body (a `sourceArtifactId`, a `primaryActorId`, a DTO `id`) through a team-scoped finder, as `UseCaseService.requireActorsInTeam` does. Never scope by a `teamId` that came from the body (OI-46).
 
-**Why both, always.** A route guard reads `{teamId}` out of the URI, so it proves only that the caller belongs to *the team named in the URL*. It never proves that the object named beside it belongs to that team, so a caller passing their **own** `teamId` next to **another team's** object id sails through. The reverse fails just as badly: a scoped query with no route rule is worthless, because then the caller chooses the `teamId` you are scoping by. Neither one alone is enough. (Every cross-team defect found in September 2026 was one of the two missing: the glossary routes had neither; the document-section GET had a scoped query but no rule; the artifact and use-case lookups had a rule but no scoping.)
+**The smell to grep for:** a service method that accepts `Integer teamId` and never mentions it in the body. That was the exact shape of the September 2026 cross-team bypass, in every RAM service at once.
 
-Working rules:
-- **Put the scope in the query, not in a check after the load.** Write `findByIdAndTeamTeamId(id, teamId)` (Spring Data derives it from the method name; `Team`'s primary key field is `teamId`, hence the doubled word), not `findById(id)` followed by a `getTeam()` comparison. The check-after version refuses the request just as correctly, but it leaves the unscoped load in the codebase as the thing the next person copies, and it can be deleted without any test failing. Precedents to copy: `RequirementArtifactRepository`, `CommentRepository.findByIdAndCommentThreadIdAndCommentThreadTeamTeamId`, and `DocumentSectionRepository.findByIdAndDocumentIdAndDocumentTeamTeamId`, which also binds the child to the parent named in the URL.
-- **When the URL carries no container id, derive the scope from the caller.** A flat foundation route (`/activities/{activityId}`) or a search endpoint (`POST /activities/search`) gives point 1 no `{teamId}` to bind, so the service resolves the scope itself: a student is bound to her own team (`BR-team-scoped-access`), an instructor or course admin to her course section (`BR-section-scoped-access`), and a `teamId` arriving in the search criteria filters inside that scope rather than setting it. See `ActivityService.findByCriteria`.
-- **Ids arriving in the request body pass neither point.** A `sourceArtifactId`, a `primaryActorId`, or a DTO `id` in a payload is covered by no route rule and by no lookup scoping. Re-resolve every one of them through a team-scoped finder in the service (see `UseCaseService.requireActorsInTeam`), and never scope by a `teamId` that itself came from the body, because the caller sets it (OI-46).
-- **The smell to grep for:** a service method that accepts `Integer teamId` and never mentions it in the body. That was the exact shape of the September 2026 cross-team bypass, in every RAM service at once.
-- **Test both refusals.** A non-member stopped at the route is `403`; a member passing another team's object id through their own team's URL is `404`. An id that names nothing at all is `403` as well, because the route rule refuses before the service runs at all (`AuthorizationRuleIntegrationTest`). See the `_NotSameTeam` and `_OtherTeams...ThroughOwnTeamUrl` tests in the RAM controller tests.
-- Ownership = user created the resource; Membership = user belongs to the same course/section/team
-- Full rationale: [Authorization in the architecture-of-record](../docs/design/architectural-design.md#authorization)
+**Test both refusals.** A non-member stopped at the route is `403`; a member passing another team's object id through their own team's URL is `404`. An id that names nothing at all is `403` as well, because the route rule refuses before the service runs (`AuthorizationRuleIntegrationTest`). See the `_NotSameTeam` and `_OtherTeams...ThroughOwnTeamUrl` tests in the RAM controller tests.
 
 ### Database
-- Dev profile: `ddl-auto: create` + `DataInitializer` seeds data on every restart
-- Prod/staging: Flyway migrations only (`src/main/resources/db/migration/V*.sql`)
+- `dev` rebuilds the schema (`ddl-auto: create`) and reseeds from `DataInitializer` on every restart; `staging`/`prod` apply Flyway migrations only (`src/main/resources/db/migration/V*.sql`)
 - When adding schema changes for production, create a new `V<n>__description.sql` migration file
 - When adding a new domain, add representative seed data to `DataInitializer` for dev and integration testing
 
 ### Spring Profiles
-`dev` (default — local MySQL + Mailpit, fixed clock, `ddl-auto: create` + `DataInitializer`), `staging`, and `prod` (Azure Key Vault for secrets, Flyway migrations). Per-profile clock and schema behavior is detailed in **Time Handling** and **Database** above.
+`dev` (the default; local MySQL and Mailpit), `staging`, and `prod` (secrets from Azure Key Vault). What each profile changes about the schema, seed data, and clock is in **Database** and **Time Handling** above, and normatively in [Architectural conventions](../docs/design/architectural-design.md#architectural-conventions).
 
 ## Testing Patterns
 
