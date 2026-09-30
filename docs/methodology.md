@@ -202,9 +202,9 @@ The **approval gate** between design and code is load-bearing: design is reviewe
 
 The methodology is tool-agnostic, but Project Pulse instantiates it with **[Claude Code](https://claude.com/claude-code)** and a small set of repository-local slash commands plus a machine-and-human conventions file:
 
-- **`CLAUDE.md`** (root and per-subtree) — the conventions, the binding architecture-of-record pointer, and the authoring rules, read by both humans and the agent on every session. This is how the contract stays enforced rather than aspirational.
+- **`CLAUDE.md`** (root and per-subtree) — the working reminders, the architecture-of-record pointer, and the authoring rules, read by both humans and the agent on every session. The binding code conventions and cross-cutting concepts have one normative home, the architecture-of-record's Crosscutting Concepts section (arc42 §8); each charter restates a rule only as a short imperative that links back to it. The charters are what the agent has in context by default, so every rule it needs while coding appears there at least as a one-liner, while the rationale lives once, in the architecture-of-record, where it cannot drift into two versions. This is how the contract stays enforced rather than aspirational.
 - **`/design`** — Phase C step 1 (use case → design-of-record; may revise the module architecture).
-- **`/implement`** — Phase C step 2 (design → code + tests).
+- **`/implement`** — Phase C step 2 (design → code + tests). It reads Crosscutting Concepts in full before coding and checks the diff against it before running tests, so conventions hold across sessions even where nearby code has drifted from them.
 - **`/spec-build`** — mechanically verifies and resyncs cross-document consistency (anchors, ID resolution, UC↔traceability coupling, terminology).
 
 The running case study is the **RAM (Requirements Authoring & Management) module** — itself a tool for *authoring* requirements — developed spec-first inside the larger Project Pulse platform. (A pleasing reflexivity for a paper: a spec-driven methodology, applied to build a requirements-authoring tool, documented by its own specs.)

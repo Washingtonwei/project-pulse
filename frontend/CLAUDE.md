@@ -68,10 +68,10 @@ export const createFoo = (foo: Foo) =>
 - Access stores with `useXxxStore()` composables
 
 ### HTTP Client (`src/utils/request.ts`)
-- Shared Axios instance with Bearer token auto-injection
-- Response interceptor unwraps `response.data` (you get the `Result` object directly, not `AxiosResponse`)
-- 401 responses auto-redirect to login and clear token/user stores
-- Errors show `ElMessage.error()` toasts (with debouncing)
+- Every call goes through this shared instance via an `src/apis/<feature>/` module; never call `axios` or `fetch` directly. The contract is normative in the [architecture-of-record's Client ↔ API contract](../docs/design/architectural-design.md#architectural-conventions).
+- It injects the Bearer token, and its response interceptor unwraps `response.data` (you get the `Result` object directly, not `AxiosResponse`)
+- A `401` clears the token/user stores and redirects to login; a `403` or `404` routes to the forbidden or not-found page
+- Other errors show `ElMessage.error()` toasts (with debouncing)
 
 ### Styling
 - Global styles in `src/assets/main.scss`

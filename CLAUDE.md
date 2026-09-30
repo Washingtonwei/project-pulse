@@ -119,12 +119,9 @@ Treat the use case as the contract:
 - The **glossary** fixes vocabulary — use the defined term in code identifiers and UI text, never a synonym.
 - **The spec is authoritative but not infallible.** When a step is ambiguous, an assumption breaks against the existing code, or requirements contradict — ask a clarifying question or challenge the spec; don't silently comply or silently invent. Fix the spec and re-derive rather than diverging quietly in code. `/design` and `/implement` build this in.
 
-Cross-cutting behavior is already specified, and some is already built — reuse it, don't reinvent per feature:
-- **Locking** (`BR-edit-lock-required`, `BR-lock-expiry`): section-level pessimistic locking already exists in `ram/document/`; its lock lifecycle is specified by the steps of UC-DOC-edit-document / UC-DOC-edit-use-case.
-- **Collaboration** (`FR-COL-*`): comment threads exist in `ram/collaboration/`; real-time presence/broadcast is specified in UC-COL-collaborative-edit (not yet built).
-- **Validation** (`FR-VAL-*`, ReqLint): deterministic structural checks. See UC-VAL-run-validation.
+Cross-cutting behavior is already specified, and much of it is built: document-section and use-case locking, document templates, comment threads, the glossary, authorship auditing, email notifications, authorization, autosave, ReqLint validation, the AI proxy, export, and project source material. Plug a feature into the existing machine rather than reinventing it: the [cross-cutting subsystems](docs/design/architectural-design.md#cross-cutting-subsystems) and [RAM cross-cutting subsystems](docs/design/architectural-design.md#ram-cross-cutting-subsystems) tables name each one, its owning package, and how an area plugs in. The binding code conventions every feature follows are in [Architectural conventions](docs/design/architectural-design.md#architectural-conventions).
 
-When implementing, **extend the existing RAM packages** (`ram/document`, `ram/requirement`, `ram/usecase`, `ram/glossary`, `ram/collaboration`) and the shared course/section/team/auth/email infrastructure — RAM is a module inside this codebase, not a separate system, so don't fork or duplicate the architecture "for RAM." Then map the use case back into `docs/traceability.md` (frontend `apis/` + views + stores, backend `ram/*` controller/service/repository/entity, tests).
+When implementing, **extend the existing `ram/*` packages** and the shared foundation (the package map is in [`backend/CLAUDE.md`](backend/CLAUDE.md)). RAM is a module inside this codebase, not a separate system, so don't fork or duplicate the architecture "for RAM." Then map the use case back into `docs/traceability.md` (frontend `apis/` + views + stores, backend `ram/*` controller/service/repository/entity, tests).
 
 ### Editing the docs
 
