@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * The actuator endpoints sit outside ${api.endpoint.base-url}, so they are not covered by the API
  * rules or by the deny-by-default catch-all: they need rules of their own, and until 2026-09-06 they
- * had none, which left env/configprops/heapdump readable by anonymous callers in production (TD-1).
+ * had none, which left env/configprops/heapdump readable by anonymous callers in production (TD-actuator-exposure).
  * <p>
  * These tests run under the dev profile, which deliberately exposes the full actuator surface, so a
  * refusal here is the security rule doing its job rather than the endpoint being unexposed. In the

@@ -13,4 +13,4 @@ scrape_configs:
 #   2. Actuator endpoints other than health and info now require ROLE_admin, so an anonymous
 #      scrape would be refused. Wire a credential here before relying on this locally.
 # Production is not scraped from here at all: nothing scrapes it yet, which is why the deployed
-# profiles do not expose the prometheus endpoint. See TD-1 in docs/design/architectural-design.md.
+# profiles do not expose the prometheus endpoint. See TD-actuator-exposure in docs/design/architectural-design.md.

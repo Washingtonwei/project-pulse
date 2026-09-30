@@ -28,7 +28,7 @@ ram:
 # The platform health probe needs `health`; `info` carries the build and version. Everything else
 # (env, configprops, heapdump, loggers, httpexchanges, beans, mappings, metrics, prometheus) is
 # opened per profile, so a profile that forgets to override this inherits the safe set rather than
-# the full one. The dev profile opens the rest. See TD-1 in docs/design/architectural-design.md.
+# the full one. The dev profile opens the rest. See TD-actuator-exposure in docs/design/architectural-design.md.
 management:
   endpoints:
     web:

@@ -14,7 +14,7 @@
 
 The test that separates architecture from ordinary design (Grady Booch, Philippe Kruchten): **a decision is architectural if changing it later is costly and its effect is system-wide.** Renaming a variable is design. Switching from one database to two is architecture.
 
-> **Why the second sense matters.** In Project Pulse, the decision that "the JWT signing key is generated fresh at every startup" (decision **KD-4**) single-handedly caps the whole platform at one server instance and forces every user to re-login on each deploy. That fact appears in *no* diagram — but it's one of the most consequential architectural truths about the system. If you believed "architecture = the diagrams," you'd miss it entirely.
+> **Why the second sense matters.** In Project Pulse, the decision that "the JWT signing key is generated fresh at every startup" (decision **KD-self-issued-jwt**) single-handedly caps the whole platform at one server instance and forces every user to re-login on each deploy. That fact appears in *no* diagram — but it's one of the most consequential architectural truths about the system. If you believed "architecture = the diagrams," you'd miss it entirely.
 
 **Architecture vs. design, in one line:** architecture is the subset of design decisions that are hard to reverse and felt system-wide. Everything else is design.
 
@@ -50,7 +50,7 @@ A quality attribute written as "the system shall be modifiable" or "the system s
 | **Response** | How should the system react? |
 | **Response measure** | How do we *measure* success? (a number!) |
 
-**Worked example — Project Pulse `QS-3` (maintainability):**
+**Worked example — Project Pulse `QS-add-bounded-context` (maintainability):**
 
 - *Source:* a contributor · *Stimulus:* adds a new bounded context (a feature) · *Artifact:* the backend codebase · *Environment:* development · *Response:* it's added as a self-contained vertical slice, no edits to existing slices · *Measure:* **zero changes to other packages; delivered in ≤ 2 person-days.**
 
@@ -78,9 +78,9 @@ The attributes that score **high on both** are your ASRs. They earn the most des
 
 | ASR (driver) | Significance | Drives which decision |
 |---|---|---|
-| Confidentiality of FERPA-regulated student records (`SEC-authorization`, `CO-ferpa`) | **High × High** | the two-layer authorization; KD-2, KD-4 |
-| Maintainability & learnability — students extend the code (`MNT-feature-locality`) | High × Medium | **KD-7** (domain-partitioned vertical slices) |
-| Responsive graph & validation at cohort scale (`PER-graph-load`) | Medium × Medium | KD-3 (relational store) |
+| `ASR-student-record-confidentiality`: confidentiality of FERPA-regulated student records (`SEC-authorization`, `CO-ferpa`) | **High × High** | the two-layer authorization; KD-ram-module, KD-self-issued-jwt |
+| `ASR-maintainability-learnability`: maintainability & learnability; students extend the code (`MNT-feature-locality`) | High × Medium | **KD-vertical-slices** |
+| `ASR-cohort-scale-performance`: responsive graph & validation at cohort scale (`PER-graph-load`) | Medium × Medium | KD-relational-graph |
 
 Notice ASRs are not a new kind of requirement — they're a *lens* that says "these existing quality attributes are the ones that move the architecture."
 
@@ -95,9 +95,9 @@ Once you know your ASRs, you make the decisions that satisfy them — and you **
 - **Consequences** — what it buys you, and the trade-off you accept.
 - **Rejected alternatives** — what you did *not* pick, and why.
 
-**Worked example — `KD-7` (the decision this session added):**
+**Worked example — `KD-vertical-slices`:**
 
-- *Driving ASR:* maintainability & learnability (`MNT-feature-locality`); verified by `QS-3`.
+- *Driving ASR:* `ASR-maintainability-learnability` (`MNT-feature-locality`); verified by `QS-add-bounded-context`.
 - *Decision:* partition the backend by **domain** — one bounded context per package, each a full vertical slice (entity → repository → service → controller) — and layer *within* each slice.
 - *Rejected:* package-by-layer (all controllers together, all services together) — it optimizes for the rare "swap a technical layer" change over the common "change one feature" change.
 - *Trade-off:* cross-cutting concerns (auth, auditing, email) must be deliberately centralized so they aren't duplicated in every slice.
@@ -110,7 +110,7 @@ Once you know your ASRs, you make the decisions that satisfy them — and you **
 quality attribute  →  (utility tree)  →  ASR  →  architecture decision (ADR/KD)  →  structure  →  verified by a quality scenario's test
 ```
 
-In Project Pulse, fully worked: `MNT-feature-locality` → ASR "maintainability" → **KD-7** → the DDD package structure → **QS-3** (and, eventually, an automated dependency test).
+In Project Pulse, fully worked: `MNT-feature-locality` → **ASR-maintainability-learnability** → **KD-vertical-slices** → the DDD package structure → **QS-add-bounded-context** (and, eventually, an automated dependency test).
 
 ---
 
@@ -128,7 +128,7 @@ You should not design everything up front (you'll guess wrong), and it will not 
 
 - **Architectural runway** — build *just enough* structure ahead of the features that will need it. Not more.
 - **Reversibility / last responsible moment** — decide the **hard-to-reverse** things early; defer the reversible ones until you must. (In Project Pulse, platform-wide decisions are confirmed up front; a single area's internal design is deferred to when it's built.)
-- **Technical debt as a managed artifact** — when you defer or compromise a decision, *record it* and pay it down deliberately. Project Pulse keeps a prioritized Risks & Technical Debt backlog (`TD-1`…`TD-11`, P0→P3) for exactly this.
+- **Technical debt as a managed artifact** — when you defer or compromise a decision, *record it* and pay it down deliberately. Project Pulse keeps a prioritized Risks & Technical Debt backlog (`TD-<slug>` items, P0→P3) for exactly this.
 
 ---
 
@@ -171,5 +171,5 @@ Do that for your top 3–5 quality attributes and you have done the core of arch
 - Bass, Clements & Kazman — *Software Architecture in Practice* (quality attributes, scenarios, Attribute-Driven Design, utility tree, ATAM).
 - Nuseibeh — "Weaving Together Requirements and Architectures" (the Twin Peaks model), *IEEE Computer*, 2001.
 - Bellomo, Kruchten, Nord & Ozkaya — on agile architecture and architectural technical debt, 2014.
-- **Project Pulse's own architecture-of-record**, [`../design/architectural-design.md`](../design/architectural-design.md) — read the *Quality Goals* table, the *Architecturally significant requirements* table, the *Architecture Decisions* (KD-1…7), and the *Quality Requirements* scenarios as live examples of everything above.
+- **Project Pulse's own architecture-of-record**, [`../design/architectural-design.md`](../design/architectural-design.md) — read the *Quality Goals* table, the *Architecturally significant requirements* table, the *Architecture Decisions* (the KD entries), and the *Quality Requirements* scenarios as live examples of everything above.
 - The development method that produces these documents: [`../methodology.md`](../methodology.md).
