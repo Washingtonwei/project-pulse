@@ -5,7 +5,7 @@ This directory holds the **design docs for Project Pulse** — how the code real
 Design comes in **two levels**, and a coding agent reads them top-down:
 
 1. **Architectural design** — [`architectural-design.md`](architectural-design.md). The product's architecture-of-record (arc42 + C4): the platform context/container views and the binding conventions, the shared-foundation and performance-tracking component views, plus the RAM module's component view and cross-cutting subsystems. **One doc.** Read it *first*, to orient before touching code.
-2. **Detailed design** — one doc per use-case (UC) area (`doc.md`, `art.md`, …). How one area's code realizes its use cases: component/class design, sequence diagrams, the data-model delta. Read the relevant area doc *before extending that area*.
+2. **Detailed design** — one doc per use-case (UC) area (`doc.md`, `art.md`, …). How one area's code realizes its use cases: component/class design, sequence diagrams, the API contract, the data-model delta, the key decisions with the alternatives they rejected, and the tests that will prove each flow. Read the relevant area doc *before extending that area*.
 
 ```
 requirements/use-cases.md  +  software-requirements-specification.md   (what — the contract)
@@ -60,7 +60,7 @@ Each Level-2 doc covers exactly one UC area and is named after that area's lower
 | `cfg.md` | CFG | AI configuration |
 | `ai.md`  | AI  | AI assistants |
 
-Add a doc only when its area is first designed; this directory grows as `/design` runs. If a new UC area is introduced in `requirements/use-cases.md`, add the matching row above and a same-named design doc when it's implemented.
+The table lists the RAM areas because RAM is where the method is applied prospectively; a foundation or performance-tracking area (`EVA`, `WAR`, `TEA`, …) gets a row and a doc the first time one of its use cases is designed. Add a doc only when its area is first designed; this directory grows as `/design` runs. If a new UC area is introduced in `requirements/use-cases.md`, add the matching row above and a same-named design doc when it's implemented.
 
 ## **The cardinal rule: cite, don't restate**
 
@@ -73,10 +73,12 @@ The same rule applies upward to Level 1: **cite the SRS for the shared model; de
 A design doc is **structured by concern, not by use case.** An area accumulates several use cases over time (`UC-DOC-edit-document`, then `-5`, then `-6`), each designed by its own `/design` run — but the doc must not become a per-UC changelog (`## UC-DOC-edit-document design`, `## UC-DOC-create-use-case design`, … stacked up). Keep the skeleton below and let the two axes grow differently:
 
 - **Area-wide, revised in place** — Overview, Components & classes (one class diagram), Data model (one ER diagram). A new use case edits these (a new service method, a new column) rather than appending a parallel copy. There is **one** class diagram and **one** ER diagram per area, not one per use case.
-- **Per-flow, appended** — Sequence diagrams (one per main success scenario + each non-trivial extension) and API-contract rows. These accumulate as use cases are added.
+- **Per-flow, appended** — Sequence diagrams (one per main success scenario + each non-trivial extension), API-contract rows, and test rows. These accumulate as use cases are added; the sequence heading for a use case is the anchor `traceability.md` may cite.
 - **Realizes / Depends header** — append the new `UC-`/`FR-` ID each time the area gains a use case.
 
 **Keep it lean — design is close to the code, so don't duplicate the code.** Thoroughness belongs in `requirements/`; a design doc earns its place only by holding what code *can't* show: the **diagram** (the shape of a flow, the lifecycle of a state, how classes relate) and the **non-obvious decisions** (an invariant, an auth rule, a reuse choice, a *why*). Everything a reader could recover by opening the files — full request/response bodies, every column, every getter — does **not** go here; `traceability.md` already maps the UC to its actual frontend/backend/test files, so **link to them, don't transcribe them.** If a section would just paraphrase the code or the SRS, drop it. A good area doc is mostly diagrams plus a few lines of rationale, not prose.
+
+**Three sections are never dropped, because the code cannot carry them before it exists:** the **API contract**, the **key decisions with their rejected alternatives**, and the **tests**. The lean rule above assumes there is code to link to. Before `/implement` runs there is none, so whatever the design leaves out, the agent invents; and when a frontend change and a backend change are built in separate sessions, the contract table is the only thing they share. Keep each one short: the contract names endpoints, callers, request fields, the success response, and the error each extension returns, but not field types or JSON bodies (Principle 8 in [`../methodology.md`](../methodology.md): derive what a wrong guess cannot break). A **greenfield** area, with no existing code at all, leans on these sections hardest.
 
 Use this skeleton as a *menu*, not a checklist. Drop any section that would only restate code or requirements; keep the order of what remains so the docs are scannable.
 
@@ -101,9 +103,18 @@ Mermaid sequence diagram(s) for the main success scenario and any non-trivial
 extension/error flow. This is the core value — the flow a reader can't see at a glance.
 Reference the use-case step each interaction implements.
 
+## API contract
+One row per endpoint or scheduled job this area adds or changes (appended per use case).
+Field types and JSON bodies are derived at build time; what both sides must agree on is here.
+
+| Endpoint or job | Caller (who may) | Request | Success | Errors, by extension |
+|---|---|---|---|---|
+
 ## Key decisions
 Only the non-obvious: invariants, the auth/permission rule (who may do this), a chosen
 trade-off, a reuse choice. Skip anything self-evident from the code.
+Each decision names what was chosen, **what was rejected, and why**. A decision with no
+rival considered was probably not a decision.
 
 ## Data model
 The *delta* this area adds (new tables/columns/migrations) — as an ER diagram where it
@@ -112,6 +123,13 @@ helps. Don't redraw the shared graph; link to the SRS's Business Domain Model in
 ## Reuse & cross-cutting
 Which existing subsystems this leans on — locking (BR-edit-lock-required/BR-lock-expiry),
 collaboration (UC-COL-*), validation (FR-VAL-*), auth, email — rather than reinventing.
+
+## Tests
+One row per flow: the main success scenario and every extension (appended per use case).
+No code. /implement writes these tests; the reviewer checks the list is complete.
+
+| Use case, flow | Level (unit / integration) | Asserts |
+|---|---|---|
 
 ## Open questions / risks
 ```
@@ -134,6 +152,10 @@ Good design before implementation is the point of these docs — pick the UML vi
 - **Vocabulary follows the glossary.** Use the defined terms (`document section`, `course section`, `requirement artifact`, `artifact link`, …) in prose, identifiers, and UI strings — never a synonym. Never write a bare "section"; qualify it as *course section* or *document section*. See [`../CLAUDE.md`](../CLAUDE.md) for the full vocabulary rules.
 - **Design IDs are name-based slugs, like requirement IDs.** The architecture-of-record's quality goals (`QG-<slug>`), key decisions (`KD-<slug>`), architecturally significant requirements (`ASR-<slug>`), quality scenarios (`QS-<slug>`), technical debt (`TD-<slug>`), and risks (`RISK-<slug>`) are flat kebab-case slugs coined from the item's own name (`KD-section-locking`, `QS-llm-outage`), never sequence numbers, so adding, removing, or reordering an item renumbers nothing. Keep each slug unique within its prefix, and never rename or repoint an existing one except when the concept itself is renamed (then update every citation, including code comments). A superseded decision stays under its ID and is marked *Superseded*. The one numbered exception in `docs/` is the `OI-n` backlog in `requirements/OPEN-ISSUES.md`, which is append-only. See [`../CLAUDE.md`](../CLAUDE.md) for the full ID conventions.
 - **`/spec-build` does not process these docs.** It only handles the five `requirements/` docs and verifies `../traceability.md`; design docs get no mechanical anchor/heading treatment. Keep them plainly structured with the skeletons above. (Like the core docs, they carry no section numbers and no TOC — but that's just the house style here, not something `/spec-build` enforces.)
+
+# **The design gate**
+
+A design is approved by **merging a pull request**, not by a conversation. The pull request carries the design doc (and any spec fix the challenge loop produced); someone other than its author reviews it; nothing is implemented from it until it merges. Its description records the **questions test**: give an agent the use case and the design in plan mode, ask what it would still have to guess to implement it, and for each guess either fix the design or keep the guess with a one-line reason a wrong answer breaks no requirement. The review comments and that list are the gate's record.
 
 # **After writing a design doc**
 
