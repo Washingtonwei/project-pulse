@@ -21,7 +21,7 @@ This document is the behavioral specification of Project Pulse — every user-in
 
 ## **Scope**
 
-This catalog covers Project Pulse end to end — the shared foundation (course sections, teams, students, instructors, accounts, rubrics), the performance-tracking workflows (weekly activity reports, peer evaluations), and the Requirements Authoring & Management (RAM) areas (templates and provisioning, glossary, documents, artifacts, links, validation, collaboration, review and submission, export, AI configuration, and AI assistants). Other docs cite use cases by identifier rather than restate their flows: the [Software Requirements Specification](software-requirements-specification.md) lists each `UC-<AREA>-<slug>` in its Use Cases section as a high-level functional requirement, [traceability.md](../traceability.md) carries one row per use case mapping it to the non-use-case `FR-<AREA>-<slug>`s it honors, the area design doc that realizes it, and the code modules and tests that implement it, and per-area design docs cite the use cases they design. In the other direction, this document cites business rules ([business-rules.md](business-rules.md), `BR-<slug>`) in each use case's Business Rules field and uses defined terms from [project-glossary.md](project-glossary.md) verbatim.
+This catalog covers Project Pulse end to end — the shared foundation (course sections, teams, students, instructors, accounts, rubrics), the performance-tracking workflows (weekly activity reports, peer evaluations, and reminders to the students who have not submitted them), and the Requirements Authoring & Management (RAM) areas (templates and provisioning, glossary, documents, artifacts, links, validation, collaboration, review and submission, export, AI configuration, and AI assistants). Other docs cite use cases by identifier rather than restate their flows: the [Software Requirements Specification](software-requirements-specification.md) lists each `UC-<AREA>-<slug>` in its Use Cases section as a high-level functional requirement, [traceability.md](../traceability.md) carries one row per use case mapping it to the non-use-case `FR-<AREA>-<slug>`s it honors, the area design doc that realizes it, and the code modules and tests that implement it, and per-area design docs cite the use cases they design. In the other direction, this document cites business rules ([business-rules.md](business-rules.md), `BR-<slug>`) in each use case's Business Rules field and uses defined terms from [project-glossary.md](project-glossary.md) verbatim.
 
 # **Use Case Template**
 
@@ -76,7 +76,7 @@ The headings below describe each field of the use-case template (Wiegers & Beatt
 
 # **Use Case List**
 
-The catalog of use cases begins below, grouped by area. Each area is an unnumbered H2 sub-heading and each use case an H3 carrying an area-prefixed ID (`UC-<AREA>-<slug>`). The catalog spans both the foundation and performance-tracking areas — Rubric, Course Section, Team, Student, Instructor, Account, Weekly Activity Report, and Peer Evaluation — and the requirements-authoring areas that follow them (Templates and Provisioning, Glossary, Requirement Documents, Requirement Artifacts, Artifact Links and Tracing, Validation, Collaboration, Review and Submission, Export, AI Configuration, and AI Assistants).
+The catalog of use cases begins below, grouped by area. Each area is an unnumbered H2 sub-heading and each use case an H3 carrying an area-prefixed ID (`UC-<AREA>-<slug>`). The catalog spans both the foundation and performance-tracking areas — Rubric, Course Section, Team, Student, Instructor, Account, Weekly Activity Report, Peer Evaluation, and Notifications — and the requirements-authoring areas that follow them (Templates and Provisioning, Glossary, Requirement Documents, Requirement Artifacts, Artifact Links and Tracing, Validation, Collaboration, Review and Submission, Export, AI Configuration, and AI Assistants).
 
 The note below is **not** the catalog. It records scope context only: a few Project Pulse capabilities not yet specified as use cases, and work that is **deferred or on hold**. Anything that has been specified appears as a `UC-<AREA>-<slug>` below — not in this note.
 
@@ -2083,7 +2083,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 **Priority:** High
 **Frequency of Use:** Approximately 37 users, average of 1 usage per week.
-**Business Rules:** BR-team-scoped-access (a student may generate the report only for a team she belongs to), BR-section-scoped-access (an instructor may generate it only for a team in a course section she is assigned to), BR-role-based-access.
+**Business Rules:** BR-team-scoped-access (a student may generate the report only for a team she belongs to), BR-section-scoped-access (an instructor may generate it only for a team in a course section she is assigned to), BR-role-based-access, BR-submission-owed (who has not turned in the WAR).
 
 **Associated Information:**
 
@@ -2102,7 +2102,7 @@ An example of the generated report:
 | John Doe | Bug fixing | Activity 1 | Fix the login bug…… | 4 | 5 | Done |
 |  | Documentation | Activity 2 | Write three new use cases. They are …… | 5 |  | In Progress |
 
-The report shall show who did not turn in the WAR for that week.
+The report shall show who did not turn in the WAR for that week, meaning the students who owe it (BR-submission-owed).
 
 Report generating algorithm: N/A
 
@@ -2343,7 +2343,7 @@ Report generating algorithm: For each individual criterion score (e.g., Quality 
 
 **Priority:** High
 **Frequency of Use:** Approximately 2 users, average of 1 usage per week.
-**Business Rules:** BR-section-scoped-access (the instructor may generate the report only for a course section she is assigned to), BR-evaluation-private-comment
+**Business Rules:** BR-section-scoped-access (the instructor may generate the report only for a course section she is assigned to), BR-evaluation-private-comment, BR-submission-owed (who has not turned in the peer evaluation)
 
 **Associated Information:**
 
@@ -2362,7 +2362,7 @@ An example of the generated report:
 |  |  | Lily Fisher | Need to work harder. | Dr. Wei, I need to talk more about John. |
 | Lily Fisher | … | … | … | … |
 
-The report shall show who did not turn in the peer evaluation for that week.
+The report shall show who did not turn in the peer evaluation for that week, meaning the students who owe it (BR-submission-owed).
 
 Report generating algorithm: How to compute the peer evaluation grade for a student? Each student receives multiple peer evaluations from her teammates every week. First, obtain the peer evaluations received by a student for that week. For each peer evaluation, compute a total score by adding up the individual criterion scores. Then compute the average of the total scores across the peer evaluations. For example, John Doe receives two peer evaluations from Tim Smith and Lily Fisher, respectively. Tim Smith gives the following scores based on the rubric: 10, 9, 10, 9, 10, 10. So the total score given by Tim is 58. Lily Fisher gives the following scores based on the rubric: 5, 5, 10, 10, 10, 10. So the total score given by Tim is 50. The grade that John Doe receives that week is (58 + 50) / 2 = 54.
 
@@ -2440,6 +2440,66 @@ Details of a peer evaluation: The instructor may choose to see more details of o
 
 **Related Use Cases:**
 **Assumptions:**
+**Open Issues:**
+
+## **Notifications**
+
+### **UC-NOT-remind-non-submitters: The instructor reminds the students who have not submitted**
+
+**UC ID and Name:** UC-NOT-remind-non-submitters: Remind the students who have not submitted
+**Created By:** Bingyang Wei
+**Date Created:** 2026-10-03
+**Primary Actor:** instructor
+**Secondary Actors:** the students who owe the item (they receive the reminder); the Gmail SMTP service (DE-gmail-smtp)
+**Trigger:** The instructor indicates to remind the students of a course section who have not submitted a weekly activity report or a peer evaluation.
+**Description:** The instructor wants to nudge only the students who still owe a weekly activity report or a peer evaluation, so that the students who have already submitted are not emailed again and the ones who have not are reminded before the item is due.
+
+**Preconditions:**
+- PRE-1. The instructor is logged into the system.
+- PRE-2. The instructor has selected a course section she is assigned to (BR-section-scoped-access).
+
+**Postconditions:**
+- POST-1. Each student who owes the selected item for the week it is due has been sent one reminder naming the item, the week, and its due day and time, unless sending to her failed.
+- POST-2. The instructor has been told how many reminders were sent and which students could not be reached.
+- POST-3. Nothing about the reminder is stored; the use case may be repeated.
+
+**Main Success Scenario:**
+1. The instructor indicates to remind the students who have not submitted.
+2. The system asks the instructor to choose the item: weekly activity report or peer evaluation.
+3. The instructor chooses the item.
+4. The system determines the week the item is currently due for, which is the previous week, and displays, grouped by team, the students who owe that item for that week (BR-submission-owed).
+5. The instructor reviews the list and confirms that the reminders should be sent.
+6. The system emails each listed student a reminder naming the course section, the item, the week, and the item's due day and time.
+7. The system informs the instructor how many reminders were sent.
+8. Use case ends.
+
+**Extensions:**
+- **4a. The previous week is not one of the course section's active weeks:**
+  - 4a1. The system informs the instructor that reminders are sent only for an active week, and sends no reminder.
+  - 4a2. Use case ends.
+- **4b. No student owes the item for that week:**
+  - 4b1. The system informs the instructor that every student who can submit the item has submitted it, and sends no reminder.
+  - 4b2. Use case ends.
+- **5a. The instructor cancels:**
+  - 5a1. The system sends no reminder.
+  - 5a2. Use case ends.
+- **6a. A reminder to one or more students cannot be sent:**
+  - 6a1. The system continues with the remaining students.
+  - 6a2. In step 7 the system also names the students it could not reach.
+
+**Priority:** Medium
+**Frequency of Use:** Approximately 2 users, 1 to 2 usages per week per course section.
+**Business Rules:** BR-submission-owed (who is listed and reminded), BR-section-scoped-access, BR-role-based-access (only an instructor assigned to the course section may send it), BR-active-weeks, BR-evaluation-submission-window (why the week is fixed), BR-team-assignment-required (students on no team are never listed).
+
+**Associated Information:**
+- Week: the item is always reminded for the week it is currently due for, the previous week. The instructor cannot choose an older week: a peer evaluation cannot be made up once its window has closed (BR-evaluation-submission-window), and one rule for both items keeps the reminder predictable. The week is shown as a date range, for example "09-28-2026 to 10-04-2026".
+- Content: the reminder names only the student's own obligation. It says nothing about which other students have or have not submitted (CO-ferpa).
+- Repetition: no record of a reminder is kept, so the instructor may send it again; the review in step 5 is the guard against sending twice by accident.
+- Failure: each reminder is sent independently. A failure to reach one student does not stop the others, and reminders already sent are not recalled. The system reports a reminder as sent only when the mail server accepted it.
+- The scheduled weekly reminder (FR-NOT-weekly-reminder) uses the same determination of who owes what, so a student who is reminded on demand and the student the scheduled job would remind are always the same.
+
+**Related Use Cases:** UC-WAR-manage-activities and UC-EVA-submit-evaluation (what the reminder asks the student to do); UC-WAR-team-war-report and UC-EVA-section-evaluation-report (where the instructor sees the same list without sending anything).
+**Assumptions:** The course section's weekly due days and due times are configured; an item with no configured due time is named without one.
 **Open Issues:**
 
 ## **Templates and Provisioning**

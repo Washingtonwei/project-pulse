@@ -142,7 +142,7 @@ The Level 2: Container Diagram for the Project Pulse system provides a detailed 
 
 ### *Shared foundation components*
 
-This view zooms into the **REST API Application** to show the **shared foundation**: the org/enrollment model, rubrics, identity and security, and notifications, which every feature area builds on. Each component maps to one or more packages under `backend/src/main/java/team/projectpulse/`. The two feature areas, [performance tracking](#performance-tracking-components) and [RAM](#ram-components), add their own components on top of this base.
+This view zooms into the **REST API Application** to show the **shared foundation**: the org/enrollment model, rubrics, identity and security, and email, which every feature area builds on. Each component maps to one or more packages under `backend/src/main/java/team/projectpulse/`. The two feature areas, [performance tracking](#performance-tracking-components) and [RAM](#ram-components), add their own components on top of this base.
 
 ```mermaid
 C4Component
@@ -158,7 +158,7 @@ C4Component
         Component(org, "course · section · team", "Spring MVC + Spring Data JPA", "Courses, course sections, teams: the org/enrollment model")
         Component(people, "student · instructor", "Spring MVC + Spring Data JPA", "Course participants and their roles")
         Component(rubric, "rubric", "Spring MVC + Spring Data JPA", "Rubrics and criteria: owned by a course, assigned to course sections")
-        Component(notify, "notifications", "Spring Mail + @Scheduled", "EmailService; WeeklyReminderScheduler sends each week's reminders")
+        Component(notify, "email", "Spring Mail", "EmailService: invitation, password-reset, confirmation, and reminder emails")
     }
 
     ContainerDb(db, "Database", "MySQL 8", "Users, courses, course sections, teams, rubrics")
@@ -173,7 +173,6 @@ C4Component
     Rel(org, rubric, "Owns and assigns rubrics")
     Rel(security, actuator, "Guards")
     Rel(user, notify, "Sends invitation and reset emails via")
-    Rel(notify, org, "Finds course sections due a reminder in")
     Rel(user, db, "Reads & writes", "JDBC")
     Rel(org, db, "Reads & writes", "JDBC")
     Rel(people, db, "Reads & writes", "JDBC")
@@ -185,7 +184,7 @@ The REST API has four entry points, and the diagram draws all of them because to
 
 ### *Performance-tracking components*
 
-This view zooms into the **REST API Application** to show the **performance-tracking** feature area (weekly activity reports and peer evaluations) on top of the [shared foundation](#shared-foundation-components), whose components appear here in grey. Each maps to a package under `backend/src/main/java/team/projectpulse/`.
+This view zooms into the **REST API Application** to show the **performance-tracking** feature area (weekly activity reports, peer evaluations, and the reminders sent to the students who still owe them) on top of the [shared foundation](#shared-foundation-components), whose components appear here in grey. Each maps to a package under `backend/src/main/java/team/projectpulse/`.
 
 ```mermaid
 C4Component
@@ -199,7 +198,8 @@ C4Component
         Component_Ext(security, "security", "Shared foundation", "Authenticates and authorizes every API request")
         Component_Ext(org, "course · section · team · student", "Shared foundation", "The org/enrollment model")
         Component_Ext(rubric, "rubric", "Shared foundation", "Rubrics and criteria")
-        Component_Ext(notify, "notifications", "Shared foundation", "Email; weekly WAR and peer evaluation reminders")
+        Component(notification, "notification", "Spring MVC + @Scheduled", "Who still owes a WAR or peer evaluation (BR-submission-owed); scheduled and on-demand reminders")
+        Component_Ext(notify, "email", "Shared foundation", "EmailService over Gmail SMTP")
     }
 
     ContainerDb(db, "Database", "MySQL 8", "WARs, peer evaluations")
@@ -211,11 +211,16 @@ C4Component
     Rel(activity, org, "Reads team members and instructors from")
     Rel(evaluation, org, "Reads course sections and students from")
     Rel(evaluation, notify, "Sends confirmation email via")
+    Rel(security, notification, "Checks the instructor's course section in; passes authorized requests to")
+    Rel(notification, activity, "Reads who reported a week from (service layer)")
+    Rel(notification, evaluation, "Reads who evaluated whom from (service layer)")
+    Rel(notification, org, "Reads course sections, teams, and students from")
+    Rel(notification, notify, "Sends reminders via")
     Rel(activity, db, "Reads & writes", "JDBC")
     Rel(evaluation, db, "Reads & writes", "JDBC")
 ```
 
-Every arrow here points into the foundation, which `MNT-feature-locality` allows, and several are direct repository reads (for example, `evaluation` loads rubric criteria through `rubric`'s repository). The one remaining violation in this area runs the other way: three `security` managers import the `activity` and `evaluation` security services ([TD-feature-locality](#risks-and-technical-debt)).
+Every arrow here points into the foundation or, for `notification`, into a sibling's service layer, both of which `MNT-feature-locality` allows. `notification` is a feature slice rather than part of the foundation because deciding who still owes a report needs `activity` and `evaluation`, and the foundation may depend on no feature (the [design-of-record for NOT](not.md) records the move). Several arrows are direct repository reads (for example, `evaluation` loads rubric criteria through `rubric`'s repository). The one remaining violation in this area runs the other way: three `security` managers import the `activity` and `evaluation` security services ([TD-feature-locality](#risks-and-technical-debt)).
 
 On the **SPA** side the layering is uniform across the app: feature pages call a per-domain API client (`frontend/src/apis/<feature>/`) over a shared Axios instance that attaches the JWT Bearer token, unwraps the `Result` envelope, and redirects to login on `401`. Pinia stores (`token`, `userInfo`, …) hold cross-cutting state; the router enforces `requiresAuth` / role guards.
 
@@ -390,7 +395,7 @@ Shared machinery every module reuses rather than reimplements — owned by the c
 | Authentication & RBAC | `security` (`SecurityConfiguration`, `authorizationmanagers/`) | JWT (RSA keypair at startup); URL rules + ownership/membership managers |
 | Shared user model | `user` (`PeerEvaluationUser` base, password reset, invitation) | Common identity base for students/instructors; the auth subject for both modules |
 | Authorship & auditing | `system` (JPA auditing, `PeerEvaluationUserAuditorAware`) | Created/modified-by metadata applied automatically across entities |
-| Email / notifications | `system` (`EmailService`, `WeeklyReminderScheduler`) | Gmail over SMTP; scheduled reminders |
+| Email | `system` (`EmailService`) | Gmail over SMTP. Reminders are a feature, not machinery: the `notification` slice decides who is reminded and calls `EmailService` |
 | Time & profiles | `system` (`DevClockConfig` / `StagingClockConfig` / `ProdClockConfig`) | Profile-scoped clocks for testable time |
 | Dev seed data | `seed` (`DataInitializer`) | `dev`-profile fixtures (the dev credentials) |
 
@@ -405,7 +410,7 @@ Beyond the platform-wide machinery above, each **RAM** area builds on a small se
 | Collaboration | `UC-COL-*` | `ram/collaboration` | Attach comment threads to an artifact / destination (the built collaboration model). Real-time presence/broadcast (UC-COL-collaborative-edit, PER-collab-latency) is **deferred** — a future layer, not in the current design (see KD-section-locking) |
 | Glossary | `FR-GLO-*` | `ram/glossary` | Terminology lookups and invariants |
 | Authorship & history | `FR-HIS-*` | `system` (JPA auditing, `PeerEvaluationUserAuditorAware`) | Inherited via JPA auditing — no per-area work |
-| Notifications | `FR-NOT-*` | `system` (`EmailService`, `WeeklyReminderScheduler`) | Call `EmailService`; Gmail over SMTP |
+| Notifications | `FR-NOT-*` | `system` (`EmailService`); reminders in `notification` | Call `EmailService`; Gmail over SMTP |
 | Security / RBAC | `FR-SEC-*` | `security` (`AuthorizationManager` beans) | Add a URL rule (with an ownership/membership manager where the answer needs domain knowledge) **and** scope the service's lookup by owning team: both enforcement points |
 | Autosave | `FR-SAVE-*` | `ram/document` (section save) + client-side debounce | Persist edits through the document-section save endpoint |
 | Validation (ReqLint) | `FR-VAL-*` | `ram/validation` | Deterministic structural checks (UC-VAL-run-validation) |
