@@ -104,7 +104,7 @@ sequenceDiagram
     SS-->>RC: students on a team, enabled, not every active teammate evaluated
     RC-->>SPA: 200, weekActive, week range, due time, owing students by team (step 4)
     alt weekActive is false (4a)
-        SPA-->>I: "Nothing is due for an inactive week", no send button
+        SPA-->>I: "Reminders are sent only for an active week", no send button
     else
         SPA-->>I: List, or "everyone has submitted" (4b)
     end
@@ -153,7 +153,7 @@ sequenceDiagram
 | Endpoint or job | Caller (who may) | Request | Success | Errors, by extension |
 |---|---|---|---|---|
 | `GET /api/v1/sections/{sectionId}/submission-status` | An instructor assigned to the course section, or the course admin who owns its course (BR-section-scoped-access, BR-role-based-access): `AuthorizationManagers.anyOf(sectionInstructorAuthorizationManager, sectionOwnershipAuthorizationManager)`; route rule added before the `denyAll()` catch-all | `item` (`WEEKLY_ACTIVITY_REPORT` or `PEER_EVALUATION`), `week` (ISO key matching `^\d{4}-W\d{2}$`, optional; default the previous week, server-computed) | `200`: `item`, `week`, `weekActive` (whether the week is in the course section's active weeks), week date range, the item's due day and time (either may be null if not configured), owing students (id, first and last name, team id and name), grouped by team. The list applies BR-submission-owed whether or not the week is active, so the report pages show who owes a WAR in any week; only the dialog reads `weekActive`, and shows 4a when it is false | Neither assigned nor owning, or a student: `403`. Unknown `item` or malformed `week`: `400` `INVALID_ARGUMENT` |
-| `POST /api/v1/sections/{sectionId}/reminders` | Same | Body `{ item }`, `@Valid`. **No week**: always the previous week, server-computed | `200`: `item`, `week`, `sent` (count), `failed` (students not reached: id, first and last name). `sent: 0` and empty `failed` is 4b | Neither assigned nor owning, or a student: `403`. Unknown `item`: `400`. Previous week not active: `400` `INVALID_ARGUMENT`, message "Nothing is due for an inactive week." (4a; the dialog already prevents it, this guards the route) |
+| `POST /api/v1/sections/{sectionId}/reminders` | Same | Body `{ item }`, `@Valid`. **No week**: always the previous week, server-computed | `200`: `item`, `week`, `sent` (count), `failed` (students not reached: id, first and last name). `sent: 0` and empty `failed` is 4b | Neither assigned nor owning, or a student: `403`. Unknown `item`: `400`. Previous week not active: `400` `INVALID_ARGUMENT`, message "Reminders are sent only for an active week." (4a; the dialog already prevents it, this guards the route) |
 | `WeeklyReminderScheduler.sendWeeklyReminders` | The clock: `@Scheduled(cron = "${app.reminders.cron}", zone = "${app.timezone}")`, daily at 08:00 America/Chicago (`0 0 8 * * *`; enabled in `prod` only); "due today" is the day of week in `app.timezone` | None | Each student who owes an item due today gets one email listing only what she owes; log line per section. A section with no due day configured for an item is never reminded of it | Disabled by `app.reminders.enabled`; per-student and per-section failures logged and skipped, as today |
 
 The email itself: subject "ProjectPulse Submission Reminder"; body greets the student by first name, names the course section, and lists each owed item with its week range and due time. Every interpolated value is HTML-escaped.

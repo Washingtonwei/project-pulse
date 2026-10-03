@@ -2475,7 +2475,7 @@ Details of a peer evaluation: The instructor may choose to see more details of o
 
 **Extensions:**
 - **4a. The previous week is not one of the course section's active weeks:**
-  - 4a1. The system informs the instructor that nothing is due for an inactive week and sends no reminder (BR-active-weeks).
+  - 4a1. The system informs the instructor that reminders are sent only for an active week, and sends no reminder.
   - 4a2. Use case ends.
 - **4b. No student owes the item for that week:**
   - 4b1. The system informs the instructor that every student who can submit the item has submitted it, and sends no reminder.
