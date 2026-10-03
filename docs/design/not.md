@@ -1,7 +1,7 @@
 # Notifications (NOT) Design
 
 > Realizes: UC-NOT-remind-non-submitters, FR-NOT-weekly-reminder (amended 2026-10-03)
-> Depends on: BR-submission-owed (the one definition of "has not submitted"), BR-active-weeks, BR-evaluation-submission-window, BR-section-scoped-access, BR-team-assignment-required, CO-ferpa, DE-gmail-smtp
+> Depends on: BR-submission-owed (the one definition of "has not submitted"), BR-active-weeks, BR-evaluation-submission-window, BR-section-scoped-access, BR-role-based-access, BR-team-assignment-required, BR-student-lifecycle, CO-ferpa, DE-gmail-smtp
 > See: [use cases](../requirements/use-cases.md#notifications), [SRS non-use-case FRs](../requirements/software-requirements-specification.md#notification-requirements), [architectural-design.md](architectural-design.md#performance-tracking-components) (performance-tracking component view, Crosscutting Concepts)
 > Designed against `main` at `cf0beee` (2026-09-30).
 
@@ -97,21 +97,21 @@ sequenceDiagram
     SPA-->>I: Choose an item (step 2)
     I->>SPA: Peer evaluation (step 3)
     SPA->>SEC: GET /sections/{sectionId}/submission-status?item=PEER_EVALUATION
-    SEC->>RC: instructor assigned to sectionId
+    SEC->>RC: instructor assigned to, or course admin owning, sectionId
     RC->>SS: findOwing(sectionId, item, WeekKeys.previousWeek(clock))
-    alt previous week not active (4a)
-        SS-->>RC: IllegalArgumentException
-        RC-->>SPA: 400, "nothing is due for an inactive week"
+    SS->>AE: findEvaluateeIdsByEvaluator(sectionId, week)
+    AE-->>SS: evaluator id to evaluatee ids
+    SS-->>RC: students on a team, enabled, not every active teammate evaluated
+    RC-->>SPA: 200, weekActive, week range, due time, owing students by team (step 4)
+    alt weekActive is false (4a)
+        SPA-->>I: "Nothing is due for an inactive week", no send button
     else
-        SS->>AE: findEvaluateeIdsByEvaluator(sectionId, week)
-        AE-->>SS: evaluator id to evaluatee ids
-        SS-->>RC: students on a team, enabled, not every teammate evaluated
-        RC-->>SPA: 200, week range, due time, owing students by team (step 4)
+        SPA-->>I: List, or "everyone has submitted" (4b)
     end
-    SPA-->>I: List, or "everyone has submitted" (4b)
     I->>SPA: Confirm (step 5), or cancel (5a)
     SPA->>SEC: POST /sections/{sectionId}/reminders {item}
-    SEC->>RC: instructor assigned to sectionId
+    SEC->>RC: instructor assigned to, or course admin owning, sectionId
+    RC->>RC: 400 if the previous week is not active (4a, server-side guard)
     RC->>SS: findOwing(...) again, at send time
     RC->>RS: remind(section, owing, week)
     loop each owing student (step 6)
@@ -137,7 +137,7 @@ sequenceDiagram
     CRON->>WRS: sendWeeklyReminders()
     WRS->>WRS: return if app.reminders.enabled is false
     WRS->>SEC: findReminderEligibleSectionsForWeek(WeekKeys.previousWeek(clock))
-    SEC-->>WRS: active sections whose previous week is active
+    SEC-->>WRS: sections with isActive true whose activeWeeks contain that week key
     loop each section (outer catch: one bad section never stops the rest)
         WRS->>WRS: items due today = WAR and/or peer evaluation by the section's due days
         WRS->>SS: findOwedItems(sectionId, itemsDueToday, week)
@@ -152,9 +152,9 @@ sequenceDiagram
 
 | Endpoint or job | Caller (who may) | Request | Success | Errors, by extension |
 |---|---|---|---|---|
-| `GET /api/v1/sections/{sectionId}/submission-status` | Instructor assigned to the course section (`SectionInstructorAuthorizationManager`; route rule added before the `denyAll()` catch-all) | `item` (`WEEKLY_ACTIVITY_REPORT` or `PEER_EVALUATION`), `week` (ISO key, optional; default the previous week, server-computed) | `200`: `item`, `week`, week date range, the item's due day and time, owing students (id, first and last name, team id and name), grouped by team | Not assigned or a student: `403`. Unknown `item` or malformed `week`: `400` `INVALID_ARGUMENT`. Week not active: `200` with an empty list and `weekActive: false` (the report pages still render). |
-| `POST /api/v1/sections/{sectionId}/reminders` | Same | Body `{ item }`, `@Valid`. **No week**: always the previous week, server-computed | `200`: `item`, `week`, `sent` (count), `failed` (students not reached). `sent: 0` and empty `failed` is 4b | Not assigned or a student: `403`. Unknown `item`: `400`. Previous week not active: `400` `INVALID_ARGUMENT`, message "Nothing is due for an inactive week." (4a) |
-| `WeeklyReminderScheduler.sendWeeklyReminders` | The clock: `@Scheduled(cron = "${app.reminders.cron}", zone = "${app.timezone}")`, 08:00 America/Chicago in `prod` | None | Each student who owes an item due today gets one email listing only what she owes; log line per section | Disabled by `app.reminders.enabled`; per-student and per-section failures logged and skipped, as today |
+| `GET /api/v1/sections/{sectionId}/submission-status` | An instructor assigned to the course section, or the course admin who owns its course (BR-section-scoped-access, BR-role-based-access): `AuthorizationManagers.anyOf(sectionInstructorAuthorizationManager, sectionOwnershipAuthorizationManager)`; route rule added before the `denyAll()` catch-all | `item` (`WEEKLY_ACTIVITY_REPORT` or `PEER_EVALUATION`), `week` (ISO key matching `^\d{4}-W\d{2}$`, optional; default the previous week, server-computed) | `200`: `item`, `week`, `weekActive` (whether the week is in the course section's active weeks), week date range, the item's due day and time (either may be null if not configured), owing students (id, first and last name, team id and name), grouped by team. The list applies BR-submission-owed whether or not the week is active, so the report pages show who owes a WAR in any week; only the dialog reads `weekActive`, and shows 4a when it is false | Neither assigned nor owning, or a student: `403`. Unknown `item` or malformed `week`: `400` `INVALID_ARGUMENT` |
+| `POST /api/v1/sections/{sectionId}/reminders` | Same | Body `{ item }`, `@Valid`. **No week**: always the previous week, server-computed | `200`: `item`, `week`, `sent` (count), `failed` (students not reached: id, first and last name). `sent: 0` and empty `failed` is 4b | Neither assigned nor owning, or a student: `403`. Unknown `item`: `400`. Previous week not active: `400` `INVALID_ARGUMENT`, message "Nothing is due for an inactive week." (4a; the dialog already prevents it, this guards the route) |
+| `WeeklyReminderScheduler.sendWeeklyReminders` | The clock: `@Scheduled(cron = "${app.reminders.cron}", zone = "${app.timezone}")`, daily at 08:00 America/Chicago (`0 0 8 * * *`; enabled in `prod` only); "due today" is the day of week in `app.timezone` | None | Each student who owes an item due today gets one email listing only what she owes; log line per section. A section with no due day configured for an item is never reminded of it | Disabled by `app.reminders.enabled`; per-student and per-section failures logged and skipped, as today |
 
 The email itself: subject "ProjectPulse Submission Reminder"; body greets the student by first name, names the course section, and lists each owed item with its week range and due time. Every interpolated value is HTML-escaped.
 
@@ -170,20 +170,20 @@ The email itself: subject "ProjectPulse Submission Reminder"; body greets the st
 
 **The request never carries a week to send for.** `POST /reminders` takes only the item; the server computes the week. Rejected: a client-supplied week, which would let a nudge ask for a peer evaluation whose window has closed and puts a scope-setting value in a caller-controlled body.
 
-**Send inside the request.** `ReminderService` sends synchronously, isolating each failure as the scheduler already does, and returns sent and failed counts, so the instructor sees exactly who was not reached. Rejected: sending in the background, which would hide failures in the log. The worst case is under Open questions.
+**Send inside the request.** `ReminderService` sends synchronously, isolating each failure as the scheduler already does, and returns sent and failed counts, so the instructor sees exactly who was not reached (step 7, 6a2, POST-2). `EmailService.sendReminderEmail` is synchronous and throws `RuntimeException` when the send fails, so a student counts as sent only when the mail server accepted the message. Rejected: sending in the background with no result shown, which would hide failures in the log and break POST-2. The worst case is under Open questions.
 
 **Store nothing.** A reminder leaves no row. Rejected: a reminder log table showing "last reminded at", which would add a table, a Flyway migration, and `DataInitializer` rows to guard against a double send that the confirmation step already guards.
 
-**Authorization.** Both routes reuse `SectionInstructorAuthorizationManager` (point 1), and the service loads students by the `sectionId` the route rule verified, never from the body (point 2). Students receive nothing about other students (CO-ferpa).
+**Authorization.** Both routes admit an instructor assigned to the course section or the course admin who owns its course, composing the existing `SectionInstructorAuthorizationManager` and `SectionOwnershipAuthorizationManager` with `AuthorizationManagers.anyOf` (point 1), and the service loads students by the `sectionId` the route rule verified, never from the body (point 2). Students receive nothing about other students (CO-ferpa). Rejected: `SectionInstructorAuthorizationManager` alone, which checks only the course section's assigned instructors and so denies a course admin that BR-section-scoped-access and BR-role-based-access let in.
 
 ## Data model
 
-No delta. The area reads `Activity`, `PeerEvaluation`, `Student`, `Team`, and `Section` as the SRS's [Business Domain Model](../requirements/software-requirements-specification.md#business-domain-model) defines them, and stores nothing (see *Store nothing*). The two new repository queries add no column or index; at course scale (about 80 students, a few hundred activities a week) the existing keys suffice.
+No delta. The area reads `Activity`, `PeerEvaluation`, `Student`, `Team`, and `Section` as the SRS's [Business Domain Model](../requirements/software-requirements-specification.md#business-domain-model) defines them, and stores nothing (see *Store nothing*). Weeks are stored as ISO-8601 week key strings (`"2026-W40"`: week-based year, Monday start) in `Activity.week`, `PeerEvaluation.week`, and `Section.activeWeeks`; `WeekKeys` computes them with `WeekFields.ISO.weekBasedYear()`, as `EvaluationService.previousWeek()` does today, so the week of January 1 can belong to the previous year (W52 or W53). The two new repository queries add no column or index; at course scale (about 80 students, a few hundred activities a week) the existing keys suffice.
 
 ## Reuse & cross-cutting
 
-- Email: `EmailService.sendReminderEmail` unchanged; Gmail over SMTP (DE-gmail-smtp).
-- Authorization: `SectionInstructorAuthorizationManager`, the manager already guarding the section peer evaluation report.
+- Email: `EmailService.sendReminderEmail` unchanged; Gmail over SMTP (DE-gmail-smtp). It wraps `body` in HTML without escaping it, so `ReminderService` escapes every interpolated value before calling it.
+- Authorization: `SectionInstructorAuthorizationManager` and `SectionOwnershipAuthorizationManager`, composed with `anyOf`.
 - Time: the injected `Clock`; the `dev` profile's fixed clock (2023-08-20) makes the previous week `2023-W33`, which the seed data must cover for local runs.
 - Error envelope: `IllegalArgumentException` maps to `400` / `INVALID_ARGUMENT` through `ExceptionHandlerAdvice`.
 
@@ -197,9 +197,10 @@ No delta. The area reads `Activity`, `PeerEvaluation`, `Student`, `Team`, and `S
 | UC-NOT 4b | integration | Everyone has submitted: `sent: 0`, `failed` empty, no email sent |
 | UC-NOT 5a | frontend | Cancelling the dialog sends no `POST` |
 | UC-NOT 6a | unit | `EmailService` throws for one student: the others are still sent; that student is in `failed` |
-| UC-NOT authorization | integration | An instructor not assigned to the section, and a student, get `403` on both routes |
+| UC-NOT authorization | integration | An instructor not assigned to the section, and a student, get `403` on both routes; the course admin who owns the course but is not assigned to the section gets `200` |
+| UC-NOT 4a, status | integration | Previous week inactive: `GET` returns `200` with `weekActive: false` and still lists students who owe a WAR |
 | UC-NOT invalid item | integration | Unknown `item`: `400` |
-| BR-submission-owed recipients | unit | A student on no team and a deactivated student are never listed; deleting a student's last activity for the week makes her owe the WAR again |
+| BR-submission-owed recipients | unit | A student on no team and a deactivated student are never listed; a student who evaluated every active teammate but not a deactivated one does not owe the peer evaluation; deleting a student's last activity for the week makes her owe the WAR again |
 | Status endpoint at scale | integration | With more than 200 activities in the week, no student who reported is listed (the old truncation) |
 | FR-NOT due day | unit | On the WAR due day only students owing the WAR are emailed, and the email lists only the WAR |
 | FR-NOT both items, one day | unit | A student owing both gets one email listing both; a student owing one gets one email listing that one |
@@ -211,7 +212,8 @@ No delta. The area reads `Activity`, `PeerEvaluation`, `Student`, `Team`, and `S
 
 ## Open questions / risks
 
-- **Latency of a whole-section reminder.** Synchronous sending of up to about 80 emails over Gmail SMTP may take tens of seconds, beyond a comfortable request time. Measure on staging at build time; if the worst case exceeds about 10 seconds, switch to sending in the background and report failures by email to the instructor. Usually only a handful of students owe an item, so the common case is fast.
+- **Latency of a whole-section reminder.** Synchronous sending of up to about 80 emails over Gmail SMTP may take tens of seconds, beyond a comfortable request time. Measure on staging at build time; if the worst case exceeds about 10 seconds, send in the background and have the dialog poll for the result, so step 7 and 6a2 still report in the dialog. Usually only a handful of students owe an item, so the common case is fast.
+- **Course admins on the existing report.** `UC-EVA-section-evaluation-report` is guarded by `SectionInstructorAuthorizationManager` alone, so a course admin who owns the course but is not assigned to the section is denied there today. This design does not change that route.
 - **Mid-window team changes.** A student moved onto a team owes evaluations to her new teammates for a week she was not on the team. Accepted as the rule's consequence; revisit if instructors report confusion.
 - **Duplicate scheduled runs** on more than one instance remain as recorded in the architecture-of-record's scaling risks; this design does not change them.
 - **WAR page default week** moves from the current to the previous week. Instructors who looked at the current week on that page will see a different default.
