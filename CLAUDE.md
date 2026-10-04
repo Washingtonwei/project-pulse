@@ -112,6 +112,7 @@ A feature begins as a use case. The loop:
 2. Run **`/design <UC-ID>`** (`.claude/commands/design.md`) to turn it into an approved **design-of-record** — the area's `docs/design/<area>.md` doc (diagrams + non-obvious decisions). Design is a separately-reviewed stage that **stops before code**.
 3. Run **`/implement <UC-ID>`** (`.claude/commands/implement.md`) to build from that design — plan → code → test.
 4. The work is recorded back into `docs/traceability.md` (`/design` marks the row `🔬 Problem-validated` when it firms the use case, then `📐 Designed` when the design-of-record is approved; `/implement` flips it to the built state).
+5. Every change (spec, design, or code) merges by pull request. Descriptions follow `.github/PULL_REQUEST_TEMPLATE.md`: at most three lines per section (a design's questions-test list goes in a collapsed `<details>` block, outside the cap), and never restate the diff.
 
 Treat the use case as the contract:
 - The **use case** gives actors, trigger, main success scenario, extensions, and pre/postconditions — *what to build and the flows to test*. Its system-subject steps plus their **Associated Information** are themselves the detailed functional requirement (a use case is a high-level FR); the cross-cutting **non-use-case FRs** (`FR-SAVE-*`, `FR-VAL-*`, …) it cites are the additional atomic "shall" statements it must honor. Together they are the *acceptance criteria* — don't restate the use-case flow as a new FR, and don't invent missing detail silently.
