@@ -66,3 +66,13 @@ Implement back to front, matching existing conventions and the approved design:
 Update the use case's row in `docs/traceability.md`: set **Build** from `📐 Designed` to the built state (`🟡 In progress` or `✅ Built`), and set **Verify** independently from the tests you actually wrote (`✅ Verified` only if tests exercise the main flow *and* every extension and pass; `🟡 Partial` if some flows/extensions are untested; `🔎 None` if you built it without a passing test). Then fill FR IDs, frontend modules, backend modules, DB changes, and tests — and in the **Tests** cell, per the extension-coverage convention, note which extensions each test covers (e.g. `…(E1,E3); E2 untested`). Don't mark `✅ Built` / `✅ Verified` to mean "done" — a built-but-untested use case is `✅ Built` / `🔎 None`, and that honesty is the point. This keeps the spec→code map navigable for the next feature. The design doc stays at `design/<area>.md`; make sure it reflects any change Phase 3 made.
 
 If implementation revealed the use case or an FR is wrong, incomplete, or contradictory, say so and propose the doc edit (follow `docs/CLAUDE.md`; run `/spec-build` after). The spec, the design, and the code are meant to agree.
+
+## Phase 6: Open the pull request
+
+Work on a branch, never on `main`. Commit on it and draft the pull request description in the shape of `.github/PULL_REQUEST_TEMPLATE.md`, at most three lines per section:
+
+- **Traces to:** the use case ID and `docs/design/<area>.md`.
+- **How it was verified:** under Verified, the tests mapped to the design's test-list rows and what Phase 4 ran. Under Not verified, every extension the traceability row marks untested and anything Phase 4 skipped. Never state a confidence level.
+- **Reviewer focus:** every change to shared code (the shared foundation or a cross-cutting subsystem), first among them any new route rule in `SecurityConfiguration`, and any deviation from the design.
+
+Recommend the developer run a fresh-context review (a new session, or `/code-review`) before requesting a human reviewer, and add its findings under How it was verified. Then tell the developer the pull request is ready for a reviewer who did not write it.
