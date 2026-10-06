@@ -1,8 +1,8 @@
 # Spec-Driven, Agent-Assisted Development — A Methodology
 
-> **Status:** working methodology document. It captures the development process Project Pulse (and its RAM module in particular) is built with, written so it can serve three audiences at once: practitioners applying it, students learning it (senior design, Fall 2026), and a research write-up (target venues: SIGCSE, CSEET or ICSE, RE, ASE's educational track). Names and framing here are deliberately open — see [Open questions](#open-questions-and-where-this-is-still-provisional).
+> **Purpose:** the development process Project Pulse is built with, for anyone applying it.
 >
-> **Working name:** *Spec-Driven, Agent-Assisted Development* (SDAAD). A shorter handle for the central loop is **breadth-first, slice-proven, fan-out** (below). The name is a placeholder; the method is the point.
+> **Name:** *Spec-Driven, Agent-Assisted Development* (SDAAD). A shorter handle for the central loop is **breadth-first, slice-proven, fan-out** (below).
 
 ## The one-sentence version
 
@@ -44,14 +44,14 @@ The methodology is realized as a layered set of documents. The shape (realized i
   - `software-requirements-specification.md` — non-use-case functional requirements (`FR-*`), domain model, quality attributes, constraints, operating environment.
 - **Design (`design/`)** — the *how*, generated from the spec, in **two levels**:
   - **Level 1 — architecture-of-record.** The breadth-complete, depth-shallow map: a single arc42/C4 architecture-of-record for the whole product (`docs/design/architectural-design.md`) — the platform context/container views and conventions every module inherits, plus each module's component view. Component boundaries for not-yet-designed areas are explicitly **provisional**.
-  - **Level 2 — design-of-record, one per use-case area.** Component/class design, sequence diagrams, API contracts, schema deltas. Cites the use cases/FRs it realizes; never restates them. Lean: diagrams + non-obvious decisions + pointers to real files.
+  - **Level 2 — design-of-record, one per use-case area,** revised in place. It cites the use cases and FRs it realizes and never restates them. Three sections are never dropped: the **API contract** (one row per endpoint or scheduled job: caller, request, success, and the error for each extension), the **key decisions**, each with the alternative it rejected, and the **test list** (one row per flow, covering every extension). Everything else follows one rule: pin what a wrong guess would break (a requirement, a business rule, a quality attribute, or the contract between two parts of the team), and leave the rest for the agent to derive.
 - **Traceability (`traceability.md`)** — the spec→code map on two axes (see [The traceability model](#the-traceability-model)): a *functional* matrix (one row per use case, carrying FR IDs, design doc, frontend/backend modules, tests, status) and a *non-functional* matrix (one row per quality attribute → quality scenario → verifying test).
 
 A companion **product/guides** split keeps shipped default content and build-guidance distinct from the spec itself, and an **OPEN-ISSUES** backlog (`OI-n`) tracks gaps still needed to make the spec implementation-ready.
 
 ### Documentation standards
 
-The artifacts above follow **recognized industry templates** rather than bespoke structures — a deliberate choice, since the method targets teaching and publication: a known template is what students should learn, and it lowers the cost of peer review (reviewers recognize the structure instead of decoding a custom one).
+The artifacts above follow **recognized industry templates** rather than bespoke structures — a deliberate choice, since a known template is what a newcomer should learn, and it lowers the cost of review (reviewers recognize the structure instead of decoding a custom one).
 
 - **Requirements** follow **Wiegers & Beatty** (*Software Requirements*, 3rd ed.) — the SRS, use-case, vision-and-scope, and glossary shapes.
 - The **architecture-of-record** follows **arc42** (Starke & Hruschka), using **C4** (Brown) for the context and building-block views.
@@ -176,13 +176,16 @@ Before fanning out, pick one **proving** use case — the one that exercises the
 
 With the architecture validated, realize the remaining use cases one at a time:
 
-1. **`/design <UC>`** — turn the use case into an approved Level-2 design-of-record (diagrams + decisions). A separately-reviewed stage that **stops before code**, and itself split into two beats, mirroring the RFC problem-then-solution rhythm: `/design` first runs the **challenge loop** against the use case — surfacing ambiguity, contradictions, and assumptions that break against the code, and looping fixes back into the spec — to firm the *problem* (the `🔬 Problem-validated` state), then designs and submits the *solution* for approval (`📐 Designed`). Trivial use cases pass through both in one motion. If the area contradicts the provisional Level-1 map, the design revises Level 1 (module architecture) and records it; platform-level changes are confirmed separately.
+1. **`/design <UC>`** — turn the use case into an approved Level-2 design-of-record. A separately-reviewed stage that **stops before code**, and itself split into two beats, mirroring the RFC problem-then-solution rhythm: `/design` first runs the **challenge loop** against the use case — surfacing ambiguity, contradictions, and assumptions that break against the code, and looping fixes back into the spec — to firm the *problem* (the `🔬 Problem-validated` state), then designs the *solution* and has the developer accept its shape (`📐 Designed`). Trivial use cases pass through both in one motion. If the area contradicts the provisional Level-1 map, the design revises Level 1 (module architecture) and records it; platform-level changes are confirmed separately. Approval is a merged pull request, reviewed and merged by a human. Its description carries the **questions test**: a fresh agent session, reading only the use case, its business rules, the architecture-of-record's Crosscutting Concepts, and the design, lists every point it would have to guess. Each guess is either fixed in the design or kept with a one-line reason. No implementation branch opens until the design merges.
 2. **`/implement <UC>`** — build from that approved design: plan → code → tests, extending the existing packages rather than forking the architecture.
-3. **Record** — update traceability; loop any spec/architecture fixes the work surfaced back into the docs.
+3. **Review** the implementation pull request against the contract: the use case with every extension, its business rules, and the design-of-record's API contract and test list. A diff shows what was added, never what was left out, so check each test-list row as covered or not. Set depth by risk and write the triage into the review: read the trunk (code many paths depend on, code that changes behavior existing users rely on, or code that is hard to roll back) line by line, and check the leaf (new code reached only through the new feature) through its tests.
+4. **Record** — update traceability; loop any spec/architecture fixes the work surfaced back into the docs.
 
 ### Phase D — Continuous co-evolution
 
 During design or implementation, the team can always return to adjust **both** the requirements and the architecture. The challenge loop (Principle 4) plus traceability (Principle 5) make this the normal case, not an exception: the spec, the architecture, and the code are kept in agreement as a standing invariant.
+
+**What a change reopens.** Phase A's exit criterion is the test. A change that stays inside a named use-case area and adds no architecturally significant requirement is a spec edit: amend the use case or rule, then revise that area's design-of-record through the gate. A change that adds something Phase A must name (a use-case area, a component, an external integration, a cross-cutting subsystem), or that adds or re-ranks an architecturally significant requirement, reopens the architecture-of-record first and places the new element there; a module-level change can ride in the area's design pull request (Phase C step 1), and a platform-level one is confirmed on its own. If it overturns a key decision, record a superseding `KD-*` with the requirement that forced it before any area designs against it. A scope change starts one level higher, in vision and scope, so its new use cases trace up to a feature.
 
 ## The human–agent division of labor
 
@@ -192,6 +195,7 @@ During design or implementation, the team can always return to adjust **both** t
 | High-level architectural decisions (platform-wide) | Human (agent proposes, human confirms) |
 | Turning an approved use case into a design-of-record | Agent, behind a design-review approval gate |
 | Implementing an approved design into code + tests | Agent |
+| Reviewing the implementation pull request against the contract | Human |
 | Module-level architecture revision when an area contradicts the map | Agent, surfaced in the design review and recorded |
 | Cross-document consistency checks | Agent (tooling) |
 | Judgment calls, ambiguity resolution, "is this a good idea?" | Human — prompted by the agent's challenge loop |
@@ -206,69 +210,9 @@ The methodology is tool-agnostic, but Project Pulse instantiates it with **[Clau
 - **`/design`** — Phase C step 1 (use case → design-of-record; may revise the module architecture).
 - **`/implement`** — Phase C step 2 (design → code + tests). It reads Crosscutting Concepts in full before coding and checks the diff against it before running tests, so conventions hold across sessions even where nearby code has drifted from them.
 - **`/spec-build`** — mechanically verifies and resyncs cross-document consistency (anchors, ID resolution, UC↔traceability coupling, terminology).
+- **`/sync-check`** audits spec-to-code conformance.
 
-The running case study is the **RAM (Requirements Authoring & Management) module** — itself a tool for *authoring* requirements — developed spec-first inside the larger Project Pulse platform. (A pleasing reflexivity for a paper: a spec-driven methodology, applied to build a requirements-authoring tool, documented by its own specs.)
-
-## Educational deployment (senior design, Fall 2026)
-
-The intended classroom use: student teams **author the spec** (glossary, vision & scope, use cases, business rules, SRS) for their capstone project, then use an AI coding agent under this methodology to produce good-quality software quickly — *without* the agent running away from them.
-
-Learning outcomes it targets:
-
-- **Requirements-engineering discipline** — students must write atomic, testable, vocabulary-consistent requirements, because the agent builds *exactly* what the spec says (a fast, unforgiving feedback loop on spec quality).
-- **Architectural thinking** — breadth-complete-but-shallow forces students to decompose a system without drowning in premature detail.
-- **Reviewing AI output** — the design-review gate and traceability make "read and judge what the agent produced" a first-class, gradeable activity.
-- **Engineering judgment** — the challenge loop teaches students to treat the agent as a skeptical collaborator, not an oracle.
-
-Guardrails to design into the assignment: insist on the approval gates (no `/implement` without a reviewed design), require the traceability matrix to be kept current, and grade the *spec* and the *review*, not only the running code.
-
-## Research framing (toward ICSE / RE / ASE / CSEET)
-
-> This section is a **starting scaffold**, not claims of results. It is meant to help shape a submission; fill in the empirical parts before asserting them.
-
-**Candidate contributions to argue:**
-
-1. A concrete, tool-supported methodology for **human-in-the-loop, spec-driven development with LLM coding agents**, with the use case as the unit of design, implementation, traceability, and test.
-2. The **breadth-complete / depth-shallow + thin-slice-validation** discipline as a specific answer to "how much design up front" for agentic development.
-3. The **challenge loop** — an explicit obligation on the agent to contest the spec — as a mechanism for keeping a fallible human spec and generated code in co-evolving agreement, mediated by traceability.
-4. (CSEET angle) An **educational instantiation** and its effect on student requirements-engineering and AI-review competencies.
-
-**Candidate research questions:**
-
-- RQ1. Does anchoring an LLM coding agent to a version-controlled spec (vs. ad-hoc prompting) measurably reduce drift / inconsistency and improve traceability coverage?
-- RQ2. Does breadth-complete/depth-shallow architecture + thin-slice validation reduce rework compared to either full up-front design or emergent design, in agent-driven projects?
-- RQ3. Does the challenge loop catch spec defects earlier, and what classes of defect does it surface?
-- RQ4. (Education) How does the methodology affect students' requirements quality, architectural decomposition, and ability to critically review AI-generated code?
-
-**Evaluation strategies to consider:** a longitudinal **case study** on Project Pulse/RAM (defect-escape, rework, traceability completeness, spec/code divergence over time); a **controlled or quasi-experimental student study** in the Fall 2026 cohort (methodology vs. control, with rubric-scored specs and reviews); **artifact-quality metrics** (atomicity/testability of requirements, traceability matrix completeness, consistency-check pass rates from `/spec-build`).
-
-**Positioning vs. prior art (to be written honestly):** relate to model-driven development, behavior-driven development and executable specifications, requirements traceability research, and the recent wave of agentic / "spec-driven" AI development tooling — and state precisely what is novel here (the specific *discipline* and the human-agent *division of labor with a challenge loop*, not merely "use a spec"). On the **architecture** side, the method stands on three established ideas rather than claiming them: **Twin Peaks** (Nuseibeh, 2001) for requirements↔architecture co-evolution (Principle 5; Phases A and D); **quality-attribute-driven design** (Bass, Clements & Kazman, *Software Architecture in Practice*; the SEI's Attribute-Driven Design and utility tree) for letting the architecturally significant quality attributes drive the key decisions (Principle 2; Phase A); and **agile architecture** (Bellomo, Kruchten, Nord & Ozkaya, 2014) for just-enough architectural runway, decision reversibility, and technical-debt-as-a-managed-artifact. The novelty is the **agent-assisted instantiation** of these — the ASR→decision derivation and the traceability made into a *checked* contract an LLM coding agent builds within — not the co-evolution or quality-attribute-driven ideas themselves.
-
-On the **process** side, the design-of-record gate is a direct descendant of the **RFC (request-for-comments) discipline** — a written proposal, circulated and approved *before* implementation — as practiced from the IETF and the Rust RFC process to engineering-org variants at Uber, Oxide, and Sourcegraph (Larson, *The Pragmatic Engineer*; the Sourcegraph handbook). The method adapts it in two ways that matter for a human + coding-agent team. First, the roles invert: the proposal is **authored by the agent and reviewed by the human**, where a classic RFC is human-authored and human-reviewed — so the value the gate carries is *decision quality* (surface the plan, catch conflicts before code, make review a first-class stage), not the *cross-team coordination* (broadcast at thousands of engineers, knowledge-silo dissolution) that motivates RFCs at org scale and that a single spec-driven project does not need. Second, the artifact is a **living design-of-record**, not a proposal frozen at approval; the frozen point-in-time decision — the RFC's other half — is carried separately here by the `KD-*` key-decision records (the architecture decision record layer, each citing the ASR that forced it). The RFC's own problem-then-solution rhythm (Sourcegraph splits *reviewing problem* from *reviewing solution*) is instantiated in Phase C's design gate: `/design` firms the use case through the challenge loop **before** it designs against it (the `🔬 Problem-validated` build state below). As with the architecture lineage, the novelty is the agent-assisted instantiation — an RFC-style gate an LLM coding agent writes *into* and is held to — not the RFC idea itself.
-
-**Threats to validity to pre-empt:** single-project / single-instructor case study (external validity); author-as-evaluator bias; rapidly changing agent capabilities (construct/temporal validity); Hawthorne effects in the student study.
-
-## Open questions and where this is still provisional
-
-- **Naming.** "Spec-Driven, Agent-Assisted Development" is a working title; the loop ("breadth-first, slice-proven, fan-out") may be the more memorable handle. A sharper name will help the paper.
-- **Slice selection.** The working rule is now *the slice that exercises the highest-risk ASRs* (top of the utility tree; Phase B). Whether "highest quality-attribute risk" reliably beats "most cross-cutting" or "most representative" as the selection criterion is still worth studying.
-- **Where Level-1 revision is allowed.** Currently the module architecture is agent-revisable (with review); the platform architecture is confirm-first. Whether that boundary is the right one is itself worth studying.
-- **Metrics.** The evaluation metrics above need operational definitions before they can be reported.
-
-## Publication-readiness gaps to close
-
-These are gaps surfaced by comparing this methodology write-up against the rest of the `docs/` set. They are recorded here so the paper effort does not lose them.
-
-1. **Prospective evidence is thin.** Much of the current traceability map for the foundation and performance-tracking features is retrospective "design-as-built code archaeology," not code produced through this method. A paper needs at least one clean prospective case: requirements → architecture → proving slice → design-of-record → agent implementation → tests → trace update.
-2. **No Level-2 design example exists yet.** `design/README.md` defines per-use-case-area design docs, but `docs/design/` currently has only the architecture-of-record and the design README. The `/design` → `/implement` workflow needs at least one concrete design-of-record artifact.
-3. **The challenge loop is not yet captured as evidence.** The method says the agent should challenge ambiguity, contradictions, and poor practice, but the repo does not yet preserve challenge events as data: what was challenged, what decision was made, what changed in the spec, and whether rework was avoided.
-4. **Research metrics are not operationalized.** Candidate metrics are named, but not defined precisely enough to report. Define drift, inconsistency, traceability completeness, requirements quality, rework, implementation time, review effort, defect classes, and learning gains.
-5. **Educational study design is missing.** The senior-design deployment needs a protocol: assignment structure, control or comparison condition, grading rubrics, pre/post assessment, artifact sampling, IRB/consent handling, and AI-agent-use constraints.
-6. **Tool generality needs a clearer contract.** The method is intended to work with agents such as Claude Code or Codex, but the repository instance is Claude Code-specific. Define the agent capability contract independent of tool: repo reading, spec adherence, approval gates, test execution, trace updates, and challenge-loop behavior.
-7. **Several RAM capabilities are not built or verified yet.** ReqLint, AI assistants, export, real-time collaboration, and AI configuration remain mostly unbuilt in `traceability.md`; RAM also lacks frontend automated tests. Claims should be bounded until more slices are implemented and verified.
-8. **Requirements-quality rubrics are not tied into the research evaluation.** The product docs define per-destination and whole-project review criteria, including ISO/IEC/IEEE 29148-derived quality checks, but the methodology does not yet use them as formal measurement instruments for the research questions.
-9. **The reproducibility package is undefined.** A paper artifact should include doc snapshots before/after, command specs or prompts, generated diffs, test results, traceability states, challenge-loop logs, open-issue logs, and anonymized student artifacts where applicable.
-10. **Open product/code gaps must be framed carefully.** `OPEN-ISSUES.md` shows many remaining code/template gaps and some spec completeness issues. That is acceptable for an in-progress case study, but the paper must distinguish validated method evidence from unfinished product scope.
+The running case study is the **RAM (Requirements Authoring & Management) module** — itself a tool for *authoring* requirements — developed spec-first inside the larger Project Pulse platform.
 
 ---
 
