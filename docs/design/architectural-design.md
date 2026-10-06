@@ -546,58 +546,58 @@ Course (aggregate root)
 
 ### *Architecturally significant requirements (the decision drivers)*
 
-Not every requirement shapes the architecture. The **architecturally significant requirements (ASRs)** are the few that do: the prioritized quality attributes plus the hard constraints whose cost of getting wrong is *system-wide*. They are the drivers the decisions below answer — the [Quality Goals](#quality-goals) are their strategic roll-up, and each ASR carries a name-based `ASR-<slug>` handle while **citing the existing SRS handles** it rolls up (it restates no requirement). Listed in rank order of architectural significance (importance × difficulty — a utility tree), the significant few are:
+Not every requirement shapes the architecture. The **architecturally significant requirements (ASRs)** are the few that do: the prioritized quality attributes plus the hard constraints whose cost of getting wrong is *system-wide*. They are the drivers the decisions below answer — the [Quality Goals](#quality-goals) are their strategic roll-up, and each ASR is named by the **existing SRS handles** it rolls up, with no ID space of its own (it restates no requirement). Listed in rank order of architectural significance (importance × difficulty — a utility tree), the significant few are:
 
-| ID | ASR (driver) | SRS handle(s) | Significance | Drives |
-|---|---|---|---|---|
-| ASR-student-record-confidentiality | Confidentiality of FERPA-regulated student records | `SEC-authorization`, `SEC-ferpa`, `CO-ferpa` | High × High | KD-ram-module, KD-self-issued-jwt; the two-layer ownership/membership authorization |
-| ASR-low-ops-burden | Low operational burden: one operator, no ops team | `AVL-uptime`, `CO-no-ops-team` | High × Medium | KD-modular-monolith, KD-relational-graph |
-| ASR-maintainability-learnability | Maintainability & learnability — student contributors extend the code | `MNT-feature-locality`, `MNT-service-layer`, `INT-single-application`; QG-maintainability (learnability is a pedagogical driver) | High × Medium | KD-ram-module, KD-no-codegen, KD-vertical-slices |
-| ASR-no-lost-work | No lost authored work under concurrent editing | `ROB-no-overwrite`, `ROB-edit-loss-bound`, `PER-autosave-cadence` | High × Medium | KD-section-locking + autosave |
-| ASR-self-hosted-auth | Single self-hosted authentication, no external IdP | `CO-single-auth`, `SEC-authentication` | Medium × Medium | KD-self-issued-jwt |
-| ASR-cohort-scale-performance | Responsive graph & validation at cohort scale | `PER-graph-load`, `PER-validation-speed`, `SCA-cohort-load` | Medium × Medium | KD-relational-graph; the accepted SQL-traversal trade-off |
-| ASR-llm-degradation | Graceful degradation when the LLM is unavailable | `AVL-llm-degradation`, `SI-llm-degradation`, `PER-ai-response-time` | Medium × Low | the AI-proxy isolation; QS-llm-outage |
+| ASR (driver) | SRS handle(s) | Significance | Drives |
+|---|---|---|---|
+| Confidentiality of FERPA-regulated student records | `SEC-authorization`, `SEC-ferpa`, `CO-ferpa` | High × High | KD-ram-module, KD-self-issued-jwt; the two-layer ownership/membership authorization |
+| Low operational burden: one operator, no ops team | `AVL-uptime`, `CO-no-ops-team` | High × Medium | KD-modular-monolith, KD-relational-graph |
+| Maintainability & learnability — student contributors extend the code | `MNT-feature-locality`, `MNT-service-layer`, `INT-single-application`; QG-maintainability (learnability is a pedagogical driver) | High × Medium | KD-ram-module, KD-no-codegen, KD-vertical-slices |
+| No lost authored work under concurrent editing | `ROB-no-overwrite`, `ROB-edit-loss-bound`, `PER-autosave-cadence` | High × Medium | KD-section-locking + autosave |
+| Single self-hosted authentication, no external IdP | `CO-single-auth`, `SEC-authentication` | Medium × Medium | KD-self-issued-jwt |
+| Responsive graph & validation at cohort scale | `PER-graph-load`, `PER-validation-speed`, `SCA-cohort-load` | Medium × Medium | KD-relational-graph; the accepted SQL-traversal trade-off |
+| Graceful degradation when the LLM is unavailable | `AVL-llm-degradation`, `SI-llm-degradation`, `PER-ai-response-time` | Medium × Low | the AI-proxy isolation; QS-llm-outage |
 
 The functional structure (the [component views](#building-block-view) above) is the *other* input to the architecture, decomposed from the use-case areas. This table is the bridge from requirements to architecture: **functionality can be satisfied by many structures, so the quality attributes and constraints are what pick among them** — and the reversible, local choices are deferred to per-area design rather than committed here.
 
 **KD-modular-monolith — Single deployable (modular monolith).** *Accepted.*
-- **Driving ASR(s):** ASR-low-ops-burden (`AVL-uptime`, `CO-no-ops-team`), bounded by ASR-cohort-scale-performance (`SCA-cohort-load`).
+- **Driving ASR(s):** low operational burden (`AVL-uptime`, `CO-no-ops-team`), bounded by cohort-scale performance (`SCA-cohort-load`).
 - **Context:** Instructor-scale deployment, no dedicated ops team; delivery speed and operational simplicity matter more than scaling parts independently.
 - **Decision:** Build the Vue SPA into the Spring Boot jar (served from `static/`), ship one Docker image to one Azure Web App — API + SPA in one process.
 - **Consequences:** Simplest possible deploy/run (QG-low-ops-burden); one artifact, one pipeline. *Rejected* microservices / separate SPA hosting — network + ops complexity unjustified at this scale. *Trade-off:* the app scales only as a whole.
 
 **KD-ram-module — RAM as a module inside the platform.** *Accepted.*
-- **Driving ASR(s):** ASR-maintainability-learnability, for reuse (`MNT-service-layer`, `INT-single-application`, `CO-single-application`), and ASR-student-record-confidentiality, for reuse of the existing authorization surface (`SEC-authorization`).
+- **Driving ASR(s):** maintainability and learnability, for reuse (`MNT-service-layer`, `INT-single-application`, `CO-single-application`), and student-record confidentiality, for reuse of the existing authorization surface (`SEC-authorization`).
 - **Context:** RAM began as a separate project but needs the same course/section/team/student/auth/email infrastructure Project Pulse already had.
 - **Decision:** Merge RAM in as `ram/*` bounded contexts on the shared base, not a separate system.
 - **Consequences:** Reuses identity, RBAC, org model, email; one deployment; uniform conventions. *Rejected* a standalone RAM service — would duplicate the org/auth model and add cross-service integration. *Trade-off:* RAM's lifecycle is coupled to the platform's.
 
 **KD-relational-graph — Relational DB for the requirements graph.** *Accepted.*
-- **Driving ASR(s):** ASR-low-ops-burden, through one store (`CO-relational-persistence`, `DI-persist-graph`), and ASR-cohort-scale-performance, for acceptable graph performance at cohort scale (`PER-graph-load`, `SCA-cohort-load`).
+- **Driving ASR(s):** low operational burden, through one store (`CO-relational-persistence`, `DI-persist-graph`), and cohort-scale performance, for acceptable graph performance at cohort scale (`PER-graph-load`, `SCA-cohort-load`).
 - **Context:** RAM's data is a graph (artifacts + typed links + traceability), which hints at a graph DB — but the platform already runs MySQL with relational tooling/ops.
 - **Decision:** Store the graph relationally (artifacts as rows, links as an edge table) in the existing DB.
 - **Consequences:** The requirements graph is one relational datastore — one backup/migration/FERPA surface — and reuses JPA + conventions. *Rejected* Neo4j/graph DB — a second datastore and new ops, unjustified at typical per-team graph size. *Trade-off:* deep traversals are SQL joins / recursive queries, not native graph ops. (The graph is wholly relational; the lone exception to the single-store picture is uploaded project source material, whose large binaries live in Azure Blob Storage — see [Data architecture](#data-architecture).)
 
 **KD-self-issued-jwt — Self-issued, stateless JWT (RSA keypair generated at startup).** *Accepted; key handling incidental — revisit.*
-- **Driving ASR(s):** ASR-self-hosted-auth (`CO-single-auth`, `SEC-authentication`) and ASR-student-record-confidentiality (`SEC-authorization`, `SEC-ferpa`).
+- **Driving ASR(s):** self-hosted authentication (`CO-single-auth`, `SEC-authentication`) and student-record confidentiality (`SEC-authorization`, `SEC-ferpa`).
 - **Context:** Wanted stateless auth (no server-side session store); no external identity provider in scope.
 - **Decision:** Self-issue and verify JWTs rather than use sessions or an external IdP. The current implementation generates the RSA keypair at application startup.
 - **Consequences:** No session store; simple. *Rejected* external IdP / institutional SSO — beyond integration cost, institutional SSO onboarding is impractical at this scale (the institution's IT will not provision a relying-party integration for a course tool), so the platform authenticates users itself; the SRS's auth requirements (FR-SEC-authentication, CO-single-auth) accordingly delegate to *this* mechanism, not to an external IdP. *Rejected* sessions (server state). **Known limitation (incidental, not by design):** because the keypair is generated per startup and not persisted, every restart/redeploy invalidates all live tokens (users re-login) and a second instance can't verify the first's tokens — effectively capping the app at one instance. Externalizing/persisting the keys would lift this. (Drives the Scalability "accepted" trade-off and QS-release-deploy; revisit when multi-instance is needed.)
 
 **KD-no-codegen — No Lombok / no MapStruct (pedagogical).** *Accepted.*
-- **Driving ASR(s):** ASR-maintainability-learnability, for student contributors (`MNT-service-layer`; learnability is a pedagogical driver — QG-maintainability — not a formal SRS attribute).
+- **Driving ASR(s):** maintainability and learnability, for student contributors (`MNT-service-layer`; learnability is a pedagogical driver — QG-maintainability — not a formal SRS attribute).
 - **Context:** The codebase is read and extended by students learning Spring/Java; annotation-processor "magic" can obscure what the code actually does.
 - **Decision:** Explicit getters/setters/constructors and explicit `Converter<S,T>` beans — no Lombok, no MapStruct.
 - **Consequences:** Fully explicit, debuggable code with no build-time codegen, so students see exactly what runs — a deliberate teaching choice. *Rejected* Lombok/MapStruct — less boilerplate but hidden behavior and extra tooling to learn. *Trade-off:* more verbose, hand-written conversion code.
 
 **KD-section-locking — Pessimistic section-level locking for collaborative editing.** *Accepted.*
-- **Driving ASR(s):** ASR-no-lost-work (`ROB-no-overwrite`, `ROB-edit-loss-bound`), with `PER-collab-latency` the deferred real-time trade-off.
+- **Driving ASR(s):** no lost work (`ROB-no-overwrite`, `ROB-edit-loss-bound`), with `PER-collab-latency` the deferred real-time trade-off.
 - **Context:** Teammates edit the same requirement document concurrently; lost updates on authored content are unacceptable, and a predictable model beats complex merge.
 - **Decision:** Lock at document-section (and use-case) granularity — one editor holds a section; others are blocked.
 - **Consequences:** No lost updates, simple mental model, fine-grained enough for parallel work on different sections. *Rejected* optimistic concurrency / OT / CRDT real-time co-editing — far more complex; real-time presence/broadcast (UC-COL-collaborative-edit) is **deferred** (not in the current release) and would be a *future layer on top*, not a replacement — until then there is no real-time push channel in the topology, and the related targets (PER-collab-latency presence-propagation, ROB-no-overwrite) are out of scope. *Trade-off:* two people can't edit the same section at once.
 
 **KD-vertical-slices — DDD bounded-context vertical slices, layered within.** *Accepted.*
-- **Driving ASR(s):** ASR-maintainability-learnability (`MNT-feature-locality`, `MNT-service-layer`, `INT-single-application`; QG-maintainability). Verified by QS-add-bounded-context.
+- **Driving ASR(s):** maintainability and learnability (`MNT-feature-locality`, `MNT-service-layer`, `INT-single-application`; QG-maintainability). Verified by QS-add-bounded-context.
 - **Context:** The codebase is extended continuously by rotating student contributors; the common change is "add or modify one feature," and it must not ripple across unrelated features.
 - **Decision:** Partition the backend by **domain** — one bounded context per package, each a full vertical slice (entity → repository → service → controller → DTO/`Converter`) — and layer *within* each slice, rather than partitioning by technical layer. A slice may use a sibling slice only through that sibling's service layer, never its repositories; slices form no dependency cycles; and the shared foundation (`system`, `security`, `user`, `rubric`, and the org model: `course`, `section`, `team`, `student`, `instructor`) depends on no feature slice (`MNT-feature-locality`). The `dev` seed package (`seed`) is the one exemption. The code does not yet meet this rule; see TD-feature-locality.
 - **Consequences:** A feature change stays inside one slice; a new bounded context is added without touching existing ones (QS-add-bounded-context: zero changes to other packages, delivered in ≤ 2 person-days); the uniform slice shape lets a contributor pattern-match across the codebase. *Rejected* package-by-layer (all controllers together, all services together) — it optimizes for the rare "swap a technical layer" change over the common "change one feature" change, and scatters a single feature across the package tree. *Trade-off:* cross-cutting concerns (auth, auditing, email) must be deliberately centralized in `system`/`security`/`user` so they aren't duplicated per slice.
