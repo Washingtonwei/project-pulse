@@ -78,9 +78,9 @@ The attributes that score **high on both** are your ASRs. They earn the most des
 
 | ASR (driver) | Significance | Drives which decision |
 |---|---|---|
-| `ASR-student-record-confidentiality`: confidentiality of FERPA-regulated student records (`SEC-authorization`, `CO-ferpa`) | **High × High** | the two-layer authorization; KD-ram-module, KD-self-issued-jwt |
-| `ASR-maintainability-learnability`: maintainability & learnability; students extend the code (`MNT-feature-locality`) | High × Medium | **KD-vertical-slices** |
-| `ASR-cohort-scale-performance`: responsive graph & validation at cohort scale (`PER-graph-load`) | Medium × Medium | KD-relational-graph |
+| Confidentiality of FERPA-regulated student records (`SEC-authorization`, `CO-ferpa`) | **High × High** | the two-layer authorization; KD-ram-module, KD-self-issued-jwt |
+| Maintainability & learnability; students extend the code (`MNT-feature-locality`) | High × Medium | **KD-vertical-slices** |
+| Responsive graph & validation at cohort scale (`PER-graph-load`) | Medium × Medium | KD-relational-graph |
 
 Notice ASRs are not a new kind of requirement — they're a *lens* that says "these existing quality attributes are the ones that move the architecture."
 
@@ -97,7 +97,7 @@ Once you know your ASRs, you make the decisions that satisfy them — and you **
 
 **Worked example — `KD-vertical-slices`:**
 
-- *Driving ASR:* `ASR-maintainability-learnability` (`MNT-feature-locality`); verified by `QS-add-bounded-context`.
+- *Driving ASR:* maintainability and learnability (`MNT-feature-locality`); verified by `QS-add-bounded-context`.
 - *Decision:* partition the backend by **domain** — one bounded context per package, each a full vertical slice (entity → repository → service → controller) — and layer *within* each slice.
 - *Rejected:* package-by-layer (all controllers together, all services together) — it optimizes for the rare "swap a technical layer" change over the common "change one feature" change.
 - *Trade-off:* cross-cutting concerns (auth, auditing, email) must be deliberately centralized so they aren't duplicated in every slice.
@@ -110,7 +110,7 @@ Once you know your ASRs, you make the decisions that satisfy them — and you **
 quality attribute  →  (utility tree)  →  ASR  →  architecture decision (ADR/KD)  →  structure  →  verified by a quality scenario's test
 ```
 
-In Project Pulse, fully worked: `MNT-feature-locality` → **ASR-maintainability-learnability** → **KD-vertical-slices** → the DDD package structure → **QS-add-bounded-context** (and, eventually, an automated dependency test).
+In Project Pulse, fully worked: `MNT-feature-locality` (an ASR: maintainability and learnability) → **KD-vertical-slices** → the DDD package structure → **QS-add-bounded-context** (and, eventually, an automated dependency test).
 
 ---
 
