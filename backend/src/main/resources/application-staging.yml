@@ -28,5 +28,5 @@ front-end:
 app:
   timezone: America/Chicago
   reminders:
-    enabled: false   # IMPORTANT: don't email people from staging
+    enabled: false   # Disables only the scheduled weekly reminder; invitations, password resets, and on-demand reminders still send real email
     cron: "0 0 8 * * *"

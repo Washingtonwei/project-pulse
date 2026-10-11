@@ -2456,7 +2456,7 @@ Details of a peer evaluation: The instructor may choose to see more details of o
 
 **Preconditions:**
 - PRE-1. The instructor is logged into the system.
-- PRE-2. The instructor has selected a course section she is assigned to (BR-section-scoped-access).
+- PRE-2. The instructor has selected a course section she is assigned to, or one belonging to a course she owns as course admin (BR-section-scoped-access).
 
 **Postconditions:**
 - POST-1. Each student who owes the selected item for the week it is due has been sent one reminder naming the item, the week, and its due day and time, unless sending to her failed.
@@ -2469,7 +2469,7 @@ Details of a peer evaluation: The instructor may choose to see more details of o
 3. The instructor chooses the item.
 4. The system determines the week the item is currently due for, which is the previous week, and displays, grouped by team, the students who owe that item for that week (BR-submission-owed).
 5. The instructor reviews the list and confirms that the reminders should be sent.
-6. The system emails each listed student a reminder naming the course section, the item, the week, and the item's due day and time.
+6. The system emails a reminder to each student who still owes the item when the instructor confirms (BR-submission-owed), naming the course section, the item, the week, and the item's due day and time.
 7. The system informs the instructor how many reminders were sent.
 8. Use case ends.
 
@@ -2489,7 +2489,7 @@ Details of a peer evaluation: The instructor may choose to see more details of o
 
 **Priority:** Medium
 **Frequency of Use:** Approximately 2 users, 1 to 2 usages per week per course section.
-**Business Rules:** BR-submission-owed (who is listed and reminded), BR-section-scoped-access, BR-role-based-access (only an instructor assigned to the course section may send it), BR-active-weeks, BR-evaluation-submission-window (why the week is fixed), BR-team-assignment-required (students on no team are never listed).
+**Business Rules:** BR-submission-owed (who is listed and reminded), BR-section-scoped-access, BR-role-based-access (an instructor assigned to the course section, or the course admin who owns its course, may send it), BR-active-weeks, BR-evaluation-submission-window (why the week is fixed), BR-team-assignment-required (students on no team are never listed).
 
 **Associated Information:**
 - Week: the item is always reminded for the week it is currently due for, the previous week. The instructor cannot choose an older week: a peer evaluation cannot be made up once its window has closed (BR-evaluation-submission-window), and one rule for both items keeps the reminder predictable. The week is shown as a date range, for example "09-28-2026 to 10-04-2026".
