@@ -13,7 +13,7 @@ The use case is the contract; the linked FRs are the acceptance criteria; the gl
 
 **The spec is authoritative but not infallible — challenge it.** As you work the use case into a design, you will hit steps that are ambiguous or underspecified, assumptions that don't survive contact with the existing code, requirements that contradict each other or reality, and — because the docs are written by humans and age — **unnecessary or incorrect constraints, out-of-date information, wrong assumptions, or an approach the spec suggests that simply isn't best practice.** When that happens, **ask the developer a clarifying question or push back — do not silently comply, do not silently invent the missing detail, and do not inherit a constraint just because it's written down.** Name the gap or the better way, say what you'd do and why, and when it's a genuine spec defect propose the doc edit (per `docs/CLAUDE.md`, then `/spec-build`). A step with no backing FR, or a cited FR that doesn't exist, is a question to raise — not something to paper over. **When in doubt, or when you see a better way, shout.**
 
-If no UC-ID is given, ask which use case to design (or list candidate use cases whose `docs/traceability.md` **Build** state is `❌ Not started` — those with no design yet).
+If no UC-ID is given, ask which use case to design (or list candidate use cases whose `docs/traceability.md` **Build** state is `❌ Not started` and whose use case carries no `**Status:**` line, so Deferred and Tabled use cases are left out; list them in **Release** order, earliest release first and `Later` last, since the release plan says what comes next).
 
 Work in phases. **Stop for approval after Phase 2 before writing the design doc.**
 
