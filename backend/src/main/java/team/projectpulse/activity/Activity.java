@@ -21,6 +21,7 @@ public class Activity {
     String week;
     @ManyToOne(optional = false)
     private Team team;
+    @Enumerated(EnumType.STRING)
     ActivityCategory category;
     String activity;
     String description;
