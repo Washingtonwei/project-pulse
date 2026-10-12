@@ -918,9 +918,9 @@ public class DataInitializer implements CommandLineRunner {
         activities.add(new Activity(john, "2023-W35", team1, ActivityCategory.SUPPORT, "Support QA Team", "Assist the QA team with testing scenarios and environment setup", 5.0, 4.0, ActivityStatus.IN_PROGRESS));
         activities.add(new Activity(john, "2023-W36", team1, ActivityCategory.TESTING, "Test User Authentication", "Write unit tests for the authentication module", 6.0, 5.0, ActivityStatus.COMPLETED));
         activities.add(new Activity(john, "2023-W36", team1, ActivityCategory.BUGFIX, "Fix CSS Layout Issue", "Resolve UI layout issues on smaller screen sizes", 3.0, 2.5, ActivityStatus.COMPLETED));
-        activities.add(new Activity(john, "2023-W37", team1, ActivityCategory.COMMUNICATION, "Team Sync-Up", "Weekly team sync-up meeting to review progress", 1.5, 1.5, ActivityStatus.COMPLETED));
+        activities.add(new Activity(john, "2023-W37", team1, ActivityCategory.REVIEW, "Review Pull Requests", "Review teammates' and agent-generated pull requests before merging", 1.5, 1.5, ActivityStatus.COMPLETED));
         activities.add(new Activity(john, "2023-W37", team1, ActivityCategory.DEVELOPMENT, "Develop Signup Feature", "Implement signup functionality for the application", 10.0, 8.5, ActivityStatus.IN_PROGRESS));
-        activities.add(new Activity(john, "2023-W38", team1, ActivityCategory.PLANNING, "Backlog Grooming", "Refine the product backlog and prepare for Sprint 4", 2.0, 2.0, ActivityStatus.COMPLETED));
+        activities.add(new Activity(john, "2023-W38", team1, ActivityCategory.REQUIREMENTS, "Refine Use Cases", "Write and refine the use cases for the Sprint 4 features", 2.0, 2.0, ActivityStatus.COMPLETED));
         activities.add(new Activity(john, "2023-W38", team1, ActivityCategory.LEARNING, "Learn Docker", "Study Docker basics for containerizing the application", 5.0, 5.0, ActivityStatus.COMPLETED));
         activities.add(new Activity(john, "2023-W39", team1, ActivityCategory.DEPLOYMENT, "Deploy to Production", "Deploy the application to the production environment", 3.0, 3.0, ActivityStatus.COMPLETED));
         activities.add(new Activity(john, "2023-W39", team1, ActivityCategory.SUPPORT, "Support Live Deployment", "Monitor the application and resolve issues post-deployment", 4.0, 4.0, ActivityStatus.IN_PROGRESS));

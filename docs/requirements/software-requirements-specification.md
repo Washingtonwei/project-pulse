@@ -315,8 +315,10 @@ classDiagram
         DEVELOPMENT
         TESTING
         BUGFIX
+        REVIEW
         COMMUNICATION
         DOCUMENTATION
+        REQUIREMENTS
         DESIGN
         PLANNING
         LEARNING
