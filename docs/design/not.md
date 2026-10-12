@@ -87,20 +87,16 @@ classDiagram
 sequenceDiagram
     actor I as Instructor
     participant SPA as SPA (RemindNonSubmittersDialog)
-    participant SEC as security (SectionInstructorAuthorizationManager)
     participant RC as ReminderController
     participant SS as SubmissionStatusService
-    participant AE as ActivityService / EvaluationService
     participant RS as ReminderService
     participant EM as EmailService
     I->>SPA: Remind students who have not submitted (step 1)
     SPA-->>I: Choose an item (step 2)
     I->>SPA: Peer evaluation (step 3)
-    SPA->>SEC: GET /sections/{sectionId}/submission-status?item=PEER_EVALUATION
-    SEC->>RC: instructor assigned to, or course admin owning, sectionId
+    SPA->>RC: GET /sections/{sectionId}/submission-status?item=PEER_EVALUATION
+    Note over SPA,RC: Both requests pass the route guard in the API contract
     RC->>SS: findOwing(sectionId, item, WeekKeys.previousWeek(clock))
-    SS->>AE: findEvaluateeIdsByEvaluator(sectionId, week)
-    AE-->>SS: evaluator id to evaluatee ids
     SS-->>RC: students on a team, enabled, not every active teammate evaluated
     RC-->>SPA: 200, weekActive, week range, due time, owing students by team (step 4)
     alt weekActive is false (4a)
@@ -110,8 +106,7 @@ sequenceDiagram
     else students owe the item
         SPA-->>I: The owing students, by team, and Confirm
         I->>SPA: Confirm (step 5), or cancel (5a)
-        SPA->>SEC: POST /sections/{sectionId}/reminders {item}
-        SEC->>RC: instructor assigned to, or course admin owning, sectionId
+        SPA->>RC: POST /sections/{sectionId}/reminders {item}
         RC->>RC: 400 if the previous week is not active (4a, server-side guard)
         RC->>SS: findOwing(...) again, at send time
         RC->>RS: remind(section, owing, week)
