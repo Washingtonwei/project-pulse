@@ -3,6 +3,15 @@
     <template #header>
       <div class="header">
         <span>Section's Weekly Activities</span>
+        <el-button
+          type="primary"
+          icon="Bell"
+          :disabled="Number.isNaN(settingsStore.defaultSectionId)"
+          @click="remindDialogVisible = true"
+          data-cy="remind-open"
+        >
+          Remind students who have not submitted
+        </el-button>
       </div>
     </template>
     <!-- Search Form -->
@@ -122,6 +131,10 @@
         </span>
       </template>
     </el-dialog>
+    <RemindNonSubmittersDialog
+      v-model="remindDialogVisible"
+      :section-id="settingsStore.defaultSectionId"
+    />
   </el-card>
 </template>
 
@@ -140,6 +153,7 @@ import { searchTeams } from '@/apis/team'
 import { getSubmissionStatus } from '@/apis/notification'
 import type { GetSubmissionStatusResponse } from '@/apis/notification/types'
 import SearchWeek from '@/components/SearchWeek.vue'
+import RemindNonSubmittersDialog from '@/components/RemindNonSubmittersDialog.vue'
 import { ElMessage } from 'element-plus'
 import type {
   GetWeeklyPeerEvaluationsForStudentResponse,
@@ -160,6 +174,7 @@ const activities = ref<Activity[]>([]) // The section's activities in a week
 const sectionId = ref<number>(NaN)
 const loading = ref<boolean>(true)
 const settingsStore = useSettingsStore()
+const remindDialogVisible = ref(false)
 
 // Load data when the component is mounted
 onMounted(async () => {
