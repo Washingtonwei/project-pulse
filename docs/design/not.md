@@ -72,11 +72,11 @@ classDiagram
     EvaluationService --> WeekKeys
 ```
 
-- **New package** `backend/src/main/java/team/projectpulse/notification/`: `ReminderController`, `SubmissionStatusService`, `ReminderService`, `SubmittableItem`, `WeeklyReminderScheduler` (moved from `system/`), and DTOs `SubmissionStatusDto`, `ReminderRequestDto`, `ReminderResultDto` with their `Converter`s.
+- **New package** `backend/src/main/java/team/projectpulse/notification/`: `ReminderController`, `SubmissionStatusService`, `ReminderService`, `SubmittableItem`, `WeeklyReminderScheduler` (moved from `system/`), and DTOs `SubmissionStatusDto` (owing students grouped in `OwingTeamDto`), `ReminderRequestDto`, `ReminderResultDto`, and `OwingStudentDto` (id, first and last name). The one `Converter` is `StudentToOwingStudentDtoConverter`; the controller assembles the other DTOs, since each combines a course section, an item, a week, and a list.
 - **Sibling service methods (new):** `ActivityService.findReportingStudentIds` backed by an `ActivityRepository` query (`select distinct a.student.id … where a.week = :week and a.team.section.sectionId = :sectionId`); `EvaluationService.findEvaluateeIdsByEvaluator` backed by a `PeerEvaluationRepository` query scoped the same way. `notification` calls these, never the repositories.
 - **Foundation (new):** `system/WeekKeys`, the one place that turns the injected `Clock` into an ISO week key (`"2026-W40"`) and a key into a date range. `EvaluationService.previousWeek()` delegates to it.
 - **Foundation (reused):** `SectionService.findReminderEligibleSectionsForWeek` (unchanged query, now called with the previous week), `StudentRepository.findBySectionSectionId`, `EmailService.sendReminderEmail`, `SectionInstructorAuthorizationManager`.
-- **Removed:** `WeeklyPeerEvaluationReport.studentsMissingPeerEvaluations` and its computation in `EvaluationService`; the missing-student filter in `SectionsActivities.vue`.
+- **Removed:** `WeeklyPeerEvaluationReport.studentsMissingPeerEvaluations` and its computation in `EvaluationService` (with `PeerEvaluationRepository.findByWeek`, which had no other caller); the missing-student filter in `SectionsActivities.vue`.
 - **Frontend:** `src/apis/notification/` (index and types) on the shared `request` instance; `components/RemindNonSubmittersDialog.vue` (Confirm is disabled while the `POST` is in flight), opened from a "Remind students who have not submitted" button on `pages/activities/admin/SectionsActivities.vue` and `pages/evaluations/admin/SectionsEvaluations.vue`; both pages read their "has not submitted" lists from `getSubmissionStatus`. The WAR page's default week changes from the current week to the previous week, matching the item's week.
 
 ## Sequence
@@ -184,7 +184,7 @@ No delta. The area reads `Activity`, `PeerEvaluation`, `Student`, `Team`, and `S
 - Email: `EmailService.sendReminderEmail` unchanged; Gmail over SMTP (DE-gmail-smtp). It wraps `body` in HTML without escaping it, so `ReminderService` escapes every interpolated value before calling it. `application-prod.yml` and `application-staging.yml` add `spring.mail.properties.mail.smtp.connectiontimeout`, `timeout`, and `writetimeout`, each `10000` (milliseconds); a send that times out throws like any other failed send and lands in `failed` (6a).
 - Authorization: `SectionInstructorAuthorizationManager` and `SectionOwnershipAuthorizationManager`, composed with `anyOf`.
 - Time: the injected `Clock`; the `dev` profile's fixed clock (Sunday 2023-08-20, in `2023-W33`) makes the previous week `2023-W32`. The seed data covers it: section 2's active weeks include `2023-W32`, and it has activities and peer evaluations for that week.
-- Error envelope: `IllegalArgumentException` maps to `400` / `INVALID_ARGUMENT` through `ExceptionHandlerAdvice`.
+- Error envelope: `IllegalArgumentException` maps to `400` / `INVALID_ARGUMENT` through `ExceptionHandlerAdvice`. A request that cannot be bound at all (an unknown `item`, a missing parameter, an unreadable body) fell through to the `500` fallback, so `ExceptionHandlerAdvice` also maps `MethodArgumentTypeMismatchException`, `MissingServletRequestParameterException`, and `HttpMessageNotReadableException` to `400` / `INVALID_ARGUMENT`. That applies to every endpoint, not only these two.
 
 ## Tests
 
@@ -195,8 +195,8 @@ No delta. The area reads `Activity`, `PeerEvaluation`, `Student`, `Team`, and `S
 | UC-NOT 4a | integration | Previous week inactive: `POST` returns `400` with the inactive-week message; no email sent |
 | UC-NOT step 6, send time | integration | A student listed by the `GET` who then submits is not emailed by the `POST`, and `sent` excludes her; when every listed student submits before the `POST`, it returns `sent: 0` and sends no email |
 | UC-NOT 4b | integration | Everyone has submitted: `sent: 0`, `failed` empty, no email sent |
-| UC-NOT 5a | frontend | Cancelling the dialog sends no `POST` |
-| UC-NOT step 5, double click | frontend | Confirm is disabled while the `POST` is in flight; clicking it twice sends one `POST` |
+| UC-NOT 5a | E2E (Cypress, API stubbed) | Cancelling the dialog sends no `POST` |
+| UC-NOT step 5, double click | E2E (Cypress, API stubbed) | Confirm is disabled while the `POST` is in flight; clicking it twice sends one `POST` |
 | UC-NOT 6a | unit | `EmailService` throws for one student: the others are still sent; that student is in `failed` |
 | UC-NOT authorization | integration | An instructor not assigned to the section, and a student, get `403` on both routes; the course admin who owns the course but is not assigned to the section gets `200` |
 | UC-NOT 4a, status | integration | Previous week inactive: `GET` returns `200` with `weekActive: false` and still lists students who owe a WAR |
@@ -213,7 +213,7 @@ No delta. The area reads `Activity`, `PeerEvaluation`, `Student`, `Team`, and `S
 
 ## Open questions / risks
 
-- **Latency of a whole-section reminder.** Synchronous sending of up to about 80 emails over Gmail SMTP may take tens of seconds, and the browser client gives every request 10 seconds (`timeout: 10_000` in `frontend/src/utils/request.ts`). A batch that runs longer shows the instructor an error for reminders that went out, which invites a second send (the retry risk below). The SMTP timeouts bound each blocking SMTP operation (connect, read, write) at 10 seconds, not each send or the whole request: one send makes several round trips, so if Gmail stops answering, 80 sends can still take minutes. Measure on staging at build time; if the worst case exceeds the 10-second client timeout, send in the background and have the dialog poll for the result, so step 7 and 6a2 still report in the dialog. Usually only a handful of students owe an item, so the common case is fast.
+- **Latency of a whole-section reminder.** Synchronous sending of up to about 80 emails over Gmail SMTP may take tens of seconds, and the browser client gives every request 10 seconds (`timeout: 10_000` in `frontend/src/utils/request.ts`). A batch that runs longer shows the instructor an error for reminders that went out, which invites a second send (the retry risk below). The SMTP timeouts bound each blocking SMTP operation (connect, read, write) at 10 seconds, not each send or the whole request: one send makes several round trips, so if Gmail stops answering, 80 sends can still take minutes. Not yet measured on staging (it was not measured when this was built); if the worst case exceeds the 10-second client timeout, send in the background and have the dialog poll for the result, so step 7 and 6a2 still report in the dialog. Usually only a handful of students owe an item, so the common case is fast.
 - **A retry after a failed request.** If the request fails after some emails went out (a dropped connection, a proxy timeout), the instructor sees an error, and sending again reminds those students a second time. Recomputing at send time drops anyone who has since submitted, but not anyone already reminded. Accepted, since nothing is stored; revisit if it happens.
 - **Course admins on the existing report.** `UC-EVA-section-evaluation-report` is guarded by `SectionInstructorAuthorizationManager` alone, so a course admin who owns the course but is not assigned to the section is denied there today. This design does not change that route.
 - **Mid-window team changes.** A student moved onto a team owes evaluations to her new teammates for a week she was not on the team. Accepted as the rule's consequence; revisit if instructors report confusion.
