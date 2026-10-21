@@ -159,6 +159,8 @@ import type {
   RatingAverage
 } from '@/apis/evaluation/types'
 import { getPreviousWeek } from '@/utils/week'
+import { getSubmissionStatus } from '@/apis/notification'
+import type { GetSubmissionStatusResponse } from '@/apis/notification/types'
 import SearchWeek from '@/components/SearchWeek.vue'
 import { ElMessage } from 'element-plus'
 
@@ -202,15 +204,22 @@ async function loadSectionsPeerEvaluationAverages() {
   peerEvalutionAverages.value = result.data.peerEvaluationAverages
   // Sort students by last name
   peerEvalutionAverages.value.sort((a, b) => a.lastName.localeCompare(b.lastName))
-  studentsMissingPeerEvaluations.value = result.data.studentsMissingPeerEvaluations
-  // Convert "first name last name" to "last name, first name" in studentsMissingPeerEvaluations and then sort
-  studentsMissingPeerEvaluations.value = studentsMissingPeerEvaluations.value.map((student) => {
-    const [firstName, lastName] = student.split(' ')
-    return `${lastName}, ${firstName}`
-  })
-  // Sort students in alphabetical order
-  studentsMissingPeerEvaluations.value.sort()
+  await loadStudentsMissingPeerEvaluations()
   loading.value = false
+}
+
+// Who has not submitted comes from the server (BR-submission-owed): a student owes the peer evaluation until she
+// has evaluated every active member of her team, herself included, not merely anyone
+async function loadStudentsMissingPeerEvaluations() {
+  const result: GetSubmissionStatusResponse = await getSubmissionStatus(
+    defaultSectionId.value!,
+    'PEER_EVALUATION',
+    week.value
+  )
+  studentsMissingPeerEvaluations.value = result.data.teams
+    .flatMap((team) => team.students)
+    .map((student) => `${student.lastName}, ${student.firstName}`)
+    .sort()
 }
 
 function resetSearchCriteria() {

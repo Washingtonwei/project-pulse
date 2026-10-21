@@ -229,15 +229,9 @@ public class EvaluationService {
             report.getPeerEvaluationAverages().add(peerEvaluationAverage);
         });
 
-        // Find all students who did not submit evaluations for the given week
-        List<PeerEvaluation> allEvaluationsInAWeek = this.evaluationRepository.findByWeek(week);
-        List<String> studentsMissingPeerEvaluations = students.stream()
-                // Filter out students who have submitted evaluations. In other words, being an evaluator of some peer evaluation.
-                .filter(student -> allEvaluationsInAWeek.stream().noneMatch(evaluation -> evaluation.getEvaluator().getId().equals(student.getId())))
-                .map(student -> student.getFirstName() + " " + student.getLastName())
-                .toList();
-
-        report.setStudentsMissingPeerEvaluations(studentsMissingPeerEvaluations);
+        // Who has not submitted is not part of this report: it is BR-submission-owed, which the notification slice
+        // owns (GET /sections/{sectionId}/submission-status). This used to count a student as done after she
+        // evaluated anyone, and calling notification from here would make a dependency cycle.
 
         report.setWeek(week);
         return report;

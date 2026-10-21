@@ -75,7 +75,6 @@ export interface WeeklyPeerEvaluationReportForOneSection {
   sectionName: string
   week: string
   peerEvaluationAverages: PeerEvaluationAverage[]
-  studentsMissingPeerEvaluations: string[]
 }
 
 export interface GenerateWeeklyPeerEvaluationAveragesForSectionResponse {

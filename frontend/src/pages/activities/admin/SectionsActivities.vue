@@ -133,16 +133,12 @@ import type {
   ActivitySearchCriteria,
   SearchActivityByCriteriaResponse
 } from '@/apis/activity/types'
-import { getCurrentWeekNumber } from '@/utils/week'
+import { getPreviousWeek } from '@/utils/week'
 import { useSettingsStore } from '@/stores/settings'
-import type {
-  SearchStudentByCriteriaResponse,
-  Student,
-  StudentSearchCriteria
-} from '@/apis/student/types'
 import type { SearchTeamByCriteriaResponse, Team, TeamSearchCriteria } from '@/apis/team/types'
 import { searchTeams } from '@/apis/team'
-import { searchStudents } from '@/apis/student'
+import { getSubmissionStatus } from '@/apis/notification'
+import type { GetSubmissionStatusResponse } from '@/apis/notification/types'
 import SearchWeek from '@/components/SearchWeek.vue'
 import { ElMessage } from 'element-plus'
 import type {
@@ -159,22 +155,19 @@ const activitySearchCriteria = ref<ActivitySearchCriteria>({
   week: ''
 })
 
-const studentSearchCriteria = ref<StudentSearchCriteria>({
-  sectionId: NaN
-})
-
 const teams = ref<Team[]>([]) // Teams that meet the search criteria
 const activities = ref<Activity[]>([]) // The section's activities in a week
-const students = ref<Student[]>([]) // All students in the section
+const sectionId = ref<number>(NaN)
 const loading = ref<boolean>(true)
 const settingsStore = useSettingsStore()
 
 // Load data when the component is mounted
 onMounted(async () => {
-  activitySearchCriteria.value.week = getCurrentWeekNumber()
+  // A weekly activity report is about the previous week while it is due, so that is the week to open on
+  activitySearchCriteria.value.week = getPreviousWeek()
 
-  studentSearchCriteria.value.sectionId = settingsStore.defaultSectionId
-  if (Number.isNaN(studentSearchCriteria.value.sectionId)) {
+  sectionId.value = settingsStore.defaultSectionId
+  if (Number.isNaN(sectionId.value)) {
     ElMessage.error('Please select a section in the Sections page.')
     return
   }
@@ -220,36 +213,17 @@ async function loadActivities() {
   })
 }
 
-async function loadStudents() {
-  const result: SearchStudentByCriteriaResponse = await searchStudents(
-    {
-      page: 0,
-      size: 100
-    },
-    studentSearchCriteria.value
+// Who has not submitted comes from the server (BR-submission-owed), already grouped by team. Computing it here
+// from one page of activities and one page of students listed students who had submitted once a section grew.
+async function loadStudentsMissingActivity() {
+  const result: GetSubmissionStatusResponse = await getSubmissionStatus(
+    sectionId.value,
+    'WEEKLY_ACTIVITY_REPORT',
+    activitySearchCriteria.value.week
   )
-  students.value = result.data.content
-
-  // Find out which students have not submitted activities
-  const studentsNotSubmitingActivities = students.value.filter((student) => {
-    return !activities.value.some((activity) => activity.studentId === student.id)
-  })
-
-  // Group students by teamId
-  const studentsNotSubmitingActivitiesGroupedByTeamId = studentsNotSubmitingActivities.reduce(
-    (team, student) => {
-      if (!team[student.teamId!]) {
-        team[student.teamId!] = []
-      }
-      team[student.teamId!].push(student)
-      return team
-    },
-    {} as Record<number, Student[]>
-  )
-
-  // Assign students to teams
   teams.value.forEach((team) => {
-    team.studentsMissingActivity = studentsNotSubmitingActivitiesGroupedByTeamId[team.teamId!] || []
+    team.studentsMissingActivity =
+      result.data.teams.find((owingTeam) => owingTeam.teamId === team.teamId)?.students || []
   })
 }
 
@@ -257,7 +231,7 @@ async function prepareSectionWeeklyActivities() {
   loading.value = true
   await loadTeams()
   await loadActivities()
-  await loadStudents()
+  await loadStudentsMissingActivity()
   loading.value = false
 }
 
@@ -267,7 +241,7 @@ async function updateWeeklyActivities() {
 
 async function resetSearchCriteria() {
   activitySearchCriteria.value = {
-    week: getCurrentWeekNumber()
+    week: getPreviousWeek()
   }
   prepareSectionWeeklyActivities()
 }

@@ -1,5 +1,6 @@
 import type { Activity } from '../activity/types'
 import type { Student } from '../student/types'
+import type { OwingStudent } from '../notification/types'
 
 export interface Team {
   teamId?: number
@@ -10,7 +11,7 @@ export interface Team {
   sectionName?: string
   students?: Student[] // For team assignment use only
   activitiesInAWeek?: Activity[]
-  studentsMissingActivity?: Student[]
+  studentsMissingActivity?: OwingStudent[]
 }
 
 export interface TeamSearchCriteria {

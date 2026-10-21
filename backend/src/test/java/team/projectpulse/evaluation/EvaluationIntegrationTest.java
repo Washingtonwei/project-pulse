@@ -406,7 +406,7 @@ public class EvaluationIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.data.peerEvaluationAverages[0].firstName").value("John"))
                 .andExpect(jsonPath("$.data.peerEvaluationAverages[0].lastName").value("Smith"))
                 .andExpect(jsonPath("$.data.peerEvaluationAverages[0].averageTotalScore").value(Matchers.closeTo(51.33, 0.01)))
-                .andExpect(jsonPath("$.data.studentsMissingPeerEvaluations", Matchers.hasSize(2)));
+                .andExpect(jsonPath("$.data.studentsMissingPeerEvaluations").doesNotExist()); // Now GET /sections/{sectionId}/submission-status
     }
 
     @Test
