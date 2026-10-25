@@ -116,6 +116,7 @@ const sending = ref(false)
 
 // Step 2: every opening starts from the choice of item
 function reset() {
+  latestStatusRequest++
   item.value = undefined
   status.value = null
   result.value = null
@@ -123,16 +124,19 @@ function reset() {
   sending.value = false
 }
 
-// Step 4: the week is always the previous week, which the server computes
+// Step 4: the week is always the previous week, which the server computes. Only the latest request may fill the
+// list, so switching items quickly cannot leave one item's students on screen while Confirm sends the other.
+let latestStatusRequest = 0
 async function loadStatus() {
   if (!item.value) return
+  const request = ++latestStatusRequest
   loading.value = true
   status.value = null
   try {
     const response = await getSubmissionStatus(props.sectionId, item.value)
-    status.value = response.data
+    if (request === latestStatusRequest) status.value = response.data
   } finally {
-    loading.value = false
+    if (request === latestStatusRequest) loading.value = false
   }
 }
 
@@ -144,13 +148,17 @@ const canConfirm = computed(
     result.value === null
 )
 
-// Steps 5 to 7. Confirm stays disabled while the request is in flight, so a double click sends once.
+// Steps 5 to 7. Confirm stays disabled while the request is in flight, so a double click sends once. The request
+// names the week on screen; if the server's previous week has moved on (Confirm after Monday midnight), it refuses,
+// and the list is reloaded for the new week so the instructor reviews it before sending.
 async function confirm() {
-  if (!item.value || sending.value) return
+  if (!item.value || !status.value || sending.value) return
   sending.value = true
   try {
-    const response = await sendReminders(props.sectionId, item.value)
+    const response = await sendReminders(props.sectionId, item.value, status.value.week)
     result.value = response.data
+  } catch {
+    await loadStatus()
   } finally {
     sending.value = false
   }

@@ -13,8 +13,10 @@ export const getSubmissionStatus = (sectionId: number, item: SubmittableItem, we
     { params: { item, week } }
   )
 
-// Always for the previous week; the server decides both the week and the recipients
-export const sendReminders = (sectionId: number, item: SubmittableItem) =>
+// Always for the previous week; the server decides both the week and the recipients, and refuses the send if the
+// week the list was shown for is no longer the previous week
+export const sendReminders = (sectionId: number, item: SubmittableItem, week: string) =>
   request.post<any, SendRemindersResponse>(`${API.SECTIONS_ENDPOINT}/${sectionId}/reminders`, {
-    item
+    item,
+    week
   })

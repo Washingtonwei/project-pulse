@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 public class ReminderController {
 
     static final String INACTIVE_WEEK_MESSAGE = "Reminders are sent only for an active week.";
+    static final String WEEK_CHANGED_MESSAGE = "The week has changed since the list was shown. Review the new list before sending.";
 
     private final SubmissionStatusService submissionStatusService;
     private final ReminderService reminderService;
@@ -79,12 +80,16 @@ public class ReminderController {
 
     /**
      * Emails each student who owes the item for the previous week (steps 6 and 7). Who owes it is recomputed here,
-     * at send time, so a student who submitted after the instructor opened the list is not emailed.
+     * at send time, so a student who submitted after the instructor opened the list is not emailed. The week is not
+     * recomputed silently: if it is no longer the week the instructor reviewed, the send is refused.
      */
     @PostMapping("/reminders")
     public Result sendReminders(@PathVariable Integer sectionId, @Valid @RequestBody ReminderRequestDto reminderRequestDto) {
         SubmittableItem item = reminderRequestDto.item();
         String week = WeekKeys.previousWeek(this.clock);
+        if (!week.equals(reminderRequestDto.week())) {
+            throw new IllegalArgumentException(WEEK_CHANGED_MESSAGE);
+        }
         Section section = this.sectionService.findSectionById(sectionId);
         // 4a: the dialog already hides the send button for an inactive week; this guards the route itself
         if (!section.getActiveWeeks().contains(week)) {

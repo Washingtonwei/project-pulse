@@ -106,8 +106,8 @@ sequenceDiagram
     else students owe the item
         SPA-->>I: The owing students, by team, and Confirm
         I->>SPA: Confirm (step 5), or cancel (5a)
-        SPA->>RC: POST /sections/{sectionId}/reminders {item}
-        RC->>RC: 400 if the previous week is not active (4a, server-side guard)
+        SPA->>RC: POST /sections/{sectionId}/reminders {item, week}
+        RC->>RC: 400 if the week shown is no longer the previous week, or the previous week is not active (4a, server-side guard)
         RC->>SS: findOwing(...) again, at send time
         RC->>RS: remind(section, owing, week)
         loop each owing student (step 6)
@@ -150,7 +150,7 @@ sequenceDiagram
 | Endpoint or job | Caller (who may) | Request | Success | Errors, by extension |
 |---|---|---|---|---|
 | `GET /api/v1/sections/{sectionId}/submission-status` | An instructor assigned to the course section, or the course admin who owns its course (BR-section-scoped-access, BR-role-based-access): `AuthorizationManagers.anyOf(sectionInstructorAuthorizationManager, sectionOwnershipAuthorizationManager)`; route rule added before the `denyAll()` catch-all | `item` (`WEEKLY_ACTIVITY_REPORT` or `PEER_EVALUATION`), `week` (ISO key matching `^\d{4}-W\d{2}$`, optional; default the previous week, server-computed) | `200`: `item`, `week`, `weekActive` (whether the week is in the course section's active weeks), week date range, the item's due day and time (either may be null if not configured), owing students (id, first and last name, team id and name), grouped by team. The list applies BR-submission-owed whether or not the week is active, so the report pages show who owes a WAR in any week; only the dialog reads `weekActive`, and shows 4a when it is false | Neither assigned nor owning, or a student: `403`. Unknown `item` or malformed `week`: `400` `INVALID_ARGUMENT` |
-| `POST /api/v1/sections/{sectionId}/reminders` | Same | Body `{ item }`, `@Valid`. **No week**: always the previous week, server-computed | `200`: `item`, `week`, `sent` (count), `failed` (students not reached: id, first and last name). `sent: 0` and empty `failed` is 4b | Neither assigned nor owning, or a student: `403`. Unknown `item`: `400`. Previous week not active: `400` `INVALID_ARGUMENT`, message "Reminders are sent only for an active week." (4a; the dialog already prevents it, this guards the route) |
+| `POST /api/v1/sections/{sectionId}/reminders` | Same | Body `{ item, week }`, `@Valid`. The week is the one the dialog showed; the send is always for the previous week, server-computed, and refused if the two differ | `200`: `item`, `week`, `sent` (count), `failed` (students not reached: id, first and last name). `sent: 0` and empty `failed` is 4b | Neither assigned nor owning, or a student: `403`. Unknown `item`: `400`. Previous week not active: `400` `INVALID_ARGUMENT`, message "Reminders are sent only for an active week." (4a; the dialog already prevents it, this guards the route). Week missing: `400`. Week shown no longer the previous week: `400` `INVALID_ARGUMENT`, message "The week has changed since the list was shown. Review the new list before sending.", and the dialog reloads the list |
 | `WeeklyReminderScheduler.sendWeeklyReminders` | The clock: `@Scheduled(cron = "${app.reminders.cron}", zone = "${app.timezone}")`, daily at 08:00 America/Chicago (`0 0 8 * * *`; enabled in `prod` only); "due today" is the day of week in `app.timezone` | None | Each student who owes an item due today gets one email listing only what she owes; log line per section. A section with no due day configured for an item is never reminded of it | Disabled by `app.reminders.enabled`; per-student and per-section failures logged and skipped, as today |
 
 The email itself: subject "ProjectPulse Submission Reminder"; body greets the student by first name, names the course section, and lists each owed item with its week range and due time. Every interpolated value is HTML-escaped.
@@ -165,7 +165,7 @@ The email itself: subject "ProjectPulse Submission Reminder"; body greets the st
 
 **Who owes a peer evaluation.** A student owes it until her evaluations for the week cover every member of her current team, herself included (BR-submission-owed), computed from one query of evaluator to evaluatee ids and one load of the section's students. Rejected: "any row", the old report's rule, because `addPeerEvaluation` accepts one evaluatee at a time and a half-finished set is real. Accepted consequence: a teammate added mid-window makes the others owe him an evaluation.
 
-**The request never carries a week to send for.** `POST /reminders` takes only the item; the server computes the week. Rejected: a client-supplied week, which would let a nudge ask for a peer evaluation whose window has closed and puts a scope-setting value in a caller-controlled body.
+**The request never chooses the week it sends for.** The server computes the week. The request names the week the instructor reviewed only so the server can refuse a send when the two differ: a Confirm that lands after Monday midnight would otherwise remind students about a week nobody reviewed. Rejected: a client-supplied week that sets the scope, which would let a nudge ask for a peer evaluation whose window has closed and puts a scope-setting value in a caller-controlled body.
 
 **Who is emailed is decided at send time.** On Confirm, `ReminderController` recomputes who owes (`findOwing` again) and emails exactly those students (step 6), so a student who submitted after the instructor opened the list is not emailed. Rejected: posting the student IDs the instructor reviewed, which would let the request body choose the recipients (see *Authorization*, point 2) and would email students who have since submitted. If everyone listed submits before Confirm, the `POST` returns `sent: 0` and the dialog reports that no reminders were needed, as in 4b.
 
@@ -194,13 +194,16 @@ No delta. The area reads `Activity`, `PeerEvaluation`, `Student`, `Team`, and `S
 | UC-NOT main, peer evaluation | integration | A student who evaluated two of three teammates is listed and emailed; one who evaluated all, self included, is not |
 | UC-NOT 4a | integration | Previous week inactive: `POST` returns `400` with the inactive-week message; no email sent |
 | UC-NOT step 6, send time | integration | A student listed by the `GET` who then submits is not emailed by the `POST`, and `sent` excludes her; when every listed student submits before the `POST`, it returns `sent: 0` and sends no email |
-| UC-NOT 4b | integration | Everyone has submitted: `sent: 0`, `failed` empty, no email sent |
+| UC-NOT 4b | integration | Everyone has submitted, for each item: the `GET` lists no team, and the `POST` returns `sent: 0`, `failed` empty, and sends no email |
+| UC-NOT step 6, week moved on | integration | The `POST` names a week that is no longer the previous week: `400` with the week-changed message; no email sent |
+| UC-NOT step 6, week moved on, dialog | E2E (Cypress, API stubbed) | A refused send reloads the list and shows no result |
+| UC-NOT step 4, items switched quickly | E2E (Cypress, API stubbed) | When the first item's answer arrives last, the dialog still lists the item chosen last, and Confirm sends that item |
 | UC-NOT 5a | E2E (Cypress, API stubbed) | Cancelling the dialog sends no `POST` |
 | UC-NOT step 5, double click | E2E (Cypress, API stubbed) | Confirm is disabled while the `POST` is in flight; clicking it twice sends one `POST` |
 | UC-NOT 6a | unit | `EmailService` throws for one student: the others are still sent; that student is in `failed` |
-| UC-NOT authorization | integration | An instructor not assigned to the section, and a student, get `403` on both routes; the course admin who owns the course but is not assigned to the section gets `200` |
+| UC-NOT authorization | integration | An instructor not assigned to the section (a plain instructor, and a course admin of another course), and a student, get `403` with the `Result` envelope on both routes; the course admin who owns the course but is not assigned to the section gets `200` |
 | UC-NOT 4a, status | integration | Previous week inactive: `GET` returns `200` with `weekActive: false` and still lists students who owe a WAR |
-| UC-NOT invalid input | integration | Unknown `item` on either route, or a malformed `week` on the `GET` (not matching `^\d{4}-W\d{2}$`): `400` |
+| UC-NOT invalid input | integration | Unknown `item` on either route, a malformed `week` on the `GET` (not matching `^\d{4}-W\d{2}$`), or a `POST` without a `week`: `400` |
 | BR-submission-owed recipients | unit | A student on no team and a deactivated student are never listed; a student who evaluated every active teammate but not a deactivated one does not owe the peer evaluation; deleting a student's last activity for the week makes her owe the WAR again |
 | Status endpoint at scale | integration | With more than 200 activities in the week, no student who reported is listed (the old truncation) |
 | FR-NOT due day | unit | On the WAR due day only students owing the WAR are emailed, and the email lists only the WAR |

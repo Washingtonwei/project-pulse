@@ -74,7 +74,7 @@ describe('Remind students who have not submitted', () => {
     cy.get('[data-cy=remind-confirm]').should('be.disabled')
     cy.get('[data-cy=remind-confirm]').click({ force: true }) // A second click on the disabled button
 
-    cy.wait('@reminders').its('request.body').should('deep.equal', { item: 'PEER_EVALUATION' })
+    cy.wait('@reminders').its('request.body').should('deep.equal', { item: 'PEER_EVALUATION', week: '2023-W32' })
     cy.get('[data-cy=remind-result]').should('contain', '2 reminders sent.')
     cy.get('@reminders.all').should('have.length', 1)
   })
@@ -94,6 +94,54 @@ describe('Remind students who have not submitted', () => {
 
     cy.get('[data-cy=remind-result]').should('contain', '1 reminder sent.')
     cy.get('[data-cy=remind-failed]').should('contain', 'Amanda Wagner')
+  })
+
+  it('shows the list of the item chosen last when the answers arrive out of order (step 4)', () => {
+    const warStatus = withData({
+      item: 'WEEKLY_ACTIVITY_REPORT',
+      dueDay: 'MONDAY',
+      teams: [{ teamId: 1, teamName: 'Team1', students: [{ id: 6, firstName: 'Jerry', lastName: 'Moon' }] }]
+    })
+    // The weekly activity report's answer arrives after the peer evaluation's
+    cy.intercept('GET', '**/sections/*/submission-status*', (req) => {
+      if (req.query.item === 'WEEKLY_ACTIVITY_REPORT') {
+        req.alias = 'warStatus'
+        req.reply({ delay: 1000, body: warStatus })
+      } else {
+        req.reply({ body: owingStatus })
+      }
+    }).as('status')
+    cy.visit('/section-evaluations')
+    cy.get('[data-cy=remind-open]').click()
+    cy.get('[data-cy=remind-item-war]').click()
+    cy.get('[data-cy=remind-item-peer-evaluation]').click()
+    cy.wait('@warStatus') // The late answer has arrived, so the list below is final
+
+    cy.get('[data-cy=remind-owing]').should('contain', 'Woody Allen').and('not.contain', 'Jerry Moon')
+    cy.get('[data-cy=remind-confirm]').click()
+    cy.wait('@reminders').its('request.body').should('deep.equal', { item: 'PEER_EVALUATION', week: '2023-W32' })
+  })
+
+  it('reloads the list when the send is refused because the week moved on (step 6)', () => {
+    cy.intercept('POST', '**/sections/*/reminders', {
+      statusCode: 400,
+      body: {
+        flag: false,
+        code: 400,
+        message: 'The week has changed since the list was shown. Review the new list before sending.'
+      }
+    }).as('refused')
+    openAndChoosePeerEvaluation(owingStatus)
+    // The page asks for the same status on load, so count the dialog's reload from here
+    cy.get('@status.all').then((before) => {
+      cy.get('[data-cy=remind-confirm]').click()
+
+      cy.wait('@refused')
+      cy.wait('@status')
+      cy.get('@status.all').should('have.length', before.length + 1)
+    })
+    cy.get('[data-cy=remind-result]').should('not.exist')
+    cy.get('[data-cy=remind-confirm]').should('be.enabled')
   })
 
   it('offers no send for an inactive week (4a)', () => {

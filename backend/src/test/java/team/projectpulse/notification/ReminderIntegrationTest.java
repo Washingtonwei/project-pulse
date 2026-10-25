@@ -27,6 +27,7 @@ import team.projectpulse.system.StatusCode;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -192,7 +193,7 @@ class ReminderIntegrationTest extends AbstractIntegrationTest {
         stubClock(LocalDate.of(2023, 7, 31));
 
         // When
-        sendReminders(this.instructorBillToken, "WEEKLY_ACTIVITY_REPORT")
+        sendReminders(this.instructorBillToken, "WEEKLY_ACTIVITY_REPORT", "2023-W30")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.flag").value(false))
                 .andExpect(jsonPath("$.code").value(StatusCode.INVALID_ARGUMENT))
@@ -224,6 +225,60 @@ class ReminderIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.data.teams", hasSize(0)));
     }
 
+    @Test
+    void testRemindWeeklyActivityReportWhenEveryoneSubmittedSendsNothing() throws Exception {
+        // Given
+        OWING_WAR.forEach(email -> reportActivity(student(email)));
+
+        // When
+        sendReminders(this.instructorBillToken, "WEEKLY_ACTIVITY_REPORT")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.data.sent").value(0))
+                .andExpect(jsonPath("$.data.failed", hasSize(0)));
+
+        // Then
+        verify(this.emailService, never()).sendReminderEmail(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void testRemindPeerEvaluationWhenEveryoneSubmittedSendsNothing() throws Exception {
+        // Given: Team2 and Team3 evaluate every teammate, as Team1 already has
+        evaluateEveryTeammate();
+        submissionStatus("PEER_EVALUATION").andExpect(jsonPath("$.data.teams", hasSize(0)));
+
+        // When
+        sendReminders(this.instructorBillToken, "PEER_EVALUATION")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.data.sent").value(0))
+                .andExpect(jsonPath("$.data.failed", hasSize(0)));
+
+        // Then
+        verify(this.emailService, never()).sendReminderEmail(anyString(), anyString(), anyString());
+    }
+
+    // Step 6: the week is the one the instructor reviewed
+
+    @Test
+    void testASendAfterThePreviousWeekMovedOnIsRefused() throws Exception {
+        // Given: the list was shown for 2023-W32 on Sunday; Confirm lands on Monday 2023-08-21, when the previous
+        // week is 2023-W33
+        stubClock(LocalDate.of(2023, 8, 21));
+
+        // When
+        sendReminders(this.instructorBillToken, "WEEKLY_ACTIVITY_REPORT", WEEK)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_ARGUMENT))
+                .andExpect(jsonPath("$.message").value(ReminderController.WEEK_CHANGED_MESSAGE));
+
+        // Then
+        verify(this.emailService, never()).sendReminderEmail(anyString(), anyString(), anyString());
+    }
+
     // Authorization
 
     @Test
@@ -238,11 +293,34 @@ class ReminderIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void testAnInstructorWhoIsNotACourseAdminAndNotAssignedIsRefused() throws Exception {
+        // Given: Bill, a plain instructor, is unassigned from course section 2
+        Section section = this.entityManager.find(Section.class, 2);
+        Instructor bill = this.entityManager.createQuery("select i from Instructor i where i.email = 'b.gates@abc.edu'", Instructor.class).getSingleResult();
+        section.removeInstructor(bill);
+        this.entityManager.flush();
+
+        submissionStatus(this.instructorBillToken, "WEEKLY_ACTIVITY_REPORT")
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN));
+        sendReminders(this.instructorBillToken, "WEEKLY_ACTIVITY_REPORT")
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN));
+        verify(this.emailService, never()).sendReminderEmail(anyString(), anyString(), anyString());
+    }
+
+    @Test
     void testAStudentIsRefused() throws Exception {
         submissionStatus(this.studentJohnToken, "WEEKLY_ACTIVITY_REPORT")
-                .andExpect(status().isForbidden());
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN));
         sendReminders(this.studentJohnToken, "WEEKLY_ACTIVITY_REPORT")
-                .andExpect(status().isForbidden());
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN));
         verify(this.emailService, never()).sendReminderEmail(anyString(), anyString(), anyString());
     }
 
@@ -283,6 +361,10 @@ class ReminderIntegrationTest extends AbstractIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, this.instructorBillToken))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(StatusCode.INVALID_ARGUMENT));
+        this.mockMvc.perform(post(this.baseUrl + "/sections/2/reminders").contentType(MediaType.APPLICATION_JSON).content("{\"item\": \"PEER_EVALUATION\"}")
+                        .header(HttpHeaders.AUTHORIZATION, this.instructorBillToken))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_ARGUMENT));
         verify(this.emailService, never()).sendReminderEmail(anyString(), anyString(), anyString());
     }
 
@@ -312,10 +394,15 @@ class ReminderIntegrationTest extends AbstractIntegrationTest {
                 .header(HttpHeaders.AUTHORIZATION, token));
     }
 
+    // Sends for the week the dialog shows under the dev clock
     private ResultActions sendReminders(String token, String item) throws Exception {
+        return sendReminders(token, item, WEEK);
+    }
+
+    private ResultActions sendReminders(String token, String item, String week) throws Exception {
         return this.mockMvc.perform(post(this.baseUrl + "/sections/2/reminders")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"item\": \"" + item + "\"}")
+                .content("{\"item\": \"" + item + "\", \"week\": \"" + week + "\"}")
                 .header(HttpHeaders.AUTHORIZATION, token));
     }
 
@@ -328,6 +415,23 @@ class ReminderIntegrationTest extends AbstractIntegrationTest {
     private Student student(String email) {
         return this.entityManager.createQuery("select s from Student s where s.email = :email", Student.class)
                 .setParameter("email", email).getSingleResult();
+    }
+
+    // Every teamed, active student of course section 2 evaluates every active teammate, herself included
+    private void evaluateEveryTeammate() {
+        List<Student> teamed = this.entityManager.createQuery("select s from Student s where s.section.sectionId = 2 and s.team is not null and s.enabled = true", Student.class)
+                .getResultList();
+        for (Student evaluator : teamed) {
+            for (Student evaluatee : teamed) {
+                boolean sameTeam = evaluator.getTeam().getTeamId().equals(evaluatee.getTeam().getTeamId());
+                Long existing = this.entityManager.createQuery("select count(e) from PeerEvaluation e where e.evaluator = :evaluator and e.evaluatee = :evaluatee and e.week = :week", Long.class)
+                        .setParameter("evaluator", evaluator).setParameter("evaluatee", evaluatee).setParameter("week", WEEK).getSingleResult();
+                if (sameTeam && existing == 0) {
+                    this.entityManager.persist(new PeerEvaluation(WEEK, evaluator, evaluatee, new ArrayList<>(), "", ""));
+                }
+            }
+        }
+        this.entityManager.flush();
     }
 
     private void reportActivity(Student student) {
