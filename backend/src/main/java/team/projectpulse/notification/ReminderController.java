@@ -87,7 +87,8 @@ public class ReminderController {
     public Result sendReminders(@PathVariable Integer sectionId, @Valid @RequestBody ReminderRequestDto reminderRequestDto) {
         SubmittableItem item = reminderRequestDto.item();
         String week = WeekKeys.previousWeek(this.clock);
-        if (!week.equals(reminderRequestDto.week())) {
+        // A malformed week is the caller's mistake, not a week that moved on
+        if (!week.equals(WeekKeys.requireValid(reminderRequestDto.week()))) {
             throw new IllegalArgumentException(WEEK_CHANGED_MESSAGE);
         }
         Section section = this.sectionService.findSectionById(sectionId);

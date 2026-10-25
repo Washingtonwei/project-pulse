@@ -144,6 +144,20 @@ describe('Remind students who have not submitted', () => {
     cy.get('[data-cy=remind-confirm]').should('be.enabled')
   })
 
+  it('does not offer Send again when no answer comes back, since the reminders may have gone out (step 7)', () => {
+    cy.intercept('POST', '**/sections/*/reminders', { forceNetworkError: true }).as('lost')
+    openAndChoosePeerEvaluation(owingStatus)
+    cy.get('@status.all').then((before) => {
+      cy.get('[data-cy=remind-confirm]').click()
+
+      cy.wait('@lost')
+      cy.get('[data-cy=remind-unconfirmed]').should('contain', 'may have been sent')
+      cy.get('[data-cy=remind-confirm]').should('not.exist')
+      cy.get('[data-cy=remind-owing]').should('not.exist')
+      cy.get('@status.all').should('have.length', before.length) // not reloaded as if nothing was sent
+    })
+  })
+
   it('offers no send for an inactive week (4a)', () => {
     openAndChoosePeerEvaluation(withData({ weekActive: false }))
 

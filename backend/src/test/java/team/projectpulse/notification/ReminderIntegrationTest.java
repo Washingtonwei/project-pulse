@@ -356,7 +356,13 @@ class ReminderIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isBadRequest());
         sendReminders(this.instructorBillToken, "ATTENDANCE")
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_ARGUMENT));
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_ARGUMENT))
+                .andExpect(jsonPath("$.message").value("The request is malformed."))
+                .andExpect(jsonPath("$.data").doesNotExist()); // no parser or DTO class names
+        sendReminders(this.instructorBillToken, "PEER_EVALUATION", "2023-32")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_ARGUMENT))
+                .andExpect(jsonPath("$.message").value("A week must look like 2026-W40."));
         this.mockMvc.perform(post(this.baseUrl + "/sections/2/reminders").contentType(MediaType.APPLICATION_JSON).content("{}")
                         .header(HttpHeaders.AUTHORIZATION, this.instructorBillToken))
                 .andExpect(status().isBadRequest())

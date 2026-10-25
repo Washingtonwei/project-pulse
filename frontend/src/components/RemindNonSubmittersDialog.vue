@@ -45,7 +45,7 @@
           data-cy="remind-nobody-owes"
         />
         <!-- Step 4: the students who owe the item, by team -->
-        <div v-else-if="result === null" data-cy="remind-owing">
+        <div v-else-if="result === null && !sendUnconfirmed" data-cy="remind-owing">
           <p>These students will be reminded:</p>
           <div v-for="team in status.teams" :key="team.teamId" class="team">
             <strong>{{ team.teamName }}</strong>
@@ -57,6 +57,17 @@
           </div>
         </div>
       </template>
+
+      <!-- The send may have gone out, but no answer came back: never offer it again blind -->
+      <el-alert
+        v-if="sendUnconfirmed"
+        type="warning"
+        :closable="false"
+        show-icon
+        title="The reminders may have been sent, but no answer came back."
+        description="Close this dialog and check who still owes the item before sending again."
+        data-cy="remind-unconfirmed"
+      />
 
       <!-- Step 7, and 6a2 -->
       <template v-if="result">
@@ -98,6 +109,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import axios from 'axios'
 import moment from 'moment'
 import { getSubmissionStatus, sendReminders } from '@/apis/notification'
 import type { ReminderResult, SubmissionStatus, SubmittableItem } from '@/apis/notification/types'
@@ -113,6 +125,7 @@ const status = ref<SubmissionStatus | null>(null)
 const result = ref<ReminderResult | null>(null)
 const loading = ref(false)
 const sending = ref(false)
+const sendUnconfirmed = ref(false)
 
 // Step 2: every opening starts from the choice of item
 function reset() {
@@ -122,6 +135,7 @@ function reset() {
   result.value = null
   loading.value = false
   sending.value = false
+  sendUnconfirmed.value = false
 }
 
 // Step 4: the week is always the previous week, which the server computes. Only the latest request may fill the
@@ -145,20 +159,27 @@ const canConfirm = computed(
     status.value !== null &&
     status.value.weekActive &&
     status.value.teams.length > 0 &&
-    result.value === null
+    result.value === null &&
+    !sendUnconfirmed.value
 )
 
 // Steps 5 to 7. Confirm stays disabled while the request is in flight, so a double click sends once. The request
-// names the week on screen; if the server's previous week has moved on (Confirm after Monday midnight), it refuses,
-// and the list is reloaded for the new week so the instructor reviews it before sending.
+// names the week on screen. A 4xx means the server refused before emailing anyone (the week moved on past Monday
+// midnight, or it became inactive), so the list is reloaded for the instructor to review again. Anything else (a
+// timeout, a 5xx, a dropped connection) may have come after some emails went out, so Send is not offered again.
 async function confirm() {
   if (!item.value || !status.value || sending.value) return
   sending.value = true
   try {
     const response = await sendReminders(props.sectionId, item.value, status.value.week)
     result.value = response.data
-  } catch {
-    await loadStatus()
+  } catch (error) {
+    const httpStatus = axios.isAxiosError(error) ? error.response?.status : undefined
+    if (httpStatus !== undefined && httpStatus >= 400 && httpStatus < 500) {
+      await loadStatus()
+    } else {
+      sendUnconfirmed.value = true
+    }
   } finally {
     sending.value = false
   }

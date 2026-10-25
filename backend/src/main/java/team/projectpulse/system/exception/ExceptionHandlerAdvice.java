@@ -175,7 +175,8 @@ public class ExceptionHandlerAdvice {
     @ExceptionHandler({MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class, HttpMessageNotReadableException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     Result handleUnbindableRequest(Exception ex) {
-        return new Result(false, StatusCode.INVALID_ARGUMENT, "The request is malformed.", ex.getMessage());
+        // The exception's own message names parser and DTO classes, so it stays out of the response
+        return new Result(false, StatusCode.INVALID_ARGUMENT, "The request is malformed.");
     }
 
     @ExceptionHandler(SectionAlreadyLockedException.class)
