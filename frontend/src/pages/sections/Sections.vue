@@ -625,7 +625,7 @@ function prepareActiveWeeks(section: Section): WeekInfo[] {
   while (currentMonday.isSameOrBefore(endDate)) {
     const currentSunday = currentMonday.clone().endOf('week').isoWeekday(7)
 
-    const weekNumber = currentMonday.format('YYYY-[W]WW')
+    const weekNumber = currentMonday.format('GGGG-[W]WW')
 
     allWeeks.push({
       weekNumber,

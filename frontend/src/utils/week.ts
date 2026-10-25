@@ -3,7 +3,7 @@ import type { Section, WeekInfo } from '@/apis/section/types'
 import moment from 'moment'
 
 export const getCurrentWeekNumber = () => {
-  return moment().format('YYYY-[W]WW') // WW gives the ISO week number (in two digits). Note the capital WW.
+  return moment().format('GGGG-[W]WW') // GGGG is the ISO week year and WW the ISO week number, so Dec 29, 2025 is 2026-W01 as on the server (WeekKeys)
 }
 
 export const getCurrentWeekRange = () => {
@@ -23,7 +23,7 @@ export const getPreviousWeekRange = () => {
 }
 
 export const getPreviousWeek = () => {
-  return moment().subtract(1, 'weeks').format('YYYY-[W]WW') // WW gives the ISO week number (in two digits). Note the capital WW.
+  return moment().subtract(1, 'weeks').format('GGGG-[W]WW') // GGGG is the ISO week year and WW the ISO week number, so Dec 29, 2025 is 2026-W01 as on the server (WeekKeys)
 }
 
 export const getAllWeeksInSection = (section: Section): WeekInfo[] => {
@@ -36,7 +36,7 @@ export const getAllWeeksInSection = (section: Section): WeekInfo[] => {
   while (currentMonday.isSameOrBefore(endDate)) {
     const currentSunday = currentMonday.clone().endOf('week').isoWeekday(7)
 
-    const weekNumber = currentMonday.format('YYYY-[W]WW')
+    const weekNumber = currentMonday.format('GGGG-[W]WW')
 
     allWeeks.push({
       weekNumber,
