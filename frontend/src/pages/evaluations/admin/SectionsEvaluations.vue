@@ -214,13 +214,16 @@ async function loadCriteria() {
 
 async function loadSectionsPeerEvaluationAverages() {
   loading.value = true
-  const result: GenerateWeeklyPeerEvaluationAveragesForSectionResponse =
-    await generateWeeklyPeerEvaluationAveragesForSection(defaultSectionId.value!, week.value)
-  peerEvalutionAverages.value = result.data.peerEvaluationAverages
-  // Sort students by last name
-  peerEvalutionAverages.value.sort((a, b) => a.lastName.localeCompare(b.lastName))
-  await loadStudentsMissingPeerEvaluations()
-  loading.value = false
+  try {
+    const result: GenerateWeeklyPeerEvaluationAveragesForSectionResponse =
+      await generateWeeklyPeerEvaluationAveragesForSection(defaultSectionId.value!, week.value)
+    peerEvalutionAverages.value = result.data.peerEvaluationAverages
+    // Sort students by last name
+    peerEvalutionAverages.value.sort((a, b) => a.lastName.localeCompare(b.lastName))
+    await loadStudentsMissingPeerEvaluations()
+  } finally {
+    loading.value = false
+  }
 }
 
 // Who has not submitted comes from the server (BR-submission-owed): a student owes the peer evaluation until she

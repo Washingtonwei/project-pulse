@@ -231,6 +231,11 @@ async function loadActivities() {
 // Who has not submitted comes from the server (BR-submission-owed), already grouped by team. Computing it here
 // from one page of activities and one page of students listed students who had submitted once a section grew.
 async function loadStudentsMissingActivity() {
+  // A cleared week searches every week's activities, and "has not submitted" only means something for one week
+  if (!activitySearchCriteria.value.week) {
+    teams.value.forEach((team) => (team.studentsMissingActivity = []))
+    return
+  }
   const result: GetSubmissionStatusResponse = await getSubmissionStatus(
     sectionId.value,
     'WEEKLY_ACTIVITY_REPORT',
@@ -244,10 +249,13 @@ async function loadStudentsMissingActivity() {
 
 async function prepareSectionWeeklyActivities() {
   loading.value = true
-  await loadTeams()
-  await loadActivities()
-  await loadStudentsMissingActivity()
-  loading.value = false
+  try {
+    await loadTeams()
+    await loadActivities()
+    await loadStudentsMissingActivity()
+  } finally {
+    loading.value = false
+  }
 }
 
 async function updateWeeklyActivities() {
