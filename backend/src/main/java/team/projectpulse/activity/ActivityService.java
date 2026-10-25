@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.Map;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -63,6 +64,15 @@ public class ActivityService {
         }
 
         return this.activityRepository.findAll(spec, pageable);
+    }
+
+    /**
+     * The ids of the course section's students who recorded at least one activity for the week, in any status.
+     * The raw material for BR-submission-owed, which the {@code notification} slice applies. Scoped by the course
+     * section the caller's route rule verified, not by the caller, because the scheduled reminder has no caller.
+     */
+    public Set<Integer> findReportingStudentIds(Integer sectionId, String week) {
+        return this.activityRepository.findReportingStudentIds(sectionId, week);
     }
 
     public Activity findActivityById(Integer activityId) {

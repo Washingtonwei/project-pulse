@@ -23,6 +23,11 @@ spring:
           auth: true
           starttls:
             enable: true
+          # JavaMail waits forever by default. Bound each blocking SMTP operation (connect, read, write) so a
+          # mail server that stops answering fails one reminder instead of holding the request open (design/not.md)
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
 front-end:
   url: https://projectpulse.team
 app:

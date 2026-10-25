@@ -17,11 +17,14 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.servlet.NoHandlerFoundException;
@@ -162,6 +165,18 @@ public class ExceptionHandlerAdvice {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     Result handleIllegalArgumentException(IllegalArgumentException ex) {
         return new Result(false, StatusCode.INVALID_ARGUMENT, ex.getMessage());
+    }
+
+    /**
+     * A request the controller could not even bind: a query parameter or path variable of the wrong type (an enum
+     * value that does not exist), a required parameter missing, or a body that is not readable JSON for its DTO.
+     * These are the caller's mistakes, so they are a 400, not the 500 the fallback below would make them.
+     */
+    @ExceptionHandler({MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class, HttpMessageNotReadableException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    Result handleUnbindableRequest(Exception ex) {
+        // The exception's own message names parser and DTO classes, so it stays out of the response
+        return new Result(false, StatusCode.INVALID_ARGUMENT, "The request is malformed.");
     }
 
     @ExceptionHandler(SectionAlreadyLockedException.class)

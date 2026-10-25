@@ -8,7 +8,6 @@ public class WeeklyPeerEvaluationReport {
     private String sectionName;
     private String week;
     private List<PeerEvaluationAverage> peerEvaluationAverages = new ArrayList<>();
-    private List<String> studentsMissingPeerEvaluations = new ArrayList<>();
 
 
     public WeeklyPeerEvaluationReport() {
@@ -36,14 +35,6 @@ public class WeeklyPeerEvaluationReport {
 
     public void setPeerEvaluationAverages(List<PeerEvaluationAverage> peerEvaluationAverages) {
         this.peerEvaluationAverages = peerEvaluationAverages;
-    }
-
-    public List<String> getStudentsMissingPeerEvaluations() {
-        return studentsMissingPeerEvaluations;
-    }
-
-    public void setStudentsMissingPeerEvaluations(List<String> studentsMissingPeerEvaluations) {
-        this.studentsMissingPeerEvaluations = studentsMissingPeerEvaluations;
     }
 
 }

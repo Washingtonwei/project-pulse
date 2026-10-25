@@ -2,6 +2,7 @@ package team.projectpulse.evaluation;
 
 import team.projectpulse.section.Section;
 import team.projectpulse.section.SectionRepository;
+import team.projectpulse.system.WeekKeys;
 import team.projectpulse.system.exception.PeerEvaluationIllegalArgumentException;
 import team.projectpulse.system.exception.ObjectNotFoundException;
 import team.projectpulse.student.Student;
@@ -19,8 +20,11 @@ import java.time.Year;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.WeekFields;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -119,9 +123,7 @@ public class EvaluationService {
      * week belongs to, which at a year boundary is not always the calendar year of its days.
      */
     private String previousWeek() {
-        LocalDate previousWeekDate = LocalDate.now(this.clock).minusWeeks(1);
-        WeekFields weekFields = WeekFields.ISO;
-        return String.format("%d-W%02d", previousWeekDate.get(weekFields.weekBasedYear()), previousWeekDate.get(weekFields.weekOfWeekBasedYear()));
+        return WeekKeys.previousWeek(this.clock);
     }
 
     /**
@@ -227,15 +229,9 @@ public class EvaluationService {
             report.getPeerEvaluationAverages().add(peerEvaluationAverage);
         });
 
-        // Find all students who did not submit evaluations for the given week
-        List<PeerEvaluation> allEvaluationsInAWeek = this.evaluationRepository.findByWeek(week);
-        List<String> studentsMissingPeerEvaluations = students.stream()
-                // Filter out students who have submitted evaluations. In other words, being an evaluator of some peer evaluation.
-                .filter(student -> allEvaluationsInAWeek.stream().noneMatch(evaluation -> evaluation.getEvaluator().getId().equals(student.getId())))
-                .map(student -> student.getFirstName() + " " + student.getLastName())
-                .toList();
-
-        report.setStudentsMissingPeerEvaluations(studentsMissingPeerEvaluations);
+        // Who has not submitted is not part of this report: it is BR-submission-owed, which the notification slice
+        // owns (GET /sections/{sectionId}/submission-status). This used to count a student as done after she
+        // evaluated anyone, and calling notification from here would make a dependency cycle.
 
         report.setWeek(week);
         return report;
@@ -301,6 +297,19 @@ public class EvaluationService {
                 .atDay(1)
                 .with(WeekFields.ISO.weekOfYear(), week)
                 .with(DayOfWeek.MONDAY);
+    }
+
+    /**
+     * Who each evaluator in a course section has evaluated for a week, by student id, as evaluator to evaluatees.
+     * An evaluator who evaluated nobody is absent. This is the raw material for BR-submission-owed, which the
+     * {@code notification} slice applies; it says nothing about who owes what.
+     */
+    public Map<Integer, Set<Integer>> findEvaluateeIdsByEvaluator(Integer sectionId, String week) {
+        Map<Integer, Set<Integer>> evaluateeIdsByEvaluator = new HashMap<>();
+        for (Object[] pair : this.evaluationRepository.findEvaluatorAndEvaluateeIds(sectionId, week)) {
+            evaluateeIdsByEvaluator.computeIfAbsent((Integer) pair[0], evaluatorId -> new HashSet<>()).add((Integer) pair[1]);
+        }
+        return evaluateeIdsByEvaluator;
     }
 
     public List<PeerEvaluation> getWeeklyEvaluationsForStudent(Integer studentId, String week) {

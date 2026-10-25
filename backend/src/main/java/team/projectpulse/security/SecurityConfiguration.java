@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
+import org.springframework.security.authorization.AuthorizationManagers;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -174,6 +175,10 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.POST, this.baseUrl + "/sections/{sectionId}/students/email-invitations").access(this.sectionOwnershipAuthorizationManager)
                         .requestMatchers(HttpMethod.GET, this.baseUrl + "/sections/{sectionId}/students/pending-invitations").access(this.sectionOwnershipAuthorizationManager)
                         .requestMatchers(HttpMethod.POST, this.baseUrl + "/sections/{sectionId}/instructors/invite-or-add").access(this.sectionOwnershipAuthorizationManager)
+                        // UC-NOT-remind-non-submitters: an instructor assigned to the course section, or the course admin who owns its course
+                        // (BR-section-scoped-access, BR-role-based-access). Either one alone would shut out the other.
+                        .requestMatchers(HttpMethod.GET, this.baseUrl + "/sections/{sectionId}/submission-status").access(AuthorizationManagers.anyOf(this.sectionInstructorAuthorizationManager, this.sectionOwnershipAuthorizationManager))
+                        .requestMatchers(HttpMethod.POST, this.baseUrl + "/sections/{sectionId}/reminders").access(AuthorizationManagers.anyOf(this.sectionInstructorAuthorizationManager, this.sectionOwnershipAuthorizationManager))
 
                         // Security rules for the /teams/** endpoint.
                         .requestMatchers(HttpMethod.POST, this.baseUrl + "/teams/search").hasAuthority("ROLE_instructor")
