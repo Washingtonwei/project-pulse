@@ -15,7 +15,7 @@ Take the use case named in `$ARGUMENTS` (e.g. `UC-DOC-create-use-case`) and driv
 
 If no UC-ID is given, ask which use case to implement (or list candidate use cases whose **Build** state is `📐 Designed` in `docs/traceability.md`, designed and ready to build, in **Release** order, earliest release first).
 
-Work in phases. The design was already reviewed and approved in `/design`, so `/implement` **has no second approval gate on the design. It pauses once, after the trunk commit** (Phase 3), so the developer reads the shared code before the leaves are built on it. The other thing that stops you is trouble: if the design contradicts the spec or the existing code, or a decision neither settles, **pause and raise it** (see the "challenge them" principle above) rather than guessing.
+Work in phases. The design was already reviewed and approved in `/design`, so `/implement` **has no second approval gate on the design. It pauses once, after the trunk commit** (Phase 3), so the developer reads the shared code before the leaves are built on it. It also stops before writing any code when the use case needs a refactor the design does not name, and proposes it (Phase 3). The other thing that stops you is trouble: if the design contradicts the spec or the existing code, or a decision neither settles, **pause and raise it** (see the "challenge them" principle above) rather than guessing.
 
 ## Phase 1 — Understand the spec and the design (read only)
 
@@ -31,7 +31,7 @@ Read widely but **skeptically** — these docs are the contract, yet they can ca
 
 **If the design doc and the spec or the existing code disagree, flag it now** — don't quietly implement around a stale design. Update `design/<area>.md` (or raise a spec defect) before building on a contradiction.
 
-## Phase 2 — Plan the implementation (then proceed, no approval gate)
+## Phase 2 — Plan the implementation (then proceed, no approval gate except a needed refactor)
 
 Work out a concise implementation plan from the approved design and **proceed directly into Phase 3** — do not stop for approval. This plan is your own working map (the *design's shape* was already approved in `/design`); state it briefly so the build and its tests are deliberate, not improvised. Cover:
 
@@ -43,16 +43,16 @@ Work out a concise implementation plan from the approved design and **proceed di
 - **Reuse vs. new** — which existing modules are extended vs. what's genuinely new.
 - **Open questions / risks** — and if any is a true blocker (a design/spec contradiction, a missing decision), **pause and raise it** before coding rather than guessing.
 
-State the plan briefly, then move on to Phase 3. There is no approval gate here and no scratch file — the gate was `/design`.
+State the plan briefly, then move on to Phase 3. There is no approval gate here and no scratch file (the gate was `/design`), except that a refactor the plan needs and the design does not name waits for the developer's agreement (Phase 3).
 
 ## Phase 3 — Implement
 
 Work on a branch, never on `main`, and **commit in steps a reviewer can read, cut along the design**. Code the developer accepted without understanding is cognitive debt, and the next session builds on it.
 
-- **Trunk first, in a commit of its own:** the trunk as `docs/methodology.md` Phase C step 2 defines it (code many paths depend on, code that changes behavior existing users rely on, or code that is hard to roll back). In practice that is the new or changed services, queries, and entities the design's class diagram puts under more than one flow, plus any change to existing behavior. Then **stop**, tell the developer which commit to read, and wait. Ask them to say what changed and why; continue when they can.
+- **A refactor the use case needs is proposed before it is made.** If the code must change shape before the use case fits (a method extracted, a class split, logic moved to one owner), stop before writing any code and tell the developer what you would change, why the use case needs it, and every place the old way appears. Make it only after they agree, in a commit of its own, first: no change in behavior, the existing tests green before and after, and finished everywhere the old way appears, so no second way of doing the same thing is left behind. Then build the use case on top, never in the same commit. A refactor the approved design already names needs no second approval.
+- **Trunk first (after any agreed refactor), in a commit of its own:** the trunk as `docs/methodology.md` Phase C step 2 defines it (code many paths depend on, code that changes behavior existing users rely on, or code that is hard to roll back). In practice that is the new or changed services, queries, and entities the design's class diagram puts under more than one flow, plus any change to existing behavior. Then **stop**, tell the developer which commit to read, and wait. Ask them to say what changed and why; continue when they can.
 - **Then one commit per leaf:** each flow's own controller, view, or job.
 - **A security rule (`SecurityConfiguration`) or a schema migration goes in a commit of its own**, so the reviewer sees it alone.
-- **A refactor the use case needs goes in a commit of its own**, before the code that uses it: no change in behavior, the existing tests green before and after, and finished everywhere the old way appears, so no second way of doing the same thing is left behind.
 - **Each commit carries the tests for what it adds** and passes them, run as targeted test classes (`-Dtest=...`), not the full suite. Phase 4 runs the full suites once, before the pull request opens.
 - **Small use case, no trunk?** One commit and no pause, except that a security rule or schema migration still goes in a commit of its own.
 
