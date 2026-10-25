@@ -108,8 +108,8 @@ sequenceDiagram
         I->>SPA: Confirm (step 5), or cancel (5a)
         SPA->>RC: POST /sections/{sectionId}/reminders {item, week}
         RC->>RC: 400 if the week shown is no longer the previous week, or the previous week is not active (4a, server-side guard)
-        RC->>SS: findOwing(...) again, at send time
-        RC->>RS: remind(section, owing, week)
+        RC->>SS: findOwedItems(sectionId, [item], week), again at send time
+        RC->>RS: remind(section, owedItems, week)
         loop each owing student (step 6)
             RS->>EM: sendReminderEmail(email, subject, escaped body)
             opt send fails (6a)
@@ -167,7 +167,7 @@ The email itself: subject "ProjectPulse Submission Reminder"; body greets the st
 
 **The request never chooses the week it sends for.** The server computes the week. The request names the week the instructor reviewed only so the server can refuse a send when the two differ: a Confirm that lands after Monday midnight would otherwise remind students about a week nobody reviewed. Rejected: a client-supplied week that sets the scope, which would let a nudge ask for a peer evaluation whose window has closed and puts a scope-setting value in a caller-controlled body.
 
-**Who is emailed is decided at send time.** On Confirm, `ReminderController` recomputes who owes (`findOwing` again) and emails exactly those students (step 6), so a student who submitted after the instructor opened the list is not emailed. Rejected: posting the student IDs the instructor reviewed, which would let the request body choose the recipients (see *Authorization*, point 2) and would email students who have since submitted. If everyone listed submits before Confirm, the `POST` returns `sent: 0` and the dialog reports that no reminders were needed, as in 4b.
+**Who is emailed is decided at send time.** On Confirm, `ReminderController` recomputes who owes (`findOwedItems` for the one item, the call the scheduled reminder also makes) and emails exactly those students (step 6), so a student who submitted after the instructor opened the list is not emailed. Rejected: posting the student IDs the instructor reviewed, which would let the request body choose the recipients (see *Authorization*, point 2) and would email students who have since submitted. If everyone listed submits before Confirm, the `POST` returns `sent: 0` and the dialog reports that no reminders were needed, as in 4b.
 
 **Send inside the request.** `ReminderService` sends synchronously, isolating each failure as the scheduler already does, and returns sent and failed counts, so the instructor sees exactly who was not reached (step 7, 6a2, POST-2). `EmailService.sendReminderEmail` is synchronous and throws `RuntimeException` when the send fails, so a student counts as sent only when the mail server accepted the message. Rejected: sending in the background with no result shown, which would hide failures in the log and break POST-2. Two guards make a synchronous send safe: the dialog disables Confirm while the request is in flight, so a double click sends once, and the mail configuration sets SMTP timeouts, so a mail server that stops answering fails one send instead of holding the request open (JavaMail waits forever by default). The worst case is under Open questions.
 

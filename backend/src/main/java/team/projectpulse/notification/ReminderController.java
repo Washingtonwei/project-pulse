@@ -96,8 +96,7 @@ public class ReminderController {
             throw new IllegalArgumentException(INACTIVE_WEEK_MESSAGE);
         }
 
-        Map<Student, List<SubmittableItem>> owedItems = new LinkedHashMap<>();
-        this.submissionStatusService.findOwing(sectionId, item, week).forEach(student -> owedItems.put(student, List.of(item)));
+        Map<Student, List<SubmittableItem>> owedItems = this.submissionStatusService.findOwedItems(sectionId, List.of(item), week);
         ReminderService.ReminderResult result = this.reminderService.remind(section, owedItems, week);
 
         ReminderResultDto resultDto = new ReminderResultDto(item, week, result.sent(),
