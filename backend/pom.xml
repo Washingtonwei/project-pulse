@@ -206,6 +206,19 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
                 <version>3.28.0</version>
+                <dependencies>
+                    <!-- The plugin bundles PMD 7.17.0; pin the current release (core and java together). -->
+                    <dependency>
+                        <groupId>net.sourceforge.pmd</groupId>
+                        <artifactId>pmd-core</artifactId>
+                        <version>7.29.0</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>net.sourceforge.pmd</groupId>
+                        <artifactId>pmd-java</artifactId>
+                        <version>7.29.0</version>
+                    </dependency>
+                </dependencies>
                 <configuration>
                     <targetJdk>${java.version}</targetJdk>
                     <rulesets>
