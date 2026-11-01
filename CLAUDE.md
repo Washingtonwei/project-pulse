@@ -62,7 +62,11 @@ mvnw.cmd test -Dtest=ActivityServiceTest     # Run a single test class
 mvnw.cmd test -Dtest="ActivityServiceTest#testFindActivityByIdSuccess"  # Single method
 mvnw.cmd package                            # Build jar (runs tests)
 mvnw.cmd package -DskipTests                # Build jar without tests
+mvnw.cmd verify                             # Tests plus SpotBugs and PMD (what CI runs)
+mvnw.cmd verify -DskipTests                 # SpotBugs and PMD only
 ```
+
+**Static analysis.** Run `mvnw.cmd verify` before calling a backend change done; CI runs the same command on every pull request. SpotBugs and PMD fail the build only on findings that are not in `backend/config/spotbugs-baseline.xml` or `backend/config/pmd-baseline.properties`, which hold the untriaged findings that existed on 2026-11-01. Never add an entry to a baseline to make a build pass: fix the finding, or suppress it at the site with a written reason (`@SuppressFBWarnings(value = "...", justification = "...")`, `// NOPMD - reason`). When you fix or suppress a baselined finding, delete its baseline entry.
 
 ### Frontend (Vue 3 + Vite + TypeScript)
 ```
@@ -72,6 +76,7 @@ npm run build        # Type-check + production build
 npm run build-only   # Production build without type-check
 npm run type-check   # vue-tsc type checking
 npm run lint         # ESLint with auto-fix
+npm run lint:check   # ESLint without fixing (what CI runs)
 npm run format       # Prettier
 npm run cy:open      # Cypress E2E tests
 ```
