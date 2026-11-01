@@ -192,7 +192,7 @@
                 <artifactId>spotbugs-maven-plugin</artifactId>
                 <version>4.10.5.0</version>
                 <configuration>
-                    <excludeFilterFile>${project.basedir}/config/spotbugs-baseline.xml</excludeFilterFile>
+                    <excludeFilterFile>${project.basedir}/config/spotbugs-exclude.xml,${project.basedir}/config/spotbugs-baseline.xml</excludeFilterFile>
                 </configuration>
                 <executions>
                     <execution>
@@ -222,7 +222,7 @@
                 <configuration>
                     <targetJdk>${java.version}</targetJdk>
                     <rulesets>
-                        <ruleset>/rulesets/java/quickstart.xml</ruleset>
+                        <ruleset>${project.basedir}/config/pmd-ruleset.xml</ruleset>
                     </rulesets>
                     <excludeFromFailureFile>${project.basedir}/config/pmd-baseline.properties</excludeFromFailureFile>
                     <printFailingErrors>true</printFailingErrors>

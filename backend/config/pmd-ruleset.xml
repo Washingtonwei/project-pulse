@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- PMD rules for Project Pulse: PMD's quickstart set, minus the rules the team has decided not to
+     enforce. To drop a rule, add an exclude inside the quickstart reference, with a comment giving
+     the reason, for example:
+
+       <exclude name="ControlStatementBraces"/>
+
+     To add a rule from outside quickstart, add its own <rule ref="category/java/..."/> line.
+     Every change here is a reviewed decision. -->
+<ruleset name="Project Pulse"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+    <description>PMD quickstart, with Project Pulse's decisions.</description>
+    <rule ref="rulesets/java/quickstart.xml">
+    </rule>
+</ruleset>

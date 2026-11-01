@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SpotBugs project decisions: a rule, or a rule in part of the code, that the team has decided not
+     to enforce. One Match per decision, with a comment giving the reason, for example:
+
+       <!- - JPA entities share associations by design (reason ...) - ->
+       <Match><Package name="~team\.projectpulse\..*"/><Bug pattern="EI_EXPOSE_REP"/></Match>
+
+     Unlike the baseline, this file may grow, but every entry is a reviewed decision. -->
+<FindBugsFilter>
+</FindBugsFilter>

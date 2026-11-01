@@ -66,7 +66,7 @@ mvnw.cmd verify                             # Tests plus SpotBugs and PMD (what 
 mvnw.cmd verify -DskipTests                 # SpotBugs and PMD only
 ```
 
-**Static analysis.** Run `mvnw.cmd verify` before calling a backend change done; CI runs the same command on every pull request. SpotBugs and PMD fail the build only on findings that are not in `backend/config/spotbugs-baseline.xml` or `backend/config/pmd-baseline.properties`, which hold the untriaged findings that existed on 2026-11-01. Never add an entry to a baseline to make a build pass: fix the finding, or suppress it at the site with a written reason (`@SuppressFBWarnings(value = "...", justification = "...")`, `// NOPMD - reason`). When you fix or suppress a baselined finding, delete its baseline entry.
+**Static analysis.** Run `mvnw.cmd verify` before calling a backend change done; CI runs the same command on every pull request. SpotBugs and PMD fail the build only on findings that are not in `backend/config/spotbugs-baseline.xml` or `backend/config/pmd-baseline.properties`, which hold the untriaged findings that existed on 2026-11-01. Never add an entry to a baseline to make a build pass: fix the finding, or suppress it at the site with a written reason (`@SuppressFBWarnings(value = "...", justification = "...")`, `// NOPMD - reason`). When you fix or suppress a baselined finding, delete its baseline entry. A project-wide decision not to enforce a rule goes in `backend/config/spotbugs-exclude.xml` or `backend/config/pmd-ruleset.xml`, with a comment giving the reason; never make one without the user's agreement.
 
 ### Frontend (Vue 3 + Vite + TypeScript)
 ```
