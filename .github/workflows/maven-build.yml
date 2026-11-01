@@ -46,7 +46,7 @@ jobs:
         working-directory: ./frontend
         run: npm ci
       # Report only for now: none of the three passes on main yet (ESLint 130 problems, vue-tsc 18 errors,
-      # Prettier 76 files). Each step becomes blocking once its findings are baselined or fixed.
+      # Prettier 75 files). Each step becomes blocking once its findings are baselined or fixed.
       - name: ESLint (report only)
         working-directory: ./frontend
         continue-on-error: true
