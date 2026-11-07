@@ -6,8 +6,9 @@ import org.springframework.stereotype.Service;
 
 /**
  * Answers the questions a route asks about one named student: is that student the caller herself
- * ({@code isStudentSelf}), and is the caller an instructor of that student's course section
- * ({@code isCurrentUserInstructorOfStudentSection}).
+ * ({@code isStudentSelf}), is the caller an instructor of that student's course section
+ * ({@code isCurrentUserInstructorOfStudentSection}), and is the caller the course admin of the course that owns
+ * that section ({@code isCurrentUserCourseAdminOfStudent}).
  *
  * <p>Every check fails closed: an id that names no row, or a link not yet established, is denied rather than
  * throwing. These methods run inside an {@code AuthorizationManager}, upstream of the {@code DispatcherServlet},
@@ -45,6 +46,23 @@ public class StudentSecurityService {
         }
         return student.getSection().getInstructors().stream()
                 .anyMatch(instructor -> instructor.getId().equals(instructorIdFromJwt));
+    }
+
+    /**
+     * Check if the caller is the course admin of the course that owns the student's course section. Only she may
+     * delete the student (BR-student-lifecycle); being assigned to the course section is not enough.
+     *
+     * @param studentId the id of the student we need to access, this is NOT the current user's Id
+     * @return true only when every link resolves and the course admin is the caller
+     */
+    public boolean isCurrentUserCourseAdminOfStudent(Integer studentId) {
+        Integer userIdFromJwt = this.userUtils.getUserId();
+        Student student = this.studentRepository.findById(studentId).orElse(null);
+        if (student == null || student.getSection() == null || student.getSection().getCourse() == null
+                || student.getSection().getCourse().getCourseAdmin() == null) {
+            return false;
+        }
+        return student.getSection().getCourse().getCourseAdmin().getId().equals(userIdFromJwt);
     }
 
 }
