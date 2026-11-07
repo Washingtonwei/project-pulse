@@ -2,6 +2,11 @@ package team.projectpulse.student;
 
 import tools.jackson.databind.json.JsonMapper;
 import team.projectpulse.AbstractIntegrationTest;
+import team.projectpulse.instructor.Instructor;
+import team.projectpulse.instructor.InstructorRepository;
+import team.projectpulse.section.Section;
+import team.projectpulse.section.SectionRepository;
+import team.projectpulse.user.UserRepository;
 import team.projectpulse.system.StatusCode;
 import org.hamcrest.Matchers;
 import org.json.JSONObject;
@@ -21,6 +26,8 @@ import org.springframework.util.MultiValueMap;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -35,6 +42,18 @@ class StudentIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     JsonMapper jsonMapper;
+
+    @Autowired
+    UserRepository userRepository;
+
+    @Autowired
+    StudentRepository studentRepository;
+
+    @Autowired
+    InstructorRepository instructorRepository;
+
+    @Autowired
+    SectionRepository sectionRepository;
 
     String adminToken;
 
@@ -270,22 +289,92 @@ class StudentIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.data").value("Access Denied"));
     }
 
-//    @Test
-//    void testAdminDeletesStudent() throws Exception {
-//        this.mockMvc.perform(delete(this.baseUrl + "/students/3").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminToken))
-//                .andExpect(jsonPath("$.flag").value(true))
-//                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
-//                .andExpect(jsonPath("$.message").value("Delete instructor successfully"));
-//    }
-//
-//    @Test
-//    void testStudentDeletesAnotherStudent() throws Exception {
-//        this.mockMvc.perform(delete(this.baseUrl + "/students/4").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentToken))
-//                .andExpect(jsonPath("$.flag").value(false))
-//                .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
-//                .andExpect(jsonPath("$.message").value("No permission."))
-//                .andExpect(jsonPath("$.data").value("Access Denied"));
-//    }
+    @Test
+    @DisplayName("The course admin of the student's course deletes the student")
+    void testAdminDeletesStudent() throws Exception {
+        Integer tracyId = idOf("t.nicholson@abc.edu");
+
+        this.mockMvc.perform(delete(this.baseUrl + "/students/" + tracyId).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.message").value("Delete student successfully"));
+        assertThat(this.studentRepository.findById(tracyId)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("The course admin deletes a student even when she is not assigned to the student's course section")
+    void testAdminNotAssignedToSectionDeletesStudent() throws Exception {
+        Integer tracyId = idOf("t.nicholson@abc.edu");
+        Section section = this.studentRepository.findById(tracyId).orElseThrow().getSection();
+        Instructor bingyang = this.instructorRepository.findById(idOf("b.wei@abc.edu")).orElseThrow();
+        section.removeInstructor(bingyang);
+        this.sectionRepository.saveAndFlush(section);
+
+        this.mockMvc.perform(delete(this.baseUrl + "/students/" + tracyId).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS));
+        assertThat(this.studentRepository.findById(tracyId)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("A student cannot delete another student")
+    void testStudentDeletesAnotherStudent() throws Exception {
+        Integer ericId = idOf("e.hudson@abc.edu");
+
+        this.mockMvc.perform(delete(this.baseUrl + "/students/" + ericId).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
+                .andExpect(jsonPath("$.message").value("No permission."))
+                .andExpect(jsonPath("$.data").value("Access Denied"));
+        assertThat(this.studentRepository.findById(ericId)).isPresent();
+    }
+
+    @Test
+    @DisplayName("A student cannot delete herself")
+    void testStudentDeletesHerself() throws Exception {
+        Integer tracyId = idOf("t.nicholson@abc.edu");
+        String tracyToken = tokenOf("t.nicholson@abc.edu");
+
+        this.mockMvc.perform(delete(this.baseUrl + "/students/" + tracyId).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, tracyToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
+                .andExpect(jsonPath("$.message").value("No permission."))
+                .andExpect(jsonPath("$.data").value("Access Denied"));
+        assertThat(this.studentRepository.findById(tracyId)).isPresent();
+    }
+
+    @Test
+    @DisplayName("An instructor assigned to the student's course section, but not its course admin, cannot delete the student")
+    void testSectionInstructorDeletesStudent() throws Exception {
+        Integer tracyId = idOf("t.nicholson@abc.edu");
+
+        this.mockMvc.perform(delete(this.baseUrl + "/students/" + tracyId).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.instructorBillToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
+                .andExpect(jsonPath("$.message").value("No permission."))
+                .andExpect(jsonPath("$.data").value("Access Denied"));
+        assertThat(this.studentRepository.findById(tracyId)).isPresent();
+    }
+
+    @Test
+    @DisplayName("The course admin of another course cannot delete the student")
+    void testOtherCourseAdminDeletesStudent() throws Exception {
+        Integer tracyId = idOf("t.nicholson@abc.edu");
+
+        this.mockMvc.perform(delete(this.baseUrl + "/students/" + tracyId).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminTimToken))
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN));
+        assertThat(this.studentRepository.findById(tracyId)).isPresent();
+    }
+
+    private Integer idOf(String email) {
+        return this.userRepository.findByEmail(email).orElseThrow().getId();
+    }
+
+    private String tokenOf(String email) throws Exception {
+        MvcResult mvcResult = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic(email, "123456"))).andReturn();
+        return "Bearer " + new JSONObject(mvcResult.getResponse().getContentAsString()).getJSONObject("data").getString("token");
+    }
 
     @Test
     void testStudentJohnFindStudentsInOwnTeam() throws Exception {
