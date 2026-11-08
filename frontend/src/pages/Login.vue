@@ -36,7 +36,7 @@
         </el-form-item>
         <el-form-item class="flex">
           <div class="flex">
-            <el-checkbox>Remember me</el-checkbox>
+            <el-checkbox v-model="rememberMe">Remember me</el-checkbox>
             <el-link type="primary" :underline="false" @click="goToForgotPassword"
               >Forget password?</el-link
             >
@@ -67,6 +67,7 @@ const loginData = ref<LoginData>({
   username: '',
   password: ''
 })
+const rememberMe = ref(false)
 
 // Add loading state
 const isLoading = ref(false)
@@ -114,8 +115,8 @@ async function login() {
 
   try {
     const result = await loginUser(loginData.value)
-    // Save token to Pinia store
-    tokenStore.setToken(result.data.token)
+    // Keep the token only for this browser session unless the user opts in.
+    tokenStore.setToken(result.data.token, rememberMe.value)
     // Save userInfo to Pinia store
     userInfoStore.setUserInfo(result.data.userInfo)
     // Save default section and course to Pinia store if the user is an instructor
