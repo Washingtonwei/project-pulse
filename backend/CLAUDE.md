@@ -84,6 +84,9 @@ Error handling is centralized in `ExceptionHandlerAdvice` — services throw exc
 - **Elapsed time** (JWT expiry, edit-lock leases): use `Instant.now()`. The dev clock is fixed at 2023-08-20 23:30, so a lease timed by it would never lapse.
 - Why the two differ, and the per-profile clocks: [Architectural conventions › Time](../docs/design/architectural-design.md#architectural-conventions).
 
+### Logging
+- One `LOGGER` per class, levels by audience, `{}` placeholders, the exception object in every `catch` that does not rethrow, and identifiers never content (no emails, tokens, or request bodies): [Architectural conventions › Logging](../docs/design/architectural-design.md#architectural-conventions).
+
 ### DTOs and Converters
 - DTO naming: `EntityDto` (e.g., `ActivityDto`, `CourseDto`)
 - Converter naming: `EntityToEntityDtoConverter` / `EntityDtoToEntityConverter`
