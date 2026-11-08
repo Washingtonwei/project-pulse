@@ -1,6 +1,8 @@
 package team.projectpulse.system.exception;
 
 import jakarta.persistence.OptimisticLockException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
@@ -36,6 +38,8 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class ExceptionHandlerAdvice {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExceptionHandlerAdvice.class);
 
     @ExceptionHandler(ObjectNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -204,15 +208,19 @@ public class ExceptionHandlerAdvice {
     }
 
     /**
-     * Fallback handles any unhandled exceptions.
+     * Fallback for any exception no other handler matches. Its message was never written for a user and can
+     * carry SQL, table, or class names (#84), so it is logged with its stack trace and never returned. Spring
+     * does not log an exception a handler has resolved, so without this line an unexpected failure leaves no
+     * trace anywhere.
      *
-     * @param ex
-     * @return
+     * @param ex the unhandled exception
+     * @return a generic error with no data
      */
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     Result handleOtherException(Exception ex) {
-        return new Result(false, StatusCode.INTERNAL_SERVER_ERROR, "A server internal error occurs.", ex.getMessage());
+        LOGGER.error("Unhandled exception", ex);
+        return new Result(false, StatusCode.INTERNAL_SERVER_ERROR, "A server internal error occurs.");
     }
 
 }
