@@ -517,15 +517,15 @@ Course (aggregate root)
 
 #### **Metrics**
 
-- Actuator + Micrometer expose JVM / HTTP / application metrics, intended for **Grafana** via **Prometheus** (both `docker-compose`, local dev only). `/actuator/prometheus` does **not** resolve in this build, although `micrometer-registry-prometheus` is a dependency: Spring Boot 4 moved that endpoint, and `heapdump`, into modules that are not on the classpath. `custom-beans` names no endpoint, and `httpexchanges` also needs an `HttpExchangeRepository` bean that is never defined. All four are in the dev exposure list but resolve to nothing (observed 2026-09-06; the dependencies have not changed since), so the local Prometheus scrape collects nothing.
+- Actuator + Micrometer expose JVM / HTTP / application metrics, intended for **Grafana** via **Prometheus** (both `docker-compose`, local dev only). In dev, `/actuator/prometheus` answers an admin with the metrics in Prometheus format and an anonymous caller with `401`, so the local scrape collects nothing until it is given an admin token (see `docker/prometheus/prometheus.yml`). Three names in the dev exposure list resolve to nothing: `custom-beans` names no endpoint, `httpexchanges` also needs an `HttpExchangeRepository` bean that is never defined, and `heapdump` answers `404` (observed 2026-11-08).
 
 #### **Tracing**
 
-- Distributed tracing via **Micrometer Tracing (Brave)** + `zipkin-reporter-brave`, exported to **Zipkin**; sampling probability **0.1** (10%).
+- Distributed tracing via **Micrometer Tracing (Brave)**, exported to **Zipkin**; sampling probability **0.1** (10%). Spring Boot 4 configures tracing only when its own modules are present, so the dependencies are `spring-boot-micrometer-tracing-brave` and `spring-boot-starter-zipkin`; the bare Micrometer and Zipkin libraries are on the classpath but nothing wires them. Each log line carries `[traceId-spanId]` for the request that wrote it.
 
 #### **Health & info**
 
-- **Staging and prod** expose only `health` (with **liveness/readiness probes**; details shown to admins only) and a trimmed `info`, both anonymous; any other endpoint is `ROLE_admin` in `SecurityConfiguration`. **Dev** additionally exposes `metrics`, `env`, `beans`, `configprops`, `loggers` and `mappings`, with values unmasked.
+- **Staging and prod** expose only `health` (with **liveness/readiness probes**; details shown to admins only) and a trimmed `info`, both anonymous; any other endpoint is `ROLE_admin` in `SecurityConfiguration`. **Dev** additionally exposes `metrics`, `prometheus`, `env`, `beans`, `configprops`, `loggers` and `mappings`, with values unmasked.
 
 #### **Logging**
 
