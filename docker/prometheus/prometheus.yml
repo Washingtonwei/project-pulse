@@ -6,11 +6,13 @@ scrape_configs:
       # host.docker.internal resolves to the host from inside the container on Docker Desktop
       # (Windows and macOS). The backend runs on port 80 on the host, not in compose.
       - targets: ["host.docker.internal:80"]
-# Two caveats for local scraping, both deliberate:
-#   1. /actuator/prometheus is not a registered endpoint in this build even though
-#      micrometer-registry-prometheus is a dependency, so this target currently 404s. Hit
-#      /actuator with an admin token to see the endpoints that are actually registered.
-#   2. Actuator endpoints other than health and info now require ROLE_admin, so an anonymous
-#      scrape would be refused. Wire a credential here before relying on this locally.
+    # Every actuator endpoint except health and info requires ROLE_admin, so an anonymous scrape
+    # gets 401 and the dashboards stay empty. To scrape locally, log in as the seeded admin
+    # (POST /api/v1/users/login), paste data.token below, uncomment, and restart Prometheus
+    # (docker-compose restart prometheus). The token expires after 2 hours and on every backend
+    # restart, because the signing key is regenerated at startup.
+    # authorization:
+    #   type: Bearer
+    #   credentials: "<paste the admin token here>"
 # Production is not scraped from here at all: nothing scrapes it yet, which is why the deployed
-# profiles do not expose the prometheus endpoint. See TD-actuator-exposure in docs/design/architectural-design.md.
+# profiles do not expose the prometheus endpoint. See TD-prod-observability in docs/design/architectural-design.md.
