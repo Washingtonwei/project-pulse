@@ -523,7 +523,7 @@ Course (aggregate root)
 
 #### **Metrics**
 
-- Actuator + Micrometer expose JVM / HTTP / application metrics, intended for **Grafana** via **Prometheus** (both `docker-compose`, local dev only). In dev, `/actuator/prometheus` answers an admin with the metrics in Prometheus format and an anonymous caller with `401`, so the local scrape collects nothing until it is given an admin token (see `docker/prometheus/prometheus.yml`). Three names in the dev exposure list resolve to nothing: `custom-beans` names no endpoint, `httpexchanges` also needs an `HttpExchangeRepository` bean that is never defined, and `heapdump` answers `404` (observed 2026-11-08).
+- Actuator + Micrometer expose JVM / HTTP / application metrics, intended for **Grafana** via **Prometheus** (both `docker-compose`, local dev only). In dev, `/actuator/prometheus` answers an admin with the metrics in Prometheus format and an anonymous caller with `401`, so the local scrape collects nothing until its commented `basic_auth` block (the seeded dev admin) is turned on (see `docker/prometheus/prometheus.yml`). Three names in the dev exposure list resolve to nothing: `custom-beans` names no endpoint, `httpexchanges` also needs an `HttpExchangeRepository` bean that is never defined, and `heapdump` answers `404` (observed 2026-11-08).
 
 #### **Tracing**
 
