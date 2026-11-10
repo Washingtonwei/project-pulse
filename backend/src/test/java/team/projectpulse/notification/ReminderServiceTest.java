@@ -6,6 +6,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import team.projectpulse.section.Section;
 import team.projectpulse.student.Student;
 import team.projectpulse.system.EmailService;
@@ -27,7 +29,7 @@ import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 class ReminderServiceTest {
 
     private static final ZoneId ZONE = ZoneId.of("America/Chicago");
@@ -71,6 +73,24 @@ class ReminderServiceTest {
         assertThat(recipients.getAllValues()).containsExactly("s1@abc.edu", "s2@abc.edu", "s3@abc.edu");
         assertThat(result.sent()).isEqualTo(2);
         assertThat(result.failed()).containsExactly(s2);
+    }
+
+    @Test
+    void testRemindLogsAFailedStudentByIdNeverByEmailAddress(CapturedOutput output) {
+        // Given: a log is copied to more places than the database is, so it names a person by id (CO-ferpa)
+        Student s1 = student("s1@abc.edu", "Ann");
+        s1.setId(7);
+        Map<Student, List<SubmittableItem>> owed = new LinkedHashMap<>();
+        owed.put(s1, List.of(SubmittableItem.WEEKLY_ACTIVITY_REPORT));
+        willThrow(new RuntimeException("Failed to send reminder email"))
+                .given(this.emailService).sendReminderEmail(anyString(), anyString(), anyString());
+
+        // When
+        this.reminderService.remind(this.section, owed, WEEK);
+
+        // Then
+        assertThat(output).contains("Could not send a submission reminder to student 7 in section Fall 2026")
+                .doesNotContain("s1@abc.edu");
     }
 
     @Test

@@ -12,6 +12,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 
 import java.util.Arrays;
 import java.util.List;
@@ -29,7 +31,7 @@ import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.*;
 
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 class UserInvitationServiceTest {
 
     @Mock
@@ -272,6 +274,20 @@ class UserInvitationServiceTest {
         // retry simply overwrites it with a fresh token, and nothing rolls back the invitations already emailed.
         verify(this.emailService, times(4)).sendInvitationEmail(any());
         verify(this.userInvitationRepository, times(4)).save(any());
+    }
+
+    @Test
+    void testSendEmailInvitationsLogsAFailureWithoutTheAddress(CapturedOutput output) {
+        // Given: the address is the invitation's key, so the log names only the course section and course (CO-ferpa)
+        willThrow(new RuntimeException("Failed to send email")).given(this.emailService).sendInvitationEmail(any());
+
+        // When
+        Map<String, List<String>> result = this.userInvitationService.sendEmailInvitations(1, 2, List.of("c.hunter@abc.edu"), "student");
+
+        // Then: the course admin still gets the address back; the log does not keep it
+        assertThat(result.get("failed")).containsExactly("c.hunter@abc.edu");
+        assertThat(output).contains("Could not send an invitation email for section 2 of course 1")
+                .doesNotContain("c.hunter@abc.edu");
     }
 
 }

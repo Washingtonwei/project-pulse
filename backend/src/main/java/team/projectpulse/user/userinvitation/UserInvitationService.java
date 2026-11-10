@@ -173,7 +173,9 @@ public class UserInvitationService {
                 this.emailService.sendInvitationEmail(userInvitation);
                 invitedEmails.add(email);
             } catch (RuntimeException e) {
-                LOGGER.error("Could not send the invitation email to {}", email, e);
+                // The address is the invitation's key, so there is no identifier to log in its place. The course admin
+                // who must act gets it back under "failed"; the log needs only where it happened (CO-ferpa).
+                LOGGER.error("Could not send an invitation email for section {} of course {}", sectionId, courseId, e);
                 failedEmails.add(email);
             }
         }
