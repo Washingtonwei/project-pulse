@@ -35,3 +35,11 @@ app:
   reminders:
     enabled: true
     cron: "0 0 8 * * *"  # 8am local time
+
+# No Zipkin runs on Azure, so exporting spans only drops them after one startup warning. Brave still puts
+# [traceId-spanId] on every log line; Application Insights collects telemetry through its agent (TD-prod-observability).
+management:
+  tracing:
+    export:
+      zipkin:
+        enabled: false
