@@ -27,7 +27,7 @@ The platform's functional requirements live in the **requirements specs** under 
 | QG-security-privacy | **Security & privacy (FERPA)** | The platform holds student educational records (WARs, peer evaluations, scores, requirements). Unauthorized disclosure is the top risk and a regulatory (FERPA) constraint. | JWT auth (RSA keypair); URL-level rules in `SecurityConfiguration` **plus** fine-grained `AuthorizationManager` beans enforcing ownership/membership (a student sees only their team's data; an instructor only their assigned course sections); role hierarchy `admin > instructor > student`; JPA auditing stamps created/modified-by for accountability; `prod` secrets in Azure Key Vault; single-tenant deployment boundary. |
 | QG-maintainability | **Maintainability & extensibility** | The codebase is extended continuously — RAM was merged in, senior-design students will extend it, and features are added spec-first via `/design`→`/implement`. New code must stay safe and consistent. | DDD one-bounded-context-per-package vertical slices isolate change; uniform conventions (the `Result` envelope, `Converter<S,T>` DTOs, no Lombok/MapStruct, `/api/v1`) make every slice look alike so a contributor pattern-matches; cross-cutting machinery is centralized in `system`/`security`/`user` so features don't reinvent it; Flyway makes schema change auditable. |
 | QG-usability | **Usability / low friction** | Non-expert students must submit WARs and peer evaluations and author requirements quickly — friction directly reduces the frequent participation the platform exists to encourage. | SPA (Vue) for a responsive single-page UX; the uniform `Result` envelope + shared Axios instance give consistent client-side error handling and transparent auth/`401` redirect; RAM autosave + section-level locking prevent lost work and edit collisions; `WeeklyReminderScheduler` emails nudge timely submission. |
-| QG-low-ops-burden | **Reliability & low operational burden** | One person deploys and runs Project Pulse with no dev/ops team (`CO-no-ops-team`); the system must deploy and run simply and behave predictably. | One deployable unit (SPA bundled into the Spring Boot jar → one container → one Azure Web App) with nothing to orchestrate; staging slot for safe deploys; Flyway migrations applied at deploy for predictable schema; profile-scoped clocks for testable time; Testcontainers integration tests + `maven-build` PR checks guard regressions; Prometheus/Grafana/Zipkin for monitoring (local dev; Application Insights on staging, production pending: [TD-prod-observability](#risks-and-technical-debt)). **Accepted trade-off:** the single-instance simplicity (and the per-startup RSA key) caps horizontal scaling — deliberately traded for low ops at the current scale. |
+| QG-low-ops-burden | **Reliability & low operational burden** | One person deploys and runs Project Pulse with no dev/ops team (`CO-no-ops-team`); the system must deploy and run simply and behave predictably. | One deployable unit (SPA bundled into the Spring Boot jar → one container → one Azure Web App) with nothing to orchestrate; staging slot for safe deploys; Flyway migrations applied at deploy for predictable schema; profile-scoped clocks for testable time; Testcontainers integration tests + `maven-build` PR checks guard regressions; Prometheus/Grafana/Zipkin for monitoring in local dev, Application Insights on both deployed slots (KD-push-telemetry). **Accepted trade-off:** the single-instance simplicity (and the per-startup RSA key) caps horizontal scaling — deliberately traded for low ops at the current scale. |
 
 These four strategic goals are refined into the prioritized, individually-cited **architecturally significant requirements** that drive each key decision — see [Architecturally significant requirements](#architecturally-significant-requirements-the-decision-drivers) under Architecture Decisions.
 
@@ -101,7 +101,7 @@ The stack built on the mandated Vue/Spring Boot/relational base ([Architecture C
 
 - **Backend:** Java 21, Spring Boot 4.0, Maven; Spring Security, Spring Data JPA, Flyway.
 - **Frontend:** Vue 3, Vite and TypeScript; Element Plus, SCSS, Pinia, Chart.js (vue-chartjs), TipTap (rich text, used by RAM); Cypress for E2E tests.
-- **Data and infrastructure:** MySQL 8; Azure Web App and Azure Blob Storage in production. Local development runs MySQL, Mailpit, Prometheus, Grafana and Zipkin through Docker Compose.
+- **Data and infrastructure:** MySQL 8; Azure Web App and Azure Blob Storage in production. Local development runs MySQL, Mailpit, Prometheus, Grafana and Zipkin through Docker Compose. Both deployed slots push telemetry to Azure Application Insights.
 
 ## **Building Block View**
 
@@ -335,6 +335,10 @@ flowchart LR
     end
     gmail["Gmail<br/>(SMTP)"]
     llm["LLM Service<br/>(HTTPS)"]
+    subgraph monitor["Azure Monitor (one Log Analytics workspace)"]
+        aiprod[("Application Insights<br/>peer-evaluation-tool")]
+        aistaging[("Application Insights<br/>peer-evaluation-tool-staging")]
+    end
 
     browser -->|HTTPS| slot
     slot -->|JDBC| db
@@ -342,11 +346,13 @@ flowchart LR
     slot -->|SMTP| gmail
     slot -->|HTTPS| llm
     staging -. swap .-> slot
+    slot -. "telemetry push (agent)" .-> aiprod
+    staging -. "telemetry push (agent)" .-> aistaging
 ```
 
 ### *Topology*
 
-- One **Azure Web App** runs a **single container** — the Spring Boot jar serving both the REST API and the bundled Vue SPA (KD-modular-monolith). It talks to one **Azure Database for MySQL** over JDBC, **Azure Blob Storage** (uploaded project source material) over HTTPS, **Gmail** over SMTP, and the external **LLM** over HTTPS. Releases deploy to a **staging slot** and swap into production (pipeline below).
+- One **Azure Web App** runs a **single container** — the Spring Boot jar serving both the REST API and the bundled Vue SPA (KD-modular-monolith). It talks to one **Azure Database for MySQL** over JDBC, **Azure Blob Storage** (uploaded project source material) over HTTPS, **Gmail** over SMTP, and the external **LLM** over HTTPS. Releases deploy to a **staging slot** and swap into production (pipeline below). Each slot's App Service agent pushes its telemetry to its own **Application Insights** resource; nothing scrapes the app (KD-push-telemetry).
 
 ### *Build & release pipeline*
 
@@ -513,7 +519,7 @@ Course (aggregate root)
 
 ### *Observability & operations*
 
-> How the running platform is monitored — metrics, tracing, health. Telemetry is wired via Spring Boot **Actuator** + **Micrometer**; the collectors and dashboards run in Docker for local development.
+> How the running platform is monitored — metrics, tracing, health. Telemetry is wired via Spring Boot **Actuator** + **Micrometer**; in local development Prometheus, Grafana and Zipkin run in Docker, and on Azure the telemetry goes to Application Insights (KD-push-telemetry).
 
 #### **Metrics**
 
@@ -533,9 +539,10 @@ Course (aggregate root)
 
 #### **Application Insights**
 
-- Deployed telemetry is pushed, not scraped: Azure Application Insights, through the Java agent that App Service attaches to the container (enabled on the slot's Application Insights page, so no code or image change). It collects requests, dependencies, exceptions, log lines, and the Micrometer metrics. Push was chosen over a scraped Prometheus because App Service has one public port: pulling would mean a public, credentialed `/actuator/prometheus` plus a Prometheus server to run, while pushing exposes nothing.
-- Staging is on since 2026-11-09 (resource `peer-evaluation-tool-staging`); production follows ([TD-prod-observability](#risks-and-technical-debt)). Every `APPLICATIONINSIGHTS_*` app setting is a deployment slot setting, so a swap never moves one slot's telemetry into the other's resource.
+- Deployed telemetry is pushed, not scraped: Azure Application Insights, through the Java agent that App Service attaches to the container (enabled on the slot's Application Insights page, so no code or image change). It collects requests, dependencies, exceptions, log lines, and the Micrometer metrics. Why push and not a scraped Prometheus is [KD-push-telemetry](#architecture-decisions).
+- On both slots since 2026-11-09: resources `peer-evaluation-tool-staging` and `peer-evaluation-tool` (East US), sharing one Log Analytics workspace. Every `APPLICATIONINSIGHTS_*` and `ApplicationInsightsAgent_*` app setting is a deployment slot setting, so a swap never moves one slot's telemetry into the other's resource. Azure leaves the workspace's daily ingestion cap off; set one so a log flood cannot run up the bill.
 - The agent samples bursts and marks each kept row with `itemCount`; queries sum `itemCount`, never `count()`. Application Insights counts every `4xx` as a failed request, so an availability SLI counts `5xx` only.
+- Two request IDs may exist: Brave writes `[traceId-spanId]` into each log line, and the agent gives the request its own `operation_Id`. Whether they match is unchecked ([TD-prod-observability](#risks-and-technical-debt)).
 
 #### **Operations**
 
@@ -545,8 +552,7 @@ Course (aggregate root)
 
 - **Actuator exposure incident, 2026-09-06 (closed; [TD-actuator-exposure](#risks-and-technical-debt)).** The actuator paths fell outside the `/api/v1` rules and reached `anyRequest().permitAll()`, and the dev exposure list with unmasked values applied to every profile, so `/actuator/env` disclosed credentials to anonymous callers on both slots. The code fix, credential rotation and verification are recorded in TD-actuator-exposure; the residual network exposure is [TD-db-public-access](#risks-and-technical-debt). The architectural lesson is recorded under Authorization: deny-by-default covers only the API base URL, so any path outside it, such as `/actuator/**`, needs rules of its own.
 - **A `200` is not proof an actuator endpoint exists.** Production serves `index.html` with `200 text/html` for unknown paths, so only the content type (`application/vnd.spring-boot.actuator.v3+json`) distinguishes a real endpoint from the SPA fallback. Check that, not the status, when probing a deployment.
-- **No production observability backend** — Prometheus/Grafana/Zipkin run only in local dev (`docker-compose`); production telemetry is **not collected** anywhere yet. A prod path (e.g. Azure Monitor / Application Insights / Managed Grafana scraping Actuator) is an open item.
-- No **alerting** rules or **SLOs**, and no centralized log aggregation.
+- **Telemetry is collected but nothing alerts on it.** Application Insights holds production's requests, logs and metrics (KD-push-telemetry), but there is no alert rule, no availability test and no agreed SLO yet ([TD-prod-observability](#risks-and-technical-debt)).
 
 ## **Architecture Decisions**
 
@@ -559,7 +565,7 @@ Not every requirement shapes the architecture. The **architecturally significant
 | ASR (driver) | SRS handle(s) | Significance | Drives |
 |---|---|---|---|
 | Confidentiality of FERPA-regulated student records | `SEC-authorization`, `SEC-ferpa`, `CO-ferpa` | High × High | KD-ram-module, KD-self-issued-jwt; the two-layer ownership/membership authorization |
-| Low operational burden: one operator, no ops team | `AVL-uptime`, `CO-no-ops-team` | High × Medium | KD-modular-monolith, KD-relational-graph |
+| Low operational burden: one operator, no ops team | `AVL-uptime`, `CO-no-ops-team` | High × Medium | KD-modular-monolith, KD-relational-graph, KD-push-telemetry |
 | Maintainability & learnability — student contributors extend the code | `MNT-feature-locality`, `MNT-service-layer`, `INT-single-application`; QG-maintainability (learnability is a pedagogical driver) | High × Medium | KD-ram-module, KD-no-codegen, KD-vertical-slices |
 | No lost authored work under concurrent editing | `ROB-no-overwrite`, `ROB-edit-loss-bound`, `PER-autosave-cadence` | High × Medium | KD-section-locking + autosave |
 | Single self-hosted authentication, no external IdP | `CO-single-auth`, `SEC-authentication` | Medium × Medium | KD-self-issued-jwt |
@@ -610,6 +616,12 @@ The functional structure (the [component views](#building-block-view) above) is 
 - **Decision:** Partition the backend by **domain** — one bounded context per package, each a full vertical slice (entity → repository → service → controller → DTO/`Converter`) — and layer *within* each slice, rather than partitioning by technical layer. A slice may use a sibling slice only through that sibling's service layer, never its repositories; slices form no dependency cycles; and the shared foundation (`system`, `security`, `user`, `rubric`, and the org model: `course`, `section`, `team`, `student`, `instructor`) depends on no feature slice (`MNT-feature-locality`). The `dev` seed package (`seed`) is the one exemption. The code does not yet meet this rule; see TD-feature-locality.
 - **Consequences:** A feature change stays inside one slice; a new bounded context is added without touching existing ones (QS-add-bounded-context: zero changes to other packages, delivered in ≤ 2 person-days); the uniform slice shape lets a contributor pattern-match across the codebase. *Rejected* package-by-layer (all controllers together, all services together) — it optimizes for the rare "swap a technical layer" change over the common "change one feature" change, and scatters a single feature across the package tree. *Trade-off:* cross-cutting concerns (auth, auditing, email) must be deliberately centralized in `system`/`security`/`user` so they aren't duplicated per slice.
 
+**KD-push-telemetry: deployed telemetry is pushed, never scraped.** *Accepted (2026-11-09).*
+- **Driving ASR(s):** low operational burden (`AVL-uptime`, `CO-no-ops-team`) and student-record confidentiality (`SEC-ferpa`, `CO-ferpa`).
+- **Context:** Production collected no telemetry (TD-prod-observability). The dev stack pulls: Prometheus scrapes `/actuator/prometheus`, which fits Kubernetes and VMs, where the scraper sits inside the same private network as the app. Project Pulse runs on Azure App Service, a PaaS with one public port and no private network shared with a collector.
+- **Decision:** On staging and production, the App Service Java agent pushes requests, dependencies, exceptions, log lines and the Micrometer metrics to Azure Application Insights, one resource per slot. Production exposes no metrics endpoint: exposure stays `health,info`, `/actuator/prometheus` stays closed, and Zipkin export is off.
+- **Consequences:** No public telemetry endpoint, no scraper credential, and no collector to run; the agent is enabled from the portal with no code or image change. Queries, dashboards and alerts live in Azure and are written in KQL. *Rejected* scraping production with Prometheus: it needs `/actuator/prometheus` reachable from the internet, a dedicated least-privilege account whose credential lives in Key Vault, and a Prometheus server to host. *Rejected* Grafana Cloud over OpenTelemetry: a third-party account, and logs about students leaving Azure. *Trade-off:* dev and deployed telemetry use different tools, ingestion is billed (so the workspace needs a daily cap), and every log line leaves the app, so the Logging rule (`CO-ferpa`) must hold before it does.
+
 ## **Quality Requirements**
 
 > Refines the [Quality Goals](#quality-goals) into a prioritized quality tree and concrete, measurable scenarios. Each scenario is ATAM-style (source · stimulus · environment → response → **measure**); the measures are the testable targets the architecture must hold.
@@ -653,7 +665,7 @@ The functional structure (the [component views](#building-block-view) above) is 
 | TD-auth-rate-limit | P2 | Debt (security) | No rate limiting on auth endpoints; `/users/exists/{email}` enables email enumeration | Add throttling/rate limits; restrict the exists endpoint | Security |
 | TD-per-startup-key | P2 | Debt (scaling) | Per-startup RSA key: redeploy forces re-login and blocks multi-instance token verification | Externalize/persist the keypair (shared JWKS) | KD-self-issued-jwt, Deployment |
 | TD-duplicate-scheduler | P2 | Debt (scaling) | `@Scheduled` reminder job fires on every instance → duplicate emails if scaled out | Single-execution coordination (ShedLock / leader election / dedicated scheduler) | Deployment |
-| TD-prod-observability | P2 | Debt (ops) | No production observability backend; the Prometheus/Grafana/Zipkin stack is dev-only. Application Insights runs on staging since 2026-11-09 | Enable Application Insights on the production slot, then managed identity in place of the connection string's key, and an alert on `5xx` | Observability |
+| TD-prod-observability | P2 | Debt (ops) | Production telemetry is collected since 2026-11-09 (Application Insights on both slots, KD-push-telemetry), but nothing alerts on it, the workspace's daily cap is unconfirmed, the connection string's key authenticates ingestion, and a log line's Brave trace ID may not match the agent's `operation_Id` for the same request | Confirm a 1 GB daily cap on the workspace; add an alert on `5xx` and an availability test on `/actuator/health/readiness`; switch ingestion to managed identity (`APPLICATIONINSIGHTS_AUTHENTICATION_STRING=Authorization=AAD`, Monitoring Metrics Publisher); compare the two IDs on staging and keep one tracer in deployed profiles | Observability |
 | TD-accessibility | P2 | Debt (accessibility) | No accessibility architecture: WCAG 2.1 AA (keyboard operability, contrast, screen-reader support) is required by USE-wcag-aa/UI-wcag-aa (risk RI-accessibility) but is not reflected in component choices or verified anywhere | Set an accessibility baseline (component-library a11y audit, keyboard-nav + focus management) and add automated checks (e.g. axe) to CI; verify against WCAG 2.1 AA | Quality Requirements; SRS USE-wcag-aa/UI-wcag-aa |
 | TD-db-public-access | P2 | Debt (network) | The MySQL flexible server has **Allow public access from any Azure service within Azure** enabled, which Azure implements as a `0.0.0.0` firewall rule admitting connections from **any** Azure IP in any tenant, bypassing the two named client-IP rules. This is what made the credentials disclosed in TD-actuator-exposure reachable in practice: the bar was "have an Azure account", not "be on the allowlist". No wide-open internet rule exists, and TLS is enforced | Untick the setting, but **not on its own**: App Service reaches the database through it, so add firewall rules for the app's `possibleOutboundIpAddresses` first, or better, use VNet integration plus a private endpoint (the Premium v3 plan supports it) and turn public access off. Also prune the stale client-IP rule dating from 2024. Lower priority now that the credentials are rotated | Security, Deployment |
 | TD-feature-locality | P2 | Debt (maintainability) | The code does not yet meet `MNT-feature-locality` (QS-add-bounded-context); the boundaries are enforced by review only. Remaining violations: (1) **sibling repositories**, 6 imports: `ram/collaboration/CommentService` reads `DocumentRepository`, `DocumentSectionRepository` and `RequirementArtifactRepository`; `ram/glossary/GlossaryService` reads `RequirementArtifactRepository`; the requirement and use-case DTO converters read `DocumentSectionRepository` and `RequirementArtifactRepository`; (2) **cycles**, 3 pairs, all in RAM and mostly from JPA entity associations: `document` ↔ `requirement`, `document` ↔ `collaboration`, `requirement` ↔ `collaboration`; (3) **foundation depends on a feature**, 3 imports: three `security` `AuthorizationManager`s import `ActivitySecurityService` or `EvaluationSecurityService`. A schema change in one component can break its siblings, and no component can be separated out on its own. `seed/DataInitializer` depends on every feature by design and is exempt | Call the sibling's service instead of its repository (the two converters overlap OI-46, so decide that approach first); make the RAM entity associations one-way or id-based to break the cycles; move feature-specific `AuthorizationManager`s next to the feature they guard; guard the boundaries with an ArchUnit test that uses `FreezingArchRule`, so these violations become a baseline and new ones fail the build (OI-45). Each fix is tracked as its own item: OI-57 (`security` managers), OI-58 (service repository reads), OI-59 (converter repository reads), OI-60 (comment-thread cycles), OI-61 (`document` ↔ `requirement` cycle) | [Building Block View](#building-block-view), KD-vertical-slices, QS-add-bounded-context |
