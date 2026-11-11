@@ -48,7 +48,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "100 * (1 - ((clamp_min(sum(http_server_requests_seconds_count{job=\"project-pulse\", status=~\"5..\"}) - (sum(http_server_requests_seconds_count{job=\"project-pulse\", status=~\"5..\"} offset 1h) or vector(0)), 0)) or vector(0)) / clamp_min(sum(http_server_requests_seconds_count{job=\"project-pulse\"}) - (sum(http_server_requests_seconds_count{job=\"project-pulse\"} offset 1h) or vector(0)), 0))",
+          "expr": "100 * (1 - ((((sum(increase(http_server_requests_seconds_count{job=\"project-pulse\", status=~\"5..\"}[1h])) > 0) or clamp_min(sum(http_server_requests_seconds_count{job=\"project-pulse\", status=~\"5..\"}) - (sum(http_server_requests_seconds_count{job=\"project-pulse\", status=~\"5..\"} offset 1h) or vector(0)), 0))) or vector(0)) / sum(increase(http_server_requests_seconds_count{job=\"project-pulse\"}[1h])))",
           "legendFormat": ""
         }
       ],
@@ -103,7 +103,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "clamp_min(sum(http_server_requests_seconds_count{job=\"project-pulse\", status=~\"5..\"}) - (sum(http_server_requests_seconds_count{job=\"project-pulse\", status=~\"5..\"} offset 15m) or vector(0)), 0) or vector(0)",
+          "expr": "((sum(increase(http_server_requests_seconds_count{job=\"project-pulse\", status=~\"5..\"}[15m])) > 0) or clamp_min(sum(http_server_requests_seconds_count{job=\"project-pulse\", status=~\"5..\"}) - (sum(http_server_requests_seconds_count{job=\"project-pulse\", status=~\"5..\"} offset 15m) or vector(0)), 0)) or vector(0)",
           "legendFormat": ""
         }
       ],

@@ -24,8 +24,9 @@ groups:
             datasourceUid: prometheus
             model:
               refId: A
-              # Not increase(): it misses a counter's first sample, so the first 500 would not fire.
-              expr: clamp_min(sum(http_server_requests_seconds_count{job="project-pulse", status=~"5.."}) - (sum(http_server_requests_seconds_count{job="project-pulse", status=~"5.."} offset 1m) or vector(0)), 0)
+              # increase() alone misses a counter's first sample, so the first 500 after startup would
+              # not fire; when it sees nothing, compare against the value one minute ago.
+              expr: (sum(increase(http_server_requests_seconds_count{job="project-pulse", status=~"5.."}[1m])) > 0) or clamp_min(sum(http_server_requests_seconds_count{job="project-pulse", status=~"5.."}) - (sum(http_server_requests_seconds_count{job="project-pulse", status=~"5.."} offset 1m) or vector(0)), 0)
               instant: true
           - refId: B
             datasourceUid: __expr__
