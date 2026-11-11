@@ -61,6 +61,7 @@ frontend/*.tsbuildinfo
 docker/grafana/*
 
 # Keep only reproducible configuration and provisioning files
+!docker/grafana/provisioning/
 !docker/grafana/provisioning/**
 !docker/grafana/Dockerfile
 !docker/grafana/docker-compose.yml

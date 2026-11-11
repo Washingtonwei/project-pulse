@@ -1,0 +1,70 @@
+# Two alerts on the local Project Pulse. Each fires as soon as its count over the last
+# minute is above zero, and emails Mailpit through the policy in notification-policies.yml.
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: project-pulse
+    folder: Project Pulse
+    interval: 10s
+    rules:
+      - uid: pulse-server-errors
+        title: Server errors (5xx)
+        condition: C
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        labels:
+          severity: page
+        annotations:
+          summary: Project Pulse returned a 5xx in the last minute.
+          description: "Which route? Open the Project Pulse dashboard, then find the request's ERROR line and trace ID in the backend log."
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              # Not increase(): it misses a counter's first sample, so the first 500 would not fire.
+              expr: clamp_min(sum(http_server_requests_seconds_count{job="project-pulse", status=~"5.."}) - (sum(http_server_requests_seconds_count{job="project-pulse", status=~"5.."} offset 1m) or vector(0)), 0)
+              instant: true
+          - refId: B
+            datasourceUid: __expr__
+            model: { refId: B, type: reduce, expression: A, reducer: last }
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+      - uid: pulse-error-logs
+        title: ERROR log lines
+        condition: C
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        labels:
+          severity: ticket
+        annotations:
+          summary: Project Pulse logged an ERROR line in the last minute.
+          description: "A request can fail while returning 200. Read the ERROR line in the backend log."
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: sum(increase(logback_events_total{job="project-pulse", level="error"}[1m]))
+              instant: true
+          - refId: B
+            datasourceUid: __expr__
+            model: { refId: B, type: reduce, expression: A, reducer: last }
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { type: gt, params: [0] }

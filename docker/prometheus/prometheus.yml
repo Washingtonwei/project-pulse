@@ -7,13 +7,13 @@ scrape_configs:
       # (Windows and macOS). The backend runs on port 80 on the host, not in compose.
       - targets: ["host.docker.internal:80"]
     # Every actuator endpoint except health and info requires ROLE_admin, so an anonymous scrape
-    # gets 401 and the dashboards stay empty. To scrape locally, uncomment the block below and
-    # restart Prometheus (docker-compose restart prometheus). It signs in with HTTP Basic as the
-    # seeded dev admin, so it keeps working across backend restarts; a pasted JWT would not,
-    # because the signing key is regenerated at every startup. Dev credentials only.
-    # basic_auth:
-    #   username: "b.wei@abc.edu"
-    #   password: "123456"
+    # gets 401 and the dashboards stay empty. The scrape signs in with HTTP Basic as the seeded
+    # dev admin, so it keeps working across backend restarts; a pasted JWT would not, because the
+    # signing key is regenerated at every startup. Dev credentials only. Comment the block out
+    # to see the 401 on http://localhost:9090/targets.
+    basic_auth:
+      username: "b.wei@abc.edu"
+      password: "123456"
 # Staging and production are never scraped: the App Service agent pushes their telemetry to
 # Application Insights, and the deployed profiles do not expose the prometheus endpoint.
 # See KD-push-telemetry in docs/design/architectural-design.md.

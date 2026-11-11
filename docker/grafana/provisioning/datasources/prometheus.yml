@@ -1,0 +1,11 @@
+# The local Prometheus from docker-compose.yml. Grafana reaches it by its container name.
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    jsonData:
+      timeInterval: 15s # matches scrape_interval in docker/prometheus/prometheus.yml
