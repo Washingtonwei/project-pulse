@@ -26,6 +26,7 @@ services:
     image: grafana/grafana-enterprise
     volumes:
       - ./docker/grafana:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning  # data source, dashboard, alerts
     env_file:
       - ./docker/grafana/grafana-config.env
     ports:

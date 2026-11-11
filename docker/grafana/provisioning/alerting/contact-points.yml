@@ -1,0 +1,12 @@
+# Alerts go by email to Mailpit (GF_SMTP_HOST in docker/grafana/grafana-config.env).
+# Read them at http://localhost:8025. Dev only: Mailpit catches every address.
+apiVersion: 1
+contactPoints:
+  - orgId: 1
+    name: Mailpit
+    receivers:
+      - uid: mailpit-email
+        type: email
+        settings:
+          addresses: on-call@projectpulse.local
+          singleEmail: true

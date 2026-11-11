@@ -1,0 +1,9 @@
+# Every alert goes to Mailpit, quickly: short waits suit a demo, not a pager.
+apiVersion: 1
+policies:
+  - orgId: 1
+    receiver: Mailpit
+    group_by: ["alertname"]
+    group_wait: 5s
+    group_interval: 30s
+    repeat_interval: 1h

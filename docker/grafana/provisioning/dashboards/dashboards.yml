@@ -1,0 +1,9 @@
+# Loads every dashboard JSON in this folder into Grafana at startup.
+apiVersion: 1
+providers:
+  - name: project-pulse
+    folder: Project Pulse
+    type: file
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards
