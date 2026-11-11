@@ -72,7 +72,7 @@
             type="textarea"
             :rows="5"
             placeholder="Enter public comment"
-            max-length="255"
+            maxlength="255"
             show-word-limit
           />
         </template>
@@ -93,7 +93,7 @@
             type="textarea"
             :rows="5"
             placeholder="Enter private comment"
-            max-length="255"
+            maxlength="255"
             show-word-limit
           />
         </template>

@@ -20,7 +20,7 @@
       <el-input v-model="activityBeingCommented.status" disabled></el-input>
     </el-form-item>
     <el-form-item label="Comment:" prop="status">
-      <el-input v-model="comment" max-length="255" show-word-limit></el-input>
+      <el-input v-model="comment" maxlength="255" show-word-limit></el-input>
     </el-form-item>
     <div style="display: flex; justify-content: end">
       <el-form-item>

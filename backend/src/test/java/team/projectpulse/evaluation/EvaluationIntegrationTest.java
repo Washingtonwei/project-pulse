@@ -33,6 +33,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @DisplayName("Integration tests for Evaluation API endpoints")
 public class EvaluationIntegrationTest extends AbstractIntegrationTest {
@@ -135,6 +136,36 @@ public class EvaluationIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.data.privateComment").value("Keep it up"))
                 .andExpect(jsonPath("$.data.createdAt").isNotEmpty())
                 .andExpect(jsonPath("$.data.updatedAt").isNotEmpty());
+    }
+
+    @Test
+    void testStudentJohnAddEvaluationCommentsTooLong() throws Exception {
+        // Production 500 on 2026-11-10: a private comment over 255 characters reached the
+        // varchar(255) column and failed the INSERT. It must be rejected as invalid input instead.
+        List<RatingDto> ratingDtos = List.of(
+                new RatingDto(null, 1, 4.0),
+                new RatingDto(null, 2, 9.0),
+                new RatingDto(null, 3, 7.0),
+                new RatingDto(null, 4, 10.0),
+                new RatingDto(null, 5, 5.0),
+                new RatingDto(null, 6, 6.0)
+        );
+
+        LocalDate fixedDate = LocalDate.of(2023, 9, 15); // 2023-W33
+        Clock fixedClock = Clock.fixed(fixedDate.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault());
+        given(this.clock.instant()).willReturn(fixedClock.instant());
+        given(this.clock.getZone()).willReturn(fixedClock.getZone());
+
+        String tooLong = "a".repeat(256);
+        PeerEvaluationDto peerEvaluationDto = new PeerEvaluationDto(null, "2023-W36", 4, "John Smith", 5, "Eric Hudson", ratingDtos, 41.0, tooLong, tooLong, null, null);
+        String json = this.jsonMapper.writeValueAsString(peerEvaluationDto);
+
+        this.mockMvc.perform(post(this.baseUrl + "/evaluations").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_ARGUMENT))
+                .andExpect(jsonPath("$.data.publicComment").value("public comment must be at most 255 characters."))
+                .andExpect(jsonPath("$.data.privateComment").value("private comment must be at most 255 characters."));
     }
 
     @Test
