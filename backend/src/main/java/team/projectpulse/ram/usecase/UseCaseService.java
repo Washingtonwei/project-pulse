@@ -1,5 +1,8 @@
 package team.projectpulse.ram.usecase;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.OptimisticLockException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -27,11 +30,14 @@ public class UseCaseService {
     private final RequirementArtifactService requirementArtifactService;
     private final UserUtils userUtils;
     private final UserRepository userRepository;
+    private final EntityManager entityManager;
 
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "The EntityManager is Spring's shared, transaction-scoped proxy; holding a reference to it is how it is meant to be used.")
     public UseCaseService(UseCaseRepository useCaseRepository, RequirementArtifactService requirementArtifactService, UserUtils userUtils, UserRepository userRepository,
-                          @Value("${ram.lock.default-lock-ttl:PT15M}") Duration defaultLockTtl) {
+                          EntityManager entityManager, @Value("${ram.lock.default-lock-ttl:PT15M}") Duration defaultLockTtl) {
         this.useCaseRepository = useCaseRepository;
+        this.entityManager = entityManager;
         this.requirementArtifactService = requirementArtifactService;
         this.userUtils = userUtils;
         this.userRepository = userRepository;
@@ -203,6 +209,14 @@ public class UseCaseService {
         if (ownerId == null || !ownerId.equals(currentUserId)) {
             throw new SectionAlreadyLockedException("Use case is locked by another user. You cannot update it.");
         }
+
+        // Every accepted update increments the version, so the next save from a stale form is refused by the check
+        // above. Hibernate only increments it by itself when a UseCase field or collection is dirty, and most of a
+        // use case lives elsewhere: the title and description on its artifact, and the step text on child rows that
+        // revising updates in place. PESSIMISTIC_FORCE_INCREMENT writes the new version now, guarded by the old one,
+        // rather than just before commit (as OPTIMISTIC_FORCE_INCREMENT would), and sets it on this entity, so the
+        // response carries the version the next save must send.
+        this.entityManager.lock(oldUseCase, LockModeType.PESSIMISTIC_FORCE_INCREMENT);
 
         // Update artifact fields
         oldUseCase.getArtifact().setTitle(update.getArtifact().getTitle());

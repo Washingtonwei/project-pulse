@@ -435,6 +435,44 @@ class UseCaseStepOrderingIntegrationTest extends AbstractIntegrationTest {
         assertThat(idsInIndexOrder(MAIN_STEP_ORDER_SQL, this.seededUseCaseId)).containsExactlyElementsOf(seededIds);
     }
 
+    @Test
+    @DisplayName("A save that only edits step text still increments the use case version, so a stale form is refused")
+    void testTextOnlyEditIncrementsTheVersion() throws Exception {
+        // With no actors or conditions, nothing on the use case itself changes, and editing a step's text leaves
+        // the step list untouched. Without an explicit increment the version would stay the same and a stale form
+        // saved afterwards would pass the version check.
+        Long useCaseId = createUseCaseWithOnlySteps();
+        JSONObject payload = lockAndFetchUseCase(useCaseId);
+        int versionBefore = payload.getInt("version");
+
+        payload.getJSONArray("mainSteps").getJSONObject(0).put("actionText", "Edited text only");
+        JSONObject saved = putUseCase(useCaseId, payload);
+        flushAndClear();
+
+        assertThat(versionInDatabase(useCaseId)).isGreaterThan(versionBefore);
+        assertThat(saved.getInt("version")).as("the response carries the new version").isEqualTo(versionInDatabase(useCaseId));
+    }
+
+    @Test
+    @DisplayName("Autosave can chain saves using the version from each response")
+    void testSecondSaveWithTheResponseVersionSucceeds() throws Exception {
+        // The editor takes the version for its next save from the response to its last one
+        // (RamUseCases.vue: currentUseCase = normalizeUseCase(result.data)), so that version must be the current one.
+        Long useCaseId = createUseCaseWithOnlySteps();
+        JSONObject payload = lockAndFetchUseCase(useCaseId);
+
+        payload.getJSONArray("mainSteps").getJSONObject(0).put("actionText", "First autosave");
+        JSONObject firstResponse = putUseCase(useCaseId, payload);
+        flushAndClear(); // each request commits on its own in production
+
+        firstResponse.getJSONArray("mainSteps").getJSONObject(1).put("actionText", "Second autosave");
+        putUseCase(useCaseId, firstResponse);
+        flushAndClear();
+
+        assertThat(this.entityManager.createNativeQuery("select action_text from use_case_main_step where use_case_artifact_id = :id order by main_step_index")
+                .setParameter("id", useCaseId).getResultList()).containsExactly("First autosave", "Second autosave");
+    }
+
     /**
      * Finds a step in a use-case payload by its id.
      */
@@ -500,7 +538,11 @@ class UseCaseStepOrderingIntegrationTest extends AbstractIntegrationTest {
      * frontend sends back on save: every existing step carries its id.
      */
     private JSONObject lockAndFetchUseCase() throws Exception {
-        String useCaseUrl = this.baseUrl + "/teams/1/use-cases/" + this.seededUseCaseId;
+        return lockAndFetchUseCase(this.seededUseCaseId);
+    }
+
+    private JSONObject lockAndFetchUseCase(Long useCaseId) throws Exception {
+        String useCaseUrl = this.baseUrl + "/teams/1/use-cases/" + useCaseId;
         assertSucceeded(this.mockMvc.perform(put(useCaseUrl + "/lock").contentType(MediaType.APPLICATION_JSON).content("{\"reason\": \"Ordering test\"}")
                 .accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken)).andReturn());
         return assertSucceeded(this.mockMvc.perform(get(useCaseUrl).accept(MediaType.APPLICATION_JSON)
@@ -508,9 +550,38 @@ class UseCaseStepOrderingIntegrationTest extends AbstractIntegrationTest {
     }
 
     private void putUseCase(JSONObject payload) throws Exception {
-        assertSucceeded(this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/" + this.seededUseCaseId)
+        putUseCase(this.seededUseCaseId, payload);
+    }
+
+    /**
+     * Saves the use case and returns the saved use case exactly as the response carries it.
+     */
+    private JSONObject putUseCase(Long useCaseId, JSONObject payload) throws Exception {
+        return assertSucceeded(this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/" + useCaseId)
                 .contentType(MediaType.APPLICATION_JSON).content(payload.toString()).accept(MediaType.APPLICATION_JSON)
-                .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken)).andReturn());
+                .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken)).andReturn()).getJSONObject("data");
+    }
+
+    /**
+     * Saves a team 1 use case with two steps and no secondary actors, preconditions or postconditions, so that
+     * nothing but its steps can change on an update. Returns its id.
+     */
+    private Long createUseCaseWithOnlySteps() {
+        UseCase seeded = loadSeededUseCase();
+        UseCase useCase = new UseCase();
+        useCase.setArtifact(new RequirementArtifact(seeded.getArtifact().getTeam(), RequirementArtifactType.USE_CASE, "Steps only", "A use case with nothing but steps.", ""));
+        useCase.setPrimaryActor(seeded.getPrimaryActor());
+        useCase.setUseCaseTrigger("The Student starts.");
+        useCase.addMainStep(new UseCaseMainStep("Student", "First step"));
+        useCase.addMainStep(new UseCaseMainStep("System", "Second step"));
+        Long id = this.useCaseService.saveUseCase(1, useCase).getId();
+        flushAndClear();
+        return id;
+    }
+
+    private int versionInDatabase(Long useCaseId) {
+        return ((Number) this.entityManager.createNativeQuery("select version from use_case where artifact_id = :id")
+                .setParameter("id", useCaseId).getSingleResult()).intValue();
     }
 
     private static JSONObject assertSucceeded(MvcResult result) throws Exception {
