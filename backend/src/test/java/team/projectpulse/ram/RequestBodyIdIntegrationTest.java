@@ -20,6 +20,7 @@ import team.projectpulse.ram.requirement.RequirementArtifactType;
 import team.projectpulse.ram.usecase.UseCase;
 import team.projectpulse.ram.usecase.UseCaseMainStep;
 import team.projectpulse.ram.usecase.UseCaseService;
+import team.projectpulse.system.StatusCode;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
@@ -325,7 +326,9 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
         MvcResult lockResult = this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3/lock").contentType(MediaType.APPLICATION_JSON).content(lockJson).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andDo(print()).andReturn();
         // Without the lock the update is refused before it reaches the steps, and the probe would test nothing.
-        assertThat(new JSONObject(lockResult.getResponse().getContentAsString()).getBoolean("flag")).as("lock acquired").isTrue();
+        JSONObject lockResponse = new JSONObject(lockResult.getResponse().getContentAsString());
+        assertThat(lockResponse.getBoolean("flag")).as("lock acquired: " + lockResponse).isTrue();
+        assertThat(lockResponse.getInt("code")).as("lock acquired: " + lockResponse).isEqualTo(StatusCode.SUCCESS);
 
         // Team 1's own use case exactly as the API serves it, plus one extra step carrying team 2's step id.
         MvcResult useCaseResult = this.mockMvc.perform(get(this.baseUrl + "/teams/1/use-cases/3").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken)).andReturn();
@@ -343,6 +346,7 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
         // Unlike the probes above, this one requires success: the designed behavior is to accept the update and
         // treat the unowned id as a new step, so a refused request would mean the probe tested nothing.
         assertThat(response.getBoolean("flag")).as(response.toString()).isTrue();
+        assertThat(response.getInt("code")).as(response.toString()).isEqualTo(StatusCode.SUCCESS);
         this.entityManager.flush();
         this.entityManager.clear();
 
