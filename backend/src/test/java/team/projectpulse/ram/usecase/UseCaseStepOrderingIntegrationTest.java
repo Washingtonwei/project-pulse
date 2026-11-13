@@ -28,7 +28,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 /**
- * Characterization tests for how the use-case step lists are ordered in the database.
+ * Characterization tests for how the use-case step lists are ordered in the database, and for the editing scenarios
+ * the use-case editor can produce on save (see {@link UseCase#reviseMainSteps}).
  *
  * <p>{@code UseCase.mainSteps}, {@code UseCaseMainStep.extensions} and {@code UseCaseExtension.steps} are the
  * inverse ({@code mappedBy}) side of their associations and carry {@code @OrderColumn}. Hibernate 7 logs HHH160246
@@ -279,6 +280,173 @@ class UseCaseStepOrderingIntegrationTest extends AbstractIntegrationTest {
         assertThat(actionTextAt(1)).isEqualTo("Inserted through the API");
         assertThat(countRows("select count(*) from use_case_main_step where id = :id", omittedId)).isZero();
         assertThat(countRows("select count(*) from use_case_extension_step where extension_id = :id", omittedExtensionId)).isZero();
+    }
+
+
+    @Test
+    @DisplayName("Two saves in a row, as autosave does, both land and keep every step id")
+    void testTwoSavesInARow() throws Exception {
+        List<Long> idsBefore = stepIds(loadSeededUseCase());
+        flushAndClear();
+
+        JSONObject first = lockAndFetchUseCase();
+        first.getJSONArray("mainSteps").getJSONObject(0).put("actionText", "First save");
+        putUseCase(first);
+        flushAndClear(); // each request commits on its own in production
+
+        JSONObject second = lockAndFetchUseCase();
+        assertThat(second.getJSONArray("mainSteps").getJSONObject(0).getString("actionText")).isEqualTo("First save");
+        second.getJSONArray("mainSteps").getJSONObject(1).put("actionText", "Second save");
+        putUseCase(second);
+        flushAndClear();
+
+        assertThat(idsInIndexOrder(MAIN_STEP_ORDER_SQL, this.seededUseCaseId)).containsExactlyElementsOf(idsBefore);
+        assertThat(actionTextAt(0)).isEqualTo("First save");
+        assertThat(actionTextAt(1)).isEqualTo("Second save");
+    }
+
+    @Test
+    @DisplayName("Removing a whole extension deletes it and its steps, and keeps the step it branched from")
+    void testRemovingAnExtensionKeepsItsStep() throws Exception {
+        UseCaseMainStep step = firstStepWithExtension(loadSeededUseCase());
+        Long stepId = step.getId();
+        Long extensionId = step.getExtensions().get(0).getId();
+        flushAndClear();
+
+        JSONObject payload = lockAndFetchUseCase();
+        stepById(payload, stepId).put("extensions", new JSONArray());
+        putUseCase(payload);
+        flushAndClear();
+
+        assertThat(countRows("select count(*) from use_case_main_step where id = :id", stepId)).isOne();
+        assertThat(countRows("select count(*) from use_case_extension where id = :id", extensionId)).isZero();
+        assertThat(countRows("select count(*) from use_case_extension_step where extension_id = :id", extensionId)).isZero();
+    }
+
+    @Test
+    @DisplayName("Changing an extension's condition, kind and exit updates it in place")
+    void testEditingAnExtensionUpdatesItInPlace() throws Exception {
+        UseCaseMainStep step = firstStepWithExtension(loadSeededUseCase());
+        Long stepId = step.getId();
+        Long extensionId = step.getExtensions().get(0).getId();
+        flushAndClear();
+
+        JSONObject payload = lockAndFetchUseCase();
+        stepById(payload, stepId).getJSONArray("extensions").getJSONObject(0)
+                .put("conditionText", "Edited condition")
+                .put("kind", "ALTERNATE")
+                .put("exit", "END_FAILURE");
+        putUseCase(payload);
+        flushAndClear();
+
+        Object[] row = (Object[]) this.entityManager.createNativeQuery(
+                        "select condition_text, kind, extension_exit from use_case_extension where id = :id")
+                .setParameter("id", extensionId).getSingleResult();
+        assertThat(row).containsExactly("Edited condition", "ALTERNATE", "END_FAILURE");
+        assertThat(idsInIndexOrder(EXTENSION_ORDER_SQL, stepId)).containsExactly(extensionId);
+    }
+
+    @Test
+    @DisplayName("Inserting an extension step in the middle renumbers that extension and keeps the existing ids")
+    void testInsertingAnExtensionStepInTheMiddle() throws Exception {
+        UseCaseMainStep step = firstStepWithExtension(loadSeededUseCase());
+        Long stepId = step.getId();
+        Long extensionId = step.getExtensions().get(0).getId();
+        List<Long> extensionStepIdsBefore = step.getExtensions().get(0).getSteps().stream().map(UseCaseExtensionStep::getId).toList();
+        flushAndClear();
+
+        JSONObject payload = lockAndFetchUseCase();
+        JSONObject extension = stepById(payload, stepId).getJSONArray("extensions").getJSONObject(0);
+        JSONArray extensionSteps = extension.getJSONArray("steps");
+        JSONArray withInsert = new JSONArray().put(extensionSteps.get(0))
+                .put(new JSONObject().put("actor", "System").put("actionText", "Inserted extension step"));
+        for (int i = 1; i < extensionSteps.length(); i++) {
+            withInsert.put(extensionSteps.get(i));
+        }
+        extension.put("steps", withInsert);
+        putUseCase(payload);
+        flushAndClear();
+
+        List<Long> idsAfter = idsInIndexOrder(EXTENSION_STEP_ORDER_SQL, extensionId);
+        assertThat(idsAfter).hasSize(extensionStepIdsBefore.size() + 1);
+        assertThat(idsAfter.get(0)).isEqualTo(extensionStepIdsBefore.get(0));
+        assertThat(idsAfter.subList(2, idsAfter.size())).containsExactlyElementsOf(extensionStepIdsBefore.subList(1, extensionStepIdsBefore.size()));
+        assertThat(extensionStepIdsBefore).doesNotContain(idsAfter.get(1));
+    }
+
+    @Test
+    @DisplayName("Editing a step's actor and an extension step's actor updates them in place")
+    void testEditingActorsUpdatesThemInPlace() throws Exception {
+        UseCaseMainStep step = firstStepWithExtension(loadSeededUseCase());
+        Long stepId = step.getId();
+        Long extensionStepId = step.getExtensions().get(0).getSteps().get(0).getId();
+        flushAndClear();
+
+        JSONObject payload = lockAndFetchUseCase();
+        JSONObject submittedStep = stepById(payload, stepId).put("actor", "Instructor");
+        submittedStep.getJSONArray("extensions").getJSONObject(0).getJSONArray("steps").getJSONObject(0).put("actor", "Instructor");
+        putUseCase(payload);
+        flushAndClear();
+
+        assertThat(this.entityManager.createNativeQuery("select actor from use_case_main_step where id = :id")
+                .setParameter("id", stepId).getSingleResult()).isEqualTo("Instructor");
+        assertThat(this.entityManager.createNativeQuery("select actor from use_case_extension_step where id = :id")
+                .setParameter("id", extensionStepId).getSingleResult()).isEqualTo("Instructor");
+    }
+
+    @Test
+    @DisplayName("Removing every step leaves an empty main success scenario and deletes the extensions too")
+    void testRemovingEveryStep() throws Exception {
+        List<Long> extensionIds = loadSeededUseCase().getMainSteps().stream()
+                .flatMap(step -> step.getExtensions().stream()).map(UseCaseExtension::getId).toList();
+        assertThat(extensionIds).isNotEmpty();
+        flushAndClear();
+
+        JSONObject payload = lockAndFetchUseCase();
+        payload.put("mainSteps", new JSONArray());
+        putUseCase(payload);
+        flushAndClear();
+
+        assertThat(idsInIndexOrder(MAIN_STEP_ORDER_SQL, this.seededUseCaseId)).isEmpty();
+        for (Long extensionId : extensionIds) {
+            assertThat(countRows("select count(*) from use_case_extension where id = :id", extensionId)).isZero();
+        }
+    }
+
+    @Test
+    @DisplayName("Creating a use case from a payload carrying existing step ids makes fresh steps and leaves the originals alone")
+    void testCreateWithExistingStepIdsMakesFreshSteps() throws Exception {
+        List<Long> seededIds = stepIds(loadSeededUseCase());
+        flushAndClear();
+
+        // The seeded use case exactly as the API serves it, every step and extension carrying its id, posted back
+        // as a new use case.
+        JSONObject payload = lockAndFetchUseCase();
+        payload.put("title", "Copied use case");
+        MvcResult result = this.mockMvc.perform(post(this.baseUrl + "/teams/1/use-cases")
+                .contentType(MediaType.APPLICATION_JSON).content(payload.toString()).accept(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken)).andReturn();
+        Long copyId = assertSucceeded(result).getJSONObject("data").getLong("id");
+        flushAndClear();
+
+        assertThat(copyId).isNotEqualTo(this.seededUseCaseId);
+        List<Long> copyIds = idsInIndexOrder(MAIN_STEP_ORDER_SQL, copyId);
+        assertThat(copyIds).hasSameSizeAs(seededIds).doesNotContainAnyElementsOf(seededIds);
+        assertThat(idsInIndexOrder(MAIN_STEP_ORDER_SQL, this.seededUseCaseId)).containsExactlyElementsOf(seededIds);
+    }
+
+    /**
+     * Finds a step in a use-case payload by its id.
+     */
+    private static JSONObject stepById(JSONObject payload, Long stepId) throws Exception {
+        JSONArray steps = payload.getJSONArray("mainSteps");
+        for (int i = 0; i < steps.length(); i++) {
+            JSONObject step = steps.getJSONObject(i);
+            if (step.optLong("id") == stepId) {
+                return step;
+            }
+        }
+        throw new AssertionError("No step " + stepId + " in the payload");
     }
 
 

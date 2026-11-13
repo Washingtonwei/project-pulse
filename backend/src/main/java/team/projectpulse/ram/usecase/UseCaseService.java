@@ -90,8 +90,17 @@ public class UseCaseService {
         return useCase;
     }
 
+    /**
+     * Saves a new use case. Its steps, extensions and extension steps are saved as fresh copies of the ones passed
+     * in, so the caller's own step objects are not the ones persisted: read saved steps from the returned use case.
+     */
     public UseCase saveUseCase(Integer teamId, UseCase useCase) {
         useCase.initLockIfMissing(); // Ensure lock is initialized for new use cases
+
+        // Fresh copies drop any step, extension or extension-step id the request body carried, which would
+        // otherwise reach save() on a child entity (OI-46).
+        useCase.replaceMainSteps(useCase.getMainSteps().stream().map(UseCaseMainStep::copyOf).toList());
+
         requireActorsInTeam(teamId, useCase);
         this.requirementArtifactService.saveRequirementArtifact(teamId, useCase.getArtifact());
         return this.useCaseRepository.save(useCase);
@@ -161,6 +170,10 @@ public class UseCaseService {
     public UseCase updateUseCase(Integer teamId, Long useCaseId, UseCase update, Integer expectedVersion) {
         UseCase oldUseCase = this.useCaseRepository.findByIdAndArtifactTeamTeamId(useCaseId, teamId)
                 .orElseThrow(() -> new ObjectNotFoundException("use case", useCaseId));
+        // Load the whole step tree in one query, rather than one query per step and per extension once the steps
+        // are revised below. The team-scoped query above has just authorized this id in this transaction, which is
+        // the condition findByIdWithStepGraph requires, and nothing is modified yet, so the query flushes nothing.
+        this.useCaseRepository.findByIdWithStepGraph(useCaseId);
         oldUseCase.initLockIfMissing();
 
         // Validate the incoming references before doing any version or lock work.
@@ -211,8 +224,9 @@ public class UseCaseService {
         oldUseCase.getPostconditions().clear();
         oldUseCase.getPostconditions().addAll(update.getPostconditions());
 
-        // Update main steps
-        oldUseCase.replaceMainSteps(update.getMainSteps());
+        // Revise the main steps in place: submitted ids pair only with this use case's own steps, extensions and
+        // extension steps, and anything unpaired becomes a new row (see UseCase.reviseMainSteps).
+        oldUseCase.reviseMainSteps(update.getMainSteps());
 
         return this.useCaseRepository.save(oldUseCase);
     }
