@@ -37,7 +37,7 @@ public class UseCase {
     @JoinTable(
             name = "use_case_secondary_actor",
             joinColumns = @JoinColumn(name = "use_case_id"),
-            inverseJoinColumns = @JoinColumn(name = "stakeholder_artifact_id")
+            inverseJoinColumns = @JoinColumn(name = "actor_artifact_id")
     )
     private Set<RequirementArtifact> secondaryActors = new HashSet<>();
 
