@@ -1,0 +1,23 @@
+-- Add EXTERNAL_SYSTEM to the RequirementArtifactType taxonomy: a non-human actor of a
+-- use case, such as an email service or an LLM service (BR-use-case-actor-types).
+-- No data migration is required: the value is new, so no existing row holds it.
+-- The new value list mirrors RequirementArtifactType.java (kept alphabetical to match
+-- Hibernate's generated column definition, as in V4).
+
+ALTER TABLE `requirement_artifact`
+  MODIFY COLUMN `type` enum(
+    'ASSUMPTION','BUSINESS_OBJECTIVE','BUSINESS_OPPORTUNITY','BUSINESS_PROBLEM','BUSINESS_RULE',
+    'CONSTRAINT','DATA_REQUIREMENT','DEPENDENCY','EXTERNAL_INTERFACE_REQUIREMENT','EXTERNAL_SYSTEM',
+    'FEATURE','FUNCTIONAL_REQUIREMENT','GLOSSARY_TERM','OTHER','POSTCONDITION','PRECONDITION',
+    'QUALITY_ATTRIBUTE','RISK','STAKEHOLDER','SUCCESS_METRIC','USER_STORY','USE_CASE',
+    'VISION_STATEMENT'
+  ) DEFAULT NULL;
+
+ALTER TABLE `artifact_key_sequence`
+  MODIFY COLUMN `type` enum(
+    'ASSUMPTION','BUSINESS_OBJECTIVE','BUSINESS_OPPORTUNITY','BUSINESS_PROBLEM','BUSINESS_RULE',
+    'CONSTRAINT','DATA_REQUIREMENT','DEPENDENCY','EXTERNAL_INTERFACE_REQUIREMENT','EXTERNAL_SYSTEM',
+    'FEATURE','FUNCTIONAL_REQUIREMENT','GLOSSARY_TERM','OTHER','POSTCONDITION','PRECONDITION',
+    'QUALITY_ATTRIBUTE','RISK','STAKEHOLDER','SUCCESS_METRIC','USER_STORY','USE_CASE',
+    'VISION_STATEMENT'
+  ) NOT NULL;

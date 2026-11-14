@@ -1183,6 +1183,13 @@ public class DataInitializer implements CommandLineRunner {
         RequirementArtifact team2GlossaryTerm = new RequirementArtifact(team2, RequirementArtifactType.GLOSSARY_TERM, "Deliverable", "A tangible output the team hands to the client at the end of a phase.", "");
         this.requirementArtifactService.saveRequirementArtifact(1, team1GlossaryTerm);
         this.requirementArtifactService.saveRequirementArtifact(2, team2GlossaryTerm);
+
+        // ---- An external system ----
+        // A non-human actor (BR-use-case-actor-types), so a use case can name an external system as an actor in
+        // dev and in tests. Seeded last, like the blocks above, so no existing id shifts; for the same reason it is
+        // not attached to the seeded use case, whose save comes much earlier.
+        RequirementArtifact team1ExternalSystem = new RequirementArtifact(team1, RequirementArtifactType.EXTERNAL_SYSTEM, "Email service", "The SMTP service that delivers the system's notification emails.", "");
+        this.requirementArtifactService.saveRequirementArtifact(1, team1ExternalSystem);
     }
 
     private void applyTemplate(RequirementDocument doc, DocumentTemplate tpl) {
