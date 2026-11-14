@@ -120,6 +120,7 @@ A requirement artifact may represent:
 - a non-requirement concept:
   - a glossary term
   - a stakeholder
+  - an external system
   - a risk
   - an assumption
   - a dependency
@@ -187,6 +188,7 @@ An enumeration defining the allowed semantic relationships between requirement a
 - IMPACTS — the source (a cross-cutting or constraining artifact) affects the target requirement or artifact; used for impact analysis.
 - MITIGATES — the source artifact mitigates the target risk.
 - MOTIVATES — the source expresses a need or driver that motivates the target requirement.
+- ENABLES: the source postcondition, once true, makes the target precondition true, so the use case that ends with the source can enable the use case that starts with the target.
 
 ## **Graph-First Model**
 
@@ -296,6 +298,18 @@ Features often act as an intermediate abstraction between business objectives an
 
 A behavioral description of how an external actor interacts with the system to achieve a specific goal.
 
+## **Actor**
+
+The role a stakeholder or an external system plays when it interacts with the system in a use case. The primary actor initiates the use case to reach its goal; secondary actors take part in it. In RAM, an actor is always a stakeholder or an external system artifact of the team, never another kind of requirement artifact.
+
+## **Precondition**
+
+A condition that must hold before a use case can start, for example "The student is logged in." In RAM, a precondition is a requirement artifact of the team that several use cases can share: a use case links to it rather than owning a copy. Preconditions and postconditions are together called conditions.
+
+## **Postcondition**
+
+A condition that holds after a use case completes successfully. Like a precondition, a postcondition is a shared requirement artifact of the team. An ENABLES artifact link connects a postcondition to the precondition it satisfies in another use case; the two keep their own wording.
+
 ## **Functional Requirement**
 
 A requirement artifact describing a specific, testable behavior the system must perform. Functional requirements are typically expressed as "shall" statements and are identified by an artifact key that RAM assigns (in the MVP, a per-type running sequence: `FR-1`, `FR-2`, …).
@@ -333,6 +347,10 @@ Glossary terms support:
 ## **Stakeholder**
 
 A requirement artifact describing any person, group, or organization with an interest in or influence over the system. Includes end users, but also customers, sponsors, instructors, administrators, regulators, and others affected by the system.
+
+## **External System**
+
+A requirement artifact describing a software system, service, or device outside the system's boundary that the system interacts with, such as an email service, an LLM service, or a learning management system. An external system may be an actor in a use case. It is distinct from an external interface requirement, which specifies how the system communicates with an external system, and from a stakeholder, which is a person, group, or organization.
 
 ## **Assumption**
 
