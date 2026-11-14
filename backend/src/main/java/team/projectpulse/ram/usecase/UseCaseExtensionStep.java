@@ -32,6 +32,21 @@ public class UseCaseExtensionStep {
         this.actionText = actionText;
     }
 
+    /**
+     * Copies a submitted extension step's content onto this existing one, keeping its id.
+     */
+    void reviseFrom(UseCaseExtensionStep submitted) {
+        this.actor = submitted.getActor();
+        this.actionText = submitted.getActionText();
+    }
+
+    /**
+     * Builds a new extension step, without an id, with the submitted step's content.
+     */
+    static UseCaseExtensionStep copyOf(UseCaseExtensionStep submitted) {
+        return new UseCaseExtensionStep(submitted.getActor(), submitted.getActionText());
+    }
+
     // getters/setters
     public Long getId() {
         return id;

@@ -1,6 +1,7 @@
 package team.projectpulse.ram;
 
 import jakarta.persistence.EntityManager;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,6 +16,11 @@ import org.springframework.test.web.servlet.ResultActions;
 import team.projectpulse.AbstractIntegrationTest;
 import team.projectpulse.ram.requirement.RequirementArtifact;
 import team.projectpulse.ram.requirement.RequirementArtifactRepository;
+import team.projectpulse.ram.requirement.RequirementArtifactType;
+import team.projectpulse.ram.usecase.UseCase;
+import team.projectpulse.ram.usecase.UseCaseMainStep;
+import team.projectpulse.ram.usecase.UseCaseService;
+import team.projectpulse.system.StatusCode;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
@@ -46,6 +52,9 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     EntityManager entityManager;
+
+    @Autowired
+    UseCaseService useCaseService;
 
     String studentJohnToken; // John is on team 1 in section 2
 
@@ -295,6 +304,74 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
         if (response.getBoolean("flag")) {
             assertStillOwnedByTeam2(victim.getId(), "Client");
         }
+    }
+
+    @Test
+    @DisplayName("A use-case update carrying another team's step id must not move that step onto the caller's use case")
+    void testStudentJohnCannotTakeAnotherTeamsStepThroughUseCaseUpdate() throws Exception {
+        // The step lists are @OneToMany(cascade = ALL, orphanRemoval = true), and the step converters copy every
+        // step id from the body. A step id naming a row of another use case therefore used to reach a cascaded
+        // merge on the caller's managed use case, which would rewrite that row and re-parent it.
+        //
+        // The seed data has no team 2 use case, so this probe builds one.
+        Long victimUseCaseId = createTeam2UseCaseWithOneStep();
+        Long victimStepId = ((Number) this.entityManager.createNativeQuery("select id from use_case_main_step where use_case_artifact_id = :id")
+                .setParameter("id", victimUseCaseId).getSingleResult()).longValue();
+
+        String lockJson = """
+                {
+                    "reason": "Locking use case for editing"
+                }
+                """;
+        MvcResult lockResult = this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3/lock").contentType(MediaType.APPLICATION_JSON).content(lockJson).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andDo(print()).andReturn();
+        // Without the lock the update is refused before it reaches the steps, and the probe would test nothing.
+        JSONObject lockResponse = new JSONObject(lockResult.getResponse().getContentAsString());
+        assertThat(lockResponse.getBoolean("flag")).as("lock acquired: " + lockResponse).isTrue();
+        assertThat(lockResponse.getInt("code")).as("lock acquired: " + lockResponse).isEqualTo(StatusCode.SUCCESS);
+
+        // Team 1's own use case exactly as the API serves it, plus one extra step carrying team 2's step id.
+        MvcResult useCaseResult = this.mockMvc.perform(get(this.baseUrl + "/teams/1/use-cases/3").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken)).andReturn();
+        JSONObject payload = new JSONObject(useCaseResult.getResponse().getContentAsString()).getJSONObject("data");
+        payload.getJSONArray("mainSteps").put(new JSONObject()
+                .put("id", victimStepId)
+                .put("actor", "Student")
+                .put("actionText", "Stolen step")
+                .put("extensions", new JSONArray()));
+
+        MvcResult mvcResult = this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3").contentType(MediaType.APPLICATION_JSON).content(payload.toString()).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andDo(print()).andReturn();
+        JSONObject response = new JSONObject(mvcResult.getResponse().getContentAsString());
+
+        // Unlike the probes above, this one requires success: the designed behavior is to accept the update and
+        // treat the unowned id as a new step, so a refused request would mean the probe tested nothing.
+        assertThat(response.getBoolean("flag")).as(response.toString()).isTrue();
+        assertThat(response.getInt("code")).as(response.toString()).isEqualTo(StatusCode.SUCCESS);
+        this.entityManager.flush();
+        this.entityManager.clear();
+
+        Object[] victimRow = (Object[]) this.entityManager.createNativeQuery("select use_case_artifact_id, action_text from use_case_main_step where id = :id")
+                .setParameter("id", victimStepId).getSingleResult();
+        assertThat(((Number) victimRow[0]).longValue()).as("owner of team 2's step").isEqualTo(victimUseCaseId);
+        assertThat(victimRow[1]).isEqualTo("Team 2's only step");
+
+        Number newStepId = (Number) this.entityManager.createNativeQuery("select id from use_case_main_step where use_case_artifact_id = 3 and action_text = 'Stolen step'")
+                .getSingleResult();
+        assertThat(newStepId.longValue()).as("the submitted step became a new row of team 1's use case").isNotEqualTo(victimStepId);
+    }
+
+    /**
+     * Saves a use case owned by team 2 with a single main step, and returns its id.
+     */
+    private Long createTeam2UseCaseWithOneStep() {
+        RequirementArtifact team2Anything = team2Artifact("Client");
+        UseCase useCase = new UseCase();
+        useCase.setArtifact(new RequirementArtifact(team2Anything.getTeam(), RequirementArtifactType.USE_CASE, "Team 2's use case", "Owned by team 2.", ""));
+        useCase.setUseCaseTrigger("Team 2 starts its use case.");
+        useCase.addMainStep(new UseCaseMainStep("System", "Team 2's only step"));
+        Long id = this.useCaseService.saveUseCase(2, useCase).getId();
+        this.entityManager.flush();
+        return id;
     }
 
     @Test

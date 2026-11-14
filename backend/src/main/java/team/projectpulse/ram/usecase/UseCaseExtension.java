@@ -89,6 +89,35 @@ public class UseCaseExtension {
         }
     }
 
+    /**
+     * Revises this extension's steps in place to match the submitted ones, pairing them by id among this
+     * extension's own steps only. See {@link OwnedChildren}.
+     */
+    public void reviseSteps(List<UseCaseExtensionStep> submitted) {
+        OwnedChildren.revise(this.steps, submitted, UseCaseExtensionStep::getId,
+                UseCaseExtensionStep::reviseFrom, UseCaseExtensionStep::copyOf, step -> step.setExtension(this));
+    }
+
+    /**
+     * Copies a submitted extension's content onto this existing extension, keeping its id. {@code label} and
+     * {@code resumeStepNo} are left alone, because no request carries them.
+     */
+    void reviseFrom(UseCaseExtension submitted) {
+        this.conditionText = submitted.getConditionText();
+        this.kind = submitted.getKind();
+        this.extensionExit = submitted.getExtensionExit();
+        reviseSteps(submitted.getSteps());
+    }
+
+    /**
+     * Builds a new extension, without an id, with the submitted extension's content and fresh copies of its steps.
+     */
+    static UseCaseExtension copyOf(UseCaseExtension submitted) {
+        UseCaseExtension copy = new UseCaseExtension(submitted.getConditionText(), submitted.getKind(), submitted.getExtensionExit());
+        submitted.getSteps().forEach(step -> copy.addStep(UseCaseExtensionStep.copyOf(step)));
+        return copy;
+    }
+
     // Getters and Setters
     public Long getId() {
         return id;

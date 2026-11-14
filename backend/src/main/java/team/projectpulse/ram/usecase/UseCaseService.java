@@ -1,5 +1,8 @@
 package team.projectpulse.ram.usecase;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.OptimisticLockException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -27,11 +30,14 @@ public class UseCaseService {
     private final RequirementArtifactService requirementArtifactService;
     private final UserUtils userUtils;
     private final UserRepository userRepository;
+    private final EntityManager entityManager;
 
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "The EntityManager is Spring's shared, transaction-scoped proxy; holding a reference to it is how it is meant to be used.")
     public UseCaseService(UseCaseRepository useCaseRepository, RequirementArtifactService requirementArtifactService, UserUtils userUtils, UserRepository userRepository,
-                          @Value("${ram.lock.default-lock-ttl:PT15M}") Duration defaultLockTtl) {
+                          EntityManager entityManager, @Value("${ram.lock.default-lock-ttl:PT15M}") Duration defaultLockTtl) {
         this.useCaseRepository = useCaseRepository;
+        this.entityManager = entityManager;
         this.requirementArtifactService = requirementArtifactService;
         this.userUtils = userUtils;
         this.userRepository = userRepository;
@@ -90,8 +96,17 @@ public class UseCaseService {
         return useCase;
     }
 
+    /**
+     * Saves a new use case. Its steps, extensions and extension steps are saved as fresh copies of the ones passed
+     * in, so the caller's own step objects are not the ones persisted: read saved steps from the returned use case.
+     */
     public UseCase saveUseCase(Integer teamId, UseCase useCase) {
         useCase.initLockIfMissing(); // Ensure lock is initialized for new use cases
+
+        // Fresh copies drop any step, extension or extension-step id the request body carried, which would
+        // otherwise reach save() on a child entity (OI-46).
+        useCase.replaceMainSteps(useCase.getMainSteps().stream().map(UseCaseMainStep::copyOf).toList());
+
         requireActorsInTeam(teamId, useCase);
         this.requirementArtifactService.saveRequirementArtifact(teamId, useCase.getArtifact());
         return this.useCaseRepository.save(useCase);
@@ -161,6 +176,10 @@ public class UseCaseService {
     public UseCase updateUseCase(Integer teamId, Long useCaseId, UseCase update, Integer expectedVersion) {
         UseCase oldUseCase = this.useCaseRepository.findByIdAndArtifactTeamTeamId(useCaseId, teamId)
                 .orElseThrow(() -> new ObjectNotFoundException("use case", useCaseId));
+        // Load the whole step tree in one query, rather than one query per step and per extension once the steps
+        // are revised below. The team-scoped query above has just authorized this id in this transaction, which is
+        // the condition findByIdWithStepGraph requires, and nothing is modified yet, so the query flushes nothing.
+        this.useCaseRepository.findByIdWithStepGraph(useCaseId);
         oldUseCase.initLockIfMissing();
 
         // Validate the incoming references before doing any version or lock work.
@@ -191,6 +210,14 @@ public class UseCaseService {
             throw new SectionAlreadyLockedException("Use case is locked by another user. You cannot update it.");
         }
 
+        // Every accepted update increments the version, so the next save from a stale form is refused by the check
+        // above. Hibernate only increments it by itself when a UseCase field or collection is dirty, and most of a
+        // use case lives elsewhere: the title and description on its artifact, and the step text on child rows that
+        // revising updates in place. PESSIMISTIC_FORCE_INCREMENT writes the new version now, guarded by the old one,
+        // rather than just before commit (as OPTIMISTIC_FORCE_INCREMENT would), and sets it on this entity, so the
+        // response carries the version the next save must send.
+        this.entityManager.lock(oldUseCase, LockModeType.PESSIMISTIC_FORCE_INCREMENT);
+
         // Update artifact fields
         oldUseCase.getArtifact().setTitle(update.getArtifact().getTitle());
         oldUseCase.getArtifact().setContent(update.getArtifact().getContent());
@@ -211,8 +238,9 @@ public class UseCaseService {
         oldUseCase.getPostconditions().clear();
         oldUseCase.getPostconditions().addAll(update.getPostconditions());
 
-        // Update main steps
-        oldUseCase.replaceMainSteps(update.getMainSteps());
+        // Revise the main steps in place: submitted ids pair only with this use case's own steps, extensions and
+        // extension steps, and anything unpaired becomes a new row (see UseCase.reviseMainSteps).
+        oldUseCase.reviseMainSteps(update.getMainSteps());
 
         return this.useCaseRepository.save(oldUseCase);
     }

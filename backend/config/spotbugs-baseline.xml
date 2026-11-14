@@ -157,7 +157,6 @@
   <Match><Class name="team.projectpulse.ram.usecase.UseCase"/><Method name="getPrimaryActor" signature="()Lteam/projectpulse/ram/requirement/RequirementArtifact;"/><Field name="primaryActor"/><Bug pattern="EI_EXPOSE_REP"/></Match>
   <Match><Class name="team.projectpulse.ram.usecase.UseCase"/><Method name="getSecondaryActors" signature="()Ljava/util/Set;"/><Field name="secondaryActors"/><Bug pattern="EI_EXPOSE_REP"/></Match>
   <Match><Class name="team.projectpulse.ram.usecase.UseCase"/><Method name="setArtifact" signature="(Lteam/projectpulse/ram/requirement/RequirementArtifact;)V"/><Field name="artifact"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
-  <Match><Class name="team.projectpulse.ram.usecase.UseCase"/><Method name="setMainSteps" signature="(Ljava/util/List;)V"/><Field name="mainSteps"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
   <Match><Class name="team.projectpulse.ram.usecase.UseCase"/><Method name="setPostconditions" signature="(Ljava/util/Set;)V"/><Field name="postconditions"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
   <Match><Class name="team.projectpulse.ram.usecase.UseCase"/><Method name="setPreconditions" signature="(Ljava/util/Set;)V"/><Field name="preconditions"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
   <Match><Class name="team.projectpulse.ram.usecase.UseCase"/><Method name="setPrimaryActor" signature="(Lteam/projectpulse/ram/requirement/RequirementArtifact;)V"/><Field name="primaryActor"/><Bug pattern="EI_EXPOSE_REP2"/></Match>

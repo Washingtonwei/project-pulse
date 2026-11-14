@@ -60,6 +60,33 @@ public class UseCaseMainStep {
         }
     }
 
+    /**
+     * Revises this step's extensions in place to match the submitted ones, pairing them by id among this step's
+     * own extensions only. See {@link OwnedChildren}.
+     */
+    public void reviseExtensions(List<UseCaseExtension> submitted) {
+        OwnedChildren.revise(this.extensions, submitted, UseCaseExtension::getId,
+                UseCaseExtension::reviseFrom, UseCaseExtension::copyOf, extension -> extension.setBaseStep(this));
+    }
+
+    /**
+     * Copies a submitted step's content onto this existing step, keeping this step's id.
+     */
+    void reviseFrom(UseCaseMainStep submitted) {
+        this.actor = submitted.getActor();
+        this.actionText = submitted.getActionText();
+        reviseExtensions(submitted.getExtensions());
+    }
+
+    /**
+     * Builds a new step, without an id, with the submitted step's content and fresh copies of its extensions.
+     */
+    static UseCaseMainStep copyOf(UseCaseMainStep submitted) {
+        UseCaseMainStep copy = new UseCaseMainStep(submitted.getActor(), submitted.getActionText());
+        submitted.getExtensions().forEach(extension -> copy.addExtension(UseCaseExtension.copyOf(extension)));
+        return copy;
+    }
+
     // Getters and Setters
     public Long getId() {
         return id;

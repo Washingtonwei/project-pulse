@@ -98,6 +98,17 @@ public class UseCase {
         }
     }
 
+    /**
+     * Revises the main success scenario in place to match the submitted steps: a submitted step whose id is one of
+     * this use case's own steps updates that step, any other submitted step becomes a new one, own steps the
+     * submission omits are deleted, and the order follows the submission. The same rule applies to each step's
+     * extensions and each extension's steps. See {@link OwnedChildren}.
+     */
+    public void reviseMainSteps(List<UseCaseMainStep> submitted) {
+        OwnedChildren.revise(this.mainSteps, submitted, UseCaseMainStep::getId,
+                UseCaseMainStep::reviseFrom, UseCaseMainStep::copyOf, step -> step.setUseCase(this));
+    }
+
     public void initLockIfMissing() {
         if (this.lock == null) {
             this.lock = new UseCaseLock();
@@ -210,10 +221,6 @@ public class UseCase {
 
     public List<UseCaseMainStep> getMainSteps() {
         return mainSteps;
-    }
-
-    public void setMainSteps(List<UseCaseMainStep> mainSteps) {
-        this.mainSteps = mainSteps;
     }
 
     public Integer getVersion() {
