@@ -373,7 +373,7 @@ The RAM environment persists requirements as a team-scoped graph of typed requir
 - **RequirementArtifact** — the atomic graph node: its `type` (`RequirementArtifactType`), `artifactKey` (the artifact key, e.g., `FR-1`, `UC-5`), `title`, `content`, `priority`, and `notes`. An artifact is grouped under a source `DocumentSection`; the section determines where the artifact appears in a requirement document.
 - **ArtifactLink** — a typed, directed edge between two artifacts (the artifact's `outgoing` and `incoming` links): its `type` (`ArtifactLinkType`) and optional `notes`. This is the requirement link of the glossary.
 - **ArtifactKeySequence** — a per-team, per-artifact-type sequence counter that assigns the next product-generated `artifactKey` while preserving the artifact-key uniqueness and stability rules (BR-artifact-key-unique).
-- Enumerations: `RequirementArtifactType` (the authoritative artifact taxonomy), `ArtifactLinkType` (`DERIVES_FROM`, `REALIZES`, `REFERENCES`, `IMPACTS`, `MITIGATES`, `MOTIVATES` — matching the glossary's artifact link type), and `Priority` (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`).
+- Enumerations: `RequirementArtifactType` (the authoritative artifact taxonomy), `ArtifactLinkType` (`DERIVES_FROM`, `REALIZES`, `REFERENCES`, `IMPACTS`, `MITIGATES`, `MOTIVATES`, `ENABLES`, matching the glossary's artifact link type), and `Priority` (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`).
 
 **Use-case structure**
 
@@ -518,6 +518,7 @@ direction TB
         ASSUMPTION
         DEPENDENCY
         STAKEHOLDER
+        EXTERNAL_SYSTEM
         BUSINESS_RULE
         FUNCTIONAL_REQUIREMENT
         FEATURE
@@ -541,6 +542,7 @@ direction TB
         IMPACTS
         MITIGATES
         MOTIVATES
+        ENABLES
     }
 
     class Priority {
@@ -614,8 +616,9 @@ direction TB
 | `RISK`                                      | Vision and Scope → Risks                                                                                                                                                                  |
 | `ASSUMPTION`, `DEPENDENCY`                  | Vision and Scope → Business Assumptions and Dependencies (business-level) **and** SRS → Assumptions and Dependencies (architecture-level, e.g., `DE-llm-service`/`DE-gmail-smtp`) — these two types are authored in either document's Assumptions-and-Dependencies section |
 | `STAKEHOLDER`                               | Vision and Scope → Stakeholder Profiles                                                                                                                                                   |
+| `EXTERNAL_SYSTEM`                           | Vision and Scope → External Systems (a list section following Product Perspective, whose context diagram shows the same systems)                                                          |
 | `FEATURE`                                   | Vision and Scope → Major Features / Scope                                                                                                                                                 |
-| `USE_CASE`, `PRECONDITION`, `POSTCONDITION` | Use Cases → the use case (preconditions/postconditions are its constituents)                                                                                                                   |
+| `USE_CASE`, `PRECONDITION`, `POSTCONDITION` | Use Cases → the use case (preconditions and postconditions are authored from within a use case and shared across the team's use cases)                                                         |
 | `BUSINESS_RULE`                             | Business Rules → the rule list                                                                                                                                                                 |
 | `FUNCTIONAL_REQUIREMENT`                    | SRS → Functional Requirements                                                                                                                                                             |
 | `EXTERNAL_INTERFACE_REQUIREMENT`            | SRS → External Interface Requirements                                                                                                                                                       |
