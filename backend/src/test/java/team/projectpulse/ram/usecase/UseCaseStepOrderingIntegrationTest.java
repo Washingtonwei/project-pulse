@@ -19,6 +19,7 @@ import team.projectpulse.system.StatusCode;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -97,7 +98,6 @@ class UseCaseStepOrderingIntegrationTest extends AbstractIntegrationTest {
 
         UseCase useCase = new UseCase();
         useCase.setArtifact(new RequirementArtifact(seeded.getArtifact().getTeam(), RequirementArtifactType.USE_CASE, "Ordering probe", "A use case created to check step order.", ""));
-        useCase.setPrimaryActor(seeded.getPrimaryActor());
         useCase.setUseCaseTrigger("The Student starts the ordering probe.");
         for (int i = 0; i < 4; i++) {
             useCase.addMainStep(new UseCaseMainStep("System", "Step " + i));
@@ -107,7 +107,7 @@ class UseCaseStepOrderingIntegrationTest extends AbstractIntegrationTest {
         extension.addStep(new UseCaseExtensionStep("System", "Extension step 1"));
         useCase.getMainSteps().get(2).addExtension(extension);
 
-        Long useCaseId = this.useCaseService.saveUseCase(1, useCase).getId();
+        Long useCaseId = this.useCaseService.saveUseCase(1, useCase, new UseCaseActorIds(seeded.getPrimaryActor().getId(), Set.of())).getId();
         flushAndClear();
 
         UseCase reloaded = this.useCaseRepository.findByIdWithStepGraph(useCaseId).orElseThrow();
@@ -570,11 +570,10 @@ class UseCaseStepOrderingIntegrationTest extends AbstractIntegrationTest {
         UseCase seeded = loadSeededUseCase();
         UseCase useCase = new UseCase();
         useCase.setArtifact(new RequirementArtifact(seeded.getArtifact().getTeam(), RequirementArtifactType.USE_CASE, "Steps only", "A use case with nothing but steps.", ""));
-        useCase.setPrimaryActor(seeded.getPrimaryActor());
         useCase.setUseCaseTrigger("The Student starts.");
         useCase.addMainStep(new UseCaseMainStep("Student", "First step"));
         useCase.addMainStep(new UseCaseMainStep("System", "Second step"));
-        Long id = this.useCaseService.saveUseCase(1, useCase).getId();
+        Long id = this.useCaseService.saveUseCase(1, useCase, new UseCaseActorIds(seeded.getPrimaryActor().getId(), Set.of())).getId();
         flushAndClear();
         return id;
     }

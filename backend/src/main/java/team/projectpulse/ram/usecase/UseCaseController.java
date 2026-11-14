@@ -41,7 +41,7 @@ public class UseCaseController {
     @PostMapping("/teams/{teamId}/use-cases")
     public Result addUseCase(@PathVariable Integer teamId, @Valid @RequestBody UseCaseDto useCaseDto) {
         UseCase newUseCase = this.useCaseDtoToUseCaseConverter.convert(useCaseDto);
-        UseCase savedUseCase = this.useCaseService.saveUseCase(teamId, newUseCase);
+        UseCase savedUseCase = this.useCaseService.saveUseCase(teamId, newUseCase, actorIdsOf(useCaseDto));
         UseCaseDto savedUseCaseDto = this.useCaseToUseCaseDtoConverter.convert(savedUseCase);
         return new Result(true, StatusCode.SUCCESS, "Add use case successfully", savedUseCaseDto);
     }
@@ -49,9 +49,13 @@ public class UseCaseController {
     @PutMapping("/teams/{teamId}/use-cases/{useCaseId}")
     public Result updateUseCase(@PathVariable Integer teamId, @PathVariable Long useCaseId, @Valid @RequestBody UseCaseDto useCaseDto) {
         UseCase update = this.useCaseDtoToUseCaseConverter.convert(useCaseDto);
-        UseCase updateUseCase = this.useCaseService.updateUseCase(teamId, useCaseId, update, useCaseDto.version());
+        UseCase updateUseCase = this.useCaseService.updateUseCase(teamId, useCaseId, update, actorIdsOf(useCaseDto), useCaseDto.version());
         UseCaseDto updatedUseCaseDto = this.useCaseToUseCaseDtoConverter.convert(updateUseCase);
         return new Result(true, StatusCode.SUCCESS, "Update use case successfully", updatedUseCaseDto);
+    }
+
+    private static UseCaseActorIds actorIdsOf(UseCaseDto useCaseDto) {
+        return new UseCaseActorIds(useCaseDto.primaryActorId(), useCaseDto.secondaryActorIds());
     }
 
     @GetMapping("/teams/{teamId}/use-cases/{useCaseId}/lock")

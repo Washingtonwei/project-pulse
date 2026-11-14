@@ -20,11 +20,15 @@ public record UseCaseDto(
         Integer teamId,
         @NotNull(message = "Primary actor ID must not be null.")
         Long primaryActorId,
-        Set<Long> secondaryActorIds,
+        @NotNull(message = "Secondary actor IDs must not be null; send an empty list for none.")
+        Set<@NotNull Long> secondaryActorIds,
         @NotEmpty(message = "Use case trigger must not be empty.")
         String trigger,
+        @NotNull(message = "Preconditions must not be null; send an empty list for none.")
         Set<ConditionDto> preconditions,
+        @NotNull(message = "Postconditions must not be null; send an empty list for none.")
         Set<ConditionDto> postconditions,
+        @NotNull(message = "Main steps must not be null; send an empty list for none.")
         List<UseCaseMainStepDto> mainSteps,
         Priority priority,
         String notes,
