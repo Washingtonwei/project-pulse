@@ -179,12 +179,27 @@ export interface LockDocumentSectionResponse extends ApiResult<RequirementDocume
 export interface SearchRequirementArtifactsResponse extends ApiResult<Page<RequirementArtifact>> {}
 
 // The following interfaces define the structure of Use Cases and Glossary Terms, which are specific types of Requirement Artifacts.
+// Another use case that references the same precondition or postcondition (extension 6b1 of UC-DOC-edit-use-case).
+export interface OtherUseCase {
+  id: number
+  artifactKey?: string | null
+  title: string
+}
+
+// A use case's precondition or postcondition. In a request the server reads only id (an existing team condition, or
+// absent for a new one) and condition (the wording); the rest is response only.
 export interface Condition {
   id?: number
+  artifactKey?: string | null
   condition: string
   type: string
   priority?: string | null
   notes?: string | null
+  otherUseCases?: OtherUseCase[]
+  // Client only, never sent: a new row whose picker is still open, and a row picked from the team's conditions in
+  // this session, which stays read-only until the next save says whether it is shared.
+  choosing?: boolean
+  pickedInSession?: boolean
 }
 
 export interface UseCaseExtensionStep {
