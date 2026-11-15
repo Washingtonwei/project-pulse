@@ -1372,6 +1372,17 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
         assertThat(response.getInt("code")).as(response.toString()).isEqualTo(StatusCode.INVALID_ARGUMENT);
     }
 
+    @Test
+    void addUseCase_WithoutTeamId() throws Exception {
+        JSONObject payload = minimalUseCase(1L, new JSONArray());
+        payload.remove("teamId");
+
+        JSONObject response = postUseCase(payload, this.studentJohnToken);
+
+        assertThat(response.getBoolean("flag")).as(response.toString()).isTrue();
+        assertThat(response.getJSONObject("data").getInt("teamId")).isEqualTo(1);
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"mainSteps[0].extensions", "mainSteps[0].extensions[0].steps"})
     void addUseCase_NullNestedList(String path) throws Exception {

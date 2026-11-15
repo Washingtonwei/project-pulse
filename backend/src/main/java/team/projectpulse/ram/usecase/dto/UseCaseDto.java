@@ -17,8 +17,7 @@ public record UseCaseDto(
         String title,
         @NotEmpty(message = "Use case description must not be empty.")
         String description,
-        @NotNull(message = "Team ID is must not be null.")
-        Integer teamId,
+        Integer teamId, // optional and ignored: the team is always the route's
         @NotNull(message = "Primary actor ID must not be null.")
         Long primaryActorId,
         @NotNull(message = "Secondary actor IDs must not be null; send an empty list for none.")
