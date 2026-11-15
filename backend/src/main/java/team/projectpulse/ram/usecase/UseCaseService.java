@@ -108,20 +108,20 @@ public class UseCaseService {
      * the ones passed in, so the caller's own step objects are not the ones persisted: read saved steps from the
      * returned use case.
      * <p>
-     * The actors come from {@code actorIds} alone, resolved in {@code teamId}; any actor already set on
+     * The actors come from {@code references} alone, resolved in {@code teamId}; any actor already set on
      * {@code useCase} is replaced. See {@link #resolveActors}.
      *
      * @throws ObjectNotFoundException  if an actor id names no artifact of this team
      * @throws IllegalArgumentException if an actor is not a stakeholder or an external system
      */
-    public UseCase saveUseCase(Integer teamId, UseCase useCase, UseCaseActorIds actorIds) {
+    public UseCase saveUseCase(Integer teamId, UseCase useCase, UseCaseReferences references) {
         useCase.initLockIfMissing(); // Ensure lock is initialized for new use cases
 
         // Fresh copies drop any step, extension or extension-step id the request body carried, which would
         // otherwise reach save() on a child entity (OI-46).
         useCase.replaceMainSteps(useCase.getMainSteps().stream().map(UseCaseMainStep::copyOf).toList());
 
-        resolveActors(teamId, actorIds, useCase);
+        resolveActors(teamId, references, useCase);
         // Sets the artifact's team from the route and mints its key, so the team read below is the route's.
         this.requirementArtifactService.saveRequirementArtifact(teamId, useCase.getArtifact());
         giveConditionsTheTeam(useCase, useCase.getArtifact().getTeam());
@@ -191,13 +191,13 @@ public class UseCaseService {
 
     /**
      * Updates use case {@code useCaseId} of {@code teamId} from {@code update} at {@code expectedVersion}; the caller
-     * must hold the use case lock. The actors come from {@code actorIds} alone; see {@link #resolveActors}.
+     * must hold the use case lock. The actors come from {@code references} alone; see {@link #resolveActors}.
      *
      * @throws ObjectNotFoundException  if the use case, or an actor id, names nothing in this team
      * @throws IllegalArgumentException if an actor is not a stakeholder or an external system, or no version is given
      * @throws OptimisticLockException  if {@code expectedVersion} is stale
      */
-    public UseCase updateUseCase(Integer teamId, Long useCaseId, UseCase update, UseCaseActorIds actorIds, Integer expectedVersion) {
+    public UseCase updateUseCase(Integer teamId, Long useCaseId, UseCase update, UseCaseReferences references, Integer expectedVersion) {
         UseCase oldUseCase = this.useCaseRepository.findByIdAndArtifactTeamTeamId(useCaseId, teamId)
                 .orElseThrow(() -> new ObjectNotFoundException("use case", useCaseId));
         // Load the whole step tree in one query, rather than one query per step and per extension once the steps
@@ -207,7 +207,7 @@ public class UseCaseService {
         oldUseCase.initLockIfMissing();
 
         // Resolve the incoming references before doing any version or lock work.
-        resolveActors(teamId, actorIds, update);
+        resolveActors(teamId, references, update);
 
         if (expectedVersion == null) {
             throw new IllegalArgumentException("Use case version is required for update.");
@@ -271,7 +271,7 @@ public class UseCaseService {
     }
 
     /**
-     * Sets {@code useCase}'s actors from {@code actorIds}, each resolved in {@code teamId}, the team named in the
+     * Sets {@code useCase}'s actors from {@code references}, each resolved in {@code teamId}, the team named in the
      * route. The team-scoped load is itself the check: an id outside the team, or naming nothing at all, throws the
      * same {@link ObjectNotFoundException}, so a refusal does not reveal which ids exist in other teams
      * (BR-team-scoped-access, OI-46). Only then is the type checked (BR-use-case-actor-types), so the type of
@@ -281,14 +281,14 @@ public class UseCaseService {
      * case has a primary actor: the DTO requires one, and this refuses a missing one from a caller inside the server
      * too, so no path can store a use case without one.
      */
-    private void resolveActors(Integer teamId, UseCaseActorIds actorIds, UseCase useCase) {
-        if (actorIds.primaryActorId() == null) {
+    private void resolveActors(Integer teamId, UseCaseReferences references, UseCase useCase) {
+        if (references.primaryActorId() == null) {
             throw new IllegalArgumentException("Primary actor is required.");
         }
-        RequirementArtifact primaryActor = requireActor(teamId, actorIds.primaryActorId(), "Primary actor");
+        RequirementArtifact primaryActor = requireActor(teamId, references.primaryActorId(), "Primary actor");
 
         Set<RequirementArtifact> secondaryActors = new HashSet<>();
-        for (Long secondaryActorId : actorIds.secondaryActorIds()) {
+        for (Long secondaryActorId : references.secondaryActorIds()) {
             secondaryActors.add(requireActor(teamId, secondaryActorId, "Secondary actor"));
         }
 

@@ -18,7 +18,7 @@ import team.projectpulse.ram.requirement.RequirementArtifact;
 import team.projectpulse.ram.requirement.RequirementArtifactRepository;
 import team.projectpulse.ram.requirement.RequirementArtifactType;
 import team.projectpulse.ram.usecase.UseCase;
-import team.projectpulse.ram.usecase.UseCaseActorIds;
+import team.projectpulse.ram.usecase.UseCaseReferences;
 import team.projectpulse.ram.usecase.UseCaseMainStep;
 import team.projectpulse.ram.usecase.UseCaseService;
 import team.projectpulse.system.StatusCode;
@@ -415,7 +415,7 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
         useCase.setArtifact(new RequirementArtifact(team2Anything.getTeam(), RequirementArtifactType.USE_CASE, "Team 2's use case", "Owned by team 2.", ""));
         useCase.setUseCaseTrigger("Team 2 starts its use case.");
         useCase.addMainStep(new UseCaseMainStep("System", "Team 2's only step"));
-        Long id = this.useCaseService.saveUseCase(2, useCase, new UseCaseActorIds(team2Anything.getId(), Set.of())).getId();
+        Long id = this.useCaseService.saveUseCase(2, useCase, new UseCaseReferences(team2Anything.getId(), Set.of())).getId();
         this.entityManager.flush();
         return id;
     }

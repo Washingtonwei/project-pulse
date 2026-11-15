@@ -990,7 +990,7 @@ public class DataInitializer implements CommandLineRunner {
         step5ExtensionA.addStep(new UseCaseExtensionStep("Student", "The Student either chooses to correct the mistake and return to step 4 of the normal flow or chooses to terminate the use case."));
         step5.addExtension(step5ExtensionA);
 
-        this.useCaseService.saveUseCase(1, useCase, new UseCaseActorIds(stakeholder1.getId(), Set.of(stakeholder2.getId())));
+        this.useCaseService.saveUseCase(1, useCase, new UseCaseReferences(stakeholder1.getId(), Set.of(stakeholder2.getId())));
 
         // Create a requirement document
         RequirementDocument doc = new RequirementDocument();

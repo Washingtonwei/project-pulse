@@ -45,7 +45,7 @@ public class UseCaseController {
      *   <li>{@code useCaseDtoToUseCaseConverter} maps the plain fields into a new, unsaved {@link UseCase}: title,
      *       description, priority and notes (onto its artifact), trigger, preconditions, postconditions and steps.
      *       It resolves no id, so the {@code UseCase} it returns has no actors and no team.</li>
-     *   <li>{@link #actorIdsOf} copies the two actor id fields, {@code primaryActorId} and
+     *   <li>{@link #referencesOf} copies the two actor id fields, {@code primaryActorId} and
      *       {@code secondaryActorIds}, out of the DTO unchanged, as plain ids.</li>
      * </ul>
      * The service then turns those ids into actors through a lookup scoped to {@code teamId} from the route, and
@@ -57,7 +57,7 @@ public class UseCaseController {
         // Part 1: the plain fields, as an unsaved use case with no actors and no team.
         UseCase newUseCase = this.useCaseDtoToUseCaseConverter.convert(useCaseDto);
         // Part 2: the actor ids, passed beside it and resolved by the service in the route's team.
-        UseCase savedUseCase = this.useCaseService.saveUseCase(teamId, newUseCase, actorIdsOf(useCaseDto));
+        UseCase savedUseCase = this.useCaseService.saveUseCase(teamId, newUseCase, referencesOf(useCaseDto));
         UseCaseDto savedUseCaseDto = this.useCaseToUseCaseDtoConverter.convert(savedUseCase);
         return new Result(true, StatusCode.SUCCESS, "Add use case successfully", savedUseCaseDto);
     }
@@ -70,7 +70,7 @@ public class UseCaseController {
      *       itself: the service copies its fields onto the stored use case, and pairs its steps with the stored ones
      *       by id. The step, extension and extension-step ids are the only ids the converter keeps, because they are
      *       pairing keys rather than references;</li>
-     *   <li>{@link #actorIdsOf} copies the actor ids out of the DTO, for the service to resolve in the route's team;</li>
+     *   <li>{@link #referencesOf} copies the actor ids out of the DTO, for the service to resolve in the route's team;</li>
      *   <li>{@code useCaseDto.version()} is the version the editor last read, read straight from the DTO, because it
      *       is not a field of the use case being edited but the guard on the edit: a stale one is refused with 409.</li>
      * </ul>
@@ -81,7 +81,7 @@ public class UseCaseController {
         // Part 1: the plain fields and the steps, as a detached use case the service copies from.
         UseCase update = this.useCaseDtoToUseCaseConverter.convert(useCaseDto);
         // Parts 2 and 3: the actor ids and the expected version, both read from the DTO and passed beside it.
-        UseCase updateUseCase = this.useCaseService.updateUseCase(teamId, useCaseId, update, actorIdsOf(useCaseDto), useCaseDto.version());
+        UseCase updateUseCase = this.useCaseService.updateUseCase(teamId, useCaseId, update, referencesOf(useCaseDto), useCaseDto.version());
         UseCaseDto updatedUseCaseDto = this.useCaseToUseCaseDtoConverter.convert(updateUseCase);
         return new Result(true, StatusCode.SUCCESS, "Update use case successfully", updatedUseCaseDto);
     }
@@ -92,8 +92,8 @@ public class UseCaseController {
      * as plain values and the service resolves them (OI-46, BR-team-scoped-access). Nothing is looked up or checked
      * here; a missing id list was already refused by {@code @Valid} before this runs.
      */
-    private static UseCaseActorIds actorIdsOf(UseCaseDto useCaseDto) {
-        return new UseCaseActorIds(useCaseDto.primaryActorId(), useCaseDto.secondaryActorIds());
+    private static UseCaseReferences referencesOf(UseCaseDto useCaseDto) {
+        return new UseCaseReferences(useCaseDto.primaryActorId(), useCaseDto.secondaryActorIds());
     }
 
     @GetMapping("/teams/{teamId}/use-cases/{useCaseId}/lock")
