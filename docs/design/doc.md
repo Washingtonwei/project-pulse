@@ -314,8 +314,8 @@ The editor lists a team's use cases through the requirement artifact search, `PO
 | Same wording as an existing condition | Always a new condition | Reuse by wording: makes "Make a separate copy" impossible, and needs a rule for how exact a match must be |
 | Who may reword a condition through a use case | Only while no other use case references it (BR-shared-condition-wording) | Always: would silently change the other use cases |
 | "Edit for all" (extension 6b2) | Not built yet | Now: it needs the stale-save guard of UC-ART-edit-artifact extension 10a, a `@Version` on `RequirementArtifact` (OI-51), which affects every artifact route |
-| How the order of conditions is stored | A `List` with `@OrderColumn` on each join table | A `Set` (as before): no order at all, and the request's `Set<ConditionDto>` merged two new entries with the same wording. A position field on the condition: the position belongs to the link, since one condition sits at different positions in different use cases. |
-| Join table primary key | `(use_case_id, *_index)`, which is what Hibernate generates for an indexed list; a repeated condition is refused by the service | Keeping `(artifact_id, use_case_id)`: reordering updates the artifact at an index while another row still holds it, a primary key collision |
+| How the order of conditions is stored | A `List` with `@OrderColumn` on each join table. Allowed because `UseCase` owns both associations (it declares the `@JoinTable`, and nothing maps them back with `mappedBy`). The Hibernate 7.4 User Guide, §3.9.2 Mapping Lists, requires `@OrderColumn` to keep a list's order and forbids it only on a `@ManyToMany(mappedBy = …)` side; §3.9.12 Ordered Lists puts the order column "in the collection link table". | A `Set` (as before): no order at all, and the request's `Set<ConditionDto>` merged two new entries with the same wording. A position field on the condition: the position belongs to the link, since one condition sits at different positions in different use cases. |
+| Join table primary key | `(use_case_id, *_index)`; a repeated condition is refused by the service. **To confirm in `/implement`:** the guide shows this key only for a unidirectional `@OneToMany` link table (§3.9.12, "PRIMARY KEY ( Person_id, order_id )"), not for `@ManyToMany`. So the first step is to read the key Hibernate generates for these tables in dev and give V9 exactly that key, so production matches what the tests run against. | Keeping `(artifact_id, use_case_id)`: if Hibernate reorders by updating the artifact at each index, a swap would briefly put one artifact on two rows, a primary key collision. The guide doesn't show the SQL Hibernate runs to reorder an indexed list, so this is inferred, and the reorder test below checks it. |
 | Where "shared" is computed | Two JPQL queries in `UseCaseRepository`, run during the save and for every response | A reference count stored on the artifact: one more value to keep in sync, for no gain at use case size |
 | Condition key prefixes | `PRC` and `PSC`, one counter per type as for every artifact | `PRE` and `POST` (as before): read exactly like the display numbers PRE-1 and POST-1. `CND` for both: would need the two types to share one counter, the only exception in key generation, and the key would not say pre or post. |
 | Condition rows already stored | No delete and no key backfill; existing join rows are numbered once by V9 | A cleanup migration: it can't tell an orphan from a condition kept for reuse, which is legitimate from this slice on |
@@ -349,7 +349,7 @@ Three migrations, and no table added:
   2. Numbers the existing rows per use case from 0, with `ROW_NUMBER() - 1` (`@OrderColumn` is 0-based), ordered by artifact id, since the old order was undefined.
   3. Makes the column `NOT NULL`.
   4. Adds an index on the artifact column, so its foreign key keeps one.
-  5. Replaces the primary key with `(use_case_id, *_index)`.
+  5. Replaces the primary key with the one Hibernate generates for the mapping, expected to be `(use_case_id, *_index)` and confirmed first in `/implement` (see Key decisions).
 
 ```mermaid
 erDiagram
@@ -393,7 +393,7 @@ The step tables and their `*_index` order columns are unchanged. The dev seed ad
 | UC-DOC-create-use-case, new conditions | integration | Stored with the list's type (a body `type` of `STAKEHOLDER` is ignored), the route's team, keys `PRC-n` and `PSC-n`, in the submitted order |
 | UC-DOC-create-use-case, an existing condition picked | integration | Linked by id; no new row |
 | Two new entries with the same wording | integration | Both stored as separate conditions, in order |
-| UC-DOC-edit-use-case, reorder | integration | The order follows the submission; the condition ids are unchanged |
+| UC-DOC-edit-use-case, reorder | integration | The order follows the submission and the condition ids are unchanged. Two cases: swap two conditions, and move the last one to the front. Both must save with no constraint error, on MySQL with the primary key V9 creates. |
 | UC-DOC-edit-use-case, remove | integration | The link is dropped; the condition row still exists |
 | UC-DOC-edit-use-case, reword an unshared condition | integration | Same id, new wording |
 | UC-DOC-edit-use-case, extension 7a, reword a shared condition | integration | 400 naming the key; the stored wording and the version are unchanged |
