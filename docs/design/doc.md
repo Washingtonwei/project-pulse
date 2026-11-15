@@ -237,6 +237,29 @@ flowchart TD
 
 **Keys and display numbers are different things.** A condition's artifact key is `PRC-n` for a precondition and `PSC-n` for a postcondition, minted once per team from that type's counter. It never changes, and it's what links, comments and search show. The display number, `PRE-1`, `PRE-2`, … or `POST-1`, …, is the condition's position in one use case only. A shared condition `PRC-7` can be PRE-1 in UC-3 and PRE-4 in UC-9.
 
+**The condition types, and where each lives.** Five small types carry a condition through a request and back, each at one boundary:
+
+```mermaid
+flowchart TD
+    J["JSON body"] --> D["ConditionDto<br/>API shape, validated by @Valid"]
+    D -- "controller: submittedConditions" --> S["SubmittedCondition<br/>id or null, wording<br/>inside UseCaseReferences"]
+    S -- "service: planConditions, checks only" --> P["PlannedCondition<br/>stored artifact or null, wording<br/>private to UseCaseService"]
+    P -- "service: applyConditions, after the version and lock checks" --> A["RequirementArtifact<br/>the stored condition"]
+    Q["UseCaseRepository sharing queries"] --> U["ConditionUse<br/>use case Y also references condition X"]
+    U -- "service: otherUseCasesReferencing, grouped by condition id" --> O["OtherUseCaseDto<br/>id, artifactKey, title"]
+    O --> R["ConditionDto.otherUseCases in the response"]
+```
+
+| Type | Layer | Why it is not one of the others |
+|---|---|---|
+| `ConditionDto` | API | The JSON contract, in both directions |
+| `SubmittedCondition` | Controller to service | The service takes no API type; this is the conditions' share of `UseCaseReferences`, as the actors travel as ids |
+| `PlannedCondition` | Inside `UseCaseService` | A checked result that must not be written yet: setting a new wording on the stored artifact early would be flushed before the version and lock checks, the same reason the actors are resolved onto the detached `update` |
+| `ConditionUse` | Repository | A query row needs the condition id to group by, and a repository builds no API type |
+| `OtherUseCaseDto` | API | The JSON shape of one entry of `otherUseCases`, without the internal condition id |
+
+Two could be dropped, and both were kept on purpose: passing `ConditionDto` to the service instead of `SubmittedCondition` would make the service depend on an API type, and returning `ConditionUse` in the response instead of `OtherUseCaseDto` would leak a repository type and a redundant `conditionId` into the JSON.
+
 ### Pairing, at any one level
 
 ```mermaid
