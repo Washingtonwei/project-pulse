@@ -206,16 +206,17 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
                 .andDo(print()).andReturn();
         JSONObject response = new JSONObject(mvcResult.getResponse().getContentAsString());
 
-        if (response.getBoolean("flag")) {
-            this.entityManager.flush();
-            this.entityManager.clear();
-            @SuppressWarnings("unchecked")
-            java.util.List<Number> conditionTeams = this.entityManager.createNativeQuery("select team_team_id from requirement_artifact where content like 'Body team probe %condition'")
-                    .getResultList();
-            assertThat(conditionTeams).hasSize(2);
-            assertThat(conditionTeams).allSatisfy(teamId -> assertThat(teamId.intValue()).isEqualTo(1));
-            assertThat(countArtifactsOfTeam(2)).isEqualTo(team2RowsBefore);
-        }
+        // Unlike the cross-team probes above, this create is valid and must succeed; a refused request would mean
+        // the probe tested nothing.
+        assertThat(response.getBoolean("flag")).as(response.toString()).isTrue();
+        this.entityManager.flush();
+        this.entityManager.clear();
+        @SuppressWarnings("unchecked")
+        java.util.List<Number> conditionTeams = this.entityManager.createNativeQuery("select team_team_id from requirement_artifact where content like 'Body team probe %condition'")
+                .getResultList();
+        assertThat(conditionTeams).hasSize(2);
+        assertThat(conditionTeams).allSatisfy(teamId -> assertThat(teamId.intValue()).isEqualTo(1));
+        assertThat(countArtifactsOfTeam(2)).isEqualTo(team2RowsBefore);
     }
 
     private long countArtifactsOfTeam(int teamId) {
@@ -414,7 +415,7 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
         useCase.setArtifact(new RequirementArtifact(team2Anything.getTeam(), RequirementArtifactType.USE_CASE, "Team 2's use case", "Owned by team 2.", ""));
         useCase.setUseCaseTrigger("Team 2 starts its use case.");
         useCase.addMainStep(new UseCaseMainStep("System", "Team 2's only step"));
-        Long id = this.useCaseService.saveUseCase(2, useCase, new UseCaseActorIds(null, Set.of())).getId();
+        Long id = this.useCaseService.saveUseCase(2, useCase, new UseCaseActorIds(team2Anything.getId(), Set.of())).getId();
         this.entityManager.flush();
         return id;
     }

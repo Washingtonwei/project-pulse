@@ -277,11 +277,15 @@ public class UseCaseService {
      * (BR-team-scoped-access, OI-46). Only then is the type checked (BR-use-case-actor-types), so the type of
      * another team's artifact cannot leak through a 400 either.
      * <p>
-     * The primary actor is checked first, then each secondary actor, and the first failure is reported.
+     * The primary actor is checked first, then each secondary actor, and the first failure is reported. Every use
+     * case has a primary actor: the DTO requires one, and this refuses a missing one from a caller inside the server
+     * too, so no path can store a use case without one.
      */
     private void resolveActors(Integer teamId, UseCaseActorIds actorIds, UseCase useCase) {
-        RequirementArtifact primaryActor = actorIds.primaryActorId() == null ? null
-                : requireActor(teamId, actorIds.primaryActorId(), "Primary actor");
+        if (actorIds.primaryActorId() == null) {
+            throw new IllegalArgumentException("Primary actor is required.");
+        }
+        RequirementArtifact primaryActor = requireActor(teamId, actorIds.primaryActorId(), "Primary actor");
 
         Set<RequirementArtifact> secondaryActors = new HashSet<>();
         for (Long secondaryActorId : actorIds.secondaryActorIds()) {

@@ -1308,6 +1308,15 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void updateUseCase_PrimaryActorFromAnotherTeam() throws Exception {
+        // The edit path resolves the primary actor through the same team-scoped lookup as create; another team's
+        // artifact is refused with 404 and the stored use case is unchanged.
+        long foreignActorId = fetchTeam2StakeholderId();
+        assertActorEditRefused(payload -> payload.put("primaryActorId", foreignActorId),
+                StatusCode.NOT_FOUND, "Could not find requirement artifact with Id " + foreignActorId + " :(");
+    }
+
+    @Test
     void updateUseCase_SecondaryActorFromAnotherTeam() throws Exception {
         long foreignActorId = fetchTeam2StakeholderId();
         assertActorEditRefused(payload -> payload.put("secondaryActorIds", new JSONArray().put(foreignActorId)),
