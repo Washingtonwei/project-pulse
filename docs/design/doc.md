@@ -265,7 +265,12 @@ Two consequences worth knowing:
 
 ## Data model
 
-One migration, `V7__add_external_system_artifact_type.sql`, adds `EXTERNAL_SYSTEM` to the `type` enum column of `requirement_artifact` and `artifact_key_sequence`, keeping the value list alphabetical to match Hibernate's generated definition (the V4 pattern). No table or column is added. The step tables and their `*_index` order columns are unchanged. The dev seed adds one team-1 external system as a secondary actor of the seeded use case.
+Two migrations, and no table or column added:
+
+- `V7__add_external_system_artifact_type.sql` adds `EXTERNAL_SYSTEM` to the `type` enum column of `requirement_artifact` and `artifact_key_sequence`, keeping the value list alphabetical to match Hibernate's generated definition (the V4 pattern).
+- `V8__rename_secondary_actor_column.sql` renames `use_case_secondary_actor.stakeholder_artifact_id` to `actor_artifact_id`, since a secondary actor may now be an external system. MySQL 8 keeps the foreign key and the composite primary key across `RENAME COLUMN`. Added during implementation, with the developer's agreement; it was not in the approved design.
+
+The step tables and their `*_index` order columns are unchanged. The dev seed adds one team-1 external system, "Email service", as the last artifact it saves, so no seeded id shifts. For the same reason it is not attached to the seeded use case, whose save comes much earlier; tests that need it as an actor attach it themselves.
 
 ## Reuse & cross-cutting
 
@@ -280,14 +285,14 @@ One migration, `V7__add_external_system_artifact_type.sql`, adds `EXTERNAL_SYSTE
 
 | Use case, flow | Level | Asserts |
 |---|---|---|
-| UC-DOC-create-use-case, main flow | integration | A stakeholder primary actor and an external-system secondary actor are stored; the response shows both |
-| UC-DOC-create-use-case, extension 4a (primary) | integration | A primary actor of another type in the caller's own team (for example a feature) is refused with 400; no use case is stored |
-| UC-DOC-create-use-case, extension 4a (secondary) | integration | One secondary actor of the wrong type is refused with 400, and the message names `Secondary actor` and its id |
-| UC-DOC-edit-use-case, extension 7a | integration | The same two refusals on PUT; the stored actors and version are unchanged |
-| Actor from another team (create and edit) | integration | Refused with 404, with the same message as an id that names nothing |
-| Missing fields (create and edit) | integration | Each of `primaryActorId`, `secondaryActorIds`, `preconditions`, `postconditions` and `mainSteps` omitted gives 400, not 500 |
+| UC-DOC-create-use-case, main flow | integration, `UseCaseControllerTest` | A stakeholder primary actor and an external-system secondary actor are stored; the response shows both |
+| UC-DOC-create-use-case, extension 4a (primary) | integration, `UseCaseControllerTest` | A primary actor of another type in the caller's own team (for example a feature) is refused with 400; no use case is stored |
+| UC-DOC-create-use-case, extension 4a (secondary) | integration, `UseCaseControllerTest` | One secondary actor of the wrong type is refused with 400, and the message names `Secondary actor` and its id |
+| UC-DOC-edit-use-case, extension 7a | integration, `UseCaseControllerTest` | The same two refusals on PUT; the stored actors and version are unchanged |
+| Actor from another team (create and edit) | integration, `UseCaseControllerTest` | Refused with 404, with the same message as an id that names nothing |
+| Missing fields (create and edit) | integration, `UseCaseControllerTest` | Each of `primaryActorId`, `secondaryActorIds`, `preconditions`, `postconditions` and `mainSteps` omitted gives 400, not 500 |
 | Body `teamId` is ignored (OI-46) | integration, `RequestBodyIdIntegrationTest` | With another team's id in the body, every stored condition belongs to the route's team and the other team gains no rows. Written first and run against the unchanged code |
-| External system key | unit | `ArtifactKeyPrefix.of(EXTERNAL_SYSTEM)` is `SYS`; a new external system gets `SYS-1` |
+| External system key | unit, `ArtifactKeyPrefixTest`; integration | `ArtifactKeyPrefix.of(EXTERNAL_SYSTEM)` is `SYS`, and no artifact type falls back to `UNK`; the seeded external system has the key `SYS-1` (asserted in the create main-flow test) |
 | Pairing rules | unit, `UseCaseStepRevisionTest` | Paired child updated in place; unpaired, foreign and repeated ids become fresh copies; omitted children removed; order follows the submission; extension ids pair only within their own step; `label` and `resumeStepNo` survive |
 | How order is stored | integration, `UseCaseStepOrderingIntegrationTest` | Contiguous indexes on create, insert, remove and move; nested lists numbered per parent; the step-graph fetch has no duplicates |
 | UC-DOC-edit-use-case, editing scenarios | integration, `UseCaseStepOrderingIntegrationTest` | Two saves in a row; remove an extension; edit an extension's kind and exit; insert an extension step; edit actors; remove every step |
