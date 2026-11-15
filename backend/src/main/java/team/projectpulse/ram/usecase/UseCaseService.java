@@ -45,9 +45,6 @@ public class UseCaseService {
     /** The artifact types that may serve as a use case's actor (BR-use-case-actor-types). */
     private static final Set<RequirementArtifactType> ACTOR_TYPES = EnumSet.of(RequirementArtifactType.STAKEHOLDER, RequirementArtifactType.EXTERNAL_SYSTEM);
 
-    /** Stands for "no use case" in the sharing queries, which exclude the use case being saved. Ids start at 1. */
-    private static final Long NO_USE_CASE = 0L;
-
     private final Duration defaultLockTtl;
     private final UseCaseRepository useCaseRepository;
     private final RequirementArtifactService requirementArtifactService;
@@ -126,12 +123,12 @@ public class UseCaseService {
      * <p>
      * The actors and the conditions come from {@code references} alone, resolved in {@code teamId}; any actor or
      * condition already set on {@code useCase} is replaced. A new condition is saved as a team artifact with its key
-     * (PRC-n or PSC-n); an existing one is linked. See {@link #resolveActors} and {@link #planConditions}.
+     * (PRC-n or PSC-n); an existing one is linked as it is. See {@link #resolveActors} and {@link #resolveConditions}.
      *
      * @throws ObjectNotFoundException  if an actor or condition id names no artifact of this team
      * @throws IllegalArgumentException if the primary actor is missing, an actor is not a stakeholder or an external
      *                                  system, or a condition entry is refused (a repeated id, the other list's type,
-     *                                  or a changed wording of a condition another use case references)
+     *                                  or a changed wording of an existing condition, extension 4a)
      */
     public UseCase saveUseCase(Integer teamId, UseCase useCase, UseCaseReferences references) {
         useCase.initLockIfMissing(); // Ensure lock is initialized for new use cases
@@ -141,17 +138,15 @@ public class UseCaseService {
         useCase.replaceMainSteps(useCase.getMainSteps().stream().map(UseCaseMainStep::copyOf).toList());
 
         resolveActors(teamId, references, useCase);
-        // Conditions are handled in two passes, as in updateUseCase: planConditions checks every entry and writes
-        // nothing, then applyConditions writes. A new use case references nothing yet, so every other use case counts
-        // as "another" one (NO_USE_CASE).
-        List<PlannedCondition> preconditions = planConditions(teamId, references.preconditions(), RequirementArtifactType.PRECONDITION, NO_USE_CASE);
-        List<PlannedCondition> postconditions = planConditions(teamId, references.postconditions(), RequirementArtifactType.POSTCONDITION, NO_USE_CASE);
+        // Check every condition entry first, writing nothing, as in updateUseCase; the new ones are saved below.
+        List<RequirementArtifact> preconditions = resolveConditions(teamId, references.preconditions(), RequirementArtifactType.PRECONDITION);
+        List<RequirementArtifact> postconditions = resolveConditions(teamId, references.postconditions(), RequirementArtifactType.POSTCONDITION);
 
         // Sets the artifact's team from the route and mints its key. Saved before the new conditions, so the use
         // case takes the lower id, as it did when the conditions were cascaded.
         this.requirementArtifactService.saveRequirementArtifact(teamId, useCase.getArtifact());
-        useCase.replacePreconditions(applyConditions(teamId, preconditions, RequirementArtifactType.PRECONDITION));
-        useCase.replacePostconditions(applyConditions(teamId, postconditions, RequirementArtifactType.POSTCONDITION));
+        useCase.replacePreconditions(saveNewConditions(teamId, preconditions));
+        useCase.replacePostconditions(saveNewConditions(teamId, postconditions));
         return this.useCaseRepository.save(useCase);
     }
 
@@ -242,13 +237,13 @@ public class UseCaseService {
     /**
      * Updates use case {@code useCaseId} of {@code teamId} from {@code update} at {@code expectedVersion}; the caller
      * must hold the use case lock. The actors and the conditions come from {@code references} alone; see
-     * {@link #resolveActors} and {@link #planConditions}. The checks run in this order, and nothing is written until
+     * {@link #resolveActors} and {@link #resolveConditions}. The checks run in this order, and nothing is written until
      * all of them pass: use case in team, actors, conditions, version, lock.
      *
      * @throws ObjectNotFoundException       if the use case, an actor id or a condition id names nothing in this team
      * @throws IllegalArgumentException      if no version is given, the primary actor is missing, an actor is not a
      *                                       stakeholder or an external system, or a condition entry is refused (a
-     *                                       repeated id, the other list's type, or a changed wording of a shared
+     *                                       repeated id, the other list's type, or a changed wording of an existing
      *                                       condition, extension 7a)
      * @throws OptimisticLockException       (409) if {@code expectedVersion} is stale
      * @throws SectionLockRequiredException  (409) if no one holds the lock
@@ -266,12 +261,11 @@ public class UseCaseService {
         // Resolve and check the incoming references before doing any version or lock work, and before any write.
         // The actors are resolved onto the detached update, not onto the managed oldUseCase; they are copied across
         // after the lock check, further down.
-        // Conditions take two passes: planConditions here checks every entry and writes nothing, so a refused
-        // request leaves the database untouched; applyConditions further down does the writes, after the version and
-        // lock checks have passed.
+        // resolveConditions checks every condition entry and writes nothing, so a refused request leaves the database
+        // untouched; saveNewConditions further down saves the new ones, after the version and lock checks.
         resolveActors(teamId, references, update);
-        List<PlannedCondition> preconditions = planConditions(teamId, references.preconditions(), RequirementArtifactType.PRECONDITION, useCaseId);
-        List<PlannedCondition> postconditions = planConditions(teamId, references.postconditions(), RequirementArtifactType.POSTCONDITION, useCaseId);
+        List<RequirementArtifact> preconditions = resolveConditions(teamId, references.preconditions(), RequirementArtifactType.PRECONDITION);
+        List<RequirementArtifact> postconditions = resolveConditions(teamId, references.postconditions(), RequirementArtifactType.POSTCONDITION);
 
         if (expectedVersion == null) {
             throw new IllegalArgumentException("Use case version is required for update.");
@@ -314,17 +308,17 @@ public class UseCaseService {
 
         // The actors. These are not what the request sent: resolveActors, near the top, replaced them on the detached
         // update with the team-checked artifacts. It wrote them onto update rather than straight onto oldUseCase
-        // because oldUseCase is managed, so the queries planConditions runs would have flushed the change before the
+        // because oldUseCase is managed, so the queries resolveConditions runs would have flushed the change before the
         // version and lock checks. Copying them across only now keeps every write after those checks.
         oldUseCase.setPrimaryActor(update.getPrimaryActor());
         oldUseCase.setUseCaseTrigger(update.getUseCaseTrigger());
         oldUseCase.getSecondaryActors().clear();
         oldUseCase.getSecondaryActors().addAll(update.getSecondaryActors());
 
-        // Conditions are links to shared artifacts: reword the unshared ones in place, save the new ones, and
-        // replace this use case's ordered lists. Removing an entry drops only the link.
-        oldUseCase.replacePreconditions(applyConditions(teamId, preconditions, RequirementArtifactType.PRECONDITION));
-        oldUseCase.replacePostconditions(applyConditions(teamId, postconditions, RequirementArtifactType.POSTCONDITION));
+        // Conditions are links to shared artifacts: save the new ones, then replace this use case's ordered lists.
+        // Removing an entry drops only the link.
+        oldUseCase.replacePreconditions(saveNewConditions(teamId, preconditions));
+        oldUseCase.replacePostconditions(saveNewConditions(teamId, postconditions));
 
         // Revise the main steps in place: submitted ids pair only with this use case's own steps, extensions and
         // extension steps, and anything unpaired becomes a new row (see UseCase.reviseMainSteps).
@@ -410,28 +404,23 @@ public class UseCaseService {
     }
 
     /**
-     * One submitted condition, checked and resolved but not yet written: {@code existing} is the team's condition the
-     * entry named, or null for a new one, and {@code wording} is what it should say.
-     */
-    private record PlannedCondition(RequirementArtifact existing, String wording) {
-    }
-
-    /**
      * Checks every entry of one condition list and resolves it, writing nothing, so that a refusal leaves the use case
-     * and its conditions untouched (BR-use-case-condition-shared, BR-shared-condition-wording). For each entry, in
-     * order: a repeated id, then the lookup scoped to {@code teamId} (404 for another team's id and for an unknown id
-     * alike), then the type, then the wording. The first failure is reported.
+     * and its conditions untouched (BR-use-case-condition-shared, BR-shared-condition-wording). An entry with an id
+     * links that condition as it is; an entry without one becomes a new condition, built here but saved only by
+     * {@link #saveNewConditions}, after the version and lock checks. For each entry with an id, in order: a repeated
+     * id, then the lookup scoped to {@code teamId} (404 for another team's id and for an unknown id alike), then the
+     * type, then the wording. The first failure is reported.
      * <p>
-     * A condition may be reworded through a use case only while no use case other than {@code useCaseId} references
-     * it, because a shared condition's wording is changed only on the condition itself, for every use case at once.
+     * A use case never rewords a condition, shared or not, so the wording sent with an id must be exactly the stored
+     * one. Rewording for one use case is a separate copy (extension 6b3): an entry with no id.
      *
-     * @param useCaseId the use case being saved, or {@link #NO_USE_CASE} on create
+     * @return the conditions in list order: the team's stored ones, and new unsaved ones (no id yet)
      */
-    private List<PlannedCondition> planConditions(Integer teamId, List<SubmittedCondition> submitted, RequirementArtifactType type, Long useCaseId) {
+    private List<RequirementArtifact> resolveConditions(Integer teamId, List<SubmittedCondition> submitted, RequirementArtifactType type) {
         // "Precondition" or "Postcondition", used only in error messages so they name the list.
         String label = type == RequirementArtifactType.PRECONDITION ? "Precondition" : "Postcondition";
-        // One planned entry per submitted entry, in the same order: this order becomes the use case's order.
-        List<PlannedCondition> plan = new ArrayList<>();
+        // One condition per submitted entry, in the same order: this order becomes the use case's order.
+        List<RequirementArtifact> conditions = new ArrayList<>(submitted.size());
         // The ids already met in this list, to refuse a condition listed twice.
         Set<Long> seen = new HashSet<>();
 
@@ -440,10 +429,15 @@ public class UseCaseService {
             // The 1-based position is the display number the student sees (PRE-2, POST-1), so errors use it.
             int position = i + 1;
 
-            // (a) No id: the student typed a new condition, or asked for a separate copy (extension 6b3). There is
-            // nothing to look up or check; applyConditions will create it.
+            // (a) No id: the student typed a new condition, or asked for a separate copy (extension 6b3). The type
+            // comes from the list it was entered in, never from the request, and the wording is the artifact's
+            // content, stored exactly as sent; a condition has no title of its own.
             if (entry.id() == null) {
-                plan.add(new PlannedCondition(null, entry.wording()));
+                RequirementArtifact condition = new RequirementArtifact();
+                condition.setType(type);
+                condition.setTitle("");
+                condition.setContent(entry.wording());
+                conditions.add(condition);
                 continue;
             }
 
@@ -462,67 +456,31 @@ public class UseCaseService {
                 throw new IllegalArgumentException(label + " " + position + " is not a " + label.toLowerCase(Locale.ROOT) + ".");
             }
 
-            // (e) A changed wording is allowed only if no other use case references this condition. Otherwise saving
-            // here would silently change those use cases too (BR-shared-condition-wording, extension 7a). An unchanged
-            // wording needs no check: linking a shared condition is fine, only rewording it is not.
-            boolean wordingChanged = !Objects.equals(condition.getContent(), entry.wording());
-            if (wordingChanged && isReferencedElsewhere(condition, type, useCaseId)) {
+            // (e) The wording must be exactly the stored one: a use case never rewords a condition, whether or not
+            // another use case references it (BR-shared-condition-wording, extension 7a, 4a on create). Plain string
+            // equality, so an untouched condition sent back as received is never refused.
+            if (!Objects.equals(condition.getContent(), entry.wording())) {
                 // Old conditions saved before keys were minted have no key, so fall back to the position.
                 String name = condition.getArtifactKey() != null ? condition.getArtifactKey() : label + " " + position;
-                throw new IllegalArgumentException(name + " is also used by other use cases; make a separate copy to change its wording here.");
+                throw new IllegalArgumentException(name + " can't be reworded through a use case; make a separate copy to change its wording here.");
             }
 
-            // All checks passed: link this existing condition, with the wording it should have.
-            plan.add(new PlannedCondition(condition, entry.wording()));
+            // All checks passed: link this existing condition as it is.
+            conditions.add(condition);
         }
-        return plan;
-    }
-
-    /**
-     * Whether any use case other than {@code useCaseId} references {@code condition}. Asks the sharing query for this
-     * one condition; any row back means it is shared.
-     */
-    private boolean isReferencedElsewhere(RequirementArtifact condition, RequirementArtifactType type, Long useCaseId) {
-        List<Long> ids = List.of(condition.getId());
-        List<ConditionUse> uses = type == RequirementArtifactType.PRECONDITION
-                ? this.useCaseRepository.findOtherUseCasesReferencingPreconditions(ids, useCaseId)
-                : this.useCaseRepository.findOtherUseCasesReferencingPostconditions(ids, useCaseId);
-        return !uses.isEmpty();
-    }
-
-    /**
-     * Writes a checked plan: a new condition is saved through {@link RequirementArtifactService#saveRequirementArtifact},
-     * which sets the team from the route and mints its key (PRC-n or PSC-n), with the type taken from the list rather
-     * than the request; an existing one is reworded in place when its wording changed. Returns the conditions in
-     * order, ready to become the use case's list.
-     */
-    private List<RequirementArtifact> applyConditions(Integer teamId, List<PlannedCondition> plan, RequirementArtifactType type) {
-        // The use case's new list, in the planned order.
-        List<RequirementArtifact> conditions = new ArrayList<>(plan.size());
-        for (PlannedCondition planned : plan) {
-            if (planned.existing() == null) {
-                // A new condition. The type comes from the list it was entered in, never from the request.
-                // The wording is the artifact's content; a condition has no title of its own.
-                RequirementArtifact condition = new RequirementArtifact();
-                condition.setType(type);
-                condition.setTitle("");
-                condition.setContent(planned.wording());
-                // saveRequirementArtifact sets the route's team and mints the key (PRC-n or PSC-n), as it does for
-                // every artifact, and stores the row now so it has an id to link.
-                conditions.add(this.requirementArtifactService.saveRequirementArtifact(teamId, condition));
-            } else {
-                // An existing condition. A changed wording reaches here only for a condition no other use case
-                // references, because planConditions refused it otherwise, so it is set in place; JPA auditing then
-                // records who changed it and when.
-                if (!Objects.equals(planned.existing().getContent(), planned.wording())) {
-                    planned.existing().setContent(planned.wording());
-                }
-                conditions.add(planned.existing());
-            }
-        }
-        // The caller hands this list to replacePreconditions or replacePostconditions. A condition left out of it
-        // loses only its link to this use case; the condition itself stays for other use cases.
         return conditions;
+    }
+
+    /**
+     * Saves the new conditions of a list that {@link #resolveConditions} checked, through
+     * {@link RequirementArtifactService#saveRequirementArtifact}, which sets the route's team and mints the key (PRC-n
+     * or PSC-n), as it does for every artifact. Existing conditions pass through unchanged. Returns the list in the
+     * same order, ready to become the use case's list; a condition left out of it loses only its link to this use case.
+     */
+    private List<RequirementArtifact> saveNewConditions(Integer teamId, List<RequirementArtifact> conditions) {
+        return conditions.stream()
+                .map(condition -> condition.getId() == null ? this.requirementArtifactService.saveRequirementArtifact(teamId, condition) : condition)
+                .toList();
     }
 
 }

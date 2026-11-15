@@ -361,7 +361,8 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
-
+    // Rewords the title, steps and an extension. The conditions go back with their stored wording, since a use case
+    // never rewords a condition (BR-shared-condition-wording); UseCaseConditionIntegrationTest covers that refusal.
     void updateUseCaseWithRewordedContent() throws Exception {
         lockUseCase(1, 3, this.studentEricToken);
         int version = fetchUseCaseVersion(1, 3, this.studentEricToken);
@@ -395,7 +396,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                          },
                          {
                              "id": 5,
-                             "condition": "The Student is a member of the team that owns the use case document. (UPDATED)",
+                             "condition": "The Student is a member of the team that owns the use case document.",
                              "type": "PRECONDITION",
                              "priority": null,
                              "notes": ""
@@ -404,7 +405,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                      "postconditions": [
                          {
                              "id": 7,
-                             "condition": "The new use case is stored in the System. (UPDATED)",
+                             "condition": "The new use case is stored in the System.",
                              "type": "POSTCONDITION",
                              "priority": null,
                              "notes": ""
