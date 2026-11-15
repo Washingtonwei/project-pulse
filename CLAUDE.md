@@ -129,6 +129,8 @@ Cross-cutting behavior is already specified, and much of it is built: document-s
 
 When implementing, **extend the existing `ram/*` packages** and the shared foundation (the package map is in [`backend/CLAUDE.md`](backend/CLAUDE.md)). RAM is a module inside this codebase, not a separate system, so don't fork or duplicate the architecture "for RAM." Then map the use case back into `docs/traceability.md` (frontend `apis/` + views + stores, backend `ram/*` controller/service/repository/entity, tests).
 
+**Comments follow behavior.** When a change alters what code does, search for the comments, Javadoc and docs that describe the old behavior and fix them in the same commit, not in a later pass. The rule is in [Architectural conventions](docs/design/architectural-design.md#architectural-conventions).
+
 ### Editing the docs
 
 When editing anything under `docs/`, the rules in `docs/CLAUDE.md` apply (anchor slugs, FR/BR/UC ID schemes, cross-doc terminology). Run **`/spec-build`** to verify and resync.
