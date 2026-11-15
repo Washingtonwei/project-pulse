@@ -13,7 +13,7 @@ public class RequirementArtifactToConditionDtoConverter implements Converter<Req
 
     /**
      * Converts a condition with no other use cases listed. Prefer {@link #convert(RequirementArtifact, List)}, which
-     * carries the sharing that the use case editor needs for extension 6b.
+     * carries the other use cases that the use case editor lists as "Also used by" (extension 6b1).
      */
     @Override
     public ConditionDto convert(RequirementArtifact source) {

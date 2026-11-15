@@ -28,12 +28,12 @@
           />
         </el-select>
 
-        <!-- A chosen row. Read-only when shared, or when picked in this session (see isReadOnly). -->
+        <!-- A chosen row. Read-only once it names a stored condition (it has an id); only a new row can be typed into. -->
         <el-input
           v-else
           v-model="condition.condition"
           placeholder="Condition"
-          :disabled="!canEdit || isReadOnly(condition)"
+          :disabled="!canEdit || isStored(condition)"
         />
 
         <span v-if="condition.artifactKey" class="condition-key">{{ condition.artifactKey }}</span>
@@ -54,21 +54,21 @@
         </div>
       </div>
 
-      <!-- Extension 6b1: a shared condition is read-only here and says which other use cases reference it. -->
-      <div v-if="isShared(condition)" class="condition-note">
-        Also used by
-        <span v-for="(other, otherIndex) in condition.otherUseCases" :key="other.id">
-          {{ other.artifactKey ? `${other.artifactKey}: ` : '' }}{{ other.title
-          }}{{ otherIndex < (condition.otherUseCases?.length ?? 0) - 1 ? ', ' : '' }} </span
-        >. Its wording can't be changed from this use case.
+      <!-- Extension 6b1: a stored condition is read-only here; a shared one also says which other use cases
+           reference it. -->
+      <div v-if="isStored(condition)" class="condition-note">
+        <template v-if="isShared(condition)">
+          Also used by
+          <span v-for="(other, otherIndex) in condition.otherUseCases" :key="other.id">
+            {{ other.artifactKey ? `${other.artifactKey}: ` : '' }}{{ other.title
+            }}{{ otherIndex < (condition.otherUseCases?.length ?? 0) - 1 ? ', ' : '' }} </span
+          >.
+        </template>
+        Its wording can't be changed from this use case.
         <!-- Extension 6b3: replace it, at the same position, with a new condition of the same wording. -->
         <el-button link type="primary" :disabled="!canEdit" @click="makeSeparateCopy(index)">
           Make a separate copy
         </el-button>
-      </div>
-      <div v-else-if="condition.pickedInSession" class="condition-note">
-        Picked from the team's {{ label }}s. Save to see whether other use cases share it before
-        changing its wording.
       </div>
     </div>
 
@@ -79,8 +79,10 @@
 <script setup lang="ts">
 // The preconditions or postconditions of one use case (UC-DOC-create-use-case, UC-DOC-edit-use-case). Each row is
 // an ordered reference to a team condition: picked from the team's existing conditions, or typed as a new one. A
-// condition that other use cases also reference can't be reworded here (BR-shared-condition-wording); the server
-// enforces that too, and this list only keeps the editor from offering it.
+// stored condition can't be reworded here, shared or not (BR-shared-condition-wording). The server ignores any wording
+// sent with a stored condition, so this list only keeps the editor from offering a change that would be dropped. To
+// reword one for this use case, the student makes a separate copy (extension 6b3), which is a new row and can be typed
+// into until the save.
 import { computed } from 'vue'
 import type { Condition, RequirementArtifact } from '@/apis/ram/types'
 
@@ -133,10 +135,9 @@ function isShared(condition: Condition) {
   return (condition.otherUseCases?.length ?? 0) > 0
 }
 
-// A row picked in this session stays read-only until the next save: the search the picker uses doesn't say whether
-// the condition is shared, and only the save response does.
-function isReadOnly(condition: Condition) {
-  return isShared(condition) || Boolean(condition.pickedInSession)
+// A row with an id names a stored condition, picked in this session or saved earlier; its wording is read-only.
+function isStored(condition: Condition) {
+  return condition.id != null
 }
 
 function add() {
@@ -156,8 +157,7 @@ function choose(index: number, value: number | string) {
       id: option.id,
       artifactKey: option.artifactKey,
       condition: option.content ?? '',
-      type: props.kind,
-      pickedInSession: true
+      type: props.kind
     }
   } else {
     rows[index] = { condition: value, type: props.kind, clientKey: newClientKey() }
@@ -181,10 +181,11 @@ function remove(index: number) {
 
 function makeSeparateCopy(index: number) {
   const rows = [...conditions.value]
-  const shared = rows[index]
-  if (!shared) return
-  // No id: the server stores this as a new condition with the same wording, which only this use case references.
-  rows[index] = { condition: shared.condition, type: props.kind, clientKey: newClientKey() }
+  const original = rows[index]
+  if (!original) return
+  // No id: the server stores this as a new condition, which only this use case references. It starts with the same
+  // wording, and the student may reword it until the save.
+  rows[index] = { condition: original.condition, type: props.kind, clientKey: newClientKey() }
   conditions.value = rows
 }
 </script>

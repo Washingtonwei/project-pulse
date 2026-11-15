@@ -15,8 +15,8 @@ public class UseCase {
     private Long id;
 
     /**
-     * Shared identity with RequirementArtifact.
-     * Invariant (service-layer): artifact.type == USE_CASE
+     * Shared identity with RequirementArtifact (@MapsId: the use case's id is its artifact's id).
+     * Invariant: artifact.type == USE_CASE, set by UseCaseDtoToUseCaseConverter, never from the request.
      */
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @MapsId
@@ -24,7 +24,8 @@ public class UseCase {
 
     /**
      * The primary actor: a stakeholder or an external system of the use case's team (BR-use-case-actor-types).
-     * Enforced by {@code UseCaseService.resolveActors}, the only place an actor is set from a request.
+     * Checked by {@code UseCaseService.resolveActors}; {@code saveUseCase} and {@code updateUseCase} set only what it
+     * returns, so no actor is ever set straight from a request.
      */
     @ManyToOne(fetch = FetchType.LAZY)
     private RequirementArtifact primaryActor;
