@@ -131,7 +131,7 @@ classDiagram
 - `copyOf`: a deep copy without any id, at every level. Used for unpaired children and for every child on create.
 - [`UseCaseLock`](../../backend/src/main/java/team/projectpulse/ram/usecase/UseCaseLock.java): its own entity and its own `@Version`, created on first use by `initLockIfMissing`.
 - [`RequirementArtifactType`](../../backend/src/main/java/team/projectpulse/ram/requirement/RequirementArtifactType.java) gains `EXTERNAL_SYSTEM`, and [`ArtifactKeyPrefix`](../../backend/src/main/java/team/projectpulse/ram/requirement/ArtifactKeyPrefix.java) maps it to `SYS`, `PRECONDITION` to `PRC` and `POSTCONDITION` to `PSC` (they were `PRE` and `POST`).
-- Frontend: [`RamUseCases.vue`](../../frontend/src/pages/ram/RamUseCases.vue) offers only stakeholders and external systems in the actor pickers, and [`types.ts`](../../frontend/src/apis/ram/types.ts) lists `EXTERNAL_SYSTEM`, so a student can create one in any LIST document section, as stakeholders are created today. Each condition row has three parts:
+- Frontend: [`RamUseCases.vue`](../../frontend/src/pages/ram/RamUseCases.vue) offers only stakeholders and external systems in the actor pickers, and [`types.ts`](../../frontend/src/apis/ram/types.ts) lists `EXTERNAL_SYSTEM`, so a student can create one in any LIST document section, as stakeholders are created today. Both condition lists are one component, [`UseCaseConditionList.vue`](../../frontend/src/components/UseCaseConditionList.vue), and the page sends only each condition's `id` and wording. Each condition row has three parts:
   - A select-or-type picker over the team's conditions of that type, loaded by `POST /teams/{teamId}/requirement-artifacts/search` with `type`. It hides conditions already in this list. Picking sets the entry's `id`; typing sets its wording with no `id`. The search returns no `otherUseCases`, so a row picked in this session stays read-only until the next save reports whether it is shared.
   - Up and down buttons to reorder.
   - Its display number (`PRE-n` or `POST-n`, from its position) with its artifact key beside it.
@@ -338,7 +338,7 @@ The editor lists a team's use cases through the requirement artifact search, `PO
 | Who may reword a condition through a use case | Only while no other use case references it (BR-shared-condition-wording) | Always: would silently change the other use cases |
 | "Edit for all" (extension 6b2) | Not built yet | Now: it needs the stale-save guard of UC-ART-edit-artifact extension 10a, a `@Version` on `RequirementArtifact` (OI-51), which affects every artifact route |
 | How the order of conditions is stored | A `List` with `@OrderColumn` on each join table. Allowed because `UseCase` owns both associations (it declares the `@JoinTable`, and nothing maps them back with `mappedBy`). The Hibernate 7.4 User Guide, §3.9.2 Mapping Lists, requires `@OrderColumn` to keep a list's order and forbids it only on a `@ManyToMany(mappedBy = …)` side; §3.9.12 Ordered Lists puts the order column "in the collection link table". | A `Set` (as before): no order at all, and the request's `Set<ConditionDto>` merged two new entries with the same wording. A position field on the condition: the position belongs to the link, since one condition sits at different positions in different use cases. |
-| Join table primary key | `(use_case_id, *_index)`; a repeated condition is refused by the service. **To confirm in `/implement`:** the guide shows this key only for a unidirectional `@OneToMany` link table (§3.9.12, "PRIMARY KEY ( Person_id, order_id )"), not for `@ManyToMany`. So the first step is to read the key Hibernate generates for these tables in dev and give V9 exactly that key, so production matches what the tests run against. | Keeping `(artifact_id, use_case_id)`: if Hibernate reorders by updating the artifact at each index, a swap would briefly put one artifact on two rows, a primary key collision. The guide doesn't show the SQL Hibernate runs to reorder an indexed list, so this is inferred, and the reorder test below checks it. |
+| Join table primary key | `(*_index, use_case_id)`, exactly what Hibernate generates for these `@ManyToMany` lists; a repeated condition is refused by the service. The guide shows such a key only for a `@OneToMany` link table (§3.9.12, "PRIMARY KEY ( Person_id, order_id )"), so `/implement` read the key Hibernate generates in dev before writing V9. It has the two expected columns, with the index column first, and the artifact column gets an index of its own. V9 creates exactly that, so production matches what the tests run against. | Keeping `(artifact_id, use_case_id)`: if Hibernate reorders by updating the artifact at each index, a swap would briefly put one artifact on two rows, a primary key collision. The guide doesn't show the SQL Hibernate runs to reorder an indexed list, so this is inferred, and the reorder test below checks it. |
 | Where "shared" is computed | Two JPQL queries in `UseCaseRepository`, run during the save and for every response | A reference count stored on the artifact: one more value to keep in sync, for no gain at use case size |
 | Condition key prefixes | `PRC` and `PSC`, one counter per type as for every artifact | `PRE` and `POST` (as before): read exactly like the display numbers PRE-1 and POST-1. `CND` for both: would need the two types to share one counter, the only exception in key generation, and the key would not say pre or post. |
 | Condition rows already stored | No delete and no key backfill; existing join rows are numbered once by V9 | A cleanup migration: it can't tell an orphan from a condition kept for reuse, which is legitimate from this slice on |
@@ -372,7 +372,9 @@ Three migrations, and no table added:
   2. Numbers the existing rows per use case from 0, with `ROW_NUMBER() - 1` (`@OrderColumn` is 0-based), ordered by artifact id, since the old order was undefined.
   3. Makes the column `NOT NULL`.
   4. Adds an index on the artifact column, so its foreign key keeps one.
-  5. Replaces the primary key with the one Hibernate generates for the mapping, expected to be `(use_case_id, *_index)` and confirmed first in `/implement` (see Key decisions).
+  5. Replaces the primary key with `(precondition_index, use_case_id)` (or the postcondition pair), the key Hibernate generates for the mapping, read from the dev schema in `/implement` (see Key decisions).
+
+  V9 was checked by applying V1 to V9 to a scratch MySQL 8 database with sample rows: each use case's rows were numbered from 0 by artifact id, and both tables then matched Hibernate's generated schema in columns, primary key, key names and foreign keys.
 
 ```mermaid
 erDiagram
@@ -413,20 +415,20 @@ The step tables and their `*_index` order columns are unchanged. The dev seed ad
 | UC-DOC-edit-use-case, editing scenarios | integration, `UseCaseStepOrderingIntegrationTest` | Two saves in a row; remove an extension; edit an extension's kind and exit; insert an extension step; edit actors; remove every step |
 | UC-DOC-edit-use-case, version | integration, `UseCaseStepOrderingIntegrationTest` | A text-only edit increments the stored version; a second save with the returned version succeeds |
 | UC-DOC-create-use-case, ids in the body | integration, `UseCaseStepOrderingIntegrationTest` | Steps submitted with existing ids are stored as new rows |
-| UC-DOC-create-use-case, new conditions | integration | Stored with the list's type (a body `type` of `STAKEHOLDER` is ignored), the route's team, keys `PRC-n` and `PSC-n`, in the submitted order |
-| UC-DOC-create-use-case, an existing condition picked | integration | Linked by id; no new row |
-| Two new entries with the same wording | integration | Both stored as separate conditions, in order |
-| UC-DOC-edit-use-case, reorder | integration | The order follows the submission and the condition ids are unchanged. Two cases: swap two conditions, and move the last one to the front. Both must save with no constraint error, on MySQL with the primary key V9 creates. |
-| UC-DOC-edit-use-case, remove | integration | The link is dropped; the condition row still exists |
-| UC-DOC-edit-use-case, reword an unshared condition | integration | Same id, new wording |
-| UC-DOC-edit-use-case, extension 7a, reword a shared condition | integration | 400 naming the key; the stored wording and the version are unchanged |
-| UC-DOC-edit-use-case, extension 6b3, separate copy | integration | The shared wording with no id becomes a new condition at the same position; the other use case still has the original |
-| `otherUseCases` in the response | integration | Lists every other use case referencing a condition; empty when unshared |
-| Condition refusals | integration | Another team's or an unknown condition id gives 404 with the same message. A repeated id, a precondition id in the postcondition list, and empty wording each give 400, with the messages under "Details of the rule". |
-| Wording comparison | integration | Sending a shared condition back with its exact stored wording is accepted; adding one trailing space is refused (7a) |
+| UC-DOC-create-use-case, new conditions | integration, `UseCaseConditionIntegrationTest` | Stored with the list's type (a body `type` of `STAKEHOLDER` is ignored), the route's team, keys `PRC-n` and `PSC-n`, in the submitted order |
+| UC-DOC-create-use-case, an existing condition picked | integration, `UseCaseConditionIntegrationTest` | Linked by id; no new row |
+| Two new entries with the same wording | integration, `UseCaseConditionIntegrationTest` | Both stored as separate conditions, in order |
+| UC-DOC-edit-use-case, reorder | integration, `UseCaseConditionIntegrationTest` | The order follows the submission and the condition ids are unchanged. Two cases: swap two conditions, and move the last one to the front. Both must save with no constraint error, on MySQL with the primary key V9 creates. |
+| UC-DOC-edit-use-case, remove | integration, `UseCaseConditionIntegrationTest` | The link is dropped; the condition row still exists |
+| UC-DOC-edit-use-case, reword an unshared condition | integration, `UseCaseConditionIntegrationTest` | Same id, new wording |
+| UC-DOC-edit-use-case, extension 7a, reword a shared condition | integration, `UseCaseConditionIntegrationTest` | 400 naming the key; the stored wording and the version are unchanged |
+| UC-DOC-edit-use-case, extension 6b3, separate copy | integration, `UseCaseConditionIntegrationTest` | The shared wording with no id becomes a new condition at the same position; the other use case still has the original |
+| `otherUseCases` in the response | integration, `UseCaseConditionIntegrationTest` | Lists every other use case referencing a condition; empty when unshared |
+| Condition refusals | integration, `UseCaseConditionIntegrationTest` | Another team's or an unknown condition id gives 404 with the same message. A repeated id, a precondition id in the postcondition list, and empty wording each give 400, with the messages under "Details of the rule". |
+| Wording comparison | integration, `UseCaseConditionIntegrationTest` | Sending a shared condition back with its exact stored wording is accepted; adding one trailing space is refused (7a) |
 | Condition key prefixes | unit, `ArtifactKeyPrefixTest` | `ArtifactKeyPrefix.of` gives `PRC` and `PSC` |
-| Seed | integration | The seeded use case keeps id 3. Its three preconditions and two postconditions have `PRC-n` and `PSC-n` keys, in the order `DataInitializer` lists them. |
-| Migration V9 | manual, scratch MySQL | V1 to V9 apply in order; existing join rows are numbered 0..n-1 per use case; the primary key is `(use_case_id, *_index)` |
+| Seed | integration, `UseCaseConditionIntegrationTest` | The seeded use case keeps id 3. Its three preconditions and two postconditions have `PRC-n` and `PSC-n` keys, in the order `DataInitializer` lists them. |
+| Migration V9 | manual, scratch MySQL (done) | V1 to V9 apply in order; existing join rows are numbered 0..n-1 per use case; the primary key is `(use_case_id, *_index)` |
 | Request-body step ids (OI-46) | integration, `RequestBodyIdIntegrationTest` | A step id from another team's use case is stored as a new step; the other team's step is unchanged |
 | Regression | existing | `UseCaseControllerTest` (including `addUseCase_NotSameTeam`) stays green |
 
@@ -435,6 +437,7 @@ All integration tests flush, clear, and read the database with native SQL, becau
 ## Open questions / risks
 
 - **"Edit for all" (extension 6b2) is not built.** It waits for the stale-save guard of UC-ART-edit-artifact extension 10a, which needs OI-51's decision on `RequirementArtifact`. Tracked as OI-72.
+- **`UseCaseService.findUseCaseByIdBasic` has no callers.** It predates this slice and its Javadoc is wrong (it loads the primary actor and the lock, not only the artifact). Proposed for deletion as a follow-up.
 - **Deleting a condition that is still referenced** through UC-ART-delete-artifact hits a foreign key and gives a 500, since BR-deletion-integrity is not built (OI-26). This slice doesn't change that.
 - **A race between two use case saves.** One rewording a condition while another links it can both pass the "not shared" check. It's rare at use case scale, and accepted; an artifact `@Version` (OI-51) would close it.
 - **Condition rows from before this slice** stay as they are: keyless, and unlinked where a save replaced them. No one had used the editor in production, so there should be few or none. Check with a read-only count before deploying V9.
