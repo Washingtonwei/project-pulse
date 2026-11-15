@@ -107,7 +107,7 @@ class UseCaseStepOrderingIntegrationTest extends AbstractIntegrationTest {
         extension.addStep(new UseCaseExtensionStep("System", "Extension step 1"));
         useCase.getMainSteps().get(2).addExtension(extension);
 
-        Long useCaseId = this.useCaseService.saveUseCase(1, useCase, new UseCaseActorIds(seeded.getPrimaryActor().getId(), Set.of())).getId();
+        Long useCaseId = this.useCaseService.saveUseCase(1, useCase, new UseCaseReferences(seeded.getPrimaryActor().getId(), Set.of(), List.of(), List.of())).getId();
         flushAndClear();
 
         UseCase reloaded = this.useCaseRepository.findByIdWithStepGraph(useCaseId).orElseThrow();
@@ -573,7 +573,7 @@ class UseCaseStepOrderingIntegrationTest extends AbstractIntegrationTest {
         useCase.setUseCaseTrigger("The Student starts.");
         useCase.addMainStep(new UseCaseMainStep("Student", "First step"));
         useCase.addMainStep(new UseCaseMainStep("System", "Second step"));
-        Long id = this.useCaseService.saveUseCase(1, useCase, new UseCaseActorIds(seeded.getPrimaryActor().getId(), Set.of())).getId();
+        Long id = this.useCaseService.saveUseCase(1, useCase, new UseCaseReferences(seeded.getPrimaryActor().getId(), Set.of(), List.of(), List.of())).getId();
         flushAndClear();
         return id;
     }

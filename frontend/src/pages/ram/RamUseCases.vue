@@ -173,38 +173,20 @@
 
         <template v-if="isNew || selectedUseCaseId">
           <el-divider>Preconditions</el-divider>
-          <div class="conditions">
-            <div
-              v-for="(condition, index) in currentUseCase.preconditions"
-              :key="index"
-              class="condition-item"
-            >
-              <el-input v-model="condition.condition" placeholder="Condition" :disabled="!canEdit" />
-              <el-button type="danger" plain :disabled="!canEdit" @click="removePrecondition(index)">
-                Remove
-              </el-button>
-            </div>
-            <el-button type="primary" plain :disabled="!canEdit" @click="addPrecondition">
-              Add precondition
-            </el-button>
-          </div>
+          <UseCaseConditionList
+            v-model="currentUseCase.preconditions"
+            kind="PRECONDITION"
+            :options="preconditionOptions"
+            :can-edit="canEdit"
+          />
 
           <el-divider>Postconditions</el-divider>
-          <div class="conditions">
-            <div
-              v-for="(condition, index) in currentUseCase.postconditions"
-              :key="index"
-              class="condition-item"
-            >
-              <el-input v-model="condition.condition" placeholder="Condition" :disabled="!canEdit" />
-              <el-button type="danger" plain :disabled="!canEdit" @click="removePostcondition(index)">
-                Remove
-              </el-button>
-            </div>
-            <el-button type="primary" plain :disabled="!canEdit" @click="addPostcondition">
-              Add postcondition
-            </el-button>
-          </div>
+          <UseCaseConditionList
+            v-model="currentUseCase.postconditions"
+            kind="POSTCONDITION"
+            :options="postconditionOptions"
+            :can-edit="canEdit"
+          />
 
           <el-divider>Main Steps</el-divider>
           <div class="steps">
@@ -423,7 +405,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserInfoStore } from '@/stores/userInfo'
 import type { Student } from '@/apis/student/types'
-import { PRIORITIES, type RequirementArtifact, type UseCase } from '@/apis/ram/types'
+import { PRIORITIES, type Condition, type RequirementArtifact, type UseCase } from '@/apis/ram/types'
+import UseCaseConditionList from '@/components/UseCaseConditionList.vue'
 import {
   searchRequirementArtifacts,
   getUseCaseById,
@@ -472,6 +455,9 @@ const selectedUseCaseId = ref<number | null>(null)
 const isNew = ref(false)
 
 const stakeholderOptions = ref<RequirementArtifact[]>([])
+// The team's existing conditions, offered by the condition pickers so that one isn't entered twice.
+const preconditionOptions = ref<RequirementArtifact[]>([])
+const postconditionOptions = ref<RequirementArtifact[]>([])
 
 // currentUseCase holds the full details of the currently selected use case for editing.
 const currentUseCase = ref<UseCase>(createEmptyUseCase())
@@ -555,6 +541,26 @@ async function loadStakeholders() {
     )
   } catch {
   }
+}
+
+// Loads the team's conditions of each kind for the pickers. Searched by type, so that only conditions come back.
+async function loadConditionOptions() {
+  if (!effectiveTeamId.value) return
+  try {
+    const [preconditions, postconditions] = await Promise.all([
+      searchRequirementArtifacts(effectiveTeamId.value, { page: 0, size: 500 }, { type: 'PRECONDITION' }),
+      searchRequirementArtifacts(effectiveTeamId.value, { page: 0, size: 500 }, { type: 'POSTCONDITION' })
+    ])
+    preconditionOptions.value = preconditions.data.content
+    postconditionOptions.value = postconditions.data.content
+  } catch {
+    // The pickers then offer no existing conditions; the request interceptor has already shown the error.
+  }
+}
+
+// Only what the server reads about a condition: which existing one it is, if any, and its wording.
+function conditionPayload(conditions: Condition[] | undefined) {
+  return (conditions || []).map((condition) => ({ id: condition.id, condition: condition.condition, type: condition.type }))
 }
 
 function filterList() {
@@ -643,28 +649,6 @@ function formatActorLabel(actor: RequirementArtifact) {
   if (!actor) return ''
   const key = actor.artifactKey ? `${actor.artifactKey} — ` : ''
   return `${key}${actor.title}`
-}
-
-function addPrecondition() {
-  if (!canEdit.value) return
-  currentUseCase.value.preconditions = currentUseCase.value.preconditions || []
-  currentUseCase.value.preconditions.push({ condition: '', type: 'PRECONDITION' })
-}
-
-function removePrecondition(index: number) {
-  if (!canEdit.value) return
-  currentUseCase.value.preconditions?.splice(index, 1)
-}
-
-function addPostcondition() {
-  if (!canEdit.value) return
-  currentUseCase.value.postconditions = currentUseCase.value.postconditions || []
-  currentUseCase.value.postconditions.push({ condition: '', type: 'POSTCONDITION' })
-}
-
-function removePostcondition(index: number) {
-  if (!canEdit.value) return
-  currentUseCase.value.postconditions?.splice(index, 1)
 }
 
 // Steps are a core part of the use case, and users often need to add new steps in between existing ones. The addStepAt function allows us to insert a new step at any position in the mainSteps array. After adding a step, we also set it as the active step and focus the action input for a smooth editing experience.
@@ -771,6 +755,12 @@ function validateUseCase(): boolean {
     ElMessage.warning('Primary actor is required')
     return false
   }
+  const blankCondition = [...(currentUseCase.value.preconditions || []), ...(currentUseCase.value.postconditions || [])]
+    .some((condition) => condition.choosing || !condition.condition.trim())
+  if (blankCondition) {
+    ElMessage.warning('Every precondition and postcondition needs wording')
+    return false
+  }
   return true
 }
 
@@ -796,6 +786,8 @@ async function saveUseCase() {
     const payload = {
       ...currentUseCase.value,
       teamId: effectiveTeamId.value,
+      preconditions: conditionPayload(currentUseCase.value.preconditions),
+      postconditions: conditionPayload(currentUseCase.value.postconditions),
       mainSteps: currentUseCase.value.mainSteps.map((step) => ({
         ...step,
         actor: sanitizeActor(step.actor),
@@ -817,7 +809,8 @@ async function saveUseCase() {
     currentUseCase.value = normalizeUseCase(result.data)
     selectedUseCaseId.value = result.data.id || null
     isNew.value = false
-    await loadUseCases()
+    // A save may have created conditions, so the pickers reload to offer them.
+    await Promise.all([loadUseCases(), loadConditionOptions()])
     ElMessage.success('Use case saved')
   } catch (error: any) {
     if (error?.response?.status === 409 || error?.response?.status === 423) {
@@ -832,7 +825,7 @@ async function ensureUseCasesLoaded() {
   if (!effectiveTeamId.value) return
   loading.value = true
   try {
-    await Promise.all([loadUseCases(), loadStakeholders()])
+    await Promise.all([loadUseCases(), loadStakeholders(), loadConditionOptions()])
   } finally {
     loading.value = false
   }

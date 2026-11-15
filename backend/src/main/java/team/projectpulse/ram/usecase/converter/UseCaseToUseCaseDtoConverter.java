@@ -3,10 +3,15 @@ package team.projectpulse.ram.usecase.converter;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 import team.projectpulse.ram.requirement.RequirementArtifact;
+import team.projectpulse.ram.usecase.ConditionUse;
 import team.projectpulse.ram.usecase.UseCase;
+import team.projectpulse.ram.usecase.dto.ConditionDto;
+import team.projectpulse.ram.usecase.dto.OtherUseCaseDto;
 import team.projectpulse.ram.usecase.dto.UseCaseDto;
 import team.projectpulse.user.converter.PeerEvaluationUserToPeerEvaluationUserDtoConverter;
 
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
@@ -24,8 +29,20 @@ public class UseCaseToUseCaseDtoConverter implements Converter<UseCase, UseCaseD
         this.useCaseLockToUseCaseLockDtoConverter = useCaseLockToUseCaseLockDtoConverter;
     }
 
+    /**
+     * Converts a use case with no condition listed as shared. The controller uses
+     * {@link #convert(UseCase, Map)} instead, so the editor can show which conditions other use cases also reference.
+     */
     @Override
     public UseCaseDto convert(UseCase source) {
+        return convert(source, Map.of());
+    }
+
+    /**
+     * @param otherUses for each condition id, the other use cases that reference that condition
+     *                  (from {@code UseCaseService.otherUseCasesReferencing})
+     */
+    public UseCaseDto convert(UseCase source, Map<Long, List<ConditionUse>> otherUses) {
         return new UseCaseDto(
                 source.getId(),
                 source.getArtifact().getArtifactKey(),
@@ -35,8 +52,8 @@ public class UseCaseToUseCaseDtoConverter implements Converter<UseCase, UseCaseD
                 source.getPrimaryActor().getId(),
                 source.getSecondaryActors().stream().map(RequirementArtifact::getId).collect(Collectors.toSet()),
                 source.getUseCaseTrigger(),
-                source.getPreconditions().stream().map(requirementArtifactToConditionDtoConverter::convert).collect(Collectors.toSet()),
-                source.getPostconditions().stream().map(requirementArtifactToConditionDtoConverter::convert).collect(Collectors.toSet()),
+                source.getPreconditions().stream().map(condition -> conditionDto(condition, otherUses)).toList(),
+                source.getPostconditions().stream().map(condition -> conditionDto(condition, otherUses)).toList(),
                 source.getMainSteps().stream().map(useCaseMainStepToUseCaseMainStepDtoConverter::convert).collect(Collectors.toList()),
                 source.getArtifact().getPriority(),
                 source.getArtifact().getNotes(),
@@ -49,4 +66,10 @@ public class UseCaseToUseCaseDtoConverter implements Converter<UseCase, UseCaseD
         );
     }
 
+    private ConditionDto conditionDto(RequirementArtifact condition, Map<Long, List<ConditionUse>> otherUses) {
+        List<OtherUseCaseDto> others = otherUses.getOrDefault(condition.getId(), List.of()).stream()
+                .map(use -> new OtherUseCaseDto(use.useCaseId(), use.artifactKey(), use.title()))
+                .toList();
+        return this.requirementArtifactToConditionDtoConverter.convert(condition, others);
+    }
 }

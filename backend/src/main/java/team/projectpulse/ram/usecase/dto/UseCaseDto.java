@@ -1,5 +1,6 @@
 package team.projectpulse.ram.usecase.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import team.projectpulse.ram.requirement.Priority;
@@ -25,9 +26,9 @@ public record UseCaseDto(
         @NotEmpty(message = "Use case trigger must not be empty.")
         String trigger,
         @NotNull(message = "Preconditions must not be null; send an empty list for none.")
-        Set<ConditionDto> preconditions,
+        List<@Valid ConditionDto> preconditions,
         @NotNull(message = "Postconditions must not be null; send an empty list for none.")
-        Set<ConditionDto> postconditions,
+        List<@Valid ConditionDto> postconditions,
         @NotNull(message = "Main steps must not be null; send an empty list for none.")
         List<UseCaseMainStepDto> mainSteps,
         Priority priority,
@@ -38,4 +39,15 @@ public record UseCaseDto(
         PeerEvaluationUserDto updatedBy,
         Integer version,
         UseCaseLockDto lock) {
+
+    /**
+     * Copies the collections so the record cannot be changed through them. A missing one stays null, so that
+     * {@code @NotNull} reports it as a 400 rather than it being read as empty.
+     */
+    public UseCaseDto {
+        secondaryActorIds = secondaryActorIds == null ? null : Set.copyOf(secondaryActorIds);
+        preconditions = preconditions == null ? null : List.copyOf(preconditions);
+        postconditions = postconditions == null ? null : List.copyOf(postconditions);
+        mainSteps = mainSteps == null ? null : List.copyOf(mainSteps);
+    }
 }

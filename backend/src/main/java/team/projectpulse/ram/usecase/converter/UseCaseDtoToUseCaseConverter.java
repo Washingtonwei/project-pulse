@@ -12,11 +12,9 @@ import java.util.stream.Collectors;
 @Component
 public class UseCaseDtoToUseCaseConverter implements Converter<UseCaseDto, UseCase> {
 
-    private final ConditionDtoToRequirementArtifactConverter conditionDtoToRequirementArtifactConverter;
     private final UseCaseMainStepDtoToUseCaseMainStepConverter useCaseMainStepDtoToUseCaseMainStepConverter;
 
-    public UseCaseDtoToUseCaseConverter(ConditionDtoToRequirementArtifactConverter conditionDtoToRequirementArtifactConverter, UseCaseMainStepDtoToUseCaseMainStepConverter useCaseMainStepDtoToUseCaseMainStepConverter) {
-        this.conditionDtoToRequirementArtifactConverter = conditionDtoToRequirementArtifactConverter;
+    public UseCaseDtoToUseCaseConverter(UseCaseMainStepDtoToUseCaseMainStepConverter useCaseMainStepDtoToUseCaseMainStepConverter) {
         this.useCaseMainStepDtoToUseCaseMainStepConverter = useCaseMainStepDtoToUseCaseMainStepConverter;
     }
 
@@ -28,8 +26,8 @@ public class UseCaseDtoToUseCaseConverter implements Converter<UseCaseDto, UseCa
         //
         // A converter has no path variables, so it is the wrong layer to resolve any reference at, and this one
         // resolves none (OI-46). It reads no team: the body's teamId is ignored, and UseCaseService takes the team
-        // from the route. It sets no actor: the controller passes the actor ids to the service as UseCaseActorIds,
-        // and the service resolves them through a team-scoped lookup.
+        // from the route. It sets no actor and no condition: the controller passes those to the service as
+        // UseCaseReferences, and the service resolves them through team-scoped lookups.
         UseCase useCase = new UseCase();
         useCase.setUseCaseTrigger(source.trigger());
 
@@ -42,13 +40,6 @@ public class UseCaseDtoToUseCaseConverter implements Converter<UseCaseDto, UseCa
         useCaseArtifact.setPriority(source.priority());
         useCaseArtifact.setNotes(source.notes());
         useCase.setArtifact(useCaseArtifact);
-
-        useCase.replacePreconditions(source.preconditions().stream()
-                .map(this.conditionDtoToRequirementArtifactConverter::convert)
-                .collect(Collectors.toSet()));
-        useCase.replacePostconditions(source.postconditions().stream()
-                .map(this.conditionDtoToRequirementArtifactConverter::convert)
-                .collect(Collectors.toSet()));
 
         useCase.replaceMainSteps(source.mainSteps().stream()
                 .map(this.useCaseMainStepDtoToUseCaseMainStepConverter::convert)
