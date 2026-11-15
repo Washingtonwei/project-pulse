@@ -383,8 +383,8 @@ public class UseCaseService {
     /**
      * For each condition of {@code useCase}, the other use cases that reference it, in use case id order, keyed by
      * condition id. A condition no other use case references has no entry. The controller calls this for every GET,
-     * POST and PUT response, and the editor shows the result so that a shared condition is read-only (extension 6b1
-     * of UC-DOC-edit-use-case). Two queries in all, one per list, however many conditions there are; see
+     * POST and PUT response, and the editor lists the result as "Also used by" (extension 6b1 of UC-DOC-edit-use-case);
+     * no save depends on it, since a stored condition is read-only whether or not it is shared. Two queries in all, one per list, however many conditions there are; see
      * {@link ConditionUse} and {@link UseCaseRepository#findOtherUseCasesReferencingPreconditions}.
      */
     public Map<Long, List<ConditionUse>> otherUseCasesReferencing(UseCase useCase) {
