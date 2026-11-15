@@ -30,7 +30,7 @@ public record UseCaseDto(
         @NotNull(message = "Postconditions must not be null; send an empty list for none.")
         List<@Valid ConditionDto> postconditions,
         @NotNull(message = "Main steps must not be null; send an empty list for none.")
-        List<UseCaseMainStepDto> mainSteps,
+        List<@Valid UseCaseMainStepDto> mainSteps,
         Priority priority,
         String notes,
         Instant createdAt,
