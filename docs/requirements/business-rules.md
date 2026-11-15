@@ -91,7 +91,7 @@ The artifact types named here are the canonical `RequirementArtifactType` set (g
 
 - **BR-use-case-actor-types:** The primary actor and every secondary actor of a use case is a stakeholder or an external system of the team that owns the use case; no other requirement artifact may serve as an actor.
 - **BR-use-case-condition-shared:** A precondition or postcondition is a requirement artifact of its team that any number of that team's use cases may reference. Its type is `PRECONDITION` or `POSTCONDITION` according to the list it belongs to, each use case orders its own preconditions and postconditions, and removing one from a use case removes only that reference.
-- **BR-shared-condition-wording:** The wording of a precondition or postcondition may be changed through a use case only while no other use case references it; once more than one use case references it, its wording is changed only on the condition itself, and the change applies to every use case that references it.
+- **BR-shared-condition-wording:** The wording of a precondition or postcondition is never changed through a use case, whether or not another use case references it; it is changed only on the condition itself, and the change applies to every use case that references it.
 
 # **Editing and Locking**
 

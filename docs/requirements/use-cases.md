@@ -3170,7 +3170,7 @@ Details:
 
 **Priority:** High
 **Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
-**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-use-case-name-unique (a use case name is unique within the team's Use Cases document); BR-use-case-actor-types (an actor is a stakeholder or an external system); BR-use-case-condition-shared (preconditions and postconditions are shared requirement artifacts).
+**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-use-case-name-unique (a use case name is unique within the team's Use Cases document); BR-use-case-actor-types (an actor is a stakeholder or an external system); BR-use-case-condition-shared (preconditions and postconditions are shared requirement artifacts); BR-shared-condition-wording (a condition is reworded only on the condition itself).
 **Associated Information:**
 
 Details:
@@ -3191,7 +3191,7 @@ Details:
 
 Actors: the student chooses the primary actor and each secondary actor from her team's stakeholders and external systems (BR-use-case-actor-types). Choosing any other requirement artifact as an actor is an input validation rule violation (extension 4a).
 
-Preconditions and postconditions: for each one, the student either chooses an existing precondition or postcondition of her team or enters a new one (BR-use-case-condition-shared). When choosing, the system offers the team's existing conditions of the matching type before the student types a new one, so that a condition such as "The user is authenticated." is not entered twice. On save, the system stores each new one as a requirement artifact of type `PRECONDITION` or `POSTCONDITION`, set by the list it was entered in rather than by the student, and assigns it an artifact key. The use case keeps its preconditions and postconditions in the order the student gives them and displays them numbered by that order (PRE-1, PRE-2, …; POST-1, POST-2, …); the numbering belongs to this use case, while each condition keeps its own artifact key. A precondition's artifact key uses the prefix `PRC` and a postcondition's `PSC`, so that a key is never confused with the use case's own PRE-n and POST-n numbering.
+Preconditions and postconditions: for each one, the student either chooses an existing precondition or postcondition of her team or enters a new one (BR-use-case-condition-shared). When choosing, the system offers the team's existing conditions of the matching type before the student types a new one, so that a condition such as "The user is authenticated." is not entered twice. On save, the system stores each new one as a requirement artifact of type `PRECONDITION` or `POSTCONDITION`, set by the list it was entered in rather than by the student, and assigns it an artifact key. The use case keeps its preconditions and postconditions in the order the student gives them and displays them numbered by that order (PRE-1, PRE-2, …; POST-1, POST-2, …); the numbering belongs to this use case, while each condition keeps its own artifact key. A precondition's artifact key uses the prefix `PRC` and a postcondition's `PSC`, so that a key is never confused with the use case's own PRE-n and POST-n numbering. A chosen condition is linked with its wording as it is: the student cannot reword it through this use case (BR-shared-condition-wording), and the system refuses a save that changes it, which is an input validation rule violation (extension 4a).
 
 Duplication detection rules: use case name must be unique
 
@@ -3243,10 +3243,10 @@ The student shall be able to cancel the use case at any time prior to submitting
   - 4a2. The student either waits and returns to step 3 of the normal flow or chooses to terminate the use case.
 - **6a. The student navigates away from the use case before confirming the change**
   - 6a1. The system immediately persists the latest changes to the use case, releases the lock on the use case, and ends the use case.
-- **6b. The student wants to reword a precondition or postcondition that another use case also references**
-  - 6b1. The system displays the condition read-only and lists the other use cases that reference it (BR-shared-condition-wording).
+- **6b. The student wants to reword a precondition or postcondition already saved in this use case**
+  - 6b1. The system displays the condition read-only and lists the other use cases that reference it, if any (BR-shared-condition-wording).
   - 6b2. The student either rewords the condition for every use case that references it through UC-ART-edit-artifact: Edit a requirement artifact, or asks the system to replace it in this use case with a separate copy.
-  - 6b3. If the student asked for a copy, the system replaces the shared condition in this use case, at the same position, with a new condition carrying the same wording, which only this use case references; the shared condition is unchanged for the other use cases.
+  - 6b3. If the student asked for a copy, the system replaces the condition in this use case, at the same position, with a new condition carrying the same wording, which the student may then reword and which only this use case references; the original condition is unchanged and stays in the team's requirements graph.
   - 6b4. The student returns to step 6 of the normal flow.
 - **7a. Input validation rule violation**
   - 7a1. The system alerts the student that an input validation rule is violated and displays the nature and location of the error.
@@ -3254,7 +3254,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 **Priority:** High
 **Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
-**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-edit-lock-required (editing a use case requires an exclusive lock); BR-lock-expiry (an edit lock expires after a configurable interval and is released automatically); BR-use-case-actor-types (an actor is a stakeholder or an external system); BR-use-case-condition-shared (preconditions and postconditions are shared requirement artifacts); BR-shared-condition-wording (a shared condition is reworded only on the condition itself).
+**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-edit-lock-required (editing a use case requires an exclusive lock); BR-lock-expiry (an edit lock expires after a configurable interval and is released automatically); BR-use-case-actor-types (an actor is a stakeholder or an external system); BR-use-case-condition-shared (preconditions and postconditions are shared requirement artifacts); BR-shared-condition-wording (a condition is reworded only on the condition itself).
 **Associated Information:**
 
 Details:
@@ -3277,7 +3277,7 @@ Actors: the same rule as UC-DOC-create-use-case applies. The student chooses eac
 
 Preconditions and postconditions: the student may add, remove, and reorder this use case's preconditions and postconditions. Adding one works as in UC-DOC-create-use-case: she chooses an existing condition of her team or enters a new one, and a new one is stored as a requirement artifact whose type the system sets (BR-use-case-condition-shared). Removing a condition from this use case only removes the reference; the condition stays in the team's requirements graph for other use cases to reuse, and is deleted only through UC-ART-delete-artifact: Delete a requirement artifact. The use case displays its conditions numbered by their order in this use case (PRE-1, PRE-2, …; POST-1, POST-2, …).
 
-Rewording a condition: the student may reword a precondition or postcondition in place only while no other use case references it; the use case's lock covers that change. A condition that another use case also references is read-only here (extension 6b; BR-shared-condition-wording). The system refuses a save that rewords such a condition, which is an input validation rule violation (extension 7a), so the rule holds even when the change does not come through the use case editor.
+Rewording a condition: every precondition and postcondition already in this use case is read-only here, whether or not another use case references it (extension 6b; BR-shared-condition-wording). To change a condition's wording for this use case only, the student replaces it with a separate copy (6b3). A new condition the student has entered but not yet saved may be reworded freely until the save. The system refuses a save that changes the wording of an existing condition, which is an input validation rule violation (extension 7a), so the rule holds even when the change does not come through the use case editor.
 
 Chaining use cases: a precondition and a postcondition are always separate artifacts, even when their wording matches. To record that another use case's postcondition is what makes one of this use case's preconditions true, the student links the postcondition to the precondition with an ENABLES artifact link through UC-LNK-create-link: Create a requirement artifact link (BR-link-constraints).
 
@@ -3285,7 +3285,7 @@ Notification: None — routine authoring changes are not notified (FR-NOT-suppre
 
 The student shall be able to cancel the use case at any time prior to submitting it.
 
-**Related Use Cases:** UC-ART-edit-artifact: Edit a requirement artifact (rewording a shared condition for every use case that references it); UC-ART-delete-artifact: Delete a requirement artifact (deleting a condition no use case needs); UC-LNK-create-link: Create a requirement artifact link (chaining a postcondition to a precondition with ENABLES).
+**Related Use Cases:** UC-ART-edit-artifact: Edit a requirement artifact (rewording a condition for every use case that references it); UC-ART-delete-artifact: Delete a requirement artifact (deleting a condition no use case needs); UC-LNK-create-link: Create a requirement artifact link (chaining a postcondition to a precondition with ENABLES).
 **Assumptions:**
 **Open Issues:**
 
