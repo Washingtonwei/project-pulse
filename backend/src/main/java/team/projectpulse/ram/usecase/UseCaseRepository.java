@@ -4,6 +4,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 public interface UseCaseRepository extends JpaRepository<UseCase, Long> {
@@ -47,5 +49,35 @@ public interface UseCaseRepository extends JpaRepository<UseCase, Long> {
                 where uc.id = :id
             """)
     Optional<UseCase> findByIdWithStepGraph(@Param("id") Long id);
+
+    /**
+     * The use cases other than {@code useCaseId} that reference any of the preconditions {@code conditionIds}, one row
+     * per reference, ordered by use case id. Pass 0 as {@code useCaseId} to exclude none (a use case being created).
+     * The ids are already scoped to the caller's team, so no team filter is needed here.
+     */
+    @Query("""
+                select new team.projectpulse.ram.usecase.ConditionUse(c.id, uc.id, a.artifactKey, a.title)
+                from UseCase uc
+                join uc.artifact a
+                join uc.preconditions c
+                where c.id in :conditionIds
+                and uc.id <> :useCaseId
+                order by uc.id
+            """)
+    List<ConditionUse> findOtherUseCasesReferencingPreconditions(@Param("conditionIds") Collection<Long> conditionIds, @Param("useCaseId") Long useCaseId);
+
+    /**
+     * As {@link #findOtherUseCasesReferencingPreconditions}, for postconditions.
+     */
+    @Query("""
+                select new team.projectpulse.ram.usecase.ConditionUse(c.id, uc.id, a.artifactKey, a.title)
+                from UseCase uc
+                join uc.artifact a
+                join uc.postconditions c
+                where c.id in :conditionIds
+                and uc.id <> :useCaseId
+                order by uc.id
+            """)
+    List<ConditionUse> findOtherUseCasesReferencingPostconditions(@Param("conditionIds") Collection<Long> conditionIds, @Param("useCaseId") Long useCaseId);
 
 }

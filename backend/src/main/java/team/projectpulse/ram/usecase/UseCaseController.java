@@ -5,11 +5,14 @@ import org.springframework.web.bind.annotation.*;
 import team.projectpulse.ram.usecase.converter.UseCaseLockToUseCaseLockDtoConverter;
 import team.projectpulse.ram.usecase.converter.UseCaseDtoToUseCaseConverter;
 import team.projectpulse.ram.usecase.converter.UseCaseToUseCaseDtoConverter;
+import team.projectpulse.ram.usecase.dto.ConditionDto;
 import team.projectpulse.ram.usecase.dto.UseCaseDto;
 import team.projectpulse.ram.usecase.dto.UseCaseLockDto;
 import team.projectpulse.ram.usecase.dto.UseCaseLockRequest;
 import team.projectpulse.system.Result;
 import team.projectpulse.system.StatusCode;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("${api.endpoint.base-url}")
@@ -34,7 +37,7 @@ public class UseCaseController {
          * At this point, the use case entity graph is fully loaded in the persistence context
          * The converter will NOT trigger any lazy loading, this is important for performance
          */
-        UseCaseDto useCaseDto = this.useCaseToUseCaseDtoConverter.convert(useCase);
+        UseCaseDto useCaseDto = this.useCaseToUseCaseDtoConverter.convert(useCase, this.useCaseService.otherUseCasesReferencing(useCase));
         return new Result(true, StatusCode.SUCCESS, "Find use case successfully", useCaseDto);
     }
 
@@ -43,22 +46,23 @@ public class UseCaseController {
      * and every field ends up in exactly one of them:
      * <ul>
      *   <li>{@code useCaseDtoToUseCaseConverter} maps the plain fields into a new, unsaved {@link UseCase}: title,
-     *       description, priority and notes (onto its artifact), trigger, preconditions, postconditions and steps.
-     *       It resolves no id, so the {@code UseCase} it returns has no actors and no team.</li>
-     *   <li>{@link #referencesOf} copies the two actor id fields, {@code primaryActorId} and
-     *       {@code secondaryActorIds}, out of the DTO unchanged, as plain ids.</li>
+     *       description, priority and notes (onto its artifact), trigger and steps. It resolves no id, so the
+     *       {@code UseCase} it returns has no actors, no conditions and no team.</li>
+     *   <li>{@link #referencesOf} copies the references out of the DTO unchanged: the actor ids, and each
+     *       precondition and postcondition as its optional id plus its wording, in order.</li>
      * </ul>
-     * The service then turns those ids into actors through a lookup scoped to {@code teamId} from the route, and
-     * gives the use case that team. The body's own {@code teamId} is never read. Fields the DTO carries only for
+     * The service then resolves those references through lookups scoped to {@code teamId} from the route, saves any
+     * new condition, and gives the use case that team. The response lists, for each condition, the other use cases
+     * that also reference it. The body's own {@code teamId} is never read. Fields the DTO carries only for
      * responses ({@code id}, {@code artifactKey}, {@code version}, the audit fields, {@code lock}) are ignored here.
      */
     @PostMapping("/teams/{teamId}/use-cases")
     public Result addUseCase(@PathVariable Integer teamId, @Valid @RequestBody UseCaseDto useCaseDto) {
-        // Part 1: the plain fields, as an unsaved use case with no actors and no team.
+        // Part 1: the plain fields, as an unsaved use case with no actors, no conditions and no team.
         UseCase newUseCase = this.useCaseDtoToUseCaseConverter.convert(useCaseDto);
-        // Part 2: the actor ids, passed beside it and resolved by the service in the route's team.
+        // Part 2: the references (actor ids, conditions), passed beside it and resolved by the service in the route's team.
         UseCase savedUseCase = this.useCaseService.saveUseCase(teamId, newUseCase, referencesOf(useCaseDto));
-        UseCaseDto savedUseCaseDto = this.useCaseToUseCaseDtoConverter.convert(savedUseCase);
+        UseCaseDto savedUseCaseDto = this.useCaseToUseCaseDtoConverter.convert(savedUseCase, this.useCaseService.otherUseCasesReferencing(savedUseCase));
         return new Result(true, StatusCode.SUCCESS, "Add use case successfully", savedUseCaseDto);
     }
 
@@ -70,7 +74,8 @@ public class UseCaseController {
      *       itself: the service copies its fields onto the stored use case, and pairs its steps with the stored ones
      *       by id. The step, extension and extension-step ids are the only ids the converter keeps, because they are
      *       pairing keys rather than references;</li>
-     *   <li>{@link #referencesOf} copies the actor ids out of the DTO, for the service to resolve in the route's team;</li>
+     *   <li>{@link #referencesOf} copies the references (actor ids, conditions) out of the DTO, for the service to
+     *       resolve in the route's team;</li>
      *   <li>{@code useCaseDto.version()} is the version the editor last read, read straight from the DTO, because it
      *       is not a field of the use case being edited but the guard on the edit: a stale one is refused with 409.</li>
      * </ul>
@@ -80,20 +85,30 @@ public class UseCaseController {
     public Result updateUseCase(@PathVariable Integer teamId, @PathVariable Long useCaseId, @Valid @RequestBody UseCaseDto useCaseDto) {
         // Part 1: the plain fields and the steps, as a detached use case the service copies from.
         UseCase update = this.useCaseDtoToUseCaseConverter.convert(useCaseDto);
-        // Parts 2 and 3: the actor ids and the expected version, both read from the DTO and passed beside it.
+        // Parts 2 and 3: the references and the expected version, both read from the DTO and passed beside it.
         UseCase updateUseCase = this.useCaseService.updateUseCase(teamId, useCaseId, update, referencesOf(useCaseDto), useCaseDto.version());
-        UseCaseDto updatedUseCaseDto = this.useCaseToUseCaseDtoConverter.convert(updateUseCase);
+        UseCaseDto updatedUseCaseDto = this.useCaseToUseCaseDtoConverter.convert(updateUseCase, this.useCaseService.otherUseCasesReferencing(updateUseCase));
         return new Result(true, StatusCode.SUCCESS, "Update use case successfully", updatedUseCaseDto);
     }
 
     /**
-     * Copies the actor ids out of the request body. The converter deliberately does not handle these: turning an id
-     * into an artifact needs the team from the route, which a converter never sees, so the ids travel to the service
-     * as plain values and the service resolves them (OI-46, BR-team-scoped-access). Nothing is looked up or checked
-     * here; a missing id list was already refused by {@code @Valid} before this runs.
+     * Copies the references out of the request body: the actor ids, and the conditions in order. The converter
+     * deliberately does not handle these: turning an id into an artifact needs the team from the route, which a
+     * converter never sees, so the ids travel to the service as plain values and the service resolves them (OI-46,
+     * BR-team-scoped-access). Nothing is looked up or checked here; a missing list or an empty condition was already
+     * refused by {@code @Valid} before this runs.
      */
     private static UseCaseReferences referencesOf(UseCaseDto useCaseDto) {
-        return new UseCaseReferences(useCaseDto.primaryActorId(), useCaseDto.secondaryActorIds());
+        return new UseCaseReferences(useCaseDto.primaryActorId(), useCaseDto.secondaryActorIds(),
+                submittedConditions(useCaseDto.preconditions()), submittedConditions(useCaseDto.postconditions()));
+    }
+
+    /**
+     * Keeps only what a request may say about a condition: which existing one it is, if any, and its wording. The
+     * {@code type}, {@code priority} and {@code notes} of a request entry are ignored; the type comes from the list.
+     */
+    private static List<SubmittedCondition> submittedConditions(List<ConditionDto> conditions) {
+        return conditions.stream().map(condition -> new SubmittedCondition(condition.id(), condition.condition())).toList();
     }
 
     @GetMapping("/teams/{teamId}/use-cases/{useCaseId}/lock")

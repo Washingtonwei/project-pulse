@@ -347,9 +347,10 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
                 .andDo(print()).andReturn();
         JSONObject response = new JSONObject(mvcResult.getResponse().getContentAsString());
 
-        if (response.getBoolean("flag")) {
-            assertStillOwnedByTeam2(victim.getId(), "Client");
-        }
+        // A condition id now names an existing condition and is resolved in the route's team, so another team's id
+        // is refused with 404 before anything is written (BR-use-case-condition-shared, OI-46).
+        assertThat(response.getBoolean("flag")).as(response.toString()).isFalse();
+        assertThat(response.getInt("code")).as(response.toString()).isEqualTo(StatusCode.NOT_FOUND);
     }
 
     @Test
@@ -415,7 +416,7 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
         useCase.setArtifact(new RequirementArtifact(team2Anything.getTeam(), RequirementArtifactType.USE_CASE, "Team 2's use case", "Owned by team 2.", ""));
         useCase.setUseCaseTrigger("Team 2 starts its use case.");
         useCase.addMainStep(new UseCaseMainStep("System", "Team 2's only step"));
-        Long id = this.useCaseService.saveUseCase(2, useCase, new UseCaseReferences(team2Anything.getId(), Set.of())).getId();
+        Long id = this.useCaseService.saveUseCase(2, useCase, new UseCaseReferences(team2Anything.getId(), Set.of(), java.util.List.of(), java.util.List.of())).getId();
         this.entityManager.flush();
         return id;
     }

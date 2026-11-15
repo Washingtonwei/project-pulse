@@ -44,21 +44,31 @@ public class UseCase {
     @Lob
     private String useCaseTrigger;
 
-    @ManyToMany(cascade = {CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
+    /**
+     * The preconditions, in this use case's order: references to shared team artifacts (BR-use-case-condition-shared).
+     * No cascade, because a condition is saved through {@code RequirementArtifactService} on its own and outlives the
+     * link. The order belongs to the link, so it is stored on the join table.
+     */
+    @ManyToMany
     @JoinTable(
             name = "use_case_precondition",
             joinColumns = @JoinColumn(name = "use_case_id"),
             inverseJoinColumns = @JoinColumn(name = "precondition_artifact_id")
     )
-    private Set<RequirementArtifact> preconditions = new HashSet<>();
+    @OrderColumn(name = "precondition_index")
+    private List<RequirementArtifact> preconditions = new ArrayList<>();
 
-    @ManyToMany(cascade = {CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
+    /**
+     * The postconditions, in this use case's order, mapped like {@link #preconditions}.
+     */
+    @ManyToMany
     @JoinTable(
             name = "use_case_postcondition",
             joinColumns = @JoinColumn(name = "use_case_id"),
             inverseJoinColumns = @JoinColumn(name = "postcondition_artifact_id")
     )
-    private Set<RequirementArtifact> postconditions = new HashSet<>();
+    @OrderColumn(name = "postcondition_index")
+    private List<RequirementArtifact> postconditions = new ArrayList<>();
 
     /**
      * Main success scenario steps (ordered).
@@ -125,22 +135,6 @@ public class UseCase {
         secondaryActors.remove(stakeholder);
     }
 
-    public void addPrecondition(RequirementArtifact preconditionArtifact) {
-        preconditions.add(preconditionArtifact);
-    }
-
-    public void removePrecondition(RequirementArtifact preconditionArtifact) {
-        preconditions.remove(preconditionArtifact);
-    }
-
-    public void addPostcondition(RequirementArtifact postconditionArtifact) {
-        postconditions.add(postconditionArtifact);
-    }
-
-    public void removePostcondition(RequirementArtifact postconditionArtifact) {
-        postconditions.remove(postconditionArtifact);
-    }
-
     public void replaceSecondaryActors(Set<RequirementArtifact> actors) {
         this.secondaryActors.clear();
         if (actors != null) {
@@ -148,14 +142,18 @@ public class UseCase {
         }
     }
 
-    public void replacePreconditions(Set<RequirementArtifact> conditions) {
+    /**
+     * Replaces the ordered list of preconditions with {@code conditions}, which {@code UseCaseService} has already
+     * resolved and checked. Only the links change; a condition dropped from the list stays in the team's graph.
+     */
+    public void replacePreconditions(List<RequirementArtifact> conditions) {
         this.preconditions.clear();
         if (conditions != null) {
             this.preconditions.addAll(conditions);
         }
     }
 
-    public void replacePostconditions(Set<RequirementArtifact> conditions) {
+    public void replacePostconditions(List<RequirementArtifact> conditions) {
         this.postconditions.clear();
         if (conditions != null) {
             this.postconditions.addAll(conditions);
@@ -204,20 +202,12 @@ public class UseCase {
         this.useCaseTrigger = trigger;
     }
 
-    public Set<RequirementArtifact> getPreconditions() {
+    public List<RequirementArtifact> getPreconditions() {
         return preconditions;
     }
 
-    public void setPreconditions(Set<RequirementArtifact> preconditions) {
-        this.preconditions = preconditions;
-    }
-
-    public Set<RequirementArtifact> getPostconditions() {
+    public List<RequirementArtifact> getPostconditions() {
         return postconditions;
-    }
-
-    public void setPostconditions(Set<RequirementArtifact> postconditions) {
-        this.postconditions = postconditions;
     }
 
     public List<UseCaseMainStep> getMainSteps() {

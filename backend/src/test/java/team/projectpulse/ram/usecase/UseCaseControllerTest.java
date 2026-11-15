@@ -387,14 +387,14 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                              "notes": ""
                          },
                          {
-                             "id": 8,
+                             "id": 4,
                              "condition": "The Student is logged into the System.",
                              "type": "PRECONDITION",
                              "priority": null,
                              "notes": ""
                          },
                          {
-                             "id": 7,
+                             "id": 5,
                              "condition": "The Student is a member of the team that owns the use case document. (UPDATED)",
                              "type": "PRECONDITION",
                              "priority": null,
@@ -403,14 +403,14 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                      ],
                      "postconditions": [
                          {
-                             "id": 4,
+                             "id": 7,
                              "condition": "The new use case is stored in the System. (UPDATED)",
                              "type": "POSTCONDITION",
                              "priority": null,
                              "notes": ""
                          },
                          {
-                             "id": 5,
+                             "id": 8,
                              "condition": "The System records collaboration metadata (e.g., last-modified timestamp and editor identity).",
                              "type": "POSTCONDITION",
                              "priority": null,
@@ -554,21 +554,21 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                     "trigger": "The Student indicates to create a new use case in the use case document.",
                     "preconditions": [
                         {
-                            "id": 8,
+                            "id": 6,
                             "condition": "Document is not locked for review.",
                             "type": "PRECONDITION",
                             "priority": null,
                             "notes": ""
                         },
                         {
-                            "id": 7,
+                            "id": 5,
                             "condition": "The Student is a member of the team that owns the use case document.",
                             "type": "PRECONDITION",
                             "priority": null,
                             "notes": ""
                         },
                         {
-                            "id": 6,
+                            "id": 4,
                             "condition": "The Student is logged into the System.",
                             "type": "PRECONDITION",
                             "priority": null,
@@ -577,14 +577,14 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                     ],
                     "postconditions": [
                         {
-                            "id": 4,
+                            "id": 7,
                             "condition": "The new use case is stored in the System.",
                             "type": "POSTCONDITION",
                             "priority": null,
                             "notes": ""
                         },
                         {
-                            "id": 5,
+                            "id": 8,
                             "condition": "The System records collaboration metadata (e.g., last-modified timestamp and editor identity).",
                             "type": "POSTCONDITION",
                             "priority": null,
@@ -754,14 +754,14 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                      "trigger": "The Student indicates to create a new use case in the use case document.",
                      "preconditions": [
                          {
-                             "id": 7,
+                             "id": 5,
                              "condition": "The Student is a member of the team that owns the use case document.",
                              "type": "PRECONDITION",
                              "priority": null,
                              "notes": ""
                          },
                          {
-                             "id": 8,
+                             "id": 4,
                              "condition": "The Student is logged into the System.",
                              "type": "PRECONDITION",
                              "priority": null,
@@ -777,14 +777,14 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                      ],
                      "postconditions": [
                          {
-                             "id": 4,
+                             "id": 8,
                              "condition": "The System records collaboration metadata (e.g., last-modified timestamp and editor identity).",
                              "type": "POSTCONDITION",
                              "priority": null,
                              "notes": ""
                          },
                          {
-                             "id": 5,
+                             "id": 7,
                              "condition": "The new use case is stored in the System.",
                              "type": "POSTCONDITION",
                              "priority": null,
@@ -916,14 +916,14 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                      "trigger": "The Student indicates to create a new use case in the use case document.",
                      "preconditions": [
                          {
-                             "id": 7,
+                             "id": 5,
                              "condition": "The Student is a member of the team that owns the use case document.",
                              "type": "PRECONDITION",
                              "priority": null,
                              "notes": ""
                          },
                          {
-                             "id": 8,
+                             "id": 4,
                              "condition": "The Student is logged into the System.",
                              "type": "PRECONDITION",
                              "priority": null,
@@ -939,14 +939,14 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                      ],
                      "postconditions": [
                          {
-                             "id": 4,
+                             "id": 8,
                              "condition": "The System records collaboration metadata (e.g., last-modified timestamp and editor identity).",
                              "type": "POSTCONDITION",
                              "priority": null,
                              "notes": ""
                          },
                          {
-                             "id": 5,
+                             "id": 7,
                              "condition": "The new use case is stored in the System.",
                              "type": "POSTCONDITION",
                              "priority": null,

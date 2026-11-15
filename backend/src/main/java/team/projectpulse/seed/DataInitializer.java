@@ -942,21 +942,19 @@ public class DataInitializer implements CommandLineRunner {
         this.requirementArtifactService.saveRequirementArtifact(1, stakeholder1);
         this.requirementArtifactService.saveRequirementArtifact(1, stakeholder2);
 
-        RequirementArtifact precondition1 = new RequirementArtifact(team1, RequirementArtifactType.PRECONDITION, "", "The Student is logged into the System.", "");
-        RequirementArtifact precondition2 = new RequirementArtifact(team1, RequirementArtifactType.PRECONDITION, "", "The Student is a member of the team that owns the use case document.", "");
-        RequirementArtifact precondition3 = new RequirementArtifact(team1, RequirementArtifactType.PRECONDITION, "", "Document is not locked for review.", "");
-        RequirementArtifact postcondition1 = new RequirementArtifact(team1, RequirementArtifactType.POSTCONDITION, "", "The new use case is stored in the System.", "");
-        RequirementArtifact postcondition2 = new RequirementArtifact(team1, RequirementArtifactType.POSTCONDITION, "", "The System records collaboration metadata (e.g., last-modified timestamp and editor identity).", "");
+        // The conditions are submitted as new entries; saveUseCase stores each as a requirement artifact with its
+        // key (PRC-n, PSC-n), after the use case's own artifact, so the seeded ids stay as they were.
+        List<SubmittedCondition> preconditions = List.of(
+                new SubmittedCondition(null, "The Student is logged into the System."),
+                new SubmittedCondition(null, "The Student is a member of the team that owns the use case document."),
+                new SubmittedCondition(null, "Document is not locked for review."));
+        List<SubmittedCondition> postconditions = List.of(
+                new SubmittedCondition(null, "The new use case is stored in the System."),
+                new SubmittedCondition(null, "The System records collaboration metadata (e.g., last-modified timestamp and editor identity)."));
 
         UseCase useCase = new UseCase();
         useCase.setUseCaseTrigger("The Student indicates to create a new use case in the use case document.");
         useCase.setArtifact(createUseCase);
-
-        useCase.addPrecondition(precondition1);
-        useCase.addPrecondition(precondition2);
-        useCase.addPrecondition(precondition3);
-        useCase.addPostcondition(postcondition1);
-        useCase.addPostcondition(postcondition2);
 
         UseCaseMainStep step1 = new UseCaseMainStep("Student", "The Student indicates to create a new use case in the use case document.");
         UseCaseMainStep step2 = new UseCaseMainStep("System", "The System asks the Student to enter the details of this new use case according to the “Details” defined in the Associated Information of this use case.");
@@ -990,7 +988,7 @@ public class DataInitializer implements CommandLineRunner {
         step5ExtensionA.addStep(new UseCaseExtensionStep("Student", "The Student either chooses to correct the mistake and return to step 4 of the normal flow or chooses to terminate the use case."));
         step5.addExtension(step5ExtensionA);
 
-        this.useCaseService.saveUseCase(1, useCase, new UseCaseReferences(stakeholder1.getId(), Set.of(stakeholder2.getId())));
+        this.useCaseService.saveUseCase(1, useCase, new UseCaseReferences(stakeholder1.getId(), Set.of(stakeholder2.getId()), preconditions, postconditions));
 
         // Create a requirement document
         RequirementDocument doc = new RequirementDocument();
