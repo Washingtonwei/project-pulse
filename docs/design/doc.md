@@ -132,7 +132,7 @@ classDiagram
 - [`UseCaseLock`](../../backend/src/main/java/team/projectpulse/ram/usecase/UseCaseLock.java): its own entity and its own `@Version`, created on first use by `initLockIfMissing`.
 - [`RequirementArtifactType`](../../backend/src/main/java/team/projectpulse/ram/requirement/RequirementArtifactType.java) gains `EXTERNAL_SYSTEM`, and [`ArtifactKeyPrefix`](../../backend/src/main/java/team/projectpulse/ram/requirement/ArtifactKeyPrefix.java) maps it to `SYS`, `PRECONDITION` to `PRC` and `POSTCONDITION` to `PSC` (they were `PRE` and `POST`).
 - Frontend: [`RamUseCases.vue`](../../frontend/src/pages/ram/RamUseCases.vue) offers only stakeholders and external systems in the actor pickers, and [`types.ts`](../../frontend/src/apis/ram/types.ts) lists `EXTERNAL_SYSTEM`, so a student can create one in any LIST document section, as stakeholders are created today. Each condition row has three parts:
-  - A select-or-type picker over the team's conditions of that type, loaded by `POST /teams/{teamId}/requirement-artifacts/search` with `type`. Picking sets the entry's `id`; typing sets its wording with no `id`.
+  - A select-or-type picker over the team's conditions of that type, loaded by `POST /teams/{teamId}/requirement-artifacts/search` with `type`. It hides conditions already in this list. Picking sets the entry's `id`; typing sets its wording with no `id`. The search returns no `otherUseCases`, so a row picked in this session stays read-only until the next save reports whether it is shared.
   - Up and down buttons to reorder.
   - Its display number (`PRE-n` or `POST-n`, from its position) with its artifact key beside it.
 
@@ -220,7 +220,20 @@ flowchart TD
 - The same `id` twice in one list, or an entry with empty wording, is a 400 for the whole request.
 - "Make a separate copy" (extension 6b3) needs no endpoint of its own. The editor replaces the entry, at the same position, with the same wording and no `id`, and the rule stores it as a new condition. This is why the server never matches conditions on wording.
 - Removing an entry removes only the link. The condition stays in the team's requirements graph, and is deleted only through UC-ART-delete-artifact.
-- On create, every use case is "another" use case, since the new one references nothing yet.
+- On create, every use case is "another" use case, since the new one references nothing yet. So an existing condition picked on create may be reworded only while no use case references it at all. Nothing else is affected, which is why no lock is needed.
+
+**Details of the rule:**
+- **Wording is the artifact's `content`.** A condition's `title` stays empty, as the seed already stores it. The request's `condition`, `SubmittedCondition.wording`, the response's `condition` and the picker's label all mean `content`.
+- **"Changed" means not exactly equal.** The comparison is plain string equality, with no trimming or case folding. The editor sends a condition's wording back exactly as it received it, so an untouched shared condition is never refused.
+- **The order of checks:** actors first, then preconditions in order, then postconditions in order. For each entry, the steps are: a repeated id, the scoped lookup (404), the type, then the wording. The first failure is reported. Empty wording is caught earlier, by `@NotBlank` on `ConditionDto.condition`, as a body validation 400 with its field path.
+- **Error messages** name the list and the 1-based position, which is the display number. Examples:
+  - "Precondition 2 is not a precondition."
+  - "Postcondition 3 repeats a condition already in this list."
+  - "PRC-7 is also used by other use cases; make a separate copy to change its wording here."
+- **A new condition** gets a null `priority`, null `notes`, no document section (`sourceDocumentSection` stays null, since a condition belongs to use cases, not to a document section), and `createdBy` and `createdAt` from JPA auditing.
+- **An in-place reword** sets `content` on the managed artifact. JPA auditing then updates its `updatedBy` and `updatedAt`.
+- **`otherUseCases`** is filled on GET, POST and PUT alike, sorted by use case id. It shows each use case's artifact key as stored.
+- **The artifact route is unchanged.** `PUT /requirement-artifacts/{id}` (UC-ART-edit-artifact) copies only title, content, priority and notes, so it cannot change a condition's type. Rewording through it is the "Edit for all" path of extension 6b2: it is allowed for every use case, and has no stale-save guard until OI-72.
 
 **Keys and display numbers are different things.** A condition's artifact key is `PRC-n` for a precondition and `PSC-n` for a postcondition, minted once per team from that type's counter. It never changes, and it's what links, comments and search show. The display number, `PRE-1`, `PRE-2`, … or `POST-1`, …, is the condition's position in one use case only. A shared condition `PRC-7` can be PRE-1 in UC-3 and PRE-4 in UC-9.
 
@@ -333,7 +346,7 @@ Three migrations, and no table added:
 - `V8__rename_secondary_actor_column.sql` renames `use_case_secondary_actor.stakeholder_artifact_id` to `actor_artifact_id`, since a secondary actor may now be an external system. MySQL 8 keeps the foreign key and the composite primary key across `RENAME COLUMN`. Added during implementation, with the developer's agreement; it was not in the approved design.
 - `V9__order_use_case_conditions.sql`, for each of `use_case_precondition` and `use_case_postcondition`:
   1. Adds `precondition_index` (or `postcondition_index`).
-  2. Numbers the existing rows per use case with `ROW_NUMBER()`, ordered by artifact id, since the old order was undefined.
+  2. Numbers the existing rows per use case from 0, with `ROW_NUMBER() - 1` (`@OrderColumn` is 0-based), ordered by artifact id, since the old order was undefined.
   3. Makes the column `NOT NULL`.
   4. Adds an index on the artifact column, so its foreign key keeps one.
   5. Replaces the primary key with `(use_case_id, *_index)`.
@@ -386,9 +399,10 @@ The step tables and their `*_index` order columns are unchanged. The dev seed ad
 | UC-DOC-edit-use-case, extension 7a, reword a shared condition | integration | 400 naming the key; the stored wording and the version are unchanged |
 | UC-DOC-edit-use-case, extension 6b3, separate copy | integration | The shared wording with no id becomes a new condition at the same position; the other use case still has the original |
 | `otherUseCases` in the response | integration | Lists every other use case referencing a condition; empty when unshared |
-| Condition refusals | integration | Another team's or an unknown condition id gives 404 with the same message; a repeated id, a precondition id in the postcondition list, and empty wording each give 400 |
+| Condition refusals | integration | Another team's or an unknown condition id gives 404 with the same message. A repeated id, a precondition id in the postcondition list, and empty wording each give 400, with the messages under "Details of the rule". |
+| Wording comparison | integration | Sending a shared condition back with its exact stored wording is accepted; adding one trailing space is refused (7a) |
 | Condition key prefixes | unit, `ArtifactKeyPrefixTest` | `ArtifactKeyPrefix.of` gives `PRC` and `PSC` |
-| Seed | integration | The seeded use case's conditions have keys and keep their order; the seeded use case's id is unchanged |
+| Seed | integration | The seeded use case keeps id 3. Its three preconditions and two postconditions have `PRC-n` and `PSC-n` keys, in the order `DataInitializer` lists them. |
 | Migration V9 | manual, scratch MySQL | V1 to V9 apply in order; existing join rows are numbered 0..n-1 per use case; the primary key is `(use_case_id, *_index)` |
 | Request-body step ids (OI-46) | integration, `RequestBodyIdIntegrationTest` | A step id from another team's use case is stored as a new step; the other team's step is unchanged |
 | Regression | existing | `UseCaseControllerTest` (including `addUseCase_NotSameTeam`) stays green |
