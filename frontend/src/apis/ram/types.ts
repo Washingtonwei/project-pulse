@@ -196,10 +196,12 @@ export interface Condition {
   priority?: string | null
   notes?: string | null
   otherUseCases?: OtherUseCase[]
-  // Client only, never sent: a new row whose picker is still open, and a row picked from the team's conditions in
-  // this session, which stays read-only until the next save says whether it is shared.
+  // Client only, never sent: a new row whose picker is still open; a row picked from the team's conditions in this
+  // session, which stays read-only until the next save says whether it is shared; and a stable key for a row with no
+  // id yet, so that reordering moves the row's own editor with it.
   choosing?: boolean
   pickedInSession?: boolean
+  clientKey?: string
 }
 
 export interface UseCaseExtensionStep {

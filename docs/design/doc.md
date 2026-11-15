@@ -428,7 +428,7 @@ The step tables and their `*_index` order columns are unchanged. The dev seed ad
 | Wording comparison | integration, `UseCaseConditionIntegrationTest` | Sending a shared condition back with its exact stored wording is accepted; adding one trailing space is refused (7a) |
 | Condition key prefixes | unit, `ArtifactKeyPrefixTest` | `ArtifactKeyPrefix.of` gives `PRC` and `PSC` |
 | Seed | integration, `UseCaseConditionIntegrationTest` | The seeded use case keeps id 3. Its three preconditions and two postconditions have `PRC-n` and `PSC-n` keys, in the order `DataInitializer` lists them. |
-| Migration V9 | manual, scratch MySQL (done) | V1 to V9 apply in order; existing join rows are numbered 0..n-1 per use case; the primary key is `(use_case_id, *_index)` |
+| Migration V9 | manual, scratch MySQL (done) | V1 to V9 apply in order; existing join rows are numbered 0..n-1 per use case; the primary key is `(*_index, use_case_id)`, as Hibernate generates it |
 | Request-body step ids (OI-46) | integration, `RequestBodyIdIntegrationTest` | A step id from another team's use case is stored as a new step; the other team's step is unchanged |
 | Regression | existing | `UseCaseControllerTest` (including `addUseCase_NotSameTeam`) stays green |
 

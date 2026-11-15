@@ -41,7 +41,6 @@ public class UseCaseDtoToUseCaseConverter implements Converter<UseCaseDto, UseCa
         useCaseArtifact.setNotes(source.notes());
         useCase.setArtifact(useCaseArtifact);
 
-
         useCase.replaceMainSteps(source.mainSteps().stream()
                 .map(this.useCaseMainStepDtoToUseCaseMainStepConverter::convert)
                 .collect(Collectors.toList()));

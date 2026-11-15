@@ -66,7 +66,6 @@ public class UseCaseToUseCaseDtoConverter implements Converter<UseCase, UseCaseD
         );
     }
 
-
     private ConditionDto conditionDto(RequirementArtifact condition, Map<Long, List<ConditionUse>> otherUses) {
         List<OtherUseCaseDto> others = otherUses.getOrDefault(condition.getId(), List.of()).stream()
                 .map(use -> new OtherUseCaseDto(use.useCaseId(), use.artifactKey(), use.title()))

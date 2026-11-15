@@ -111,8 +111,17 @@ const availableOptions = computed(() => {
   return props.options.filter((option) => option.id == null || !used.has(option.id))
 })
 
+// A row's key must follow the row, not its position: keyed by position, moving a new row would leave its half-used
+// picker behind at the old position. A row with no id yet gets a client-side key of its own.
+let nextClientKey = 0
+function newClientKey() {
+  nextClientKey += 1
+  return `new-${nextClientKey}`
+}
+
 function rowKey(condition: Condition, index: number) {
-  return condition.id != null ? `id-${condition.id}` : `new-${index}`
+  if (condition.id != null) return `id-${condition.id}`
+  return condition.clientKey ?? `new-at-${index}`
 }
 
 function optionLabel(option: RequirementArtifact) {
@@ -131,7 +140,10 @@ function isReadOnly(condition: Condition) {
 }
 
 function add() {
-  conditions.value = [...conditions.value, { condition: '', type: props.kind, choosing: true }]
+  conditions.value = [
+    ...conditions.value,
+    { condition: '', type: props.kind, choosing: true, clientKey: newClientKey() }
+  ]
 }
 
 // The picker's value is a number when an existing condition was chosen, and the typed text when a new one was made.
@@ -148,7 +160,7 @@ function choose(index: number, value: number | string) {
       pickedInSession: true
     }
   } else {
-    rows[index] = { condition: value, type: props.kind }
+    rows[index] = { condition: value, type: props.kind, clientKey: newClientKey() }
   }
   conditions.value = rows
 }
@@ -172,7 +184,7 @@ function makeSeparateCopy(index: number) {
   const shared = rows[index]
   if (!shared) return
   // No id: the server stores this as a new condition with the same wording, which only this use case references.
-  rows[index] = { condition: shared.condition, type: props.kind }
+  rows[index] = { condition: shared.condition, type: props.kind, clientKey: newClientKey() }
   conditions.value = rows
 }
 </script>

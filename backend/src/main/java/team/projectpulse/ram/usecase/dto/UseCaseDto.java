@@ -41,11 +41,13 @@ public record UseCaseDto(
         UseCaseLockDto lock) {
 
     /**
-     * Copies the condition lists so the record cannot be changed through them. A missing list stays null, so that
+     * Copies the collections so the record cannot be changed through them. A missing one stays null, so that
      * {@code @NotNull} reports it as a 400 rather than it being read as empty.
      */
     public UseCaseDto {
+        secondaryActorIds = secondaryActorIds == null ? null : Set.copyOf(secondaryActorIds);
         preconditions = preconditions == null ? null : List.copyOf(preconditions);
         postconditions = postconditions == null ? null : List.copyOf(postconditions);
+        mainSteps = mainSteps == null ? null : List.copyOf(mainSteps);
     }
 }
