@@ -41,6 +41,8 @@ public class UseCaseDtoToUseCaseConverter implements Converter<UseCaseDto, UseCa
         useCaseArtifact.setNotes(source.notes());
         useCase.setArtifact(useCaseArtifact);
 
+        // The step tree: main steps, their extensions and extension steps, with their ids kept as pairing keys only
+        // (see UseCaseMainStepDtoToUseCaseMainStepConverter).
         useCase.replaceMainSteps(source.mainSteps().stream()
                 .map(this.useCaseMainStepDtoToUseCaseMainStepConverter::convert)
                 .collect(Collectors.toList()));

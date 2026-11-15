@@ -16,9 +16,10 @@ public class UseCaseMainStepDtoToUseCaseMainStepConverter implements Converter<U
 
     @Override
     public UseCaseMainStep convert(UseCaseMainStepDto source) {
-        // The id is mapped on purpose, as a pairing key only. The result is never saved: UseCase.reviseMainSteps
-        // pairs it with one of the use case's own steps or builds a fresh copy without an id, so a body id can
-        // only select among that use case's rows (OI-46). The same holds for extensions and extension steps.
+        // The id is mapped on purpose, as a pairing key only. The result is never saved as it is: on create,
+        // UseCaseService.saveUseCase replaces every step with a copyOf without an id; on edit, UseCase.reviseMainSteps
+        // pairs it with one of the use case's own steps or builds such a fresh copy. So a body id can only select
+        // among that use case's own rows (OI-46). The same holds for extensions and extension steps.
         UseCaseMainStep useCaseMainStep = new UseCaseMainStep(
                 source.id(),
                 source.actor(),

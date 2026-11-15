@@ -34,9 +34,10 @@ import java.util.Set;
  * Creating, reading, editing and locking use cases (UC-DOC-create-use-case, UC-DOC-edit-use-case). The design of
  * record is {@code docs/design/doc.md}.
  * <p>
- * Every reference a request names (the actors, and each precondition and postcondition) arrives as a plain id in
- * {@link UseCaseReferences} and is resolved here, through a lookup scoped to the team in the route, never by the DTO
- * converter (OI-46, BR-team-scoped-access). Every check runs before any write, so a refused request changes nothing.
+ * Every reference a request names (the actors, and each existing precondition and postcondition) arrives as a plain
+ * id in {@link UseCaseReferences} and is resolved here, through a lookup scoped to the team in the route, never by the
+ * DTO converter (OI-46, BR-team-scoped-access); a new condition arrives as its wording alone. Every check runs before
+ * any write, so a refused request changes nothing.
  */
 @Service
 @Transactional
@@ -142,10 +143,14 @@ public class UseCaseService {
         List<RequirementArtifact> preconditions = resolveConditions(teamId, references.preconditions(), RequirementArtifactType.PRECONDITION);
         List<RequirementArtifact> postconditions = resolveConditions(teamId, references.postconditions(), RequirementArtifactType.POSTCONDITION);
 
+        // Every check has passed; the writes start here. The actors are the team-checked artifacts resolveActors
+        // returned, never what the request sent.
         useCase.setPrimaryActor(actors.primary());
         useCase.replaceSecondaryActors(actors.secondaries());
-        // Sets the artifact's team from the route and mints its key. Saved before the new conditions, so the use
-        // case takes the lower id, as it did when the conditions were cascaded.
+        // The use case's own artifact (title, description, priority, notes, type USE_CASE from the converter):
+        // saveRequirementArtifact sets its team from the route and mints its key (UC-n). The use case shares its id
+        // (@MapsId). Saved before the new conditions, so the use case takes the lower id, as it did when the
+        // conditions were cascaded.
         this.requirementArtifactService.saveRequirementArtifact(teamId, useCase.getArtifact());
         useCase.replacePreconditions(saveNewConditions(teamId, preconditions));
         useCase.replacePostconditions(saveNewConditions(teamId, postconditions));
@@ -258,6 +263,8 @@ public class UseCaseService {
         // are revised below. The team-scoped query above has just authorized this id in this transaction, which is
         // the condition findByIdWithStepGraph requires, and nothing is modified yet, so the query flushes nothing.
         this.useCaseRepository.findByIdWithStepGraph(useCaseId);
+        // A use case that has never been locked has no lock row yet, and this creates one. Nobody holds it, so the lock
+        // check below refuses the save, and the refusal rolls the new row back with everything else.
         oldUseCase.initLockIfMissing();
 
         // Resolve and check the incoming references before doing any version or lock work, and before any write. Both
@@ -300,16 +307,18 @@ public class UseCaseService {
         // response carries the version the next save must send.
         this.entityManager.lock(oldUseCase, LockModeType.PESSIMISTIC_FORCE_INCREMENT);
 
-        // Update artifact fields
+        // The plain fields, copied from the detached update: title, description (the artifact's content), priority and
+        // notes onto the stored artifact, and the trigger onto the use case. JPA auditing stamps the artifact's
+        // updatedBy and updatedAt when any of them changed.
         oldUseCase.getArtifact().setTitle(update.getArtifact().getTitle());
         oldUseCase.getArtifact().setContent(update.getArtifact().getContent());
         oldUseCase.getArtifact().setPriority(update.getArtifact().getPriority());
         oldUseCase.getArtifact().setNotes(update.getArtifact().getNotes());
+        oldUseCase.setUseCaseTrigger(update.getUseCaseTrigger());
 
         // The actors are the team-checked artifacts resolveActors returned, never what the request sent.
         oldUseCase.setPrimaryActor(actors.primary());
         oldUseCase.replaceSecondaryActors(actors.secondaries());
-        oldUseCase.setUseCaseTrigger(update.getUseCaseTrigger());
 
         // Conditions are links to shared artifacts: save the new ones, then replace this use case's ordered lists.
         // Removing an entry drops only the link.
@@ -329,10 +338,10 @@ public class UseCaseService {
 
     /**
      * Resolves the actors {@code references} names, each in {@code teamId}, the team named in the route, and returns
-     * them without setting them on any use case, so it writes nothing. The team-scoped load is itself the check: an id outside the team, or naming nothing at all, throws the
-     * same {@link ObjectNotFoundException}, so a refusal does not reveal which ids exist in other teams
-     * (BR-team-scoped-access, OI-46). Only then is the type checked (BR-use-case-actor-types), so the type of
-     * another team's artifact cannot leak through a 400 either.
+     * them without setting them on any use case, so it writes nothing. The team-scoped load is itself the check: an
+     * id outside the team, or naming nothing at all, throws the same {@link ObjectNotFoundException}, so a refusal does
+     * not reveal which ids exist in other teams (BR-team-scoped-access, OI-46). Only then is the type checked
+     * (BR-use-case-actor-types), so the type of another team's artifact cannot leak through a 400 either.
      * <p>
      * The primary actor is checked first, then each secondary actor, and the first failure is reported. Every use
      * case has a primary actor: the DTO requires one, and this refuses a missing one from a caller inside the server
@@ -383,9 +392,10 @@ public class UseCaseService {
     /**
      * For each condition of {@code useCase}, the other use cases that reference it, in use case id order, keyed by
      * condition id. A condition no other use case references has no entry. The controller calls this for every GET,
-     * POST and PUT response, and the editor lists the result as "Also used by" (extension 6b1 of UC-DOC-edit-use-case);
-     * no save depends on it, since a stored condition is read-only whether or not it is shared. Two queries in all, one per list, however many conditions there are; see
-     * {@link ConditionUse} and {@link UseCaseRepository#findOtherUseCasesReferencingPreconditions}.
+     * POST and PUT response, and the editor lists the result as "Also used by" (extension 6b1 of
+     * UC-DOC-edit-use-case); no save depends on it, since a stored condition is read-only whether or not it is shared.
+     * Two queries in all, one per list, however many conditions there are; see {@link ConditionUse} and
+     * {@link UseCaseRepository#findOtherUseCasesReferencingPreconditions}.
      */
     public Map<Long, List<ConditionUse>> otherUseCasesReferencing(UseCase useCase) {
         Map<Long, List<ConditionUse>> uses = new HashMap<>();
