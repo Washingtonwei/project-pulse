@@ -127,7 +127,9 @@ public class UseCaseService {
         useCase.replaceMainSteps(useCase.getMainSteps().stream().map(UseCaseMainStep::copyOf).toList());
 
         resolveActors(teamId, references, useCase);
-        // A new use case references nothing yet, so every other use case counts as "another" one.
+        // Conditions are handled in two passes, as in updateUseCase: planConditions checks every entry and writes
+        // nothing, then applyConditions writes. A new use case references nothing yet, so every other use case counts
+        // as "another" one (NO_USE_CASE).
         List<PlannedCondition> preconditions = planConditions(teamId, references.preconditions(), RequirementArtifactType.PRECONDITION, NO_USE_CASE);
         List<PlannedCondition> postconditions = planConditions(teamId, references.postconditions(), RequirementArtifactType.POSTCONDITION, NO_USE_CASE);
 
@@ -218,6 +220,9 @@ public class UseCaseService {
         oldUseCase.initLockIfMissing();
 
         // Resolve and check the incoming references before doing any version or lock work, and before any write.
+        // Conditions take two passes: planConditions here checks every entry and writes nothing, so a refused
+        // request leaves the database untouched; applyConditions further down does the writes, after the version and
+        // lock checks have passed.
         resolveActors(teamId, references, update);
         List<PlannedCondition> preconditions = planConditions(teamId, references.preconditions(), RequirementArtifactType.PRECONDITION, useCaseId);
         List<PlannedCondition> postconditions = planConditions(teamId, references.postconditions(), RequirementArtifactType.POSTCONDITION, useCaseId);
@@ -376,32 +381,60 @@ public class UseCaseService {
      * @param useCaseId the use case being saved, or {@link #NO_USE_CASE} on create
      */
     private List<PlannedCondition> planConditions(Integer teamId, List<SubmittedCondition> submitted, RequirementArtifactType type, Long useCaseId) {
+        // "Precondition" or "Postcondition", used only in error messages so they name the list.
         String label = type == RequirementArtifactType.PRECONDITION ? "Precondition" : "Postcondition";
+        // One planned entry per submitted entry, in the same order: this order becomes the use case's order.
         List<PlannedCondition> plan = new ArrayList<>();
+        // The ids already met in this list, to refuse a condition listed twice.
         Set<Long> seen = new HashSet<>();
+
         for (int i = 0; i < submitted.size(); i++) {
             SubmittedCondition entry = submitted.get(i);
-            int position = i + 1; // the display number, PRE-n or POST-n
+            // The 1-based position is the display number the student sees (PRE-2, POST-1), so errors use it.
+            int position = i + 1;
+
+            // (a) No id: the student typed a new condition, or asked for a separate copy (extension 6b3). There is
+            // nothing to look up or check; applyConditions will create it.
             if (entry.id() == null) {
                 plan.add(new PlannedCondition(null, entry.wording()));
                 continue;
             }
+
+            // (b) The same condition twice in one list is a mistake, refused rather than silently merged.
             if (!seen.add(entry.id())) {
                 throw new IllegalArgumentException(label + " " + position + " repeats a condition already in this list.");
             }
+
+            // (c) Look the id up within the route's team only. Another team's id and an id that names nothing both
+            // throw the same 404, so the refusal reveals nothing about other teams (BR-team-scoped-access).
             RequirementArtifact condition = this.requirementArtifactService.findRequirementArtifactById(teamId, entry.id());
+
+            // (d) A precondition's id may not appear in the postcondition list, or the other way round. Checked only
+            // after (c), so the type of another team's artifact can't leak through a 400.
             if (condition.getType() != type) {
                 throw new IllegalArgumentException(label + " " + position + " is not a " + label.toLowerCase(Locale.ROOT) + ".");
             }
-            if (!Objects.equals(condition.getContent(), entry.wording()) && isReferencedElsewhere(condition, type, useCaseId)) {
+
+            // (e) A changed wording is allowed only if no other use case references this condition. Otherwise saving
+            // here would silently change those use cases too (BR-shared-condition-wording, extension 7a). An unchanged
+            // wording needs no check: linking a shared condition is fine, only rewording it is not.
+            boolean wordingChanged = !Objects.equals(condition.getContent(), entry.wording());
+            if (wordingChanged && isReferencedElsewhere(condition, type, useCaseId)) {
+                // Old conditions saved before keys were minted have no key, so fall back to the position.
                 String name = condition.getArtifactKey() != null ? condition.getArtifactKey() : label + " " + position;
                 throw new IllegalArgumentException(name + " is also used by other use cases; make a separate copy to change its wording here.");
             }
+
+            // All checks passed: link this existing condition, with the wording it should have.
             plan.add(new PlannedCondition(condition, entry.wording()));
         }
         return plan;
     }
 
+    /**
+     * Whether any use case other than {@code useCaseId} references {@code condition}. Asks the sharing query for this
+     * one condition; any row back means it is shared.
+     */
     private boolean isReferencedElsewhere(RequirementArtifact condition, RequirementArtifactType type, Long useCaseId) {
         List<Long> ids = List.of(condition.getId());
         List<ConditionUse> uses = type == RequirementArtifactType.PRECONDITION
@@ -417,21 +450,30 @@ public class UseCaseService {
      * order, ready to become the use case's list.
      */
     private List<RequirementArtifact> applyConditions(Integer teamId, List<PlannedCondition> plan, RequirementArtifactType type) {
+        // The use case's new list, in the planned order.
         List<RequirementArtifact> conditions = new ArrayList<>(plan.size());
         for (PlannedCondition planned : plan) {
             if (planned.existing() == null) {
+                // A new condition. The type comes from the list it was entered in, never from the request.
+                // The wording is the artifact's content; a condition has no title of its own.
                 RequirementArtifact condition = new RequirementArtifact();
                 condition.setType(type);
                 condition.setTitle("");
                 condition.setContent(planned.wording());
+                // saveRequirementArtifact sets the route's team and mints the key (PRC-n or PSC-n), as it does for
+                // every artifact, and stores the row now so it has an id to link.
                 conditions.add(this.requirementArtifactService.saveRequirementArtifact(teamId, condition));
             } else {
+                // An existing condition. planConditions already allowed any change of wording (it isn't shared),
+                // so a changed wording is set in place; JPA auditing then records who changed it and when.
                 if (!Objects.equals(planned.existing().getContent(), planned.wording())) {
                     planned.existing().setContent(planned.wording());
                 }
                 conditions.add(planned.existing());
             }
         }
+        // The caller hands this list to replacePreconditions or replacePostconditions. A condition left out of it
+        // loses only its link to this use case; the condition itself stays for other use cases.
         return conditions;
     }
 
