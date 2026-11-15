@@ -58,7 +58,8 @@ public class UseCaseController {
      */
     @PostMapping("/teams/{teamId}/use-cases")
     public Result addUseCase(@PathVariable Integer teamId, @Valid @RequestBody UseCaseDto useCaseDto) {
-        // Part 1: the plain fields, as an unsaved use case with no actors, no conditions and no team.
+        // Part 1: the plain fields and the step tree (main steps, their extensions and extension steps), as an unsaved use
+        // case with no actors, no conditions and no team. saveUseCase replaces the steps with fresh copies without ids.
         UseCase newUseCase = this.useCaseDtoToUseCaseConverter.convert(useCaseDto);
         // Part 2: the references (actor ids, conditions), passed beside it and resolved by the service in the route's team.
         UseCase savedUseCase = this.useCaseService.saveUseCase(teamId, newUseCase, referencesOf(useCaseDto));
@@ -83,7 +84,8 @@ public class UseCaseController {
      */
     @PutMapping("/teams/{teamId}/use-cases/{useCaseId}")
     public Result updateUseCase(@PathVariable Integer teamId, @PathVariable Long useCaseId, @Valid @RequestBody UseCaseDto useCaseDto) {
-        // Part 1: the plain fields and the steps, as a detached use case the service copies from.
+        // Part 1: the plain fields and the step tree (main steps, their extensions and extension steps), as a detached
+        // use case the service copies from; the step ids pair submitted steps with the stored ones.
         UseCase update = this.useCaseDtoToUseCaseConverter.convert(useCaseDto);
         // Parts 2 and 3: the references and the expected version, both read from the DTO and passed beside it.
         UseCase updateUseCase = this.useCaseService.updateUseCase(teamId, useCaseId, update, referencesOf(useCaseDto), useCaseDto.version());
