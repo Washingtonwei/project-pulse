@@ -30,12 +30,23 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * Creating, reading, editing and locking use cases (UC-DOC-create-use-case, UC-DOC-edit-use-case). The design of
+ * record is {@code docs/design/doc.md}.
+ * <p>
+ * Every reference a request names (the actors, and each precondition and postcondition) arrives as a plain id in
+ * {@link UseCaseReferences} and is resolved here, through a lookup scoped to the team in the route, never by the DTO
+ * converter (OI-46, BR-team-scoped-access). Every check runs before any write, so a refused request changes nothing.
+ */
 @Service
 @Transactional
 public class UseCaseService {
 
     /** The artifact types that may serve as a use case's actor (BR-use-case-actor-types). */
     private static final Set<RequirementArtifactType> ACTOR_TYPES = EnumSet.of(RequirementArtifactType.STAKEHOLDER, RequirementArtifactType.EXTERNAL_SYSTEM);
+
+    /** Stands for "no use case" in the sharing queries, which exclude the use case being saved. Ids start at 1. */
+    private static final Long NO_USE_CASE = 0L;
 
     private final Duration defaultLockTtl;
     private final UseCaseRepository useCaseRepository;
@@ -59,8 +70,8 @@ public class UseCaseService {
     /**
      * Finds a use case by ID with all related entities fully loaded.
      * Uses the 3-query approach to avoid big Cartesian products:
-     * 1. Load use case with scalar relationships (artifact, primaryActor)
-     * 2. Load ManyToMany collections (secondaryActors, preconditions, postconditions)
+     * 1. Load use case with scalar relationships (artifact, primaryActor, lock and its holder)
+     * 2. Load ManyToMany collections (secondaryActors, and the ordered preconditions and postconditions)
      * 3. Load the main steps graph (mainSteps -> extensions -> extension steps)
      * <p>
      * All queries execute within the same transaction/persistence context,
@@ -113,11 +124,14 @@ public class UseCaseService {
      * the ones passed in, so the caller's own step objects are not the ones persisted: read saved steps from the
      * returned use case.
      * <p>
-     * The actors come from {@code references} alone, resolved in {@code teamId}; any actor already set on
-     * {@code useCase} is replaced. See {@link #resolveActors}.
+     * The actors and the conditions come from {@code references} alone, resolved in {@code teamId}; any actor or
+     * condition already set on {@code useCase} is replaced. A new condition is saved as a team artifact with its key
+     * (PRC-n or PSC-n); an existing one is linked. See {@link #resolveActors} and {@link #planConditions}.
      *
-     * @throws ObjectNotFoundException  if an actor id names no artifact of this team
-     * @throws IllegalArgumentException if an actor is not a stakeholder or an external system
+     * @throws ObjectNotFoundException  if an actor or condition id names no artifact of this team
+     * @throws IllegalArgumentException if the primary actor is missing, an actor is not a stakeholder or an external
+     *                                  system, or a condition entry is refused (a repeated id, the other list's type,
+     *                                  or a changed wording of a condition another use case references)
      */
     public UseCase saveUseCase(Integer teamId, UseCase useCase, UseCaseReferences references) {
         useCase.initLockIfMissing(); // Ensure lock is initialized for new use cases
@@ -141,6 +155,12 @@ public class UseCaseService {
         return this.useCaseRepository.save(useCase);
     }
 
+    /**
+     * The lock of use case {@code useCaseId} of {@code teamId}, created on first use. An expired lock is cleared here,
+     * so expiry needs no timer: it takes effect the next time anyone reads the lock (BR-lock-expiry).
+     *
+     * @throws ObjectNotFoundException if the use case is not found, or belongs to another team
+     */
     public UseCaseLock findUseCaseLock(Integer teamId, Long useCaseId) {
         UseCase useCase = this.useCaseRepository.findByIdWithScalars(useCaseId, teamId)
                 .orElseThrow(() -> new ObjectNotFoundException("use case", useCaseId));
@@ -156,6 +176,15 @@ public class UseCaseService {
         return lock;
     }
 
+    /**
+     * Gives the caller the use case lock until now plus the TTL ({@code ram.lock.default-lock-ttl}), or extends it to
+     * that time if the caller already holds it (BR-edit-lock-required). The holder can extend it again and again; see
+     * OI-68.
+     *
+     * @throws SectionAlreadyLockedException (423) if someone else holds an unexpired lock; the message names them
+     *                                       and the expiry
+     * @throws ObjectNotFoundException       if the use case is not found, or belongs to another team
+     */
     public UseCaseLock lockUseCase(Integer teamId, Long useCaseId, String reason) {
         UseCaseLock useCaseLock = findUseCaseLock(teamId, useCaseId);
         Integer currentUserId = this.userUtils.getUserId();
@@ -185,6 +214,14 @@ public class UseCaseService {
         return useCaseLock;
     }
 
+    /**
+     * Releases the use case lock. An instructor may release anyone's lock, for example one a student left behind; a
+     * student only their own.
+     *
+     * @throws SectionUnlockNotAllowedException (403) if the caller is a student who does not hold the lock, including
+     *                                          when no one holds it
+     * @throws ObjectNotFoundException          if the use case is not found, or belongs to another team
+     */
     public void unlockUseCase(Integer teamId, Long useCaseId) {
         UseCaseLock useCaseLock = findUseCaseLock(teamId, useCaseId);
         Integer currentUserId = this.userUtils.getUserId();
@@ -204,11 +241,18 @@ public class UseCaseService {
 
     /**
      * Updates use case {@code useCaseId} of {@code teamId} from {@code update} at {@code expectedVersion}; the caller
-     * must hold the use case lock. The actors come from {@code references} alone; see {@link #resolveActors}.
+     * must hold the use case lock. The actors and the conditions come from {@code references} alone; see
+     * {@link #resolveActors} and {@link #planConditions}. The checks run in this order, and nothing is written until
+     * all of them pass: use case in team, actors, conditions, version, lock.
      *
-     * @throws ObjectNotFoundException  if the use case, or an actor id, names nothing in this team
-     * @throws IllegalArgumentException if an actor is not a stakeholder or an external system, or no version is given
-     * @throws OptimisticLockException  if {@code expectedVersion} is stale
+     * @throws ObjectNotFoundException       if the use case, an actor id or a condition id names nothing in this team
+     * @throws IllegalArgumentException      if no version is given, the primary actor is missing, an actor is not a
+     *                                       stakeholder or an external system, or a condition entry is refused (a
+     *                                       repeated id, the other list's type, or a changed wording of a shared
+     *                                       condition, extension 7a)
+     * @throws OptimisticLockException       (409) if {@code expectedVersion} is stale
+     * @throws SectionLockRequiredException  (409) if no one holds the lock
+     * @throws SectionAlreadyLockedException (423) if someone else holds it
      */
     public UseCase updateUseCase(Integer teamId, Long useCaseId, UseCase update, UseCaseReferences references, Integer expectedVersion) {
         UseCase oldUseCase = this.useCaseRepository.findByIdAndArtifactTeamTeamId(useCaseId, teamId)
@@ -266,11 +310,11 @@ public class UseCaseService {
         oldUseCase.getArtifact().setPriority(update.getArtifact().getPriority());
         oldUseCase.getArtifact().setNotes(update.getArtifact().getNotes());
 
-        // Update scalar relationships
+        // The primary actor (resolved above by resolveActors) and the trigger
         oldUseCase.setPrimaryActor(update.getPrimaryActor());
         oldUseCase.setUseCaseTrigger(update.getUseCaseTrigger());
 
-        // Update ManyToMany collections
+        // The secondary actors, also resolved above
         oldUseCase.getSecondaryActors().clear();
         oldUseCase.getSecondaryActors().addAll(update.getSecondaryActors());
 
@@ -341,8 +385,11 @@ public class UseCaseService {
     }
 
     /**
-     * For each condition of {@code useCase}, the other use cases that reference it, in use case id order. The use case
-     * editor shows these so that a shared condition is read-only (extension 6b1 of UC-DOC-edit-use-case).
+     * For each condition of {@code useCase}, the other use cases that reference it, in use case id order, keyed by
+     * condition id. A condition no other use case references has no entry. The controller calls this for every GET,
+     * POST and PUT response, and the editor shows the result so that a shared condition is read-only (extension 6b1
+     * of UC-DOC-edit-use-case). Two queries in all, one per list, however many conditions there are; see
+     * {@link ConditionUse} and {@link UseCaseRepository#findOtherUseCasesReferencingPreconditions}.
      */
     public Map<Long, List<ConditionUse>> otherUseCasesReferencing(UseCase useCase) {
         Map<Long, List<ConditionUse>> uses = new HashMap<>();
@@ -358,9 +405,6 @@ public class UseCaseService {
         }
         return uses;
     }
-
-    /** Stands for "no use case" in the sharing queries, which exclude the use case being saved. Ids start at 1. */
-    private static final Long NO_USE_CASE = 0L;
 
     /**
      * One submitted condition, checked and resolved but not yet written: {@code existing} is the team's condition the
@@ -464,8 +508,9 @@ public class UseCaseService {
                 // every artifact, and stores the row now so it has an id to link.
                 conditions.add(this.requirementArtifactService.saveRequirementArtifact(teamId, condition));
             } else {
-                // An existing condition. planConditions already allowed any change of wording (it isn't shared),
-                // so a changed wording is set in place; JPA auditing then records who changed it and when.
+                // An existing condition. A changed wording reaches here only for a condition no other use case
+                // references, because planConditions refused it otherwise, so it is set in place; JPA auditing then
+                // records who changed it and when.
                 if (!Objects.equals(planned.existing().getContent(), planned.wording())) {
                     planned.existing().setContent(planned.wording());
                 }
