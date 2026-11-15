@@ -160,7 +160,7 @@ sequenceDiagram
     S->>S: resolveConditions: check every entry (see Preconditions and postconditions), else 400 or 404
     S->>R: saveRequirementArtifact(teamId, artifact): team from route, key UC-n
     S->>R: saveRequirementArtifact for each new condition: type from its list, key PRC-n or PSC-n
-    S->>DB: save use case (steps cascade; conditions are links only)
+    S->>DB: save use case (steps cascade, conditions are links only)
     C-->>E: Result with the use case, its step ids and version
 ```
 
@@ -188,7 +188,7 @@ sequenceDiagram
     S->>S: lock held by the caller (409 not locked, 423 someone else)
     S->>DB: lock(useCase, PESSIMISTIC_FORCE_INCREMENT)
     S->>U: artifact fields, trigger, actors
-    S->>S: reword unshared conditions in place; save new ones (PRC-n, PSC-n)
+    S->>S: reword unshared conditions in place, then save new ones (PRC-n, PSC-n)
     S->>U: replace the ordered condition lists (links only)
     S->>U: reviseMainSteps(submitted steps)
     U->>U: OwnedChildren.revise, recursively per level
@@ -213,7 +213,7 @@ flowchart TD
     T -- yes --> W{Wording changed?}
     W -- no --> K[Link as is]
     W -- yes --> S{Referenced by another use case?}
-    S -- no --> R[Reword in place; the use case lock covers it]
+    S -- no --> R[Reword in place, covered by the use case lock]
     S -- yes --> X400b[400: names the key, says to make a separate copy<br/>extension 7a, 4a on create]
 ```
 
