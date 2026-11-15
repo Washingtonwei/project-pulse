@@ -128,7 +128,7 @@ public class UseCaseService {
      * @throws ObjectNotFoundException  if an actor or condition id names no artifact of this team
      * @throws IllegalArgumentException if the primary actor is missing, an actor is not a stakeholder or an external
      *                                  system, or a condition entry is refused (a repeated id, or the other list's
-     *                                  type, extension 4a)
+     *                                  type); each is an input validation refusal, extension 4a
      */
     public UseCase saveUseCase(Integer teamId, UseCase useCase, UseCaseReferences references) {
         useCase.initLockIfMissing(); // Ensure lock is initialized for new use cases
@@ -249,7 +249,8 @@ public class UseCaseService {
      * @throws ObjectNotFoundException       if the use case, an actor id or a condition id names nothing in this team
      * @throws IllegalArgumentException      if no version is given, the primary actor is missing, an actor is not a
      *                                       stakeholder or an external system, or a condition entry is refused (a
-     *                                       repeated id, or the other list's type, extension 7a)
+     *                                       repeated id, or the other list's type); each is an input validation
+     *                                       refusal, extension 7a
      * @throws OptimisticLockException       (409) if {@code expectedVersion} is stale
      * @throws SectionLockRequiredException  (409) if no one holds the lock
      * @throws SectionAlreadyLockedException (423) if someone else holds it
