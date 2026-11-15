@@ -1372,6 +1372,66 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
         assertThat(response.getInt("code")).as(response.toString()).isEqualTo(StatusCode.INVALID_ARGUMENT);
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"mainSteps[0].extensions", "mainSteps[0].extensions[0].steps"})
+    void addUseCase_NullNestedList(String path) throws Exception {
+        JSONObject payload = minimalUseCase(1L, new JSONArray());
+        payload.put("mainSteps", stepTreeWithNullList(path));
+
+        JSONObject response = postUseCase(payload, this.studentJohnToken);
+
+        assertThat(response.getBoolean("flag")).isFalse();
+        assertThat(response.getInt("code")).as(response.toString()).isEqualTo(StatusCode.INVALID_ARGUMENT);
+        assertThat(response.getJSONObject("data").has(path)).as(response.toString()).isTrue();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"mainSteps[0].extensions", "mainSteps[0].extensions[0].steps"})
+    void updateUseCase_NullNestedList(String path) throws Exception {
+        lockUseCase(1, 3, this.studentJohnToken);
+        JSONObject before = fetchUseCase(1, 3, this.studentJohnToken);
+        JSONObject payload = new JSONObject(before.toString());
+        payload.put("mainSteps", stepTreeWithNullList(path));
+
+        MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload.toString())
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andReturn();
+        JSONObject response = new JSONObject(result.getResponse().getContentAsString());
+
+        assertThat(response.getBoolean("flag")).isFalse();
+        assertThat(response.getInt("code")).as(response.toString()).isEqualTo(StatusCode.INVALID_ARGUMENT);
+        assertThat(response.getJSONObject("data").has(path)).as(response.toString()).isTrue();
+        JSONObject after = fetchUseCase(1, 3, this.studentJohnToken);
+        assertThat(after.getInt("version")).isEqualTo(before.getInt("version"));
+        assertThat(after.getJSONArray("mainSteps").length()).isEqualTo(before.getJSONArray("mainSteps").length());
+    }
+
+    /**
+     * A one-step tree holding one extension with one step, with the list at {@code path} sent as JSON null.
+     */
+    private JSONArray stepTreeWithNullList(String path) throws Exception {
+        JSONObject extension = new JSONObject()
+                .put("conditionText", "The probe fails.")
+                .put("kind", "EXCEPTION")
+                .put("exit", "RESUME")
+                .put("steps", new JSONArray().put(new JSONObject()
+                        .put("actor", "System")
+                        .put("actionText", "The System reports the failure.")));
+        JSONObject step = new JSONObject()
+                .put("actor", "Student")
+                .put("actionText", "The Student starts the probe.")
+                .put("extensions", new JSONArray().put(extension));
+        if (path.endsWith(".steps")) {
+            extension.put("steps", JSONObject.NULL);
+        } else {
+            step.put("extensions", JSONObject.NULL);
+        }
+        return new JSONArray().put(step);
+    }
+
     /**
      * Locks team 1's use case 3, submits it as served with one change, and asserts the refusal and that the stored
      * actors and version are unchanged. A null message skips the message check.
