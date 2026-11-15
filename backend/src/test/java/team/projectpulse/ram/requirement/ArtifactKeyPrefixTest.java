@@ -15,6 +15,13 @@ class ArtifactKeyPrefixTest {
         assertThat(ArtifactKeyPrefix.of(RequirementArtifactType.EXTERNAL_SYSTEM)).isEqualTo("SYS");
     }
 
+    @Test
+    @DisplayName("Condition keys are PRC and PSC, never the PRE and POST of a use case's own numbering")
+    void conditionPrefixes() {
+        assertThat(ArtifactKeyPrefix.of(RequirementArtifactType.PRECONDITION)).isEqualTo("PRC");
+        assertThat(ArtifactKeyPrefix.of(RequirementArtifactType.POSTCONDITION)).isEqualTo("PSC");
+    }
+
     @ParameterizedTest
     @EnumSource(RequirementArtifactType.class)
     @DisplayName("Every artifact type has a prefix of its own, so no type falls back to UNK")

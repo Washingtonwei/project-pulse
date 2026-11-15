@@ -26,8 +26,10 @@ public final class ArtifactKeyPrefix {
         MAP.put(RequirementArtifactType.EXTERNAL_SYSTEM, "SYS");
         MAP.put(RequirementArtifactType.BUSINESS_RULE, "RULE");
         MAP.put(RequirementArtifactType.FEATURE, "FEAT");
-        MAP.put(RequirementArtifactType.PRECONDITION, "PRE");
-        MAP.put(RequirementArtifactType.POSTCONDITION, "POST");
+        // PRC and PSC rather than PRE and POST, so that a condition's key never reads like the PRE-n and POST-n numbers
+        // a use case gives its own conditions by position.
+        MAP.put(RequirementArtifactType.PRECONDITION, "PRC");
+        MAP.put(RequirementArtifactType.POSTCONDITION, "PSC");
         MAP.put(RequirementArtifactType.USER_STORY, "US");
         MAP.put(RequirementArtifactType.QUALITY_ATTRIBUTE, "QA");
         MAP.put(RequirementArtifactType.EXTERNAL_INTERFACE_REQUIREMENT, "EIR");
