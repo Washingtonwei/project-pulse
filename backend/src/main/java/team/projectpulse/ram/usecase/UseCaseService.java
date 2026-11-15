@@ -137,11 +137,13 @@ public class UseCaseService {
         // otherwise reach save() on a child entity (OI-46).
         useCase.replaceMainSteps(useCase.getMainSteps().stream().map(UseCaseMainStep::copyOf).toList());
 
-        resolveActors(teamId, references, useCase);
-        // Check every condition entry first, writing nothing, as in updateUseCase; the new ones are saved below.
+        // Check every reference first, writing nothing, as in updateUseCase; the writes follow.
+        ResolvedActors actors = resolveActors(teamId, references);
         List<RequirementArtifact> preconditions = resolveConditions(teamId, references.preconditions(), RequirementArtifactType.PRECONDITION);
         List<RequirementArtifact> postconditions = resolveConditions(teamId, references.postconditions(), RequirementArtifactType.POSTCONDITION);
 
+        useCase.setPrimaryActor(actors.primary());
+        useCase.replaceSecondaryActors(actors.secondaries());
         // Sets the artifact's team from the route and mints its key. Saved before the new conditions, so the use
         // case takes the lower id, as it did when the conditions were cascaded.
         this.requirementArtifactService.saveRequirementArtifact(teamId, useCase.getArtifact());
@@ -258,12 +260,10 @@ public class UseCaseService {
         this.useCaseRepository.findByIdWithStepGraph(useCaseId);
         oldUseCase.initLockIfMissing();
 
-        // Resolve and check the incoming references before doing any version or lock work, and before any write.
-        // The actors are resolved onto the detached update, not onto the managed oldUseCase; they are copied across
-        // after the lock check, further down.
-        // resolveConditions checks every condition entry and writes nothing, so a refused request leaves the database
-        // untouched; saveNewConditions further down saves the new ones, after the version and lock checks.
-        resolveActors(teamId, references, update);
+        // Resolve and check the incoming references before doing any version or lock work, and before any write. Both
+        // resolve methods only read and return what they found, so a refused request leaves the database untouched;
+        // the results are written onto oldUseCase after the version and lock checks, further down.
+        ResolvedActors actors = resolveActors(teamId, references);
         List<RequirementArtifact> preconditions = resolveConditions(teamId, references.preconditions(), RequirementArtifactType.PRECONDITION);
         List<RequirementArtifact> postconditions = resolveConditions(teamId, references.postconditions(), RequirementArtifactType.POSTCONDITION);
 
@@ -306,14 +306,10 @@ public class UseCaseService {
         oldUseCase.getArtifact().setPriority(update.getArtifact().getPriority());
         oldUseCase.getArtifact().setNotes(update.getArtifact().getNotes());
 
-        // The actors. These are not what the request sent: resolveActors, near the top, replaced them on the detached
-        // update with the team-checked artifacts. It wrote them onto update rather than straight onto oldUseCase
-        // because oldUseCase is managed, so the queries resolveConditions runs would have flushed the change before the
-        // version and lock checks. Copying them across only now keeps every write after those checks.
-        oldUseCase.setPrimaryActor(update.getPrimaryActor());
+        // The actors are the team-checked artifacts resolveActors returned, never what the request sent.
+        oldUseCase.setPrimaryActor(actors.primary());
+        oldUseCase.replaceSecondaryActors(actors.secondaries());
         oldUseCase.setUseCaseTrigger(update.getUseCaseTrigger());
-        oldUseCase.getSecondaryActors().clear();
-        oldUseCase.getSecondaryActors().addAll(update.getSecondaryActors());
 
         // Conditions are links to shared artifacts: save the new ones, then replace this use case's ordered lists.
         // Removing an entry drops only the link.
@@ -327,9 +323,13 @@ public class UseCaseService {
         return this.useCaseRepository.save(oldUseCase);
     }
 
+    /** A use case's actors as {@link #resolveActors} found them: team-checked artifacts, not yet set on any use case. */
+    private record ResolvedActors(RequirementArtifact primary, Set<RequirementArtifact> secondaries) {
+    }
+
     /**
-     * Sets {@code useCase}'s actors from {@code references}, each resolved in {@code teamId}, the team named in the
-     * route. The team-scoped load is itself the check: an id outside the team, or naming nothing at all, throws the
+     * Resolves the actors {@code references} names, each in {@code teamId}, the team named in the route, and returns
+     * them without setting them on any use case, so it writes nothing. The team-scoped load is itself the check: an id outside the team, or naming nothing at all, throws the
      * same {@link ObjectNotFoundException}, so a refusal does not reveal which ids exist in other teams
      * (BR-team-scoped-access, OI-46). Only then is the type checked (BR-use-case-actor-types), so the type of
      * another team's artifact cannot leak through a 400 either.
@@ -338,7 +338,7 @@ public class UseCaseService {
      * case has a primary actor: the DTO requires one, and this refuses a missing one from a caller inside the server
      * too, so no path can store a use case without one.
      */
-    private void resolveActors(Integer teamId, UseCaseReferences references, UseCase useCase) {
+    private ResolvedActors resolveActors(Integer teamId, UseCaseReferences references) {
         if (references.primaryActorId() == null) {
             throw new IllegalArgumentException("Primary actor is required.");
         }
@@ -349,8 +349,7 @@ public class UseCaseService {
             secondaryActors.add(requireActor(teamId, secondaryActorId, "Secondary actor"));
         }
 
-        useCase.setPrimaryActor(primaryActor);
-        useCase.replaceSecondaryActors(secondaryActors);
+        return new ResolvedActors(primaryActor, secondaryActors);
     }
 
     /**

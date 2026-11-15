@@ -60,9 +60,10 @@ classDiagram
         +updateUseCase(teamId, useCaseId, update, references, expectedVersion)
         +otherUseCasesReferencing(useCase)
         +findUseCaseLock / lockUseCase / unlockUseCase
-        -resolveActors(teamId, references, useCase)
+        -resolveActors(teamId, references) ResolvedActors
         -requireActor(teamId, actorId, role)
-        -resolveConditions(teamId, useCase, references)
+        -resolveConditions(teamId, submitted, type) List
+        -saveNewConditions(teamId, conditions) List
     }
     class UseCaseRepository {
         +findOtherUseCasesReferencingPreconditions(ids, useCaseId)
@@ -123,7 +124,7 @@ classDiagram
 - [`UseCaseController`](../../backend/src/main/java/team/projectpulse/ram/usecase/UseCaseController.java): builds a `UseCaseReferences` from the DTO and passes it to the service with the converted use case. It puts each use case's other-use-case lists (`otherUseCasesReferencing`) into the response. It holds no logic.
 - `UseCaseReferences` and `SubmittedCondition` (`ram/usecase/`): carry every reference the request names (the actor ids, and each condition as an optional id plus its wording, in order) from the request to the service, so the converter never produces a reference at all. `UseCaseReferences` replaces the `UseCaseActorIds` of the actors slice.
 - [`UseCaseDtoToUseCaseConverter`](../../backend/src/main/java/team/projectpulse/ram/usecase/converter/UseCaseDtoToUseCaseConverter.java): field mapping only. It injects no repository, never reads the body's `teamId`, and maps no condition. `ConditionDtoToRequirementArtifactConverter` is deleted.
-- [`UseCaseService`](../../backend/src/main/java/team/projectpulse/ram/usecase/UseCaseService.java): resolves the actors (`resolveActors` and `requireActor`, where the team-scoped load is itself the check) and the conditions (`resolveConditions`); runs the version and lock checks; calls the domain methods. It holds no step logic.
+- [`UseCaseService`](../../backend/src/main/java/team/projectpulse/ram/usecase/UseCaseService.java): resolves the actors (`resolveActors` and `requireActor`, where the team-scoped load is itself the check) and the conditions (`resolveConditions`); runs the version and lock checks; calls the domain methods. It holds no step logic. Both resolve methods only read and return what they found (a private `ResolvedActors` record, and the ordered condition list), so every check comes before every write on create and on edit alike; the results are set on the use case, and the new conditions saved by `saveNewConditions`, only after the checks pass.
 - [`UseCaseRepository`](../../backend/src/main/java/team/projectpulse/ram/usecase/UseCaseRepository.java): two JPQL queries that return, for a set of condition ids, every other use case that references each one (condition id, use case id, artifact key, title), excluding the use case being saved.
 - [`OwnedChildren`](../../backend/src/main/java/team/projectpulse/ram/usecase/OwnedChildren.java): the pairing algorithm. Its comments walk one worked example ([A, B, C] becomes [C, N, A]) through every phase; read them before changing it.
 - `reviseMainSteps`, `reviseExtensions`, `reviseSteps`: each passes its own list and its own level's `reviseFrom`, `copyOf` and back-reference setter to `OwnedChildren`.
