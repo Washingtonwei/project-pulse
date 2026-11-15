@@ -543,13 +543,15 @@ async function loadUseCases() {
   }
 }
 
-// In a use case, actors can be either stakeholders or external interface requirements. For example, a stakeholder could be a user role like "Customer" or "Admin", while an external interface requirement could represent an external system that interacts with the use case.
+// A use case's actors are the team's stakeholders and external systems (BR-use-case-actor-types). A stakeholder is a
+// person or role, such as "Customer"; an external system is a non-human participant, such as an email or LLM service.
+// The server refuses any other artifact type, so this filter only keeps the picker from offering one.
 async function loadStakeholders() {
   if (!effectiveTeamId.value) return
   try {
     const result = await searchRequirementArtifacts(effectiveTeamId.value, { page: 0, size: 500 }, {})
     stakeholderOptions.value = result.data.content.filter((artifact) =>
-      ['STAKEHOLDER', 'EXTERNAL_INTERFACE_REQUIREMENT'].includes(artifact.type)
+      ['STAKEHOLDER', 'EXTERNAL_SYSTEM'].includes(artifact.type)
     )
   } catch {
   }
