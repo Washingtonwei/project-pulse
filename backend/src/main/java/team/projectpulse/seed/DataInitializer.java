@@ -35,6 +35,7 @@ import org.springframework.stereotype.Component;
 import java.time.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Component
 @Profile("dev")
@@ -951,9 +952,6 @@ public class DataInitializer implements CommandLineRunner {
         useCase.setUseCaseTrigger("The Student indicates to create a new use case in the use case document.");
         useCase.setArtifact(createUseCase);
 
-        useCase.setPrimaryActor(stakeholder1);
-        useCase.addSecondaryActor(stakeholder2);
-
         useCase.addPrecondition(precondition1);
         useCase.addPrecondition(precondition2);
         useCase.addPrecondition(precondition3);
@@ -992,7 +990,7 @@ public class DataInitializer implements CommandLineRunner {
         step5ExtensionA.addStep(new UseCaseExtensionStep("Student", "The Student either chooses to correct the mistake and return to step 4 of the normal flow or chooses to terminate the use case."));
         step5.addExtension(step5ExtensionA);
 
-        this.useCaseService.saveUseCase(1, useCase);
+        this.useCaseService.saveUseCase(1, useCase, new UseCaseActorIds(stakeholder1.getId(), Set.of(stakeholder2.getId())));
 
         // Create a requirement document
         RequirementDocument doc = new RequirementDocument();
@@ -1183,6 +1181,13 @@ public class DataInitializer implements CommandLineRunner {
         RequirementArtifact team2GlossaryTerm = new RequirementArtifact(team2, RequirementArtifactType.GLOSSARY_TERM, "Deliverable", "A tangible output the team hands to the client at the end of a phase.", "");
         this.requirementArtifactService.saveRequirementArtifact(1, team1GlossaryTerm);
         this.requirementArtifactService.saveRequirementArtifact(2, team2GlossaryTerm);
+
+        // ---- An external system ----
+        // A non-human actor (BR-use-case-actor-types), so a use case can name an external system as an actor in
+        // dev and in tests. Seeded last, like the blocks above, so no existing id shifts; for the same reason it is
+        // not attached to the seeded use case, whose save comes much earlier.
+        RequirementArtifact team1ExternalSystem = new RequirementArtifact(team1, RequirementArtifactType.EXTERNAL_SYSTEM, "Email service", "The SMTP service that delivers the system's notification emails.", "");
+        this.requirementArtifactService.saveRequirementArtifact(1, team1ExternalSystem);
     }
 
     private void applyTemplate(RequirementDocument doc, DocumentTemplate tpl) {

@@ -23,20 +23,21 @@ public class UseCase {
     private RequirementArtifact artifact;
 
     /**
-     * Primary actor must be a stakeholder artifact.
-     * Invariant (service-layer): primaryActor.type == STAKEHOLDER
+     * The primary actor: a stakeholder or an external system of the use case's team (BR-use-case-actor-types).
+     * Enforced by {@code UseCaseService.resolveActors}, the only place an actor is set from a request.
      */
     @ManyToOne(fetch = FetchType.LAZY)
     private RequirementArtifact primaryActor;
 
     /**
-     * Secondary actors (0..N), also stakeholders.
+     * Secondary actors (0..N), each a stakeholder or an external system of the use case's team, under the same rule
+     * and the same enforcement as the primary actor.
      */
     @ManyToMany
     @JoinTable(
             name = "use_case_secondary_actor",
             joinColumns = @JoinColumn(name = "use_case_id"),
-            inverseJoinColumns = @JoinColumn(name = "stakeholder_artifact_id")
+            inverseJoinColumns = @JoinColumn(name = "actor_artifact_id")
     )
     private Set<RequirementArtifact> secondaryActors = new HashSet<>();
 

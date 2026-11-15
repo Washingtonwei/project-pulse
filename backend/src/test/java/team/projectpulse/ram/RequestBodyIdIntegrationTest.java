@@ -18,9 +18,12 @@ import team.projectpulse.ram.requirement.RequirementArtifact;
 import team.projectpulse.ram.requirement.RequirementArtifactRepository;
 import team.projectpulse.ram.requirement.RequirementArtifactType;
 import team.projectpulse.ram.usecase.UseCase;
+import team.projectpulse.ram.usecase.UseCaseActorIds;
 import team.projectpulse.ram.usecase.UseCaseMainStep;
 import team.projectpulse.ram.usecase.UseCaseService;
 import team.projectpulse.system.StatusCode;
+
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
@@ -176,6 +179,49 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
             assertThat(response.getJSONObject("data").getLong("id")).isNotEqualTo(victim.getId());
             assertStillOwnedByTeam2(victim.getId(), "Client");
         }
+    }
+
+    @Test
+    @DisplayName("A use-case create naming another team in its body stores its conditions under the route's team")
+    void testUseCaseCreateIgnoresTheTeamNamedInTheBody() throws Exception {
+        // The route says team 1; the body says team 2. The team must come from the route only, so every new
+        // precondition and postcondition belongs to team 1 and team 2 gains no rows.
+        long team2RowsBefore = countArtifactsOfTeam(2);
+
+        String json = """
+                {
+                    "teamId": 2,
+                    "title": "Body team probe",
+                    "description": "A use case whose body names another team.",
+                    "trigger": "The Student does something",
+                    "primaryActorId": %d,
+                    "secondaryActorIds": [],
+                    "preconditions": [ { "condition": "Body team probe precondition", "type": "PRECONDITION" } ],
+                    "postconditions": [ { "condition": "Body team probe postcondition", "type": "POSTCONDITION" } ],
+                    "mainSteps": []
+                }
+                """.formatted(team1PrimaryActorId());
+
+        MvcResult mvcResult = this.mockMvc.perform(post(this.baseUrl + "/teams/1/use-cases").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andDo(print()).andReturn();
+        JSONObject response = new JSONObject(mvcResult.getResponse().getContentAsString());
+
+        // Unlike the cross-team probes above, this create is valid and must succeed; a refused request would mean
+        // the probe tested nothing.
+        assertThat(response.getBoolean("flag")).as(response.toString()).isTrue();
+        this.entityManager.flush();
+        this.entityManager.clear();
+        @SuppressWarnings("unchecked")
+        java.util.List<Number> conditionTeams = this.entityManager.createNativeQuery("select team_team_id from requirement_artifact where content like 'Body team probe %condition'")
+                .getResultList();
+        assertThat(conditionTeams).hasSize(2);
+        assertThat(conditionTeams).allSatisfy(teamId -> assertThat(teamId.intValue()).isEqualTo(1));
+        assertThat(countArtifactsOfTeam(2)).isEqualTo(team2RowsBefore);
+    }
+
+    private long countArtifactsOfTeam(int teamId) {
+        return ((Number) this.entityManager.createNativeQuery("select count(*) from requirement_artifact where team_team_id = :teamId")
+                .setParameter("teamId", teamId).getSingleResult()).longValue();
     }
 
     /**
@@ -369,7 +415,7 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
         useCase.setArtifact(new RequirementArtifact(team2Anything.getTeam(), RequirementArtifactType.USE_CASE, "Team 2's use case", "Owned by team 2.", ""));
         useCase.setUseCaseTrigger("Team 2 starts its use case.");
         useCase.addMainStep(new UseCaseMainStep("System", "Team 2's only step"));
-        Long id = this.useCaseService.saveUseCase(2, useCase).getId();
+        Long id = this.useCaseService.saveUseCase(2, useCase, new UseCaseActorIds(team2Anything.getId(), Set.of())).getId();
         this.entityManager.flush();
         return id;
     }

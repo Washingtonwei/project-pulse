@@ -22,6 +22,8 @@ public final class ArtifactKeyPrefix {
         MAP.put(RequirementArtifactType.ASSUMPTION, "ASM");
         MAP.put(RequirementArtifactType.DEPENDENCY, "DEP");
         MAP.put(RequirementArtifactType.STAKEHOLDER, "STK");
+        // SYS rather than EXT, which would read as "extension" inside a use case.
+        MAP.put(RequirementArtifactType.EXTERNAL_SYSTEM, "SYS");
         MAP.put(RequirementArtifactType.BUSINESS_RULE, "RULE");
         MAP.put(RequirementArtifactType.FEATURE, "FEAT");
         MAP.put(RequirementArtifactType.PRECONDITION, "PRE");

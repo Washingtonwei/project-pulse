@@ -9,21 +9,28 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import team.projectpulse.ram.requirement.RequirementArtifact;
 import team.projectpulse.ram.requirement.RequirementArtifactService;
+import team.projectpulse.ram.requirement.RequirementArtifactType;
 import team.projectpulse.system.UserUtils;
 import team.projectpulse.system.exception.ObjectNotFoundException;
 import team.projectpulse.system.exception.SectionAlreadyLockedException;
 import team.projectpulse.system.exception.SectionLockRequiredException;
 import team.projectpulse.system.exception.SectionUnlockNotAllowedException;
+import team.projectpulse.team.Team;
 import team.projectpulse.user.PeerEvaluationUser;
 import team.projectpulse.user.UserRepository;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Set;
 
 @Service
 @Transactional
 public class UseCaseService {
+
+    /** The artifact types that may serve as a use case's actor (BR-use-case-actor-types). */
+    private static final Set<RequirementArtifactType> ACTOR_TYPES = EnumSet.of(RequirementArtifactType.STAKEHOLDER, RequirementArtifactType.EXTERNAL_SYSTEM);
 
     private final Duration defaultLockTtl;
     private final UseCaseRepository useCaseRepository;
@@ -97,18 +104,27 @@ public class UseCaseService {
     }
 
     /**
-     * Saves a new use case. Its steps, extensions and extension steps are saved as fresh copies of the ones passed
-     * in, so the caller's own step objects are not the ones persisted: read saved steps from the returned use case.
+     * Saves a new use case for {@code teamId}. Its steps, extensions and extension steps are saved as fresh copies of
+     * the ones passed in, so the caller's own step objects are not the ones persisted: read saved steps from the
+     * returned use case.
+     * <p>
+     * The actors come from {@code actorIds} alone, resolved in {@code teamId}; any actor already set on
+     * {@code useCase} is replaced. See {@link #resolveActors}.
+     *
+     * @throws ObjectNotFoundException  if an actor id names no artifact of this team
+     * @throws IllegalArgumentException if an actor is not a stakeholder or an external system
      */
-    public UseCase saveUseCase(Integer teamId, UseCase useCase) {
+    public UseCase saveUseCase(Integer teamId, UseCase useCase, UseCaseActorIds actorIds) {
         useCase.initLockIfMissing(); // Ensure lock is initialized for new use cases
 
         // Fresh copies drop any step, extension or extension-step id the request body carried, which would
         // otherwise reach save() on a child entity (OI-46).
         useCase.replaceMainSteps(useCase.getMainSteps().stream().map(UseCaseMainStep::copyOf).toList());
 
-        requireActorsInTeam(teamId, useCase);
+        resolveActors(teamId, actorIds, useCase);
+        // Sets the artifact's team from the route and mints its key, so the team read below is the route's.
         this.requirementArtifactService.saveRequirementArtifact(teamId, useCase.getArtifact());
+        giveConditionsTheTeam(useCase, useCase.getArtifact().getTeam());
         return this.useCaseRepository.save(useCase);
     }
 
@@ -173,7 +189,15 @@ public class UseCaseService {
         useCaseLock.unlock();
     }
 
-    public UseCase updateUseCase(Integer teamId, Long useCaseId, UseCase update, Integer expectedVersion) {
+    /**
+     * Updates use case {@code useCaseId} of {@code teamId} from {@code update} at {@code expectedVersion}; the caller
+     * must hold the use case lock. The actors come from {@code actorIds} alone; see {@link #resolveActors}.
+     *
+     * @throws ObjectNotFoundException  if the use case, or an actor id, names nothing in this team
+     * @throws IllegalArgumentException if an actor is not a stakeholder or an external system, or no version is given
+     * @throws OptimisticLockException  if {@code expectedVersion} is stale
+     */
+    public UseCase updateUseCase(Integer teamId, Long useCaseId, UseCase update, UseCaseActorIds actorIds, Integer expectedVersion) {
         UseCase oldUseCase = this.useCaseRepository.findByIdAndArtifactTeamTeamId(useCaseId, teamId)
                 .orElseThrow(() -> new ObjectNotFoundException("use case", useCaseId));
         // Load the whole step tree in one query, rather than one query per step and per extension once the steps
@@ -182,8 +206,8 @@ public class UseCaseService {
         this.useCaseRepository.findByIdWithStepGraph(useCaseId);
         oldUseCase.initLockIfMissing();
 
-        // Validate the incoming references before doing any version or lock work.
-        requireActorsInTeam(teamId, update);
+        // Resolve the incoming references before doing any version or lock work.
+        resolveActors(teamId, actorIds, update);
 
         if (expectedVersion == null) {
             throw new IllegalArgumentException("Use case version is required for update.");
@@ -232,6 +256,7 @@ public class UseCaseService {
         oldUseCase.getSecondaryActors().clear();
         oldUseCase.getSecondaryActors().addAll(update.getSecondaryActors());
 
+        giveConditionsTheTeam(update, oldUseCase.getArtifact().getTeam());
         oldUseCase.getPreconditions().clear();
         oldUseCase.getPreconditions().addAll(update.getPreconditions());
 
@@ -246,41 +271,69 @@ public class UseCaseService {
     }
 
     /**
-     * Requires the use case's actors to belong to {@code teamId}, the team named in the route, so that a use case
-     * cannot reference artifacts outside its own team.
+     * Sets {@code useCase}'s actors from {@code actorIds}, each resolved in {@code teamId}, the team named in the
+     * route. The team-scoped load is itself the check: an id outside the team, or naming nothing at all, throws the
+     * same {@link ObjectNotFoundException}, so a refusal does not reveal which ids exist in other teams
+     * (BR-team-scoped-access, OI-46). Only then is the type checked (BR-use-case-actor-types), so the type of
+     * another team's artifact cannot leak through a 400 either.
      * <p>
-     * <strong>The returned artifact is discarded on purpose: these calls are made for their exception,
-     * not for their value.</strong> {@code findRequirementArtifactById} is team-scoped and throws
-     * {@link ObjectNotFoundException} when the id does not belong to {@code teamId}, which is the
-     * entire reason to call it. Reusing that finder keeps exactly one definition of "does this
-     * artifact belong to this team" instead of a second copy here, at the cost of a statement that
-     * looks discardable to a reader who does not know that. An {@code existsByIdAndTeamTeamId}
-     * returning a boolean would read more plainly, and would be the thing to change to.
-     * <p>
-     * This covers the actors. Resolving every reference here rather than in the converter, so that the check is
-     * the resolution rather than a second pass after it, is the direction of travel; it is tracked as OI-46.
+     * The primary actor is checked first, then each secondary actor, and the first failure is reported. Every use
+     * case has a primary actor: the DTO requires one, and this refuses a missing one from a caller inside the server
+     * too, so no path can store a use case without one.
      */
-    private void requireActorsInTeam(Integer teamId, UseCase useCase) {
-        RequirementArtifact primaryActor = useCase.getPrimaryActor();
-        if (primaryActor != null && primaryActor.getId() != null) {
-            this.requirementArtifactService.findRequirementArtifactById(teamId, primaryActor.getId());
+    private void resolveActors(Integer teamId, UseCaseActorIds actorIds, UseCase useCase) {
+        if (actorIds.primaryActorId() == null) {
+            throw new IllegalArgumentException("Primary actor is required.");
+        }
+        RequirementArtifact primaryActor = requireActor(teamId, actorIds.primaryActorId(), "Primary actor");
+
+        Set<RequirementArtifact> secondaryActors = new HashSet<>();
+        for (Long secondaryActorId : actorIds.secondaryActorIds()) {
+            secondaryActors.add(requireActor(teamId, secondaryActorId, "Secondary actor"));
         }
 
-        Set<RequirementArtifact> secondaryActors = useCase.getSecondaryActors();
-        if (secondaryActors != null) {
-            for (RequirementArtifact secondaryActor : secondaryActors) {
-                if (secondaryActor != null && secondaryActor.getId() != null) {
-                    this.requirementArtifactService.findRequirementArtifactById(teamId, secondaryActor.getId());
-                }
-            }
-        }
+        useCase.setPrimaryActor(primaryActor);
+        useCase.replaceSecondaryActors(secondaryActors);
     }
 
-    private <T> void updateCollection(Set<T> oldCollection, Set<T> newCollection) {
-        oldCollection.clear();
-        if (newCollection != null) {
-            oldCollection.addAll(newCollection);
+    /**
+     * Loads one actor and checks that it may be an actor, in two steps whose order matters:
+     * <ol>
+     *   <li><strong>Team first.</strong> {@code findRequirementArtifactById} looks the id up within {@code teamId}
+     *       only, and throws {@link ObjectNotFoundException} (404) when the artifact belongs to another team or does
+     *       not exist. Both cases give the same message, so the caller cannot tell them apart.</li>
+     *   <li><strong>Type second.</strong> Only an artifact already known to be this team's is checked against
+     *       {@link #ACTOR_TYPES} (BR-use-case-actor-types), and a wrong type is an {@link IllegalArgumentException}
+     *       (400, extension 4a on create, 7a on edit). Checking the type first would let a 400 versus 404 reveal the
+     *       type of another team's artifact.</li>
+     * </ol>
+     *
+     * @param teamId  the team named in the route, never one from the request body
+     * @param actorId the id the request named for this actor
+     * @param role    "Primary actor" or "Secondary actor", used only in the 400 message, so that the message says
+     *                which field and which id are wrong (the location extensions 4a1 and 7a1 ask for)
+     * @return the managed artifact, safe to set as an actor of a use case of {@code teamId}
+     */
+    private RequirementArtifact requireActor(Integer teamId, Long actorId, String role) {
+        // Step 1: scoped to the route's team; throws 404 for another team's id and for an unknown id alike.
+        RequirementArtifact actor = this.requirementArtifactService.findRequirementArtifactById(teamId, actorId);
+        // Step 2: the artifact is this team's; now check it is a stakeholder or an external system.
+        if (!ACTOR_TYPES.contains(actor.getType())) {
+            throw new IllegalArgumentException(role + " " + actorId + " must be a stakeholder or an external system.");
         }
+        return actor;
+    }
+
+    /**
+     * Gives every precondition and postcondition of {@code useCase} the team named in the route. The converter sets
+     * none, since the body's {@code teamId} is never trusted (OI-46).
+     * <p>
+     * A stopgap at this layer: making conditions shared references of the team (BR-use-case-condition-shared) is the
+     * next design slice, and it replaces this method.
+     */
+    private static void giveConditionsTheTeam(UseCase useCase, Team team) {
+        useCase.getPreconditions().forEach(condition -> condition.setTeam(team));
+        useCase.getPostconditions().forEach(condition -> condition.setTeam(team));
     }
 
 }

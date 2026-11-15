@@ -1,9 +1,12 @@
 package team.projectpulse.ram.usecase;
 
 import org.hamcrest.Matchers;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -14,6 +17,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import team.projectpulse.AbstractIntegrationTest;
 import team.projectpulse.system.StatusCode;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -24,6 +28,9 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
 
     @Autowired
     MockMvc mockMvc;
+
+    @Autowired
+    UseCaseRepository useCaseRepository;
 
     String adminBingyangToken; // Bingyang is the instructor of section 2
 
@@ -93,8 +100,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                       "teamId": 1,
                       "primaryActorId": 1,
                       "secondaryActorIds": [
-                          2,
-                          3
+                          2
                       ],
                       "trigger": "The Student indicates to edit a section-based requirement document (e.g., Vision & Scope, SRS).",
                       "preconditions": [
@@ -231,8 +237,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                       "teamId": 1,
                       "primaryActorId": 1,
                       "secondaryActorIds": [
-                          2,
-                          3
+                          2
                       ],
                       "trigger": "The Student indicates to edit a section-based requirement document (e.g., Vision & Scope, SRS).",
                       "preconditions": [
@@ -1239,6 +1244,210 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(true))
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS));
+    }
+
+    // ---- Actors: BR-use-case-actor-types and BR-team-scoped-access ----
+
+    @Test
+    void addUseCase_WithAnExternalSystemAsSecondaryActor() throws Exception {
+        // Main flow of UC-DOC-create-use-case with both kinds of actor: a stakeholder as primary actor and an
+        // external system as a secondary actor.
+        JSONObject externalSystem = fetchFirstArtifact(1, "EXTERNAL_SYSTEM", this.studentJohnToken);
+        assertThat(externalSystem.getString("artifactKey")).isEqualTo("SYS-1");
+        long externalSystemId = externalSystem.getLong("id");
+
+        JSONObject response = postUseCase(minimalUseCase(1L, new JSONArray().put(externalSystemId)), this.studentJohnToken);
+
+        assertThat(response.getBoolean("flag")).as(response.toString()).isTrue();
+        assertThat(response.getJSONObject("data").getLong("primaryActorId")).isEqualTo(1L);
+        JSONArray secondaryActorIds = response.getJSONObject("data").getJSONArray("secondaryActorIds");
+        assertThat(secondaryActorIds.length()).isEqualTo(1);
+        assertThat(secondaryActorIds.getLong(0)).isEqualTo(externalSystemId);
+    }
+
+    @Test
+    void addUseCase_PrimaryActorOfAnotherType() throws Exception {
+        // Extension 4a: a functional requirement of the caller's own team is not an actor.
+        long functionalRequirementId = fetchFirstArtifact(1, "FUNCTIONAL_REQUIREMENT", this.studentJohnToken).getLong("id");
+        long useCasesBefore = this.useCaseRepository.count();
+
+        JSONObject response = postUseCase(minimalUseCase(functionalRequirementId, new JSONArray()), this.studentJohnToken);
+
+        assertThat(response.getBoolean("flag")).isFalse();
+        assertThat(response.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
+        assertThat(response.getString("message")).isEqualTo("Primary actor " + functionalRequirementId + " must be a stakeholder or an external system.");
+        assertThat(this.useCaseRepository.count()).isEqualTo(useCasesBefore);
+    }
+
+    @Test
+    void addUseCase_SecondaryActorOfAnotherType() throws Exception {
+        // Extension 4a for a secondary actor; the message names the field and the id, which is the location 4a1
+        // asks for.
+        long functionalRequirementId = fetchFirstArtifact(1, "FUNCTIONAL_REQUIREMENT", this.studentJohnToken).getLong("id");
+
+        JSONObject response = postUseCase(minimalUseCase(1L, new JSONArray().put(2L).put(functionalRequirementId)), this.studentJohnToken);
+
+        assertThat(response.getBoolean("flag")).isFalse();
+        assertThat(response.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
+        assertThat(response.getString("message")).isEqualTo("Secondary actor " + functionalRequirementId + " must be a stakeholder or an external system.");
+    }
+
+    @Test
+    void updateUseCase_PrimaryActorOfAnotherType() throws Exception {
+        // Extension 7a: the same refusal on edit, and nothing changes.
+        long functionalRequirementId = fetchFirstArtifact(1, "FUNCTIONAL_REQUIREMENT", this.studentJohnToken).getLong("id");
+        assertActorEditRefused(payload -> payload.put("primaryActorId", functionalRequirementId),
+                StatusCode.INVALID_ARGUMENT, "Primary actor " + functionalRequirementId + " must be a stakeholder or an external system.");
+    }
+
+    @Test
+    void updateUseCase_SecondaryActorOfAnotherType() throws Exception {
+        long functionalRequirementId = fetchFirstArtifact(1, "FUNCTIONAL_REQUIREMENT", this.studentJohnToken).getLong("id");
+        assertActorEditRefused(payload -> payload.put("secondaryActorIds", new JSONArray().put(functionalRequirementId)),
+                StatusCode.INVALID_ARGUMENT, "Secondary actor " + functionalRequirementId + " must be a stakeholder or an external system.");
+    }
+
+    @Test
+    void updateUseCase_PrimaryActorFromAnotherTeam() throws Exception {
+        // The edit path resolves the primary actor through the same team-scoped lookup as create; another team's
+        // artifact is refused with 404 and the stored use case is unchanged.
+        long foreignActorId = fetchTeam2StakeholderId();
+        assertActorEditRefused(payload -> payload.put("primaryActorId", foreignActorId),
+                StatusCode.NOT_FOUND, "Could not find requirement artifact with Id " + foreignActorId + " :(");
+    }
+
+    @Test
+    void updateUseCase_SecondaryActorFromAnotherTeam() throws Exception {
+        long foreignActorId = fetchTeam2StakeholderId();
+        assertActorEditRefused(payload -> payload.put("secondaryActorIds", new JSONArray().put(foreignActorId)),
+                StatusCode.NOT_FOUND, null);
+    }
+
+    @Test
+    void addUseCase_ActorFromAnotherTeamIsRefusedLikeAnIdThatNamesNothing() throws Exception {
+        // The refusal must not reveal that the id exists in another team: the same status and the same message,
+        // apart from the id itself, as an id that names no artifact at all.
+        long foreignActorId = fetchTeam2StakeholderId();
+        long unknownId = 999_999L;
+
+        JSONObject foreign = postUseCase(minimalUseCase(foreignActorId, new JSONArray()), this.studentJohnToken);
+        JSONObject unknown = postUseCase(minimalUseCase(unknownId, new JSONArray()), this.studentJohnToken);
+
+        assertThat(foreign.getInt("code")).isEqualTo(StatusCode.NOT_FOUND);
+        assertThat(unknown.getInt("code")).isEqualTo(StatusCode.NOT_FOUND);
+        assertThat(foreign.getString("message").replace(String.valueOf(foreignActorId), "<id>"))
+                .isEqualTo(unknown.getString("message").replace(String.valueOf(unknownId), "<id>"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"primaryActorId", "secondaryActorIds", "preconditions", "postconditions", "mainSteps"})
+    void addUseCase_MissingField(String field) throws Exception {
+        JSONObject payload = minimalUseCase(1L, new JSONArray());
+        payload.remove(field);
+
+        JSONObject response = postUseCase(payload, this.studentJohnToken);
+
+        assertThat(response.getBoolean("flag")).isFalse();
+        assertThat(response.getInt("code")).as(response.toString()).isEqualTo(StatusCode.INVALID_ARGUMENT);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"primaryActorId", "secondaryActorIds", "preconditions", "postconditions", "mainSteps"})
+    void updateUseCase_MissingField(String field) throws Exception {
+        lockUseCase(1, 3, this.studentJohnToken);
+        JSONObject payload = fetchUseCase(1, 3, this.studentJohnToken);
+        payload.remove(field);
+
+        MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload.toString())
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andReturn();
+        JSONObject response = new JSONObject(result.getResponse().getContentAsString());
+
+        assertThat(response.getBoolean("flag")).isFalse();
+        assertThat(response.getInt("code")).as(response.toString()).isEqualTo(StatusCode.INVALID_ARGUMENT);
+    }
+
+    /**
+     * Locks team 1's use case 3, submits it as served with one change, and asserts the refusal and that the stored
+     * actors and version are unchanged. A null message skips the message check.
+     */
+    private void assertActorEditRefused(JsonEdit change, int expectedCode, String expectedMessage) throws Exception {
+        lockUseCase(1, 3, this.studentJohnToken);
+        JSONObject before = fetchUseCase(1, 3, this.studentJohnToken);
+        JSONObject payload = new JSONObject(before.toString());
+        change.apply(payload);
+
+        MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload.toString())
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andReturn();
+        JSONObject response = new JSONObject(result.getResponse().getContentAsString());
+
+        assertThat(response.getBoolean("flag")).isFalse();
+        assertThat(response.getInt("code")).as(response.toString()).isEqualTo(expectedCode);
+        if (expectedMessage != null) {
+            assertThat(response.getString("message")).isEqualTo(expectedMessage);
+        }
+
+        JSONObject after = fetchUseCase(1, 3, this.studentJohnToken);
+        assertThat(after.getInt("version")).isEqualTo(before.getInt("version"));
+        assertThat(after.getLong("primaryActorId")).isEqualTo(before.getLong("primaryActorId"));
+        assertThat(after.getJSONArray("secondaryActorIds").toString()).isEqualTo(before.getJSONArray("secondaryActorIds").toString());
+    }
+
+    @FunctionalInterface
+    private interface JsonEdit {
+        void apply(JSONObject payload) throws Exception;
+    }
+
+    private JSONObject minimalUseCase(long primaryActorId, JSONArray secondaryActorIds) throws Exception {
+        return new JSONObject()
+                .put("title", "Actor rule probe")
+                .put("description", "A minimal use case for checking actor rules.")
+                .put("teamId", 1)
+                .put("primaryActorId", primaryActorId)
+                .put("secondaryActorIds", secondaryActorIds)
+                .put("trigger", "The student starts the probe.")
+                .put("preconditions", new JSONArray())
+                .put("postconditions", new JSONArray())
+                .put("mainSteps", new JSONArray());
+    }
+
+    private JSONObject postUseCase(JSONObject payload, String token) throws Exception {
+        MvcResult result = this.mockMvc.perform(post(this.baseUrl + "/teams/1/use-cases")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload.toString())
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, token))
+                .andReturn();
+        return new JSONObject(result.getResponse().getContentAsString());
+    }
+
+    private JSONObject fetchUseCase(int teamId, int useCaseId, String token) throws Exception {
+        MvcResult result = this.mockMvc.perform(get(this.baseUrl + "/teams/" + teamId + "/use-cases/" + useCaseId)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, token))
+                .andReturn();
+        return new JSONObject(result.getResponse().getContentAsString()).getJSONObject("data");
+    }
+
+    /**
+     * The first artifact of a type in a team, found through that team's search endpoint rather than a hard-coded
+     * seeded id.
+     */
+    private JSONObject fetchFirstArtifact(int teamId, String type, String token) throws Exception {
+        MvcResult result = this.mockMvc.perform(post(this.baseUrl + "/teams/" + teamId + "/requirement-artifacts/search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new JSONObject().put("type", type).toString())
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, token))
+                .andReturn();
+        return new JSONObject(result.getResponse().getContentAsString()).getJSONObject("data").getJSONArray("content").getJSONObject(0);
     }
 
     /**

@@ -11,6 +11,7 @@ public enum RequirementArtifactType {
     ASSUMPTION,
     DEPENDENCY,
     STAKEHOLDER,
+    EXTERNAL_SYSTEM,
     BUSINESS_RULE,
     FUNCTIONAL_REQUIREMENT,
     FEATURE,

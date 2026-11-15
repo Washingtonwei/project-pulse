@@ -106,7 +106,7 @@ Authorization has **two enforcement points**, and every request that reaches dat
 **Point 2, the scoped query** (in the service).
 - Load by id and owning team in one query: `findByIdAndTeamTeamId(id, teamId)`, never `findById(id)` followed by a `getTeam()` comparison. Spring Data derives it from the method name; `Team`'s primary key field is `teamId`, hence the doubled word. Precedents to copy: `RequirementArtifactRepository`, `CommentRepository.findByIdAndCommentThreadIdAndCommentThreadTeamTeamId`, and `DocumentSectionRepository.findByIdAndDocumentIdAndDocumentTeamTeamId`, which also binds the child to the parent named in the URL.
 - When the URL carries no container id (a flat route such as `/activities/{activityId}`, or `POST /activities/search`), derive the scope from the caller through `UserUtils`, and let a `teamId` in the search criteria filter inside that scope, never set it. See `ActivityService.findByCriteria`.
-- Re-resolve every id in a request body (a `sourceArtifactId`, a `primaryActorId`, a DTO `id`) through a team-scoped finder, as `UseCaseService.requireActorsInTeam` does. Never scope by a `teamId` that came from the body (OI-46).
+- Re-resolve every id in a request body (a `sourceArtifactId`, a `primaryActorId`, a DTO `id`) through a team-scoped finder, as `UseCaseService.resolveActors` does for a use case's actors, so the scoped load is itself the check. Never scope by a `teamId` that came from the body (OI-46).
 
 **The smell to grep for:** a service method that accepts `Integer teamId` and never mentions it in the body. That was the exact shape of the September 2026 cross-team bypass, in every RAM service at once.
 
