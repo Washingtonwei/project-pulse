@@ -292,8 +292,28 @@ public class UseCaseService {
         useCase.replaceSecondaryActors(secondaryActors);
     }
 
+    /**
+     * Loads one actor and checks that it may be an actor, in two steps whose order matters:
+     * <ol>
+     *   <li><strong>Team first.</strong> {@code findRequirementArtifactById} looks the id up within {@code teamId}
+     *       only, and throws {@link ObjectNotFoundException} (404) when the artifact belongs to another team or does
+     *       not exist. Both cases give the same message, so the caller cannot tell them apart.</li>
+     *   <li><strong>Type second.</strong> Only an artifact already known to be this team's is checked against
+     *       {@link #ACTOR_TYPES} (BR-use-case-actor-types), and a wrong type is an {@link IllegalArgumentException}
+     *       (400, extension 4a on create, 7a on edit). Checking the type first would let a 400 versus 404 reveal the
+     *       type of another team's artifact.</li>
+     * </ol>
+     *
+     * @param teamId  the team named in the route, never one from the request body
+     * @param actorId the id the request named for this actor
+     * @param role    "Primary actor" or "Secondary actor", used only in the 400 message, so that the message says
+     *                which field and which id are wrong (the location extensions 4a1 and 7a1 ask for)
+     * @return the managed artifact, safe to set as an actor of a use case of {@code teamId}
+     */
     private RequirementArtifact requireActor(Integer teamId, Long actorId, String role) {
+        // Step 1: scoped to the route's team; throws 404 for another team's id and for an unknown id alike.
         RequirementArtifact actor = this.requirementArtifactService.findRequirementArtifactById(teamId, actorId);
+        // Step 2: the artifact is this team's; now check it is a stakeholder or an external system.
         if (!ACTOR_TYPES.contains(actor.getType())) {
             throw new IllegalArgumentException(role + " " + actorId + " must be a stakeholder or an external system.");
         }
