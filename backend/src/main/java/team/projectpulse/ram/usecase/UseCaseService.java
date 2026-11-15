@@ -264,6 +264,8 @@ public class UseCaseService {
         oldUseCase.initLockIfMissing();
 
         // Resolve and check the incoming references before doing any version or lock work, and before any write.
+        // The actors are resolved onto the detached update, not onto the managed oldUseCase; they are copied across
+        // after the lock check, further down.
         // Conditions take two passes: planConditions here checks every entry and writes nothing, so a refused
         // request leaves the database untouched; applyConditions further down does the writes, after the version and
         // lock checks have passed.
@@ -310,11 +312,12 @@ public class UseCaseService {
         oldUseCase.getArtifact().setPriority(update.getArtifact().getPriority());
         oldUseCase.getArtifact().setNotes(update.getArtifact().getNotes());
 
-        // The primary actor (resolved above by resolveActors) and the trigger
+        // The actors. These are not what the request sent: resolveActors, near the top, replaced them on the detached
+        // update with the team-checked artifacts. It wrote them onto update rather than straight onto oldUseCase
+        // because oldUseCase is managed, so the queries planConditions runs would have flushed the change before the
+        // version and lock checks. Copying them across only now keeps every write after those checks.
         oldUseCase.setPrimaryActor(update.getPrimaryActor());
         oldUseCase.setUseCaseTrigger(update.getUseCaseTrigger());
-
-        // The secondary actors, also resolved above
         oldUseCase.getSecondaryActors().clear();
         oldUseCase.getSecondaryActors().addAll(update.getSecondaryActors());
 
