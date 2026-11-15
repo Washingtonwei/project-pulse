@@ -79,9 +79,10 @@
 <script setup lang="ts">
 // The preconditions or postconditions of one use case (UC-DOC-create-use-case, UC-DOC-edit-use-case). Each row is
 // an ordered reference to a team condition: picked from the team's existing conditions, or typed as a new one. A
-// stored condition can't be reworded here, shared or not (BR-shared-condition-wording); the server enforces that too,
-// and this list only keeps the editor from offering it. To reword one for this use case, the student makes a separate
-// copy (extension 6b3), which is a new row and can be typed into until the save.
+// stored condition can't be reworded here, shared or not (BR-shared-condition-wording). The server ignores any wording
+// sent with a stored condition, so this list only keeps the editor from offering a change that would be dropped. To
+// reword one for this use case, the student makes a separate copy (extension 6b3), which is a new row and can be typed
+// into until the save.
 import { computed } from 'vue'
 import type { Condition, RequirementArtifact } from '@/apis/ram/types'
 

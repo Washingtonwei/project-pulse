@@ -27,7 +27,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -128,8 +127,8 @@ public class UseCaseService {
      *
      * @throws ObjectNotFoundException  if an actor or condition id names no artifact of this team
      * @throws IllegalArgumentException if the primary actor is missing, an actor is not a stakeholder or an external
-     *                                  system, or a condition entry is refused (a repeated id, the other list's type,
-     *                                  or a changed wording of an existing condition, extension 4a)
+     *                                  system, or a condition entry is refused (a repeated id, or the other list's
+     *                                  type, extension 4a)
      */
     public UseCase saveUseCase(Integer teamId, UseCase useCase, UseCaseReferences references) {
         useCase.initLockIfMissing(); // Ensure lock is initialized for new use cases
@@ -250,8 +249,7 @@ public class UseCaseService {
      * @throws ObjectNotFoundException       if the use case, an actor id or a condition id names nothing in this team
      * @throws IllegalArgumentException      if no version is given, the primary actor is missing, an actor is not a
      *                                       stakeholder or an external system, or a condition entry is refused (a
-     *                                       repeated id, the other list's type, or a changed wording of an existing
-     *                                       condition, extension 7a)
+     *                                       repeated id, or the other list's type, extension 7a)
      * @throws OptimisticLockException       (409) if {@code expectedVersion} is stale
      * @throws SectionLockRequiredException  (409) if no one holds the lock
      * @throws SectionAlreadyLockedException (423) if someone else holds it
@@ -418,10 +416,10 @@ public class UseCaseService {
      * links that condition as it is; an entry without one becomes a new condition, built here but saved only by
      * {@link #saveNewConditions}, after the version and lock checks. For each entry with an id, in order: a repeated
      * id, then the lookup scoped to {@code teamId} (404 for another team's id and for an unknown id alike), then the
-     * type, then the wording. The first failure is reported.
+     * type. The first failure is reported.
      * <p>
-     * A use case never rewords a condition, shared or not, so the wording sent with an id must be exactly the stored
-     * one. Rewording for one use case is a separate copy (extension 6b3): an entry with no id.
+     * A use case never rewords a condition, shared or not, so the wording sent with an id is ignored and the stored
+     * wording stands. Rewording for one use case is a separate copy (extension 6b3): an entry with no id.
      *
      * @return the conditions in list order: the team's stored ones, and new unsaved ones (no id yet)
      */
@@ -465,16 +463,8 @@ public class UseCaseService {
                 throw new IllegalArgumentException(label + " " + position + " is not a " + label.toLowerCase(Locale.ROOT) + ".");
             }
 
-            // (e) The wording must be exactly the stored one: a use case never rewords a condition, whether or not
-            // another use case references it (BR-shared-condition-wording, extension 7a, 4a on create). Plain string
-            // equality, so an untouched condition sent back as received is never refused.
-            if (!Objects.equals(condition.getContent(), entry.wording())) {
-                // Old conditions saved before keys were minted have no key, so fall back to the position.
-                String name = condition.getArtifactKey() != null ? condition.getArtifactKey() : label + " " + position;
-                throw new IllegalArgumentException(name + " can't be reworded through a use case; make a separate copy to change its wording here.");
-            }
-
-            // All checks passed: link this existing condition as it is.
+            // All checks passed: link this existing condition as it is. The wording sent with it is ignored, so its
+            // stored wording stands: a use case never rewords a condition, shared or not (BR-shared-condition-wording).
             conditions.add(condition);
         }
         return conditions;

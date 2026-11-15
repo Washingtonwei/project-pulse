@@ -112,18 +112,18 @@ class UseCaseConditionIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("Extension 4a: an existing condition picked with changed wording is refused, and nothing is stored")
-    void createRefusesRewordingAPickedCondition() throws Exception {
+    @DisplayName("The wording sent with a picked condition is ignored: it is linked with its stored wording")
+    void createIgnoresTheWordingOfAPickedCondition() throws Exception {
         long conditionsBefore = countConditions();
-        long useCasesBefore = countUseCases();
 
-        JSONObject response = postUseCase(minimalUseCase()
-                .put("preconditions", new JSONArray().put(new JSONObject().put("condition", "A new one")).put(entry(4, "Reworded login"))));
+        JSONObject data = requireSuccess(postUseCase(minimalUseCase()
+                .put("preconditions", new JSONArray().put(new JSONObject().put("condition", "A new one")).put(entry(4, "Reworded login")))));
 
-        assertThat(response.getInt("code")).as(response.toString()).isEqualTo(StatusCode.INVALID_ARGUMENT);
-        assertThat(response.getString("message")).isEqualTo("PRC-1 can't be reworded through a use case; make a separate copy to change its wording here.");
-        assertThat(countConditions()).isEqualTo(conditionsBefore);
-        assertThat(countUseCases()).isEqualTo(useCasesBefore);
+        JSONObject picked = data.getJSONArray("preconditions").getJSONObject(1);
+        assertThat(picked.getLong("id")).isEqualTo(4L);
+        assertThat(picked.getString("condition")).isEqualTo(LOGGED_IN);
+        // Only the typed one is new.
+        assertThat(countConditions()).isEqualTo(conditionsBefore + 1);
         assertThat(fetchUseCase(3).getJSONArray("preconditions").getJSONObject(0).getString("condition")).isEqualTo(LOGGED_IN);
     }
 
@@ -178,34 +178,29 @@ class UseCaseConditionIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("Extension 7a: rewording an unshared condition is refused, naming its key, and nothing changes")
-    void editRefusesRewordingAnUnsharedCondition() throws Exception {
+    @DisplayName("The wording sent with an unshared condition is ignored: the save succeeds and the stored wording stands")
+    void editIgnoresTheWordingOfAnUnsharedCondition() throws Exception {
         lock(3);
-        JSONObject before = fetchUseCase(3);
 
-        JSONObject response = putUseCase(3, withPreconditions(before, entry(4, LOGGED_IN), entry(5, "Reworded membership"), entry(6, NOT_LOCKED)));
+        JSONObject data = requireSuccess(putUseCase(3, withPreconditions(fetchUseCase(3), entry(4, LOGGED_IN), entry(5, "Reworded membership"), entry(6, NOT_LOCKED))));
 
-        assertThat(response.getInt("code")).as(response.toString()).isEqualTo(StatusCode.INVALID_ARGUMENT);
-        assertThat(response.getString("message")).isEqualTo("PRC-2 can't be reworded through a use case; make a separate copy to change its wording here.");
-        JSONObject after = fetchUseCase(3);
-        assertThat(after.getInt("version")).isEqualTo(before.getInt("version"));
-        assertThat(after.getJSONArray("preconditions").getJSONObject(1).getString("condition")).isEqualTo(MEMBER);
+        JSONObject kept = data.getJSONArray("preconditions").getJSONObject(1);
+        assertThat(kept.getLong("id")).isEqualTo(5L);
+        assertThat(kept.getString("condition")).isEqualTo(MEMBER);
     }
 
     @Test
-    @DisplayName("Extension 7a: rewording a shared condition is refused, naming its key, and nothing changes")
-    void editRefusesRewordingASharedCondition() throws Exception {
-        shareConditionFourWithANewUseCase();
+    @DisplayName("The wording sent with a shared condition is ignored: the save succeeds and no use case sees a change")
+    void editIgnoresTheWordingOfASharedCondition() throws Exception {
+        long otherUseCaseId = shareConditionFourWithANewUseCase();
         lock(3);
-        JSONObject before = fetchUseCase(3);
 
-        JSONObject response = putUseCase(3, withPreconditions(before, entry(4, "Reworded login"), entry(5, MEMBER), entry(6, NOT_LOCKED)));
+        JSONObject data = requireSuccess(putUseCase(3, withPreconditions(fetchUseCase(3), entry(4, "Reworded login"), entry(5, MEMBER), entry(6, NOT_LOCKED))));
 
-        assertThat(response.getInt("code")).as(response.toString()).isEqualTo(StatusCode.INVALID_ARGUMENT);
-        assertThat(response.getString("message")).isEqualTo("PRC-1 can't be reworded through a use case; make a separate copy to change its wording here.");
-        JSONObject after = fetchUseCase(3);
-        assertThat(after.getInt("version")).isEqualTo(before.getInt("version"));
-        assertThat(after.getJSONArray("preconditions").getJSONObject(0).getString("condition")).isEqualTo(LOGGED_IN);
+        JSONObject kept = data.getJSONArray("preconditions").getJSONObject(0);
+        assertThat(kept.getLong("id")).isEqualTo(4L);
+        assertThat(kept.getString("condition")).isEqualTo(LOGGED_IN);
+        assertThat(fetchUseCase(otherUseCaseId).getJSONArray("preconditions").getJSONObject(0).getString("condition")).isEqualTo(LOGGED_IN);
     }
 
     @Test
@@ -236,20 +231,6 @@ class UseCaseConditionIntegrationTest extends AbstractIntegrationTest {
         assertThat(shared.getJSONObject(0).getLong("id")).isEqualTo(otherUseCaseId);
         assertThat(shared.getJSONObject(0).getString("title")).isEqualTo("Condition probe");
         assertThat(preconditions.getJSONObject(1).getJSONArray("otherUseCases").length()).isZero();
-    }
-
-    @Test
-    @DisplayName("A condition sent back with its exact wording is accepted; one extra space is a rewording, shared or not")
-    void wordingComparisonIsExact() throws Exception {
-        shareConditionFourWithANewUseCase();
-        lock(3);
-
-        requireSuccess(putUseCase(3, withPreconditions(fetchUseCase(3), entry(4, LOGGED_IN), entry(5, MEMBER), entry(6, NOT_LOCKED))));
-        JSONObject shared = putUseCase(3, withPreconditions(fetchUseCase(3), entry(4, LOGGED_IN + " "), entry(5, MEMBER), entry(6, NOT_LOCKED)));
-        JSONObject unshared = putUseCase(3, withPreconditions(fetchUseCase(3), entry(4, LOGGED_IN), entry(5, MEMBER + " "), entry(6, NOT_LOCKED)));
-
-        assertThat(shared.getInt("code")).as(shared.toString()).isEqualTo(StatusCode.INVALID_ARGUMENT);
-        assertThat(unshared.getInt("code")).as(unshared.toString()).isEqualTo(StatusCode.INVALID_ARGUMENT);
     }
 
     // ---- Refusals ----
@@ -394,11 +375,6 @@ class UseCaseConditionIntegrationTest extends AbstractIntegrationTest {
         this.entityManager.flush();
         return ((Number) this.entityManager.createNativeQuery("select count(*) from requirement_artifact where type in ('PRECONDITION', 'POSTCONDITION')")
                 .getSingleResult()).longValue();
-    }
-
-    private long countUseCases() {
-        this.entityManager.flush();
-        return ((Number) this.entityManager.createNativeQuery("select count(*) from use_case").getSingleResult()).longValue();
     }
 
     private long countLinks(long useCaseId, long conditionId) {

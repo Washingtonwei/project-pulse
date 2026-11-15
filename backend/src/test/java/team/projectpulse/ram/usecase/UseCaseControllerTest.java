@@ -362,7 +362,8 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
 
     @Test
     // Rewords the title, steps and an extension. The conditions go back with their stored wording, since a use case
-    // never rewords a condition (BR-shared-condition-wording); UseCaseConditionIntegrationTest covers that refusal.
+    // never rewords a condition (BR-shared-condition-wording); UseCaseConditionIntegrationTest shows that a changed
+    // wording sent with a condition is ignored.
     void updateUseCaseWithRewordedContent() throws Exception {
         lockUseCase(1, 3, this.studentEricToken);
         int version = fetchUseCaseVersion(1, 3, this.studentEricToken);
