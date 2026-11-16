@@ -104,7 +104,6 @@ A requirement artifact may represent:
   - a business opportunity
   - a business objective
   - a success metric
-  - a vision statement
   - a feature
   - a use case
   - a use-case precondition
@@ -125,7 +124,7 @@ A requirement artifact may represent:
   - an assumption
   - a dependency
 
-These map one-to-one to the `RequirementArtifactType` enumeration in the data model (the SRS's Business Domain Model), which is the authoritative taxonomy; the `OTHER` enum value is an implementation fallback and is not a distinct domain concept. "Background" is document narrative (a prose document section), not a tracked artifact.
+These map one-to-one to the `RequirementArtifactType` enumeration in the data model (the SRS's Business Domain Model), which is the authoritative taxonomy; the `OTHER` enum value is an implementation fallback and is not a distinct domain concept. "Background" and the vision statement are document narrative (prose document sections), not tracked artifacts.
 
 Requirement artifacts are:
 
@@ -243,8 +242,9 @@ A document section specifies:
 - whether the document section is required
 - guidance or examples
 - whether the document section contains narrative text or a list of artifacts
+- for a list, which artifact types it admits
 
-Document sections do not own artifacts; they define where artifacts are rendered.
+A list-type document section holds the requirement artifacts of the types its template admits (BR-artifact-home). Adding an item to it creates an artifact there, and removing an item deletes that artifact (BR-section-artifact-removal). Artifacts with no document section home, such as a use case's preconditions and postconditions, are authored elsewhere and belong to no document section.
 
 ## **Section Key**
 
