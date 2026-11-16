@@ -158,7 +158,9 @@ Not all functional behaviors of Project Pulse are best expressed as use cases. T
 
 ### *Autosave and Persistence Requirements*
 
-**FR-SAVE-autosave-active (State-Driven):** While a student is actively editing an authoring destination, the system shall automatically save the authoring destination's content at the autosave cadence specified in PER-autosave-cadence. _(Part of FEAT-requirements-authoring.)_
+Autosave (FR-SAVE-autosave-active) is **deferred to a future release and is not part of the MVP scope** (see Vision and Scope, [Major Features / Scope](vision-and-scope.md#major-features--scope)). In the MVP, a student's edits to an authoring destination are stored only when the student saves them: leaving with unsaved changes asks the student to save or abandon them, and an expired lock saves nothing (UC-DOC-edit-document and UC-DOC-edit-use-case).
+
+**FR-SAVE-autosave-active (Deferred, future release):** While a student is actively editing an authoring destination, the system shall automatically save the authoring destination's content at the autosave cadence specified in PER-autosave-cadence.
 
 ### *Validation and Consistency Requirements (ReqLint)*
 
@@ -190,7 +192,7 @@ The initial release ships fixed, built-in templates, and the enforcement require
 
 **FR-TPL-enforce-structure (Ubiquitous):** The system shall enforce the structure, required document sections, and metadata defined by the active template. _(Part of FEAT-requirements-authoring.)_
 
-**FR-TPL-customize (Deferred — future release):** When an authorized user (a course admin or instructor) updates a template, the system shall apply the updated structure to new documents but shall not retroactively modify existing documents without that user's approval.
+**FR-TPL-customize (Deferred, future release):** When an authorized user (a course admin or instructor) updates a template, the system shall apply the updated structure to new documents but shall not retroactively modify existing documents without that user's approval.
 
 **FR-TPL-section-keys (Ubiquitous):** The system shall apply the numbering and section-key scheme defined by the active template to all document sections within a document. _(Part of FEAT-requirements-authoring.)_
 
@@ -202,11 +204,11 @@ The initial release ships fixed, built-in templates, and the enforcement require
 
 Authorship metadata (FR-HIS-authorship-metadata) is in scope for the initial release and is relied on by the authoring use cases. Document versioning — checkpointing, restoring, and retaining prior versions (FR-HIS-checkpoint, FR-HIS-restore, FR-HIS-retention) — is **deferred to a future release and is not part of the MVP scope** (see Vision and Scope, [Major Features / Scope](vision-and-scope.md#major-features--scope)). The three deferred requirements are retained here, with their IDs, so the intent is not lost.
 
-**FR-HIS-checkpoint (Deferred — future release):** When a document section is saved, the system shall create a version checkpoint containing the user, timestamp, and diff.
+**FR-HIS-checkpoint (Deferred, future release):** When a document section is saved, the system shall create a version checkpoint containing the user, timestamp, and diff.
 
-**FR-HIS-restore (Deferred — future release):** The system shall allow authorized users to restore a previous version of a document section.
+**FR-HIS-restore (Deferred, future release):** The system shall allow authorized users to restore a previous version of a document section.
 
-**FR-HIS-retention (Deferred — future release):** The system shall preserve historical versions for at least one academic term.
+**FR-HIS-retention (Deferred, future release):** The system shall preserve historical versions for at least one academic term.
 
 **FR-HIS-authorship-metadata (Ubiquitous):** The system shall record, for every authored item (glossary term, requirement artifact, use case, document section, artifact link, and comment), the identity of its creator and creation timestamp and the identity of its last editor and last-modified timestamp. For a use case, this authorship metadata is carried by the use case's paired requirement artifact audit record; the use case's constituent main steps and extensions do not carry separate authorship metadata. _(Part of FEAT-collaboration; cross-cutting — relied on by the authoring use cases across the glossary, documents, artifacts, links, and comments.)_
 
@@ -741,9 +743,9 @@ USE-first-session-success: A new student shall be able to open a document sectio
 
 PER-report-load: Project Pulse shall return the instructor progress-monitoring dashboard and the weekly-activity-report and peer-evaluation report views within 500 milliseconds at the 95th percentile, under the peak near-deadline concurrency envelope of SCA-cohort-load.
 
-PER-collab-latency: While editing under the SCA-cohort-load concurrency envelope, RAM shall propagate collaborator presence and lock-state events (join, disconnect, lock acquire/release) within 1 second for 95% of events. _(Post-MVP — depends on the deferred real-time collaboration; see UC-COL-collaborative-edit.)_
+PER-collab-latency: While editing under the SCA-cohort-load concurrency envelope, RAM shall propagate collaborator presence and lock-state events (join, disconnect, lock acquire/release) within 1 second for 95% of events. _(Post-MVP; depends on the deferred real-time collaboration; see UC-COL-collaborative-edit.)_
 
-PER-autosave-cadence: RAM shall autosave an actively edited authoring destination at least every 10 seconds and persist an edited use case's latest content immediately when the student navigates away. (Realized by FR-SAVE-autosave-active and the navigate-away extension of UC-DOC-edit-use-case. A document section instead asks the student to save or abandon unsaved changes, per extension 6a of UC-DOC-edit-document.)
+PER-autosave-cadence: RAM shall autosave an actively edited authoring destination at least every 10 seconds. (Realized by FR-SAVE-autosave-active.) _(Post-MVP; depends on the deferred autosave.)_
 
 PER-validation-speed: RAM shall return ReqLint validation results for a single requirement document within 3 seconds for 95% of runs.
 
@@ -775,11 +777,11 @@ AVL-llm-degradation: While the external LLM service is unavailable, Project Puls
 
 ## **Robustness**
 
-ROB-edit-loss-bound: In the event of a browser crash, disconnection, or power failure, RAM shall lose no more than 10 seconds of a student's edits. (Bounds the autosave behavior of FR-SAVE-autosave-active.)
+ROB-edit-loss-bound: In the event of a browser crash, disconnection, or power failure, RAM shall lose no more than 10 seconds of a student's edits. (Bounds the autosave behavior of FR-SAVE-autosave-active.) _(Post-MVP; depends on the deferred autosave. In the MVP, unsaved edits are lost when the browser closes or fails.)_
 
-ROB-autosave-retry: When an autosave fails, RAM shall notify the student and retry in the background without interrupting editing. (The failure-handling behavior of the autosave in FR-SAVE-autosave-active.)
+ROB-autosave-retry: When an autosave fails, RAM shall notify the student and retry in the background without interrupting editing. (The failure-handling behavior of the autosave in FR-SAVE-autosave-active.) _(Post-MVP; depends on the deferred autosave.)_
 
-ROB-no-overwrite: RAM shall ensure that real-time collaborative updates never overwrite or corrupt content already saved by another collaborator, per BR-collab-no-overwrite and UC-COL-collaborative-edit (POST-2). _(Post-MVP — applies to the deferred real-time collaboration; in the MVP, section-level locking prevents concurrent overwrites.)_
+ROB-no-overwrite: RAM shall ensure that real-time collaborative updates never overwrite or corrupt content already saved by another collaborator, per BR-collab-no-overwrite and UC-COL-collaborative-edit (POST-2). _(Post-MVP; applies to the deferred real-time collaboration; in the MVP, section-level locking prevents concurrent overwrites.)_
 
 ## **Scalability and Interoperability**
 

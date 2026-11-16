@@ -3254,8 +3254,9 @@ The student shall be able to cancel the use case at any time prior to submitting
 - **4a. use case already locked by another team member**
   - 4a1. The system alerts the student that another team member is currently editing this use case and does not grant the lock.
   - 4a2. The student either waits and returns to step 3 of the normal flow or chooses to terminate the use case.
-- **6a. The student navigates away from the use case before confirming the change**
-  - 6a1. The system immediately persists the latest changes to the use case, releases the lock on the use case, and ends the use case.
+- **6a. The student tries to navigate away from the use case with unsaved changes**
+  - 6a1. The system asks the student whether to save or abandon the changes, and does not let the student leave until the student chooses.
+  - 6a2. The student either chooses to save (continues at step 7, and leaves after step 12), chooses to abandon (the system discards the unsaved changes, releases the lock on the use case, and ends the use case), or chooses to stay (returns to step 6).
 - **6b. The student wants to reword a precondition or postcondition already saved in this use case**
   - 6b1. The system displays the condition read-only and lists the other use cases that reference it, if any (BR-shared-condition-wording).
   - 6b2. The student either rewords the condition for every use case that references it through UC-ART-edit-artifact: Edit a requirement artifact, or asks the system to replace it in this use case with a separate copy.
@@ -3264,6 +3265,9 @@ The student shall be able to cancel the use case at any time prior to submitting
 - **7a. Input validation rule violation**
   - 7a1. The system alerts the student that an input validation rule is violated and displays the nature and location of the error.
   - 7a2. The student corrects the mistake and returns to step 7 of the normal flow.
+- **11a. The student's lock on the use case expired before the save (BR-lock-expiry)**
+  - 11a1. The system refuses to save, tells the student that the lock expired and the changes were not saved, and keeps the unsaved changes on screen so the student can copy them. Nothing is saved when a lock expires.
+  - 11a2. The student reopens the use case and returns to step 3, which takes a new lock and loads the use case's current content.
 
 **Priority:** High
 **Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
@@ -3295,6 +3299,8 @@ Rewording a condition: every precondition and postcondition already in this use 
 Chaining use cases: a precondition and a postcondition are always separate artifacts, even when their wording matches. To record that another use case's postcondition is what makes one of this use case's preconditions true, the student links the postcondition to the precondition with an ENABLES artifact link through UC-LNK-create-link: Create a requirement artifact link (BR-link-constraints).
 
 Notification: None — routine authoring changes are not notified (FR-NOT-suppress-routine); saved changes propagate to connected teammates in real time (UC-COL-collaborative-edit).
+
+Leaving and lock expiry: extension 6a covers leaving the use case inside the application. When the student closes the browser, or the browser or connection fails, no prompt can be shown and nothing is saved; the lock stays held until it expires (BR-lock-expiry), and the unsaved changes are lost. Nothing is saved when a lock expires (extension 11a).
 
 The student shall be able to cancel the use case at any time prior to submitting it.
 
