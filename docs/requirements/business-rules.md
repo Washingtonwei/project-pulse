@@ -65,7 +65,7 @@ These business rules apply across Project Pulse. The course-administration rules
 
 **Link-type compatibility matrix (BR-link-constraints).** Each link is read source → target, and no artifact may link to itself. The matrix classifies *requirement* artifact types into four abstraction tiers, plus a set of *cross-cutting* artifact types:
 
-- Tier 1 — Business/Vision: Business Problem, Business Opportunity, Business Objective, Vision Statement, Success Metric
+- Tier 1 — Business/Vision: Business Problem, Business Opportunity, Business Objective, Success Metric
 - Tier 2 — Feature: Feature
 - Tier 3 — Behavioral: Use Case, User Story
 - Tier 4 — Detailed/system: Functional Requirement, Quality Attribute, External Interface Requirement, Constraint, Data Requirement, Operating Environment
@@ -86,6 +86,11 @@ A lower tier number is a higher level of abstraction (Tier 1 is the highest). Th
 | ENABLES | Postcondition → Precondition | Source must be a postcondition and target a precondition. Use ENABLES when the outcome of one use case is what makes another use case's precondition true. The two conditions keep their own wording. For example, "The student is assigned to a team." ends one use case and is required before another can start. |
 
 The artifact types named here are the canonical `RequirementArtifactType` set (glossary ↔ the SRS's Business Domain Model enum) — the **product's student-facing taxonomy** for typing artifacts in a team's own requirements graph, **not** this spec's own requirement-class/ID inventory (the two share names but are different lists; see the `RequirementArtifactType` note in the SRS's Business Domain Model). Stakeholder and Dependency are tracked artifact types. User stories are a deferred type (see the SRS's Business Domain Model); a User Story, when present, is a Tier 3 behavioral artifact.
+
+# **Document Composition**
+
+- **BR-artifact-home:** A list-type document section holds only requirement artifacts of the types it is the authoring home of, as the artifact type → authoring home table in the SRS's Business Domain Model assigns them. An artifact takes its type from the document section it is created in (choosing among the admitted types only when the document section admits more than one), and its type never changes afterwards.
+- **BR-section-artifact-removal:** Removing a requirement artifact from the list-type document section that holds it deletes the artifact, under BR-deletion-integrity. This is unlike a use case's preconditions and postconditions, where removing one removes only the reference (BR-use-case-condition-shared).
 
 # **Use Case Composition**
 

@@ -513,7 +513,6 @@ direction TB
         BUSINESS_OPPORTUNITY
         BUSINESS_OBJECTIVE
         SUCCESS_METRIC
-        VISION_STATEMENT
         RISK
         ASSUMPTION
         DEPENDENCY
@@ -610,24 +609,26 @@ direction TB
 | Artifact type                               | Document → Section                                                                                                                                                                             |
 | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GLOSSARY_TERM`                             | Glossary → term list                                                                                                                                                                           |
-| `BUSINESS_PROBLEM`, `BUSINESS_OPPORTUNITY`  | Vision and Scope → Business Opportunity/Problem Statement                                                                                                                                 |
-| `BUSINESS_OBJECTIVE`, `SUCCESS_METRIC`      | Vision and Scope → Business Objectives                                                                                                                                                    |
-| `VISION_STATEMENT`                          | Vision and Scope → Vision Statement                                                                                                                                                       |
-| `RISK`                                      | Vision and Scope → Risks                                                                                                                                                                  |
+| `BUSINESS_PROBLEM`, `BUSINESS_OPPORTUNITY`  | Vision and Scope → Business Opportunity/Problem Statement                                                                                                                                      |
+| `BUSINESS_OBJECTIVE`                        | Vision and Scope → Business Objectives                                                                                                                                                         |
+| `SUCCESS_METRIC`                            | Vision and Scope → Success Metrics (a list section following Business Objectives; each metric links to the objective it measures)                                                              |
+| `RISK`                                      | Vision and Scope → Risks                                                                                                                                                                       |
 | `ASSUMPTION`, `DEPENDENCY`                  | Vision and Scope → Business Assumptions and Dependencies (business-level) **and** SRS → Assumptions and Dependencies (architecture-level, e.g., `DE-llm-service`/`DE-gmail-smtp`) — these two types are authored in either document's Assumptions-and-Dependencies section |
-| `STAKEHOLDER`                               | Vision and Scope → Stakeholder Profiles                                                                                                                                                   |
-| `EXTERNAL_SYSTEM`                           | Vision and Scope → External Systems (a list section following Product Perspective, whose context diagram shows the same systems)                                                          |
-| `FEATURE`                                   | Vision and Scope → Major Features / Scope                                                                                                                                                 |
+| `STAKEHOLDER`                               | Vision and Scope → Stakeholder Profiles                                                                                                                                                        |
+| `EXTERNAL_SYSTEM`                           | Vision and Scope → External Systems (a list section following Product Perspective, whose context diagram shows the same systems)                                                               |
+| `FEATURE`                                   | Vision and Scope → Major Features / Scope                                                                                                                                                      |
 | `USE_CASE`, `PRECONDITION`, `POSTCONDITION` | Use Cases → the use case (preconditions and postconditions are authored from within a use case and shared across the team's use cases)                                                         |
-| `BUSINESS_RULE`                             | Business Rules → the rule list                                                                                                                                                                 |
-| `FUNCTIONAL_REQUIREMENT`                    | SRS → Functional Requirements                                                                                                                                                             |
-| `EXTERNAL_INTERFACE_REQUIREMENT`            | SRS → External Interface Requirements                                                                                                                                                       |
-| `DATA_REQUIREMENT`                          | SRS → Data Requirements                                                                                                                                                                     |
-| `QUALITY_ATTRIBUTE`                         | SRS → Quality Attributes                                                                                                                                                                    |
+| `BUSINESS_RULE`                             | Business Rules → the rule list (the SRS's Business Rules section refers to the Business Rules document and holds no rules of its own)                                                          |
+| `FUNCTIONAL_REQUIREMENT`                    | SRS → Non-Use Case Functional Requirements (the list section under Functional Requirements; a use case is itself a functional requirement and is authored as a `USE_CASE`)                     |
+| `EXTERNAL_INTERFACE_REQUIREMENT`            | SRS → User Interfaces, Software Interfaces, Hardware Interfaces, **and** Communications Interfaces (the list sections under External Interface Requirements; authored in whichever one the interface belongs to) |
+| `DATA_REQUIREMENT`                          | SRS → Data Requirements                                                                                                                                                                        |
+| `QUALITY_ATTRIBUTE`                         | SRS → Quality Attributes                                                                                                                                                                       |
 | `CONSTRAINT`                                | SRS → Design and Implementation Constraints (CO-\*)                                                                                                                                            |
 | `OPERATING_ENVIRONMENT`                     | SRS → Operating Environment (OE-\*)                                                                                                                                                            |
 | `USER_STORY`                                | _(deferred — a future, optional User Stories document)_                                                                                                                                        |
 | `OTHER`                                     | _(fallback — no fixed home)_                                                                                                                                                                   |
+
+A list-type document section admits exactly the artifact types this table homes there, and no others (BR-artifact-home). Where a type has more than one home (`ASSUMPTION`, `DEPENDENCY`, `EXTERNAL_INTERFACE_REQUIREMENT`), it may be authored in any of them; where a document section is the home of more than one type, the student chooses among those types when she adds an item. A vision statement is narrative text in Vision and Scope → Vision Statement, not an artifact type.
 
 ## **Data Dictionary**
 
@@ -742,7 +743,7 @@ PER-report-load: Project Pulse shall return the instructor progress-monitoring d
 
 PER-collab-latency: While editing under the SCA-cohort-load concurrency envelope, RAM shall propagate collaborator presence and lock-state events (join, disconnect, lock acquire/release) within 1 second for 95% of events. _(Post-MVP — depends on the deferred real-time collaboration; see UC-COL-collaborative-edit.)_
 
-PER-autosave-cadence: RAM shall autosave an actively edited authoring destination at least every 10 seconds and persist its latest content immediately when the student navigates away. (Realized by FR-SAVE-autosave-active and the navigate-away extension of UC-DOC-edit-document / UC-DOC-edit-use-case.)
+PER-autosave-cadence: RAM shall autosave an actively edited authoring destination at least every 10 seconds and persist an edited use case's latest content immediately when the student navigates away. (Realized by FR-SAVE-autosave-active and the navigate-away extension of UC-DOC-edit-use-case. A document section instead asks the student to save or abandon unsaved changes, per extension 6a of UC-DOC-edit-document.)
 
 PER-validation-speed: RAM shall return ReqLint validation results for a single requirement document within 3 seconds for 95% of runs.
 
