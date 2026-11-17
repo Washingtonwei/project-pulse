@@ -188,8 +188,8 @@ The rest of OI-21 (the `ARCHITECTURAL_DESIGN` document and the added and reorder
 | Use case, flow | Level | Asserts |
 |---|---|---|
 | UC-ART-create-artifact, main flow | integration, `DocumentSectionControllerTest` | A new item saved in a list gets the next key for its type, keeps its position, and is found by the artifact search; the save, which changes only the list, returns a higher version, and a second save with the old version is refused with 409 |
-| Step 2, a section with two types | integration | Vision and Scope `ASSUMPTIONS_DEPENDENCIES` accepts one `ASSUMPTION` and one `DEPENDENCY` in the same save |
-| BR-artifact-home, type not admitted | integration | A new `RISK` in `BUSINESS_OBJECTIVES` is refused with 400 naming the type; nothing is stored and the version is unchanged |
+| Step 2, a section with two types | integration | SRS `ASSUMPTIONS_DEPENDENCIES` accepts one `ASSUMPTION` and one `DEPENDENCY` in the same save (the seed holds only an SRS document, so the list tests use its sections) |
+| BR-artifact-home, type not admitted | integration | A new `RISK` in SRS `NON_USE_CASE_FUNCTIONAL_REQUIREMENTS` is refused with 400 naming the type; nothing is stored and the version is unchanged |
 | Extension 4a | integration | A new item with an empty title, an empty content or no type is refused with 400 and field errors, not 500 |
 | Existing item of a type not admitted | integration | A save that keeps a legacy `OTHER` item succeeds, and its type and key are unchanged |
 | Extension 5a | integration, `RequirementArtifactControllerTest` | A search with a type and part of an existing title, in a different letter case, returns that artifact |
@@ -205,6 +205,6 @@ The rest of OI-21 (the `ARCHITECTURAL_DESIGN` document and the added and reorder
 
 ## Open questions / risks
 
-- **Seed data must follow.** `DataInitializer` writes through repositories, so nothing refuses a seeded artifact in a list that does not admit its type. The integration tests run on that seed, so `/implement` brings it in line with the admitted types as part of this change, not later.
+- **Seed data must follow.** `DataInitializer` writes through repositories, so nothing refuses a seeded artifact in a list that does not admit its type. Checked when this was built: the seed already holds only admitted types in its lists, so it needed no change.
 - **PRE-3 (document not locked for review)** is not checked, because review is not built yet; the other editing use cases are in the same state.
 - **Size.** `/implement` can build this in two slices: the admitted types, validation and duplicate warning first; then the template changes and V10.
