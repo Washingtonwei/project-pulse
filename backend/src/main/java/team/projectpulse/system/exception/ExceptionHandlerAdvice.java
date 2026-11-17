@@ -165,6 +165,12 @@ public class ExceptionHandlerAdvice {
         return new Result(false, StatusCode.INVALID_ARGUMENT, ex.getMessage());
     }
 
+    @ExceptionHandler(SectionItemRejectedException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    Result handleSectionItemRejectedException(SectionItemRejectedException ex) {
+        return new Result(false, StatusCode.INVALID_ARGUMENT, ex.getMessage());
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     Result handleIllegalArgumentException(IllegalArgumentException ex) {

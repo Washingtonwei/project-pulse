@@ -152,6 +152,7 @@ sections:
   - sectionKey: "DESIGN_CONSTRAINTS"
     title: "Design and Implementation Constraints"
     type: "LIST"
+    artifactTypes: ["CONSTRAINT"]
     guidance: |
       Describe factors that limit implementation choices.
 
@@ -164,6 +165,7 @@ sections:
   - sectionKey: "ASSUMPTIONS_DEPENDENCIES"
     title: "Assumptions and Dependencies"
     type: "LIST"
+    artifactTypes: ["ASSUMPTION", "DEPENDENCY"]
     guidance: |
       List assumptions believed to be true without definitive proof.
 
@@ -195,6 +197,7 @@ sections:
   - sectionKey: "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS"
     title: "Non-Use Case Functional Requirements"
     type: "LIST"
+    artifactTypes: ["FUNCTIONAL_REQUIREMENT"]
     guidance: |
       Describe functional requirements that are not easily expressed as use cases.
 
@@ -205,6 +208,7 @@ sections:
   - sectionKey: "BUSINESS_RULES"
     title: "Business Rules"
     type: "LIST"
+    artifactTypes: ["BUSINESS_RULE"]
     guidance: |
       Document corporate policies, regulations, standards, and rules the system must conform to.
 
@@ -244,6 +248,7 @@ sections:
   - sectionKey: "USER_INTERFACES"
     title: "User Interfaces"
     type: "LIST"
+    artifactTypes: ["EXTERNAL_INTERFACE_REQUIREMENT"]
     guidance: |
       Describe logical characteristics of user interfaces.
 
@@ -255,6 +260,7 @@ sections:
   - sectionKey: "SOFTWARE_INTERFACES"
     title: "Software Interfaces"
     type: "LIST"
+    artifactTypes: ["EXTERNAL_INTERFACE_REQUIREMENT"]
     guidance: |
       Describe interactions with other software systems.
 
@@ -278,6 +284,7 @@ sections:
   - sectionKey: "COMMUNICATION_INTERFACES"
     title: "Communications Interfaces"
     type: "LIST"
+    artifactTypes: ["EXTERNAL_INTERFACE_REQUIREMENT"]
     guidance: |
       Describe communication requirements such as email, messaging, and network protocols.
 
@@ -289,6 +296,7 @@ sections:
   - sectionKey: "QUALITY_ATTRIBUTES"
     title: "Quality Attributes"
     type: "LIST"
+    artifactTypes: ["QUALITY_ATTRIBUTE"]
     guidance: |
       Describe quality attributes such as usability, performance, security, and reliability.
 

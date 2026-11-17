@@ -7,11 +7,14 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Component;
 import team.projectpulse.ram.document.DocumentType;
+import team.projectpulse.ram.requirement.RequirementArtifactType;
+import team.projectpulse.ram.requirement.SectionType;
 import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -74,6 +77,7 @@ public class DocumentTemplateRegistry {
     private void loadTemplate(Resource resource, DocumentType type) throws IOException {
         try (InputStream in = resource.getInputStream()) {
             DocumentTemplate template = yamlMapper.readValue(in, DocumentTemplate.class);
+            checkArtifactTypes(type, template);
             templates.put(type, template);
             log.debug("Loaded template for DocumentType: {}", type);
         }
@@ -87,8 +91,39 @@ public class DocumentTemplateRegistry {
         }
     }
 
+    /**
+     * Refuses a template whose sections disagree with their type: a LIST section must name the artifact types it
+     * holds, and a RICH_TEXT section must name none. Thrown from {@link #loadAllTemplates}, so a broken template
+     * stops the application at startup instead of leaving a list that admits nothing (BR-artifact-home).
+     */
+    static void checkArtifactTypes(DocumentType type, DocumentTemplate template) {
+        for (DocumentTemplate.SectionTemplate section : template.getSections()) {
+            boolean hasTypes = !section.getArtifactTypes().isEmpty();
+            if (section.getType() == SectionType.LIST && !hasTypes) {
+                throw new IllegalStateException("Template " + type + ": LIST section " + section.getSectionKey() + " names no artifactTypes.");
+            }
+            if (section.getType() == SectionType.RICH_TEXT && hasTypes) {
+                throw new IllegalStateException("Template " + type + ": RICH_TEXT section " + section.getSectionKey() + " names artifactTypes.");
+            }
+        }
+    }
+
     public Optional<DocumentTemplate> find(DocumentType type) {
         return Optional.ofNullable(templates.get(type));
+    }
+
+    /**
+     * The artifact types a document section of a {@code type} document holds, in template order (BR-artifact-home).
+     * Empty for a RICH_TEXT section, and for a section key the template no longer has.
+     */
+    public List<RequirementArtifactType> admittedTypes(DocumentType type, String sectionKey) {
+        return find(type).stream()
+                .flatMap(template -> template.getSections().stream())
+                .filter(section -> section.getSectionKey().equals(sectionKey))
+                .findFirst()
+                .map(DocumentTemplate.SectionTemplate::getArtifactTypes)
+                .map(List::copyOf)
+                .orElse(List.of());
     }
 
 }

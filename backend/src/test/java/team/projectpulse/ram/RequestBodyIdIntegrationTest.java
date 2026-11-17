@@ -422,12 +422,11 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("A LIST section entry whose artifact key matches nothing becomes a new artifact")
-    void testSectionUpdateWithAnUnmatchedArtifactKeyCreatesANewArtifact() throws Exception {
-        // The companion to the probe above, which sent team 2's key and happened to collide with a key this
-        // section already had, since artifact keys are minted per team. That took the matched branch and left the
-        // fall-through untested. This one sends a key belonging to no artifact anywhere, so it exercises the
-        // branch the javadoc on mergeSubmittedArtifacts describes: unmatched entries become new rows.
+    @DisplayName("A LIST section entry whose id names none of the section's own rows becomes a new artifact")
+    void testSectionUpdateWithAnUnmatchedIdCreatesANewArtifact() throws Exception {
+        // The section save pairs an item by id with the section's own rows only (DocumentSectionService.resolveSectionItems),
+        // so team 2's id falls through and the item becomes a new row. The artifact key sent with it is ignored
+        // altogether: the new row is keyed from team 1's sequence.
         RequirementArtifact victim = team2Artifact("Data export");
         long artifactCountBefore = this.requirementArtifactRepository.count();
 

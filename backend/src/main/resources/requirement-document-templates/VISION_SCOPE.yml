@@ -94,6 +94,7 @@ sections:
   - sectionKey: "BUSINESS_OBJECTIVES"
     title: "Business Objectives"
     type: "LIST"
+    artifactTypes: ["BUSINESS_OBJECTIVE"]
     guidance: |
       Summarize the important business benefits the product will provide.
 
@@ -135,6 +136,7 @@ sections:
   - sectionKey: "RISKS"
     title: "Risks"
     type: "LIST"
+    artifactTypes: ["RISK"]
     guidance: |
       Summarize major risks associated with developing or not developing the product.
 
@@ -154,6 +156,7 @@ sections:
   - sectionKey: "ASSUMPTIONS_DEPENDENCIES"
     title: "Business Assumptions and Dependencies"
     type: "LIST"
+    artifactTypes: ["ASSUMPTION", "DEPENDENCY"]
     guidance: |
       Record assumptions believed to be true without definitive proof.
 
@@ -173,6 +176,7 @@ sections:
   - sectionKey: "STAKEHOLDER_PROFILES"
     title: "Stakeholder Profiles"
     type: "LIST"
+    artifactTypes: ["STAKEHOLDER"]
     guidance: |
       Identify all stakeholders and users involved in the project.
 
@@ -220,6 +224,7 @@ sections:
   - sectionKey: "MAJOR_FEATURES"
     title: "Major Features / Scope"
     type: "LIST"
+    artifactTypes: ["FEATURE"]
     guidance: |
       List and briefly describe major product features. Features are the high-level capabilities of the system that are necessary to deliver benefits to the users and other stakeholders. To be more specific, each feature is an externally desired service that typically requires a series of inputs to achieve the desired result. For example, a feature of a problem tracking system might be the ability to provide trending reports.
 

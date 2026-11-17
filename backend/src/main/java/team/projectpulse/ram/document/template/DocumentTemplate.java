@@ -1,5 +1,6 @@
 package team.projectpulse.ram.document.template;
 
+import team.projectpulse.ram.requirement.RequirementArtifactType;
 import team.projectpulse.ram.requirement.SectionType;
 
 import java.util.ArrayList;
@@ -31,6 +32,9 @@ public class DocumentTemplate {
         private String title;
         private SectionType type;
         private String guidance;
+        // The artifact types a LIST section holds (BR-artifact-home), in the order the editor offers them; empty for a
+        // RICH_TEXT section. DocumentTemplateRegistry refuses a template that breaks either half at startup.
+        private List<RequirementArtifactType> artifactTypes = List.of();
 
         public String getSectionKey() {
             return sectionKey;
@@ -62,6 +66,14 @@ public class DocumentTemplate {
 
         public void setGuidance(String guidance) {
             this.guidance = guidance;
+        }
+
+        public List<RequirementArtifactType> getArtifactTypes() {
+            return artifactTypes;
+        }
+
+        public void setArtifactTypes(List<RequirementArtifactType> artifactTypes) {
+            this.artifactTypes = artifactTypes != null ? List.copyOf(artifactTypes) : List.of();
         }
     }
 }

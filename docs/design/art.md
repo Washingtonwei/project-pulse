@@ -39,16 +39,10 @@ classDiagram
   }
   class DocumentSectionController {
     updateDocumentSectionContent()
-    +builds the SubmittedItem list
+    +@Valid
   }
-  class SubmittedItem {
-    <<new record>>
-    id
-    type
-    title
-    content
-    priority
-    notes
+  class DocumentSectionDtoToDocumentSectionConverter {
+    +maps each item through the artifact converter, id as a pairing hint
   }
   class DocumentSectionService {
     updateDocumentSectionContent()
@@ -59,19 +53,19 @@ classDiagram
     +fills artifactTypes
   }
   class RequirementArtifactService {
-    saveRequirementArtifact()
+    saveRequirementArtifact() +clears any id
   }
-  DocumentSectionController --> SubmittedItem
+  DocumentSectionController --> DocumentSectionDtoToDocumentSectionConverter
   DocumentSectionController --> DocumentSectionService
   DocumentSectionService --> DocumentTemplateRegistry
   DocumentSectionService --> RequirementArtifactService
   DocumentSectionToDocumentSectionDtoConverter --> DocumentTemplateRegistry
 ```
 
-`+` marks what this design adds to an existing class, and `<<new record>>` a new one; `mergeSubmittedArtifacts` is replaced by `resolveSectionItems` and the write phase. Files:
+`+` marks what this design adds to an existing class; `mergeSubmittedArtifacts` is replaced by `resolveSectionItems` and the write phase. Files:
 
-- **Changed:** [`DocumentSectionService`](../../backend/src/main/java/team/projectpulse/ram/document/DocumentSectionService.java), [`DocumentSectionController`](../../backend/src/main/java/team/projectpulse/ram/document/DocumentSectionController.java) (`@Valid`), [`DocumentSectionDto`](../../backend/src/main/java/team/projectpulse/ram/document/dto/DocumentSectionDto.java) (`List<@Valid RequirementArtifactDto>`, read-only `artifactTypes`), [`DocumentSectionToDocumentSectionDtoConverter`](../../backend/src/main/java/team/projectpulse/ram/document/converter/DocumentSectionToDocumentSectionDtoConverter.java), [`DocumentTemplate`](../../backend/src/main/java/team/projectpulse/ram/document/template/DocumentTemplate.java) and [`DocumentTemplateRegistry`](../../backend/src/main/java/team/projectpulse/ram/document/template/DocumentTemplateRegistry.java), [`RequirementArtifactType`](../../backend/src/main/java/team/projectpulse/ram/requirement/RequirementArtifactType.java) and [`ArtifactKeyPrefix`](../../backend/src/main/java/team/projectpulse/ram/requirement/ArtifactKeyPrefix.java), the templates [`VISION_SCOPE.yml`](../../backend/src/main/resources/requirement-document-templates/VISION_SCOPE.yml) and [`SRS.yml`](../../backend/src/main/resources/requirement-document-templates/SRS.yml).
-- **New:** the record `SubmittedItem` in `ram/document`, `BUSINESS_RULES.yml` (one LIST section), and migration `V10__list_section_homes.sql`.
+- **Changed:** [`DocumentSectionService`](../../backend/src/main/java/team/projectpulse/ram/document/DocumentSectionService.java), [`DocumentSectionController`](../../backend/src/main/java/team/projectpulse/ram/document/DocumentSectionController.java) (`@Valid`), [`DocumentSectionDtoToDocumentSectionConverter`](../../backend/src/main/java/team/projectpulse/ram/document/converter/DocumentSectionDtoToDocumentSectionConverter.java) (maps the items), [`RequirementArtifactDtoToRequirementArtifactConverter`](../../backend/src/main/java/team/projectpulse/ram/requirement/converter/RequirementArtifactDtoToRequirementArtifactConverter.java) (maps the id) and [`RequirementArtifactService`](../../backend/src/main/java/team/projectpulse/ram/requirement/RequirementArtifactService.java) (`saveRequirementArtifact` clears it), [`DocumentSectionDto`](../../backend/src/main/java/team/projectpulse/ram/document/dto/DocumentSectionDto.java) (`List<@Valid RequirementArtifactDto>`, read-only `artifactTypes`), [`DocumentSectionToDocumentSectionDtoConverter`](../../backend/src/main/java/team/projectpulse/ram/document/converter/DocumentSectionToDocumentSectionDtoConverter.java), [`DocumentTemplate`](../../backend/src/main/java/team/projectpulse/ram/document/template/DocumentTemplate.java) and [`DocumentTemplateRegistry`](../../backend/src/main/java/team/projectpulse/ram/document/template/DocumentTemplateRegistry.java), [`RequirementArtifactType`](../../backend/src/main/java/team/projectpulse/ram/requirement/RequirementArtifactType.java) and [`ArtifactKeyPrefix`](../../backend/src/main/java/team/projectpulse/ram/requirement/ArtifactKeyPrefix.java), the templates [`VISION_SCOPE.yml`](../../backend/src/main/resources/requirement-document-templates/VISION_SCOPE.yml) and [`SRS.yml`](../../backend/src/main/resources/requirement-document-templates/SRS.yml).
+- **New:** `BUSINESS_RULES.yml` (one LIST section), and migration `V10__list_section_homes.sql`.
 - **Frontend, changed:** [`RamDocumentEditor.vue`](../../frontend/src/pages/ram/RamDocumentEditor.vue) and [`apis/ram/types.ts`](../../frontend/src/apis/ram/types.ts).
 - **Reused unchanged:** the document-section lock, `RequirementArtifactService.saveRequirementArtifact`, `DocumentSection.replaceAllRequirementArtifacts`, and the artifact search (`RequirementArtifactSpecs.hasType`, `hasTitleLike`).
 
@@ -123,7 +117,7 @@ sequenceDiagram
   S->>E: Save (UC-DOC-edit-document step 8)
   E->>C: PUT document section with version and requirementArtifacts
   C->>C: @Valid on each nested item (step 4 on the server)
-  C->>DS: updateDocumentSectionContent(content, SubmittedItem list)
+  C->>DS: updateDocumentSectionContent(converted section with its items, version)
   DS->>DS: resolveSectionItems: pair ids with the section's own rows, build new artifacts (writes nothing)
   DS->>R: admittedTypes(document type, section key)
   DS->>DS: each new item's type admitted, else 400 (BR-artifact-home)
@@ -152,7 +146,7 @@ All routes are under the API base URL and return the `Result` envelope. "Team me
 
 The use case's Details table names the fields but leaves their rules blank, so the design fixes them:
 
-- **Required on every item:** `type`, `title` and `content`, through the constraints `RequirementArtifactDto` already carries. Every item is checked, existing ones included: the editor sends an existing item's type back with it, and it has never let an item be stored without a title or content.
+- **Required on every item:** `type`, `title` and `content`, through the constraints `RequirementArtifactDto` carries; a title or content of only spaces counts as missing (`@NotBlank`). Every item is checked, existing ones included: the editor sends an existing item's type back with it, and it has never let an item be stored without a title or content.
 - **Optional:** `priority` (one of the `Priority` values; the editor preselects `MEDIUM`) and `notes`. No length limits beyond the columns.
 - **Not set here:** links are added afterwards through UC-LNK-create-link.
 - **Order of checks:** item validation (`@Valid`) runs first, then the admitted-type check while the items are resolved, then the version and lock checks, the same order the use case save uses (references before version and lock). A request with several faults gets the first of these, and nothing is written until all of them pass.
@@ -169,7 +163,7 @@ The use case's Details table names the fields but leaves their rules blank, so t
 - **Admitted types live in the template YAML and are read at save time.** Rejected: copying them into a `document_section` column at provisioning. The templates are fixed and built in, so a copy would only add a second source that every template change has to migrate. At startup the registry refuses a LIST section with no `artifactTypes` and a RICH_TEXT section with some.
 - **The check applies to new items only.** An existing item keeps its type even if the document section does not admit it, such as the `OTHER` rows the old editor created by default. Rejected: refusing the save until such items are fixed, which would block every team with old data. "The type never changes" already holds, because an existing item takes only its four editable fields.
 - **The server validates the nested items with `@Valid`**, so a bad item is a 400 with field errors rather than a 500, as the use case editor does since #136. Rejected: trusting the editor's own check.
-- **The section save follows the use case save's two phases.** The controller turns each nested DTO into a `SubmittedItem` record (as `UseCaseController` builds `SubmittedCondition`), so the save no longer receives entities from the requirement-artifact converter. `resolveSectionItems` pairs items with the section's own rows by id, builds each new artifact fresh from the accepted fields, and checks admitted types, writing nothing. Only after the version and lock checks does the save copy the editable fields, store new items through `RequirementArtifactService.saveRequirementArtifact` (which sets the team and mints the key, as for a new condition), and hand the list to `replaceAllRequirementArtifacts`. Rejected: keeping `mergeSubmittedArtifacts`, which checks a new item after the lock and after the content is set, attaches the converter-built object itself, and mints keys by hand; and keeping the pairing by artifact key. Both are safe, since either is looked up only among the section's own rows, but the key was chosen only because the converter still mapped it after the id mapping was removed (`dd0fa8d`); id matches the use case save, needs no editor change, and still pairs a row whose key is blank, which key pairing would silently duplicate.
+- **The section save follows the use case save's two phases.** The section converter maps each item through the requirement-artifact converter, which now maps the id as a pairing hint, as the use case converter keeps step ids; the controller passes the converted section on whole. That converter's other callers are creates, so `saveRequirementArtifact` clears the id before saving: every create inserts, and a body id can never merge over another team's row (OI-46). Those items are request data, never saved or attached: `resolveSectionItems` is their only reader. `resolveSectionItems` pairs items with the section's own rows by id, builds each new artifact fresh from the accepted fields, and checks admitted types, writing nothing. Only after the version and lock checks does the save copy the editable fields, store new items through `RequirementArtifactService.saveRequirementArtifact` (which sets the team and mints the key, as for a new condition), and hand the list to `replaceAllRequirementArtifacts`. Rejected: keeping `mergeSubmittedArtifacts`, which checks a new item after the lock and after the content is set, attaches the converter-built object itself, and mints keys by hand; pulling the items out in the controller as plain records (as `UseCaseController` builds `SubmittedCondition`), which would let the compiler stop a submitted item being saved but splits the request into two inputs; and keeping the pairing by artifact key. Both are safe, since either is looked up only among the section's own rows, but the key was chosen only because the converter still mapped it after the id mapping was removed (`dd0fa8d`); id matches the use case save, needs no editor change, and still pairs a row whose key is blank, which key pairing would silently duplicate.
 - **Every accepted save increments the document section's version,** through `PESSIMISTIC_FORCE_INCREMENT` after the lock check, as `UseCaseService.updateUseCase` does. `requirementArtifacts` is the `mappedBy` side, so Hibernate does not increment the version when only the list or its rows change, and a list-only save would otherwise leave the version as it was and let the next stale save through. Rejected: relying on `@Version` alone, which covers only a change to `content`.
 - **The save's item refusals raise one exception of their own,** `SectionItemRejectedException`, mapped to 400 with a message written for the student: a new item's type the document section does not admit, and an id repeated in one save. Rejected: `IllegalArgumentException`, whose message text reaches the client from many unrelated places (issue #84), and which `resolveConditions` still uses; and one class per refusal, which adds classes without changing what the client gets.
 - **An artifact appears only in the document section it was created in,** even when its type has a second home (an assumption created in Vision and Scope does not appear in the SRS list). POST-3's "any other document view its type maps to" is met by the requirements graph and the artifact search, not by a second list. Rejected: showing it in both lists, which the one owning section per artifact cannot express, and which would let a save of one list unlink an item the other list holds.
