@@ -131,7 +131,23 @@ public class DocumentControllerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.message").value("Create requirement document successfully"))
                 .andExpect(jsonPath("$.data.title").value("Vision and Scope Document"))
-                .andExpect(jsonPath("$.data.sections", Matchers.hasSize(16)));
+                .andExpect(jsonPath("$.data.sections", Matchers.hasSize(18)));
+    }
+
+    @Test
+    void createBusinessRulesDocument_OneListSectionForRules() throws Exception {
+        String json = """
+                {
+                    "type": "BUSINESS_RULES"
+                }
+                """;
+        this.mockMvc.perform(post(this.baseUrl + "/teams/1/documents").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.data.title").value("Business Rules"))
+                .andExpect(jsonPath("$.data.sections", Matchers.hasSize(1)))
+                .andExpect(jsonPath("$.data.sections[0].sectionKey").value("BUSINESS_RULES"))
+                .andExpect(jsonPath("$.data.sections[0].type").value("LIST"));
     }
 
     @Test

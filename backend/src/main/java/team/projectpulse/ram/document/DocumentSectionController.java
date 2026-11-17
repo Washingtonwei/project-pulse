@@ -1,5 +1,6 @@
 package team.projectpulse.ram.document;
 
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import team.projectpulse.ram.document.converter.DocumentSectionDtoToDocumentSectionConverter;
 import team.projectpulse.ram.document.converter.DocumentSectionLockToDocumentSectionLockDtoConverter;
@@ -35,7 +36,7 @@ public class DocumentSectionController {
     }
 
     @PutMapping("/teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}")
-    public Result updateDocumentSectionContent(@PathVariable Integer teamId, @PathVariable Long documentId, @PathVariable Long documentSectionId, @RequestBody DocumentSectionDto documentSectionDto) {
+    public Result updateDocumentSectionContent(@PathVariable Integer teamId, @PathVariable Long documentId, @PathVariable Long documentSectionId, @Valid @RequestBody DocumentSectionDto documentSectionDto) {
         DocumentSection update = this.documentSectionDtoToDocumentSectionConverter.convert(documentSectionDto);
         DocumentSection updatedDocumentSection = this.documentSectionService.updateDocumentSectionContent(teamId, documentId, documentSectionId, update, documentSectionDto.version());
         DocumentSectionDto updatedDocumentSectionDto = this.documentSectionToDocumentSectionDtoConverter.convert(updatedDocumentSection);

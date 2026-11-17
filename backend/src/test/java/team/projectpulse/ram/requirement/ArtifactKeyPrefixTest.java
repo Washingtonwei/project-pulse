@@ -22,6 +22,12 @@ class ArtifactKeyPrefixTest {
         assertThat(ArtifactKeyPrefix.of(RequirementArtifactType.POSTCONDITION)).isEqualTo("PSC");
     }
 
+    @Test
+    @DisplayName("An operating environment's artifact key starts with OE")
+    void operatingEnvironmentPrefix() {
+        assertThat(ArtifactKeyPrefix.of(RequirementArtifactType.OPERATING_ENVIRONMENT)).isEqualTo("OE");
+    }
+
     @ParameterizedTest
     @EnumSource(RequirementArtifactType.class)
     @DisplayName("Every artifact type has a prefix of its own, so no type falls back to UNK")

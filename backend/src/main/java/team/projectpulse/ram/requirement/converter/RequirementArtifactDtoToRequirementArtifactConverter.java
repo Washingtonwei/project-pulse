@@ -19,10 +19,12 @@ public class RequirementArtifactDtoToRequirementArtifactConverter implements Con
 
     @Override
     public RequirementArtifact convert(RequirementArtifactDto source) {
-        // The id is not read from the payload: a create has the server assign it, and an update takes it from
-        // the URL. Mapping it here would let a create carry an existing id, which turns save() into a merge over
-        // that artifact and reassigns it to the caller's team.
+        // The id is mapped as a pairing hint only: the document section save pairs it with the section's own rows
+        // (DocumentSectionService.resolveSectionItems). It never selects the row to write. A create clears it in
+        // RequirementArtifactService.saveRequirementArtifact, so it can never merge over the artifact it names, and an
+        // update takes the artifact from the URL and copies fields onto the stored row (OI-46).
         RequirementArtifact requirementArtifact = new RequirementArtifact();
+        requirementArtifact.setId(source.id());
         requirementArtifact.setType(source.type());
         requirementArtifact.setArtifactKey(source.artifactKey());
         requirementArtifact.setTitle(source.title());

@@ -81,19 +81,24 @@ sections:
 
   - sectionKey: "BUSINESS_OPPORTUNITY"
     title: "Business Opportunity / Problem Statement"
-    type: "RICH_TEXT"
+    type: "LIST"
+    artifactTypes: ["BUSINESS_PROBLEM", "BUSINESS_OPPORTUNITY"]
     guidance: |
-      Provide a concise statement summarizing the opportunity being exploited or the problem being solved.
+      State each problem being solved, and each opportunity being exploited, as an item of its own. Choose Business Problem or Business Opportunity when you add it.
 
-      Focus on:
-      - Current inefficiencies or pain points
+      For each item, cover:
+      - The current inefficiency or pain point, or the opening the product takes advantage of
       - Who is affected and how
-      - Why solving this problem matters
-      - The opportunity created by addressing it
+      - Why solving it matters
+
+      **Example:**
+      - BP-1: Employees spend an average of 60 minutes a day going to the cafeteria to buy lunch, about 30 minutes of which is waiting in line.
+      - BOP-1: Most employees already order online at home, so an online cafeteria order needs no new habit.
 
   - sectionKey: "BUSINESS_OBJECTIVES"
     title: "Business Objectives"
     type: "LIST"
+    artifactTypes: ["BUSINESS_OBJECTIVE"]
     guidance: |
       Summarize the important business benefits the product will provide.
 
@@ -105,6 +110,22 @@ sections:
       **Example:**
       - BO-1: Reduce processing time by 50%
       - BO-2: Increase submission rate by 20%
+
+  - sectionKey: "SUCCESS_METRICS"
+    title: "Success Metrics"
+    type: "LIST"
+    artifactTypes: ["SUCCESS_METRIC"]
+    guidance: |
+      State how you will know each business objective was achieved. Give each metric its own item, and link it to the objective it measures.
+
+      For each metric, cover:
+      - What is measured, and how
+      - The target value and when it should be reached
+      - The current value, if it is known
+
+      **Example:**
+      - SM-1: At least 75% of employees who use the cafeteria order through the system at least once a week within 6 months of release (measures BO-1).
+      - SM-2: Average time from order to delivery is under 20 minutes during lunch hours (measures BO-2).
 
   - sectionKey: "VISION_STATEMENT"
     title: "Vision Statement"
@@ -135,6 +156,7 @@ sections:
   - sectionKey: "RISKS"
     title: "Risks"
     type: "LIST"
+    artifactTypes: ["RISK"]
     guidance: |
       Summarize major risks associated with developing or not developing the product.
 
@@ -154,6 +176,7 @@ sections:
   - sectionKey: "ASSUMPTIONS_DEPENDENCIES"
     title: "Business Assumptions and Dependencies"
     type: "LIST"
+    artifactTypes: ["ASSUMPTION", "DEPENDENCY"]
     guidance: |
       Record assumptions believed to be true without definitive proof.
 
@@ -173,6 +196,7 @@ sections:
   - sectionKey: "STAKEHOLDER_PROFILES"
     title: "Stakeholder Profiles"
     type: "LIST"
+    artifactTypes: ["STAKEHOLDER"]
     guidance: |
       Identify all stakeholders and users involved in the project.
 
@@ -217,9 +241,25 @@ sections:
       - What external systems does it interact with?
       - One easy way to display the major components of the larger system, interconnections, and external interfaces is with a context diagram.
 
+  - sectionKey: "EXTERNAL_SYSTEMS"
+    title: "External Systems"
+    type: "LIST"
+    artifactTypes: ["EXTERNAL_SYSTEM"]
+    guidance: |
+      List each system outside your product that it interacts with: the same systems your context diagram in Product Perspective shows. Give each one its own item, so a use case can name it as an actor.
+
+      For each system, cover:
+      - What it is and who runs it
+      - What your product sends to it or receives from it
+      - What happens to your product if it is unavailable
+
+      **Example:**
+      - SYS-1: Payroll System. The company's payroll service, run by Human Resources. The Cafeteria Ordering System sends it meal charges to deduct from employees' pay.
+
   - sectionKey: "MAJOR_FEATURES"
     title: "Major Features / Scope"
     type: "LIST"
+    artifactTypes: ["FEATURE"]
     guidance: |
       List and briefly describe major product features. Features are the high-level capabilities of the system that are necessary to deliver benefits to the users and other stakeholders. To be more specific, each feature is an externally desired service that typically requires a series of inputs to achieve the desired result. For example, a feature of a problem tracking system might be the ability to provide trending reports.
 

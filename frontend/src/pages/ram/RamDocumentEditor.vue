@@ -295,14 +295,15 @@
     <!-- Requirement Artifact Dialog for both adding and editing -->
     <el-dialog v-model="artifactDialogVisible" title="Requirement" width="600px">
       <el-form label-width="140px">
-        <el-form-item label="Type">
-          <el-select v-model="artifactDraft.type" filterable placeholder="Select type">
-            <el-option
-              v-for="type in REQUIREMENT_ARTIFACT_TYPES"
-              :key="type"
-              :label="type"
-              :value="type"
-            />
+        <!-- UC-ART-create-artifact step 2: the document section fixes which types it holds (its artifactTypes, in
+             template order). A stored item keeps its type, so it is shown read-only; a new item chooses among the
+             admitted types, and the control is hidden when there is only one. -->
+        <el-form-item v-if="artifactDraft.id" label="Type">
+          <span>{{ artifactDraft.type }}</span>
+        </el-form-item>
+        <el-form-item v-else-if="admittedTypes.length > 1" label="Type">
+          <el-select v-model="artifactDraft.type" placeholder="Select type">
+            <el-option v-for="type in admittedTypes" :key="type" :label="type" :value="type" />
           </el-select>
         </el-form-item>
         <el-form-item label="Title">
@@ -325,9 +326,47 @@
           <el-input v-model="artifactDraft.notes" type="textarea" :autosize="{ minRows: 2 }" />
         </el-form-item>
       </el-form>
+      <!-- UC-ART-create-artifact step 5 and extension 5a: possible duplicates, advisory only. -->
+      <el-alert
+        v-if="duplicateMatches.length"
+        type="warning"
+        :closable="false"
+        show-icon
+        title="This team already has similar requirements. Add yours anyway, or open one to compare."
+      >
+        <ul class="duplicate-list">
+          <li v-for="match in duplicateMatches" :key="match.id">
+            <el-link type="primary" @click="openDuplicate(match)">
+              {{ match.artifactKey }}: {{ match.title }}
+            </el-link>
+          </li>
+        </ul>
+      </el-alert>
       <template #footer>
         <el-button @click="artifactDialogVisible = false">Cancel</el-button>
-        <el-button type="primary" @click="saveArtifact">Save</el-button>
+        <el-button type="primary" :loading="checkingDuplicates" @click="saveArtifact">
+          {{ duplicateMatches.length ? 'Add anyway' : 'Save' }}
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- Extension 5a2: an existing artifact, read-only, so the student never leaves the editor with unsaved items. -->
+    <el-dialog
+      v-model="duplicateDialogVisible"
+      :title="openedDuplicate ? `${openedDuplicate.artifactKey}: ${openedDuplicate.title}` : ''"
+      width="560px"
+      append-to-body
+    >
+      <el-descriptions v-if="openedDuplicate" :column="1" border>
+        <el-descriptions-item label="Type">{{ openedDuplicate.type }}</el-descriptions-item>
+        <el-descriptions-item label="Content">
+          <span class="duplicate-content">{{ openedDuplicate.content }}</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="Priority">{{ openedDuplicate.priority }}</el-descriptions-item>
+        <el-descriptions-item label="Notes">{{ openedDuplicate.notes }}</el-descriptions-item>
+      </el-descriptions>
+      <template #footer>
+        <el-button @click="duplicateDialogVisible = false">Close</el-button>
       </template>
     </el-dialog>
 
@@ -359,7 +398,7 @@ import type { Instructor } from '@/apis/instructor/types'
 import type { Student } from '@/apis/student/types'
 import {
   PRIORITIES,
-  REQUIREMENT_ARTIFACT_TYPES,
+  type RequirementArtifact,
   type RequirementArtifactSummary,
   type RequirementDocument,
   type RequirementDocumentSection,
@@ -371,6 +410,7 @@ import {
   findDocumentSectionById,
   getDocumentSectionLock,
   lockDocumentSection,
+  searchRequirementArtifacts,
   unlockDocumentSection,
   updateDocumentSection
 } from '@/apis/ram'
@@ -422,14 +462,17 @@ const draftContent = ref('')
 const draftArtifacts = ref<RequirementArtifactSummary[]>([])
 
 const artifactDialogVisible = ref(false)
-const artifactDraft = ref<RequirementArtifactSummary>({
-  type: 'OTHER',
-  title: '',
-  content: '',
-  priority: 'MEDIUM',
-  notes: ''
-})
+const artifactDraft = ref<RequirementArtifactSummary>(emptyArtifactDraft(''))
 const artifactEditingIndex = ref<number | null>(null)
+
+// The duplicate check (UC-ART-create-artifact step 5): matches found for the draft's type and title, and the type and
+// title they were found for, so a second confirm of the same draft adds it, while a changed draft is checked again.
+const duplicateMatches = ref<RequirementArtifact[]>([])
+const duplicateCheckedFor = ref('')
+const checkingDuplicates = ref(false)
+const duplicateDialogVisible = ref(false)
+const openedDuplicate = ref<RequirementArtifact | null>(null)
+const DUPLICATE_MATCH_LIMIT = 5
 const linkDialogVisible = ref(false)
 const linkUrl = ref('')
 
@@ -485,6 +528,9 @@ const canUnlock = computed(() =>
   )
 )
 const canEdit = computed(() => Boolean(selectedSection.value && lockedByMe.value))
+
+// The types the selected LIST section admits, in template order (BR-artifact-home); empty for a RICH_TEXT section.
+const admittedTypes = computed(() => selectedSection.value?.artifactTypes ?? [])
 
 function goBack() {
   router.push({ name: 'ram-documents', query: ramQuery.value })
@@ -619,12 +665,18 @@ async function saveSection() {
     const payload: UpdateDocumentSectionRequest = {
       type: selectedSection.value.type,
       content: draftContent.value, // For rich text sections, this is the HTML content. For list sections, this can be ignored.
-      // For list sections, send the updated list of requirement artifacts. For rich text sections, this can be an empty array.
+      // For list sections, the whole list in display order. Each item sends only what the save reads: its id (a stored
+      // item; a new one has none) and its fields. The key and the document section are the server's to set, so they
+      // are not sent. For rich text sections, this can be an empty array.
       requirementArtifacts:
         selectedSection.value.type === 'LIST'
           ? draftArtifacts.value.map((artifact) => ({
-              ...artifact, // spread the artifact summary fields
-              sourceSectionId: selectedSection.value!.id // include the source section ID for the backend to know which section these artifacts belong to
+              id: artifact.id,
+              type: artifact.type,
+              title: artifact.title,
+              content: artifact.content,
+              priority: artifact.priority,
+              notes: artifact.notes
             }))
           : [],
       version: selectedSection.value.version ?? null
@@ -654,21 +706,27 @@ async function saveSection() {
   }
 }
 
+function emptyArtifactDraft(type: string): RequirementArtifactSummary {
+  return { type, title: '', content: '', priority: 'MEDIUM', notes: '' }
+}
+
+function resetDuplicateCheck() {
+  duplicateMatches.value = []
+  duplicateCheckedFor.value = ''
+}
+
 function openAddArtifact() {
   artifactEditingIndex.value = null
-  artifactDraft.value = {
-    type: 'OTHER',
-    title: '',
-    content: '',
-    priority: 'MEDIUM',
-    notes: ''
-  }
+  // Preselect the first admitted type; with only one, it is the type and the control stays hidden.
+  artifactDraft.value = emptyArtifactDraft(admittedTypes.value[0] ?? '')
+  resetDuplicateCheck()
   artifactDialogVisible.value = true
 }
 
 function openEditArtifact(index: number) {
   artifactEditingIndex.value = index
   artifactDraft.value = { ...draftArtifacts.value[index] }
+  resetDuplicateCheck()
   artifactDialogVisible.value = true
 }
 
@@ -676,18 +734,57 @@ function removeArtifact(index: number) {
   draftArtifacts.value.splice(index, 1)
 }
 
-function saveArtifact() {
-  if (!artifactDraft.value.title || !artifactDraft.value.content) {
-    ElMessage.warning('Title and content are required.')
+function openDuplicate(match: RequirementArtifact) {
+  openedDuplicate.value = match
+  duplicateDialogVisible.value = true
+}
+
+/**
+ * Looks for the team's saved artifacts of the draft's type whose title contains the draft's title (case-insensitive),
+ * up to DUPLICATE_MATCH_LIMIT. Advisory only: if the search fails, the item is added as if nothing matched. Other
+ * unsaved items in this list are not searched.
+ */
+async function findDuplicates(type: string, title: string): Promise<RequirementArtifact[]> {
+  if (!effectiveTeamId.value) return []
+  try {
+    const result = await searchRequirementArtifacts(
+      effectiveTeamId.value,
+      { page: 0, size: DUPLICATE_MATCH_LIMIT },
+      { type, title }
+    )
+    return result.data.content
+  } catch {
+    return []
+  }
+}
+
+// UC-ART-create-artifact steps 4 to 7: check the required fields, then, for a new item, warn about possible duplicates
+// before adding it. A second confirm of the same type and title adds it anyway (5a1). Editing an item is not checked.
+async function saveArtifact() {
+  const draft = artifactDraft.value
+  if (!draft.type || !draft.title.trim() || !draft.content.trim()) {
+    ElMessage.warning('Type, title and content are required.')
     return
   }
 
   if (artifactEditingIndex.value === null) {
-    draftArtifacts.value.push({ ...artifactDraft.value })
+    const checkKey = `${draft.type}\n${draft.title.trim()}`
+    if (duplicateCheckedFor.value !== checkKey) {
+      checkingDuplicates.value = true
+      try {
+        duplicateMatches.value = await findDuplicates(draft.type, draft.title.trim())
+      } finally {
+        checkingDuplicates.value = false
+      }
+      duplicateCheckedFor.value = checkKey
+      if (duplicateMatches.value.length) return
+    }
+    draftArtifacts.value.push({ ...draft })
   } else {
-    draftArtifacts.value[artifactEditingIndex.value] = { ...artifactDraft.value }
+    draftArtifacts.value[artifactEditingIndex.value] = { ...draft }
   }
 
+  resetDuplicateCheck()
   artifactDialogVisible.value = false
 }
 
@@ -929,6 +1026,15 @@ onUnmounted(() => {
   gap: 8px;
   align-items: center;
   flex-wrap: nowrap;
+}
+
+.duplicate-list {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.duplicate-content {
+  white-space: pre-wrap;
 }
 
 @media (max-width: 960px) {

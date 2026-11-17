@@ -59,7 +59,18 @@ public class RequirementArtifactService {
                 new ObjectNotFoundException("requirement artifact", requirementArtifactId));
     }
 
+    /**
+     * Creates {@code newRequirementArtifact} in team {@code teamId}: it always inserts a new row, never updates one. The
+     * team comes from the route and the artifact key is minted here (BR-artifact-key-unique), whatever the object
+     * carried.
+     */
     public RequirementArtifact saveRequirementArtifact(Integer teamId, RequirementArtifact newRequirementArtifact) {
+        // Every caller creates, and the object may come straight from a request body, whose id names any row in any
+        // team. Saving an entity that has an id merges it over that row, so the id is cleared first: a create can
+        // never overwrite another artifact, whatever the converter mapped (OI-46). Updates load the stored row through
+        // a team-scoped lookup and save that row instead (updateRequirementArtifact).
+        newRequirementArtifact.setId(null);
+
         Team team = this.teamRepository.findById(teamId)
                 .orElseThrow(() -> new ObjectNotFoundException("team", teamId));
 

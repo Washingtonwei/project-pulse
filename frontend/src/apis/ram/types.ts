@@ -55,7 +55,6 @@ export const REQUIREMENT_ARTIFACT_TYPES = [
   'BUSINESS_OPPORTUNITY',
   'BUSINESS_OBJECTIVE',
   'SUCCESS_METRIC',
-  'VISION_STATEMENT',
   'RISK',
   'ASSUMPTION',
   'DEPENDENCY',
@@ -70,6 +69,7 @@ export const REQUIREMENT_ARTIFACT_TYPES = [
   'USER_STORY',
   'QUALITY_ATTRIBUTE',
   'EXTERNAL_INTERFACE_REQUIREMENT',
+  'OPERATING_ENVIRONMENT',
   'CONSTRAINT',
   'DATA_REQUIREMENT',
   'OTHER'
@@ -119,6 +119,8 @@ export interface RequirementDocumentSection {
   title: string
   content?: string | null
   requirementArtifacts?: RequirementArtifactSummary[]
+  // The artifact types a LIST section holds, in template order (BR-artifact-home); empty for a RICH_TEXT section.
+  artifactTypes?: string[]
   guidance?: string | null
   createdAt?: string | null
   updatedAt?: string | null

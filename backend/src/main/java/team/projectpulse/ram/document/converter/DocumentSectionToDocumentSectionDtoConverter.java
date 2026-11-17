@@ -3,10 +3,13 @@ package team.projectpulse.ram.document.converter;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 import team.projectpulse.ram.document.DocumentSection;
+import team.projectpulse.ram.document.template.DocumentTemplateRegistry;
 import team.projectpulse.ram.document.dto.DocumentSectionDto;
 import team.projectpulse.ram.requirement.SectionType;
 import team.projectpulse.ram.requirement.converter.RequirementArtifactToRequirementArtifactDtoConverter;
 import team.projectpulse.user.converter.PeerEvaluationUserToPeerEvaluationUserDtoConverter;
+
+import java.util.List;
 
 @Component
 public class DocumentSectionToDocumentSectionDtoConverter implements Converter<DocumentSection, DocumentSectionDto> {
@@ -14,8 +17,10 @@ public class DocumentSectionToDocumentSectionDtoConverter implements Converter<D
     private final RequirementArtifactToRequirementArtifactDtoConverter requirementArtifactConverter;
     private final PeerEvaluationUserToPeerEvaluationUserDtoConverter peerEvaluationUserConverter;
     private final DocumentSectionLockToDocumentSectionLockDtoConverter documentSectionLockToDocumentSectionLockDtoConverter;
+    private final DocumentTemplateRegistry documentTemplateRegistry;
 
-    public DocumentSectionToDocumentSectionDtoConverter(RequirementArtifactToRequirementArtifactDtoConverter requirementArtifactConverter, PeerEvaluationUserToPeerEvaluationUserDtoConverter peerEvaluationUserConverter, DocumentSectionLockToDocumentSectionLockDtoConverter documentSectionLockToDocumentSectionLockDtoConverter) {
+    public DocumentSectionToDocumentSectionDtoConverter(RequirementArtifactToRequirementArtifactDtoConverter requirementArtifactConverter, PeerEvaluationUserToPeerEvaluationUserDtoConverter peerEvaluationUserConverter, DocumentSectionLockToDocumentSectionLockDtoConverter documentSectionLockToDocumentSectionLockDtoConverter, DocumentTemplateRegistry documentTemplateRegistry) {
+        this.documentTemplateRegistry = documentTemplateRegistry;
         this.requirementArtifactConverter = requirementArtifactConverter;
         this.peerEvaluationUserConverter = peerEvaluationUserConverter;
         this.documentSectionLockToDocumentSectionLockDtoConverter = documentSectionLockToDocumentSectionLockDtoConverter;
@@ -36,6 +41,9 @@ public class DocumentSectionToDocumentSectionDtoConverter implements Converter<D
                                         .toList()
                                 : null
                         : null,
+                source.getType() == SectionType.LIST
+                        ? this.documentTemplateRegistry.admittedTypes(source.getDocument().getType(), source.getSectionKey())
+                        : List.of(),
                 source.getGuidance(),
                 source.getCreatedAt(),
                 source.getUpdatedAt(),
