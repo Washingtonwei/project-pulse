@@ -1,0 +1,19 @@
+title: "Business Rules"
+
+sections:
+
+  - sectionKey: "BUSINESS_RULES"
+    title: "Business Rules"
+    type: "LIST"
+    artifactTypes: ["BUSINESS_RULE"]
+    guidance: |
+      List the policies, regulations, standards and calculations your system must conform to, one rule per item. A rule exists whether or not the software does: it belongs to the business, and use cases and requirements cite it by its key.
+
+      For each rule, cover:
+      - The rule itself, stated so it can be checked
+      - Where it comes from (a law, a company policy, an industry standard)
+      - Whether it is fixed or may change
+
+      **Example:**
+      - RULE-1: Only employees who are registered for payroll deduction may charge a meal to their pay. (Company policy)
+      - RULE-2: Each meal is charged the price in effect when it was ordered, not when it was delivered. (Company policy)

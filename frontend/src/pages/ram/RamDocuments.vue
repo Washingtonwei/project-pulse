@@ -161,6 +161,11 @@ const catalog = [
     description: 'Capture user interactions and system behavior step by step.'
   },
   {
+    type: 'BUSINESS_RULES' as DocumentType,
+    title: 'Business Rules',
+    description: 'List the policies and rules the system must follow, each with its own key.'
+  },
+  {
     type: 'SRS' as DocumentType,
     title: 'Software Requirements (SRS)',
     description: 'Author functional requirements, constraints, and quality attributes.'

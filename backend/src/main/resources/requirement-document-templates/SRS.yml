@@ -138,16 +138,21 @@ sections:
 
   - sectionKey: "OPERATING_ENVIRONMENT"
     title: "Operating Environment"
-    type: "RICH_TEXT"
+    type: "LIST"
+    artifactTypes: ["OPERATING_ENVIRONMENT"]
     guidance: |
-      Describe the environment in which the software will operate.
+      Describe the environment in which the software will operate, one fact per item, so each can be checked and traced.
 
-      Include:
+      Consider:
       - Hardware platforms
-      - Operating systems
+      - Operating systems and browsers
       - User locations
       - Server and database locations
       - Coexisting software systems
+
+      **Example:**
+      - OE-1: The system shall run in current versions of Chrome, Firefox, Edge and Safari.
+      - OE-2: The system's server and database shall be hosted in the company's data center.
 
   - sectionKey: "DESIGN_CONSTRAINTS"
     title: "Design and Implementation Constraints"
@@ -207,18 +212,24 @@ sections:
 
   - sectionKey: "BUSINESS_RULES"
     title: "Business Rules"
-    type: "LIST"
-    artifactTypes: ["BUSINESS_RULE"]
+    type: "RICH_TEXT"
     guidance: |
-      Document corporate policies, regulations, standards, and rules the system must conform to.
-
-      This section may reference a separate Business Rules document.
+      Business rules are authored in the team's Business Rules document, not here. Use this section to point to that document and say how the rules shape the requirements in this SRS.
 
   - sectionKey: "DATA_REQUIREMENTS"
     title: "Data Requirements"
-    type: "RICH_TEXT"
+    type: "LIST"
+    artifactTypes: ["DATA_REQUIREMENT"]
     guidance: |
-      Describe data consumed, processed, or produced by the system.
+      Describe the data the system consumes, processes, or produces, one requirement per item.
+
+      Consider:
+      - What data is stored, and its format
+      - Where it comes from and who may change it
+      - Reports or exports the system produces
+
+      **Example:**
+      - DR-1: The system shall store each order's items, price, delivery location and requested delivery time.
 
   - sectionKey: "BUSINESS_DOMAIN_MODEL"
     title: "Business Domain Model"
@@ -277,9 +288,14 @@ sections:
 
   - sectionKey: "HARDWARE_INTERFACES"
     title: "Hardware Interfaces"
-    type: "RICH_TEXT"
+    type: "LIST"
+    artifactTypes: ["EXTERNAL_INTERFACE_REQUIREMENT"]
     guidance: |
-      Describe interfaces between software and hardware components, if any.
+      Describe each interface between the software and a hardware component, one per item. Leave the list empty if the system has none.
+
+      Include:
+      - The device and what it is used for
+      - The data exchanged and how
 
   - sectionKey: "COMMUNICATION_INTERFACES"
     title: "Communications Interfaces"
