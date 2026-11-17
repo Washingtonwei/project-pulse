@@ -119,6 +119,8 @@ export interface RequirementDocumentSection {
   title: string
   content?: string | null
   requirementArtifacts?: RequirementArtifactSummary[]
+  // The artifact types a LIST section holds, in template order (BR-artifact-home); empty for a RICH_TEXT section.
+  artifactTypes?: string[]
   guidance?: string | null
   createdAt?: string | null
   updatedAt?: string | null

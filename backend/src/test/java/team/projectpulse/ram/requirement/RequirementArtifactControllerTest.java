@@ -118,6 +118,37 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.data.content", Matchers.hasSize(3)));
     }
 
+    /**
+     * UC-ART-create-artifact step 5 and extension 5a: the editor's duplicate check is this search with the new item's
+     * type and title. A title that is only part of the stored one, in another case, still finds it.
+     */
+    @Test
+    void createArtifact_Extension5a_DuplicateSearchMatchesTypeAndTitleIgnoringCase() throws Exception {
+        String json = """
+                {
+                    "type": "FUNCTIONAL_REQUIREMENT",
+                    "title": "AUTHENTICATION"
+                }
+                """;
+        this.mockMvc.perform(post(this.baseUrl + "/teams/1/requirement-artifacts/search").param("page", "0").param("size", "5").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.data.content", Matchers.hasSize(1)))
+                .andExpect(jsonPath("$.data.content[0].id").value(9))
+                .andExpect(jsonPath("$.data.content[0].title").value("User authentication"));
+
+        // The same words under another type are not a duplicate.
+        String otherType = """
+                {
+                    "type": "RISK",
+                    "title": "authentication"
+                }
+                """;
+        this.mockMvc.perform(post(this.baseUrl + "/teams/1/requirement-artifacts/search").contentType(MediaType.APPLICATION_JSON).content(otherType).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.data.content", Matchers.hasSize(0)));
+    }
+
     @Test
     void findRequirementArtifactById_Admin() throws Exception {
         this.mockMvc.perform(get(this.baseUrl + "/teams/1/requirement-artifacts/9").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
