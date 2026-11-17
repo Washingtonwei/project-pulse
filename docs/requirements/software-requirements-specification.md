@@ -528,11 +528,13 @@ direction TB
         POSTCONDITION
         USER_STORY
         QUALITY_ATTRIBUTE
-        EXTERNAL_INTERFACE_REQUIREMENT
+        USER_INTERFACE
+        SOFTWARE_INTERFACE
+        HARDWARE_INTERFACE
+        COMMUNICATIONS_INTERFACE
         CONSTRAINT
         DATA_REQUIREMENT
         OPERATING_ENVIRONMENT
-        OTHER
     }
 
     class ArtifactLinkType {
@@ -602,11 +604,11 @@ direction TB
 **Notes.**
 
 - The built-in templates that provision a team's documents and sections (UC-TPL-provision-documents) are the _provisioning_ layer and are not shown in this domain diagram; the MVP ships fixed, built-in templates.
-- `RequirementArtifactType` is the authoritative artifact taxonomy and is reconciled one-to-one with the glossary's requirement artifact list. **It plays one role only: the product's student-facing taxonomy** — the controlled vocabulary the running product offers students to type the artifacts in their *own* project's requirements graph (with product-generated keys like `FR-1`, `SM-1`, `UC-5`). It is **deliberately distinct from the requirement classes by which *this* SRS organizes *Project Pulse's own* requirements** (`FR-<AREA>-<slug>`, `SM-<slug>`, `DI-*`, the quality codes, …). The two **share names** because both speak the same requirements-engineering vocabulary, but they are **different lists with different ID schemes and must not be conflated** — e.g., `SUCCESS_METRIC` / `DATA_REQUIREMENT` are types a student assigns to her own artifacts, whereas Project Pulse's own success metrics are `SM-<slug>` and its data requirements `DI-*`. `OTHER` is an implementation fallback, not a domain concept. A single `RISK` type is the umbrella over business/adoption, technical/feasibility, and security/safety risks (the earlier `BUSINESS_RISK`/`RISK` pair was collapsed into `RISK`); `DEPENDENCY` is a tracked artifact.
+- `RequirementArtifactType` is the authoritative artifact taxonomy and is reconciled one-to-one with the glossary's requirement artifact list. **It plays one role only: the product's student-facing taxonomy** — the controlled vocabulary the running product offers students to type the artifacts in their *own* project's requirements graph (with product-generated keys like `FR-1`, `SM-1`, `UC-5`). It is **deliberately distinct from the requirement classes by which *this* SRS organizes *Project Pulse's own* requirements** (`FR-<AREA>-<slug>`, `SM-<slug>`, `DI-*`, the quality codes, …). The two **share names** because both speak the same requirements-engineering vocabulary, but they are **different lists with different ID schemes and must not be conflated** — e.g., `SUCCESS_METRIC` / `DATA_REQUIREMENT` are types a student assigns to her own artifacts, whereas Project Pulse's own success metrics are `SM-<slug>` and its data requirements `DI-*`. A single `RISK` type is the umbrella over business/adoption, technical/feasibility, and security/safety risks (the earlier `BUSINESS_RISK`/`RISK` pair was collapsed into `RISK`); `DEPENDENCY` is a tracked artifact.
 - User stories are a **deferred** concept: the `USER_STORY` artifact type and the `USER_STORIES` `DocumentType` are retained so a future, optional User Stories document can be enabled without a schema change, but no User Stories document, template, or use case ships in the MVP.
 - Cross-cutting fields required by the `DI-*` / `FR-HIS` requirements — authorship metadata (creator/editor identity and timestamps, FR-HIS-authorship-metadata / DI-authorship-metadata), an optimistic-lock version field (DI-concurrency-control), and the soft-delete marker that retains logically deleted items for audit (DI-soft-delete-retention) — apply to the applicable entities and are added when the system is built; they are deliberately not drawn on each class here, because they are cross-cutting persistence mechanisms rather than domain attributes.
 
-**Artifact type → authoring home.** Each artifact type is authored in a specific document section, which determines where it appears in a document. In the MVP the student authors an artifact in the document section she is in, which fixes its type (UC-ART-create-artifact); the map below is the canonical placement (and the basis for the future requirements-graph "add by type" path):
+**Artifact type → authoring home.** Each artifact type with a document section home is an item of a list-type document section, its home, wherever the student creates it: while editing that document section, from the artifact catalog, or (in a future release) from the requirements graph view (UC-ART-create-artifact, BR-artifact-home). The map below is the canonical placement:
 
 | Artifact type                               | Document → Section                                                                                                                                                                             |
 | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -615,22 +617,24 @@ direction TB
 | `BUSINESS_OBJECTIVE`                        | Vision and Scope → Business Objectives                                                                                                                                                         |
 | `SUCCESS_METRIC`                            | Vision and Scope → Success Metrics (a list section following Business Objectives; each metric links to the objective it measures)                                                              |
 | `RISK`                                      | Vision and Scope → Risks                                                                                                                                                                       |
-| `ASSUMPTION`, `DEPENDENCY`                  | Vision and Scope → Business Assumptions and Dependencies (business-level) **and** SRS → Assumptions and Dependencies (architecture-level, e.g., `DE-llm-service`/`DE-gmail-smtp`) — these two types are authored in either document's Assumptions-and-Dependencies section |
+| `ASSUMPTION`, `DEPENDENCY`                  | Vision and Scope → Business Assumptions and Dependencies (business-level) **and** SRS → Assumptions and Dependencies (architecture-level, e.g., `DE-llm-service`/`DE-gmail-smtp`): the only types with two homes; an artifact of either type lives in one of them and may move to the other (BR-artifact-home) |
 | `STAKEHOLDER`                               | Vision and Scope → Stakeholder Profiles                                                                                                                                                        |
 | `EXTERNAL_SYSTEM`                           | Vision and Scope → External Systems (a list section following Product Perspective, whose context diagram shows the same systems)                                                               |
 | `FEATURE`                                   | Vision and Scope → Major Features / Scope                                                                                                                                                      |
 | `USE_CASE`, `PRECONDITION`, `POSTCONDITION` | Use Cases → the use case (preconditions and postconditions are authored from within a use case and shared across the team's use cases)                                                         |
 | `BUSINESS_RULE`                             | Business Rules → the rule list (the SRS's Business Rules section refers to the Business Rules document and holds no rules of its own)                                                          |
 | `FUNCTIONAL_REQUIREMENT`                    | SRS → Non-Use Case Functional Requirements (the list section under Functional Requirements; a use case is itself a functional requirement and is authored as a `USE_CASE`)                     |
-| `EXTERNAL_INTERFACE_REQUIREMENT`            | SRS → User Interfaces, Software Interfaces, Hardware Interfaces, **and** Communications Interfaces (the list sections under External Interface Requirements; authored in whichever one the interface belongs to) |
+| `USER_INTERFACE` | SRS → External Interface Requirements → User Interfaces |
+| `SOFTWARE_INTERFACE` | SRS → External Interface Requirements → Software Interfaces |
+| `HARDWARE_INTERFACE` | SRS → External Interface Requirements → Hardware Interfaces |
+| `COMMUNICATIONS_INTERFACE` | SRS → External Interface Requirements → Communications Interfaces |
 | `DATA_REQUIREMENT`                          | SRS → Data Requirements                                                                                                                                                                        |
 | `QUALITY_ATTRIBUTE`                         | SRS → Quality Attributes                                                                                                                                                                       |
 | `CONSTRAINT`                                | SRS → Design and Implementation Constraints (CO-\*)                                                                                                                                            |
 | `OPERATING_ENVIRONMENT`                     | SRS → Operating Environment (OE-\*)                                                                                                                                                            |
 | `USER_STORY`                                | _(deferred — a future, optional User Stories document)_                                                                                                                                        |
-| `OTHER`                                     | _(fallback — no fixed home)_                                                                                                                                                                   |
 
-A list-type document section admits exactly the artifact types this table homes there, and no others (BR-artifact-home). Where a type has more than one home (`ASSUMPTION`, `DEPENDENCY`, `EXTERNAL_INTERFACE_REQUIREMENT`), it may be authored in any of them; where a document section is the home of more than one type, the student chooses among those types when she adds an item. A vision statement is narrative text in Vision and Scope → Vision Statement, not an artifact type.
+A list-type document section admits exactly the artifact types this table homes there, and no others (BR-artifact-home). Every type has exactly one home except `ASSUMPTION` and `DEPENDENCY`, which have two; when one is created outside a document section, the student chooses which of the two homes it goes to. Where a document section is the home of more than one type, the student chooses among those types when she adds an item there. `GLOSSARY_TERM`, `USE_CASE`, `PRECONDITION`, and `POSTCONDITION` are authored in the glossary and the use case editor, not in a list-type document section, and `USER_STORY` is deferred. A vision statement is narrative text in Vision and Scope → Vision Statement, not an artifact type.
 
 ## **Data Dictionary**
 
@@ -661,7 +665,7 @@ DI-soft-delete-retention: RAM shall retain logically deleted glossary terms and 
 
 DI-authorship-metadata: RAM shall persist authorship metadata — creator/editor identity and timestamps — on every authored RAM item as the audit trail specified by FR-HIS-authorship-metadata, preserved with logically deleted items (DI-soft-delete-retention).
 
-DI-concurrency-control: RAM shall use optimistic version fields and exclusive edit locks for document sections and use cases to protect concurrent edits, and shall treat expired locks as releasable according to the locking rules (BR-edit-lock-required, BR-lock-expiry).
+DI-concurrency-control: RAM shall protect concurrent edits with exclusive edit locks on document section content and use cases, and with optimistic version fields on requirement artifacts and on the order of a list-type document section's items, refusing a change based on a version a teammate has since changed; it shall treat expired locks as releasable according to the locking rules (BR-edit-lock-required, BR-lock-expiry).
 
 DI-no-version-history: RAM shall not retain document-section version checkpoints for release 1.0; document version history is deferred to a future release (FR-HIS-checkpoint, FR-HIS-restore, FR-HIS-retention).
 

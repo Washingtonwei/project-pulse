@@ -414,7 +414,7 @@ Beyond the platform-wide machinery above, each **RAM** area builds on a small se
 
 | Subsystem | FR family | Owner | How an area plugs in |
 |---|---|---|---|
-| Section locking | `BR-edit-lock-required`, `BR-lock-expiry` | `ram/document` (`DocumentSectionLock`), `ram/usecase` (`UseCaseLock`) | Acquire/release a lock on the authoring destination before edit (UC-DOC-edit-document / UC-DOC-edit-use-case) |
+| Section locking | `BR-edit-lock-required`, `BR-lock-expiry` | `ram/document` (`DocumentSectionLock`), `ram/usecase` (`UseCaseLock`) | Acquire/release a lock on the authoring destination before editing a document section's content or a use case (UC-DOC-edit-document / UC-DOC-edit-use-case); requirement artifacts and a list-type document section's item order take no lock and are guarded by optimistic version fields instead (DI-concurrency-control) |
 | Document templates | `FR-TPL-*` | `ram/document/template` (`DocumentTemplateRegistry`) | Provision a document's sections from its `DocumentType` template |
 | Collaboration | `UC-COL-*` | `ram/collaboration` | Attach comment threads to an artifact / destination (the built collaboration model). Real-time presence/broadcast (UC-COL-collaborative-edit, PER-collab-latency) is **deferred** — a future layer, not in the current design (see KD-section-locking) |
 | Glossary | `FR-GLO-*` | `ram/glossary` | Terminology lookups and invariants |

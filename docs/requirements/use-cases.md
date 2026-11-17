@@ -3002,10 +3002,10 @@ The student shall be able to cancel the use case at any time prior to submitting
 3. The student selects a document section to edit.
 4. The system acquires an exclusive lock on the selected document section for the student.
 5. The system displays the document section's guidance and examples, as well as the current content in an editor.
-6. The student edits the document section content.
+6. The student edits the document section content. In a list-type document section she may also add, change, remove, and reorder its requirement artifacts, each stored as soon as she makes it, according to the "List-type document sections" defined in the Associated Information of this use case.
 7. The system performs basic validation on the edited content and displays any warnings or errors.
 8. The student confirms completion of the edit.
-9. The system saves the updated content, updates authorship metadata, and confirms that the document has been updated.
+9. The system saves the updated document section content, updates authorship metadata, and confirms that the document has been updated.
 10. The system releases the lock on the document section.
 11. Use case ends.
 
@@ -3015,30 +3015,31 @@ The student shall be able to cancel the use case at any time prior to submitting
   - 4a2. The student either chooses to select a different document section (returns to step 3) or chooses to terminate the use case.
 - **6a. The student tries to navigate away from the document section with unsaved changes**
   - 6a1. The system asks the student whether to save or abandon the changes, and does not let the student leave until the student chooses.
-  - 6a2. The student either chooses to save (continues at step 9, where extension 9a can apply, and leaves after step 10), chooses to abandon (the system discards the unsaved changes, releases the lock on the document section, and ends the use case), or chooses to stay (returns to step 6).
+  - 6a2. The student either chooses to save (continues at step 9 and leaves after step 10), chooses to abandon (the system discards the unsaved document section content, releases the lock on the document section, and ends the use case; requirement artifacts she already added, changed, removed, or reordered stay as stored), or chooses to stay (returns to step 6).
+- **6b. Another team member changed the order of the list-type document section's requirement artifacts after the student loaded it**
+  - 6b1. The system refuses the student's reorder, informs her that the list was changed by someone else, and displays the list's current order.
+  - 6b2. The student reorders the current list again or leaves it as it is, and returns to step 6 of the normal flow.
 - **7a. Input validation rule violation**
   - 7a1. The system alerts the student that an input validation rule is violated and displays the nature and location of the error.
   - 7a2. The student corrects the mistake and returns to step 7 of the normal flow.
-- **9a. A requirement artifact the student removed from a list-type document section is still referenced by another artifact**
-  - 9a1. The system refuses to save the document section, names each removed artifact that is still referenced and the artifacts that reference it, and keeps the student's other edits in the editor.
-  - 9a2. The student either restores the removed item and returns to step 8, or keeps the lock, removes or repoints the references through other use cases, and returns to step 8.
-- **9b. The student's lock on the document section expired before the save (BR-lock-expiry)**
-  - 9b1. The system refuses to save, tells the student that the lock expired and the changes were not saved, and keeps the unsaved changes on screen so the student can copy them. Nothing is saved when a lock expires.
-  - 9b2. The student reopens the document section and returns to step 3, which takes a new lock and loads the document section's current content.
+- **9a. The student's lock on the document section expired before the save (BR-lock-expiry)**
+  - 9a1. The system refuses to save, tells the student that the lock expired and the document section content was not saved, and keeps the unsaved content on screen so the student can copy it. No document section content is saved when a lock expires; requirement artifact changes already stored in step 6 stay.
+  - 9a2. The student reopens the document section and returns to step 3, which takes a new lock and loads the document section's current content.
 
 **Priority:** High
 **Frequency of Use:** Very frequent: multiple times per student per working session; peaks near deadlines.
-**Business Rules:** BR-team-scoped-access (team-scoped access control); BR-edit-lock-required (editing a document section requires an exclusive lock); BR-lock-expiry (an edit lock expires after a configurable interval and is released automatically); BR-artifact-home (a list-type document section holds only artifacts of the types it is the home of); BR-section-artifact-removal and BR-deletion-integrity (removing an item deletes its artifact, which a reference blocks).
+**Business Rules:** BR-team-scoped-access (team-scoped access control); BR-edit-lock-required (editing a document section's content requires an exclusive lock; requirement artifacts are protected by versioning instead); BR-lock-expiry (an edit lock expires after a configurable interval and is released automatically); BR-artifact-home (a list-type document section holds only artifacts of the types it is the home of); BR-section-artifact-removal and BR-deletion-integrity (removing an item deletes its artifact, which a reference blocks).
 **Associated Information:**
 
 Details:
 - The set of document sections, their order, and the rules for each section of a section-based document (Vision and Scope, SRS) are defined by that document's built-in Template (see UC-TPL-provision-documents: Create team documents from built-in templates). This use case edits one document section at a time within that template-defined structure.
 
 List-type document sections:
-- The content of a list-type document section is its ordered list of requirement artifacts. In step 6 the student adds items (UC-ART-create-artifact: Create a requirement artifact), changes items (UC-ART-edit-artifact: Edit a requirement artifact), removes items, and reorders them.
-- Every one of these changes is stored together when the document section is saved in step 9; nothing is stored item by item before then, and nothing is stored when the lock expires (extension 9b).
-- Extension 6a covers leaving the document section inside the application. When the student closes the browser, or the browser or connection fails, no prompt can be shown and nothing is saved; the lock stays held until it expires (BR-lock-expiry), and the unsaved changes are lost.
-- Removing an item deletes its requirement artifact according to the "Deletion strategy" of UC-ART-delete-artifact: Delete a requirement artifact (BR-section-artifact-removal). A removed artifact that another artifact still references blocks the save (extension 9a).
+- A list-type document section is a view of the requirement artifacts whose home it is (BR-artifact-home), in the order the team gives them. The document section does not own them: the same artifacts can also be created, edited, and deleted outside any document (for example from the artifact catalog through UC-ART-find-artifacts: Find requirement artifacts).
+- In step 6 the student adds items (UC-ART-create-artifact: Create a requirement artifact), changes items (UC-ART-edit-artifact: Edit a requirement artifact), removes items (UC-ART-delete-artifact: Delete a requirement artifact, BR-section-artifact-removal), and reorders them. Each of these changes is stored as soon as she makes it, not with the document section content in step 9, and each is protected against a teammate's concurrent change by versioning, not by the document section's lock (extension 6b here; the stale-version extensions of the UC-ART use cases).
+- In the document section view, the list's add, change, remove, and reorder controls are available only while the student holds the document section's lock, so editing a document section feels like one activity. The lock is not required to store an artifact change; it only decides when the document section view offers the controls.
+- The save in step 9 stores the document section's own content only. Abandoning in extension 6a, or a lock expiring (extension 9a), discards only unsaved document section content.
+- Extension 6a covers leaving the document section inside the application. When the student closes the browser, or the browser or connection fails, no prompt can be shown and no unsaved document section content is saved; the lock stays held until it expires (BR-lock-expiry), and the unsaved content is lost.
 
 Notification: None — routine authoring changes are not notified (FR-NOT-suppress-routine); saved changes propagate to connected teammates in real time (UC-COL-collaborative-edit).
 
@@ -3439,31 +3440,30 @@ Sort criteria: default ascending by Artifact Key; the student may re-sort by Typ
 **Date Created:**
 **Primary Actor:** student
 **Secondary Actors:**
-**Trigger:** The student, while viewing a list-type document section, indicates to add a requirement artifact to it.
-**Description:** The student wants to create a new requirement artifact (for example, a business objective, risk, or feature) and add it to the requirements graph. In the MVP she does this from within the document section that holds artifacts of that kind — she navigates to the section (e.g., business objectives) and adds the artifact there, so the section determines both the artifact's placement and its artifact type. This use case runs within UC-DOC-edit-document: Edit a section-based requirement document, as one of the edits the student makes to a list-type document section she holds the lock on; the new artifact is stored when she saves that document section.
+**Trigger:** The student indicates to create a requirement artifact, either while editing a list-type document section or from the artifact catalog.
+**Description:** The student wants to create a new requirement artifact (for example, a business objective, risk, or feature) and add it to the requirements graph. A requirement artifact is a first-class entity of the requirements graph, not a part of a document: she can create it while editing the list-type document section that is its home (UC-DOC-edit-document: Edit a section-based requirement document), which limits its type to the types that document section admits, or from the artifact catalog (UC-ART-find-artifacts: Find requirement artifacts), where she chooses its type. Either way the artifact is placed in its home document section (BR-artifact-home) and stored as soon as she confirms it.
 
 **Preconditions:**
 - PRE-1. The student is logged into the system.
-- PRE-2. The student is a member of the team that owns the requirement document.
-- PRE-3. The document is not locked for review.
-- PRE-4. The student holds the lock on the list-type document section to which the artifact will belong (UC-DOC-edit-document: Edit a section-based requirement document, BR-edit-lock-required).
+- PRE-2. The student is a member of the team that will own the requirement artifact.
+- PRE-3. The artifact's home document is not locked for review.
 
 **Postconditions:**
-- POST-1. The new requirement artifact is stored in the system, with its artifact key, once the student saves the document section.
+- POST-1. The new requirement artifact is stored in the system with its artifact key.
 - POST-2. The artifact appears in the requirements graph.
-- POST-3. The artifact appears in the document section it was created in (and in any other document view its type maps to).
+- POST-3. The artifact appears at the end of its home document section's list.
 - POST-4. The system records authorship metadata (e.g., last-modified timestamp and editor identity).
 
 **Main Success Scenario:**
-1. The student, viewing a list-type document section, indicates to add a requirement artifact to it.
-2. The system asks the student to enter the details of the new artifact according to the "Details" defined in the Associated Information of this use case; because the document section determines the artifact's type, the student enters its content, metadata, and notes rather than choosing a type. When the document section admits more than one artifact type, the student chooses among only those types.
+1. The student indicates to create a requirement artifact.
+2. The system asks the student to enter the details of the new artifact according to the "Details" defined in the Associated Information of this use case, offering the artifact types according to the "Type and home" defined in the Associated Information of this use case.
 3. The student enters the details of this new requirement artifact and confirms that she has finished.
 4. The system validates the student's inputs according to the "Details" defined in the Associated Information of this use case.
 5. The system checks whether an artifact of the same type with similar content already exists, according to the "Duplication detection rules" defined in the Associated Information of this use case.
 6. The system displays the details of the new requirement artifact and asks the student to confirm the creation.
 7. The student either confirms the creation (continues the normal flow) or chooses to modify the details (returns to step 3).
-8. The system adds the new requirement artifact to the document section's list, where the student sees it among the section's other items.
-9. When the student saves the document section (UC-DOC-edit-document step 9), the system stores the new requirement artifact, assigns its artifact key, adds it to the requirements graph, and places it in the document section it was created in (and in any other document view its type maps to).
+8. The system stores the new requirement artifact, assigns its artifact key, adds it to the requirements graph, and appends it to the end of its home document section's list.
+9. The system displays the new requirement artifact with its artifact key and informs the student that it has been created.
 10. Use case ends.
 
 **Extensions:**
@@ -3473,17 +3473,21 @@ Sort criteria: default ascending by Artifact Key; the student may re-sort by Typ
 - **5a. The system finds a possible duplicate (an existing artifact of the same type with similar content)**
   - 5a1. The system warns the student and shows the possible duplicate(s).
   - 5a2. The student may open the existing artifact instead of creating a new one, revise her input and return to step 4, or proceed with the creation if the new artifact is genuinely distinct (continue at step 6). The warning is advisory and does not block creation.
+- **8a. The artifact's home document was locked for review after the student began**
+  - 8a1. The system refuses to create the artifact and informs the student that its home document is locked for review.
+  - 8a2. The use case terminates.
 
 **Priority:** High
 **Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
-**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-artifact-key-unique (unique, stable artifact key); BR-artifact-home (the document section the artifact is created in determines its placement and its artifact type); BR-edit-lock-required (the student holds the document section's lock).
+**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-artifact-key-unique (unique, stable artifact key); BR-artifact-home (the artifact type determines its home document section; created from a document section, the type is one that document section admits).
 **Associated Information:**
 
 Details:
 
 | Property name | Data type | Editability | Validation rule | Effect of change | Reference to glossary |
 | ---- | ---- | ---- | ---- | ---- | ---- |
-| Requirement artifact type | `RequirementArtifactType` | Set once, at creation | One of the types the document section admits (BR-artifact-home) | None; the type cannot be changed later |  |
+| Requirement artifact type | `RequirementArtifactType` | Set once, at creation | A type with a document section home; created from a document section, one of the types that document section admits (BR-artifact-home) | None; the type cannot be changed later |  |
+| Home | document section | Set at creation; may later change only as UC-ART-edit-artifact allows | One of the type's home document sections (BR-artifact-home) | The artifact is appended to the end of that document section's list |  |
 | Content |  |  |  |  |  |
 | Links |  |  |  |  |  |
 | Metadata: priority |  |  |  |  |  |
@@ -3491,11 +3495,10 @@ Details:
 
 *Column "Effect of change" shows consequences of modification other than saving.*
 
-The artifact's type is set by the document section it is created in; the student does not choose it in the MVP, except among the admitted types of a document section that admits more than one.
-
-Placement:
-- MVP: the artifact is created in the document section the student is currently viewing; that section determines its placement and artifact type.
-- Future (requirements graph view): when the student adds an artifact directly in the graph — which shows all artifacts independent of document sections — there is no section context, so she selects the destination section, or the system places it by artifact type (the artifact type → authoring-home map in the SRS's [Business Domain Model](software-requirements-specification.md#business-domain-model)).
+Type and home:
+- Created from a list-type document section: the student chooses among only the types that document section admits, and no choice is offered when it admits one. That document section is the artifact's home.
+- Created from the artifact catalog (and, in a future release, from the requirements graph view): the student chooses the type among the types that have a document section home. The type determines the home through the artifact type → authoring home table in the SRS's [Business Domain Model](software-requirements-specification.md#business-domain-model). Only for a type with two homes (Assumption, Dependency) does the student also choose the home.
+- Artifacts with no document section home (glossary terms, use cases, preconditions, postconditions) are created through their own use cases, not this one.
 
 Duplication detection rules: Advisory only — the system warns when an artifact of the same type has similar content (fuzzy match) but does not block creation; the student decides whether to proceed, revise, or open the existing artifact. In the MVP, "similar content" means an artifact of the same type whose title contains the new title, ignoring letter case.
 
@@ -3503,7 +3506,7 @@ Notification: None — routine authoring changes are not notified (FR-NOT-suppre
 
 The student shall be able to cancel the use case at any time prior to submitting it.
 
-**Related Use Cases:** The student may first choose to UC-ART-find-artifacts: Find requirement artifacts but cannot find any, then decide to create one.
+**Related Use Cases:** The student may first choose to UC-ART-find-artifacts: Find requirement artifacts but cannot find any, then decide to create one. UC-DOC-edit-document: Edit a section-based requirement document (creating an item while editing its home document section).
 **Assumptions:**
 **Open Issues:**
 
@@ -3536,7 +3539,6 @@ This use case may be revisited in future versions if free-text authoring or refa
 - PRE-1. The student is logged into the system.
 - PRE-2. The student is a member of the team that owns the requirement artifact.
 - PRE-3. The requirement artifact is not locked for review.
-- PRE-4. If the requirement artifact is held by a document section, the student holds the lock on that document section (BR-edit-lock-required).
 
 **Postconditions:**
 - POST-1. Changes made to the requirement artifact are stored in the system.
@@ -3565,14 +3567,15 @@ This use case may be revisited in future versions if free-text authoring or refa
 
 **Priority:** High
 **Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
-**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-artifact-home (the artifact's type never changes); BR-edit-lock-required (an artifact held by a document section is edited under that document section's lock).
+**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-artifact-home (the artifact's type never changes; only an Assumption or Dependency may move between its two homes); BR-edit-lock-required (a requirement artifact is protected by versioning, not by a lock; extension 10a).
 **Associated Information:**
 
 Details:
 
 | Property name | Data type | Editability | Validation rule | Effect of change | Warning | Reference to glossary |
 | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
-| Requirement artifact type |  | No; fixed by the document section the artifact was created in (BR-artifact-home) |  |  |  |  |
+| Requirement artifact type |  | No; set once, at creation (BR-artifact-home) |  |  |  |  |
+| Home | document section | Only for an Assumption or Dependency, and only between its two homes (Vision and Scope, SRS) | One of the type's home document sections (BR-artifact-home) | The artifact leaves its old home document section's list and is appended to the end of the new one's; its artifact key, links, and comment threads are unchanged |  |  |
 | Content |  | Yes |  |  |  |  |
 | Notes |  | Yes |  |  |  |  |
 | Metadata: priority |  | Yes |  |  |  |  |
@@ -3601,7 +3604,6 @@ The student shall be able to cancel the use case at any time prior to submitting
 - PRE-1. The student is logged into the system.
 - PRE-2. The student is a member of the team that owns the requirement artifact.
 - PRE-3. The requirement artifact is not locked for review.
-- PRE-4. If the requirement artifact is held by a document section, the student holds the lock on that document section (BR-edit-lock-required).
 
 **Postconditions:**
 - POST-1. The requirement artifact is deleted from the system according to the "Deletion strategy" defined in the Associated Information of this use case.
@@ -3621,10 +3623,13 @@ The student shall be able to cancel the use case at any time prior to submitting
   - 4a1. The system alerts the student that a deletion rule is violated and displays the nature of the violation.
   - 4a2. The system prompts possible actions to resolve the violation.
   - 4a3. use case terminates.
+- **7a. Another team member saved a change to this requirement artifact after the student viewed it**
+  - 7a1. The system refuses the deletion, informs the student that the requirement artifact was changed by someone else, and displays its current details.
+  - 7a2. The student either returns to step 3 of the normal flow to delete the current version or abandons the deletion.
 
 **Priority:** High
 **Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
-**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-deletion-integrity (a referenced artifact cannot be deleted; deletion is logical); BR-edit-lock-required (an artifact held by a document section is deleted under that document section's lock); BR-section-artifact-removal (removing an item from a list-type document section deletes it by this use case's strategies).
+**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-deletion-integrity (a referenced artifact cannot be deleted; deletion is logical); BR-edit-lock-required (a requirement artifact is protected by versioning, not by a lock; extension 7a); BR-section-artifact-removal (removing an item from a list-type document section deletes it by this use case's strategies).
 **Associated Information:**
 
 Deletion strategy:

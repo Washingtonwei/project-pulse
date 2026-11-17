@@ -89,8 +89,8 @@ The artifact types named here are the canonical `RequirementArtifactType` set (g
 
 # **Document Composition**
 
-- **BR-artifact-home:** A list-type document section holds only requirement artifacts of the types it is the authoring home of, as the artifact type → authoring home table in the SRS's Business Domain Model assigns them. An artifact takes its type from the document section it is created in (choosing among the admitted types only when the document section admits more than one), and its type never changes afterwards.
-- **BR-section-artifact-removal:** Removing a requirement artifact from the list-type document section that holds it deletes the artifact, under BR-deletion-integrity. This is unlike a use case's preconditions and postconditions, where removing one removes only the reference (BR-use-case-condition-shared).
+- **BR-artifact-home:** Every requirement artifact of a type that has a document section home is an item of exactly one list-type document section, its home, as the artifact type → authoring home table in the SRS's Business Domain Model assigns it; a list-type document section holds only artifacts of the types it is the home of. Each such type has exactly one home, except Assumption and Dependency, which each have two (Vision and Scope, SRS); an Assumption or Dependency may move between its two homes, keeping its artifact key, links, and comment threads. An artifact created while editing a list-type document section takes one of the types that document section admits. An artifact's type never changes after creation. Glossary terms, use cases, preconditions, and postconditions have no document section home.
+- **BR-section-artifact-removal:** Removing a requirement artifact from its home document section deletes the artifact, under BR-deletion-integrity. This is unlike a use case's preconditions and postconditions, where removing one removes only the reference (BR-use-case-condition-shared).
 
 # **Use Case Composition**
 
@@ -100,7 +100,7 @@ The artifact types named here are the canonical `RequirementArtifactType` set (g
 
 # **Editing and Locking**
 
-- **BR-edit-lock-required:** Editing a document section or a use case requires an exclusive lock on that authoring destination, held by the editing student; at most one student may hold a given lock at a time.
+- **BR-edit-lock-required:** Editing a document section's content or a use case requires an exclusive lock on that authoring destination, held by the editing student; at most one student may hold a given lock at a time. Creating, changing, moving, reordering, or deleting a requirement artifact that has a document section home requires no lock: a change based on a version of the artifact, or of its home document section's order, that a teammate has since changed is refused instead.
 - **BR-lock-expiry:** An edit lock expires a configurable interval after it is acquired (default 15 minutes) and is then released automatically, freeing the authoring destination for another student; an expired lock is cleared the next time the destination is read or a lock on it is requested.
 - **BR-collab-no-overwrite:** Real-time collaboration shall not overwrite or corrupt content already saved by another collaborator.
 
