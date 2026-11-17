@@ -3403,7 +3403,7 @@ Sort criteria: default ascending by Artifact Key; the student may re-sort by Typ
 - Artifact key.
 - Artifact type.
 - Artifact content.
-- Metadata: priority, status.
+- Metadata: priority.
 - Notes.
 - All requirement artifact links belonging to this artifact.
 - For a glossary term:
@@ -3486,7 +3486,7 @@ Details:
 | Requirement artifact type | `RequirementArtifactType` | Set once, at creation | One of the types the document section admits (BR-artifact-home) | None; the type cannot be changed later |  |
 | Content |  |  |  |  |  |
 | Links |  |  |  |  |  |
-| Metadata: priority, status |  |  |  |  |  |
+| Metadata: priority |  |  |  |  |  |
 | Notes |  |  |  |  |  |
 
 *Column "Effect of change" shows consequences of modification other than saving.*
@@ -3497,7 +3497,7 @@ Placement:
 - MVP: the artifact is created in the document section the student is currently viewing; that section determines its placement and artifact type.
 - Future (requirements graph view): when the student adds an artifact directly in the graph — which shows all artifacts independent of document sections — there is no section context, so she selects the destination section, or the system places it by artifact type (the artifact type → authoring-home map in the SRS's [Business Domain Model](software-requirements-specification.md#business-domain-model)).
 
-Duplication detection rules: Advisory only — the system warns when an artifact of the same type has similar content (fuzzy match) but does not block creation; the student decides whether to proceed, revise, or open the existing artifact.
+Duplication detection rules: Advisory only — the system warns when an artifact of the same type has similar content (fuzzy match) but does not block creation; the student decides whether to proceed, revise, or open the existing artifact. In the MVP, "similar content" means an artifact of the same type whose title contains the new title, ignoring letter case.
 
 Notification: None — routine authoring changes are not notified (FR-NOT-suppress-routine); saved changes propagate to connected teammates in real time (UC-COL-collaborative-edit).
 
@@ -3575,7 +3575,7 @@ Details:
 | Requirement artifact type |  | No; fixed by the document section the artifact was created in (BR-artifact-home) |  |  |  |  |
 | Content |  | Yes |  |  |  |  |
 | Notes |  | Yes |  |  |  |  |
-| Metadata: priority, status |  | Yes |  |  |  |  |
+| Metadata: priority |  | Yes |  |  |  |  |
 
 *Column "Effect of change" shows consequences of modification other than saving.*
 
