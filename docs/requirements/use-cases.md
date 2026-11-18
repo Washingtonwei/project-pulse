@@ -3476,10 +3476,13 @@ Sort criteria: default ascending by Artifact Key; the student may re-sort by Typ
 - **8a. The artifact's home document was locked for review after the student began**
   - 8a1. The system refuses to create the artifact and informs the student that its home document is locked for review.
   - 8a2. The use case terminates.
+- **8b. The artifact's home document has not been created for the team yet**
+  - 8b1. The system refuses to create the artifact, names the home document (for example, the Software Requirements Specification), and informs the student that the course admin creates the team's documents (UC-TPL-provision-documents).
+  - 8b2. The use case terminates.
 
 **Priority:** High
 **Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
-**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-artifact-key-unique (unique, stable artifact key); BR-artifact-home (the artifact type determines its home document section; created from a document section, the type is one that document section admits).
+**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-artifact-key-unique (unique, stable artifact key); BR-artifact-home (the artifact type determines its home document section; created from a document section, the type is one that document section admits); BR-review-lock (nothing is added to a document locked for review, extension 8a).
 **Associated Information:**
 
 Details:
@@ -3487,6 +3490,7 @@ Details:
 | Property name | Data type | Editability | Validation rule | Effect of change | Reference to glossary |
 | ---- | ---- | ---- | ---- | ---- | ---- |
 | Requirement artifact type | `RequirementArtifactType` | Set once, at creation | A type with a document section home; created from a document section, one of the types that document section admits (BR-artifact-home) | None; the type cannot be changed later |  |
+| Title |  | Yes |  |  |  |
 | Home | document section | Set at creation; may later change only as UC-ART-edit-artifact allows | One of the type's home document sections (BR-artifact-home) | The artifact is appended to the end of that document section's list |  |
 | Content |  |  |  |  |  |
 | Links |  |  |  |  |  |

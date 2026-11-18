@@ -1,77 +1,70 @@
 # Requirement Artifacts (ART) Design
 
 > Realizes: UC-ART-create-artifact
-> Depends on: BR-artifact-home, BR-artifact-key-unique, BR-edit-lock-required, BR-team-scoped-access, DI-artifact-key-assignment, OI-21 and OI-22 (template and type changes, the part listed under Data model), OI-46 (request-body ids)
-> See: [use cases](../requirements/use-cases.md#requirement-artifacts), [Business Domain Model](../requirements/software-requirements-specification.md#business-domain-model) (the artifact type → authoring home table), [architectural-design.md](architectural-design.md#domain--aggregate-model) (Domain & aggregate model, Authorization), [doc.md](doc.md) (the DOC area, which owns the document-section editor)
-> History: designed through `/design` on 2026-11-16. Saving new items in a list-type document section and minting their keys was already built; where this doc describes that code, it records the design as built.
+> Depends on: BR-artifact-home, BR-artifact-key-unique, BR-edit-lock-required, BR-review-lock, BR-team-scoped-access, DI-concurrency-control, DI-artifact-key-assignment, OI-46 (no ids from the request body)
+> See: [use cases](../requirements/use-cases.md#requirement-artifacts), [Business Domain Model](../requirements/software-requirements-specification.md#business-domain-model) (the artifact type → authoring home table), [architectural-design.md](architectural-design.md#domain--aggregate-model) (Domain & aggregate model, Transactions & consistency, Authorization), [doc.md](doc.md) (the DOC area, which owns the document section editor)
+> History: first designed 2026-11-16 with new items saved inside the document section save. Revised 2026-11-17 after the spec made requirement artifacts first-class (OI-23): an artifact is created on its own, stored at once, and guarded by versioning instead of the document section's lock.
 
 ## Scope
 
-This doc is the ART area's design-of-record. It covers creating a requirement artifact in a list-type document section: which types a document section admits, validating a new item, the advisory duplicate warning, and minting the artifact key when the document section is saved. It also covers the template and type changes that give every artifact type in the SRS's homes table a list to be created in.
+This doc is the ART area's design-of-record. It covers creating a requirement artifact from any authoring surface, resolving its home document section from its type, and the cutover the new model needs in the document section editor: items are created and edited through the artifact endpoints, and the document section save stores prose only.
 
 Not covered here, each to be designed on its own:
-- **Removing an item** (it deletes the artifact, UC-DOC-edit-document 9a) and the logical delete behind it belong to UC-ART-delete-artifact. Until that ships, a removed item is unlinked from its document section, not deleted (OI-23).
-- **The lock precondition on the standalone artifact edit and delete endpoints** (UC-ART-edit-artifact and UC-ART-delete-artifact PRE-4).
-- **The editor's leave prompt and lock-expiry handling** (UC-DOC-edit-document 6a and 9b), including the editor reloading the document section on every 409.
-- **The standalone `POST /teams/{teamId}/requirement-artifacts`** and its converter's handling of `sourceSectionId` stay as they are; they belong to OI-46.
+- **Removing an item** belongs to UC-ART-delete-artifact (logical delete, refused while referenced). Until it is designed, the document section view hides its Remove button, because today's `DELETE` hard-deletes and cascades links away, against BR-deletion-integrity.
+- **Reordering items** (UC-DOC-edit-document 6b) and the order version it needs. Until then the order is creation order.
+- **Moving an Assumption or Dependency** between its two homes (UC-ART-edit-artifact, Home row).
+- **The artifact catalog page** belongs to UC-ART-find-artifacts. The create endpoint already serves it.
 
 ## Overview
 
-A new requirement artifact is never sent on its own. UC-ART-create-artifact runs inside UC-DOC-edit-document, so the student adds the item in the editor's list, and it reaches the server in the next save of the whole document section (`PUT …/document-sections/{id}`). The save pairs each submitted item by id with the document section's own rows only, updates the paired ones, and stores the rest as new artifacts with freshly minted keys. It runs in the two phases the use case save uses for its conditions (`UseCaseService.resolveConditions`, then `saveNewConditions`): first resolve and check every item while writing nothing, including the one new check that a new item's type is one the document section admits (BR-artifact-home); then check the version and the lock, then write.
+There is one create endpoint, `POST /teams/{teamId}/requirement-artifacts`, for every surface. The request names the artifact type and may name the home document type. The home document type is required only for `ASSUMPTION` and `DEPENDENCY`, which have two homes; the document section view always sends its own, so the artifact lands in the list the student is looking at, and the catalog sends it only when it asks the student. The server resolves the home: the template registry maps the type (and, for the two-home types, the document type) to one section key, and the team's document of that type holds the section with that key. No document or section id travels in the body.
 
-A document section's admitted types come from its template. Each LIST section in the YAML templates declares `artifactTypes`, the types the SRS's homes table assigns to it. The server reads them at save time, and the document section's GET returns them so the editor can offer only those types.
+The service locks the home document section's row, appends the artifact to the section's list (which sets its home), and saves it with a freshly minted key, so the row is inserted once with its home and `artifact_index` is written at the end. It does not check the document section's lock: the section view offers Add and Edit only to the lock holder, as a UI gate (UC-DOC-edit-document, BR-edit-lock-required).
 
 ## Components & classes
 
 ```mermaid
 classDiagram
-  class SectionTemplate {
-    sectionKey
-    title
-    type
-    guidance
-    +artifactTypes
+  class RequirementArtifact {
+    +version
   }
   class DocumentTemplateRegistry {
-    find(DocumentType)
-    +admittedTypes(DocumentType, sectionKey)
-    +validateAtStartup()
+    admittedTypes(DocumentType, sectionKey)
+    +homesOf(RequirementArtifactType)
+    +validateAtStartup() every list type has its homes
   }
-  class DocumentSectionController {
-    updateDocumentSectionContent()
-    +@Valid
+  class DocumentSectionRepository {
+    +findByIdForUpdate(id)
   }
-  class DocumentSectionDtoToDocumentSectionConverter {
-    +maps each item through the artifact converter, id as a pairing hint
-  }
-  class DocumentSectionService {
-    updateDocumentSectionContent()
-    +resolveSectionItems()
-    +write phase after version and lock
-  }
-  class DocumentSectionToDocumentSectionDtoConverter {
-    +fills artifactTypes
+  class RequirementArtifactController {
+    addRequirementArtifact()
+    updateRequirementArtifact() +version
   }
   class RequirementArtifactService {
-    saveRequirementArtifact() +clears any id
+    +createRequirementArtifact(teamId, draft, homeDocumentType)
+    saveRequirementArtifact() mints the key
+    updateRequirementArtifact() +version check
   }
-  DocumentSectionController --> DocumentSectionDtoToDocumentSectionConverter
-  DocumentSectionController --> DocumentSectionService
-  DocumentSectionService --> DocumentTemplateRegistry
-  DocumentSectionService --> RequirementArtifactService
-  DocumentSectionToDocumentSectionDtoConverter --> DocumentTemplateRegistry
+  class DocumentSectionService {
+    updateDocumentSectionContent() prose only
+  }
+  RequirementArtifactController --> RequirementArtifactService
+  RequirementArtifactService --> DocumentTemplateRegistry
+  RequirementArtifactService --> DocumentRepository
+  RequirementArtifactService --> DocumentSectionRepository
 ```
 
-`+` marks what this design adds to an existing class; `mergeSubmittedArtifacts` is replaced by `resolveSectionItems` and the write phase. Files:
+`+` marks what this design adds. Files:
 
-- **Changed:** [`DocumentSectionService`](../../backend/src/main/java/team/projectpulse/ram/document/DocumentSectionService.java), [`DocumentSectionController`](../../backend/src/main/java/team/projectpulse/ram/document/DocumentSectionController.java) (`@Valid`), [`DocumentSectionDtoToDocumentSectionConverter`](../../backend/src/main/java/team/projectpulse/ram/document/converter/DocumentSectionDtoToDocumentSectionConverter.java) (maps the items), [`RequirementArtifactDtoToRequirementArtifactConverter`](../../backend/src/main/java/team/projectpulse/ram/requirement/converter/RequirementArtifactDtoToRequirementArtifactConverter.java) (maps the id) and [`RequirementArtifactService`](../../backend/src/main/java/team/projectpulse/ram/requirement/RequirementArtifactService.java) (`saveRequirementArtifact` clears it), [`DocumentSectionDto`](../../backend/src/main/java/team/projectpulse/ram/document/dto/DocumentSectionDto.java) (`List<@Valid RequirementArtifactDto>`, read-only `artifactTypes`), [`DocumentSectionToDocumentSectionDtoConverter`](../../backend/src/main/java/team/projectpulse/ram/document/converter/DocumentSectionToDocumentSectionDtoConverter.java), [`DocumentTemplate`](../../backend/src/main/java/team/projectpulse/ram/document/template/DocumentTemplate.java) and [`DocumentTemplateRegistry`](../../backend/src/main/java/team/projectpulse/ram/document/template/DocumentTemplateRegistry.java), [`RequirementArtifactType`](../../backend/src/main/java/team/projectpulse/ram/requirement/RequirementArtifactType.java) and [`ArtifactKeyPrefix`](../../backend/src/main/java/team/projectpulse/ram/requirement/ArtifactKeyPrefix.java), the templates [`VISION_SCOPE.yml`](../../backend/src/main/resources/requirement-document-templates/VISION_SCOPE.yml) and [`SRS.yml`](../../backend/src/main/resources/requirement-document-templates/SRS.yml).
-- **New:** `BUSINESS_RULES.yml` (one LIST section), and migration `V10__artifact_type_operating_environment.sql`.
-- **Frontend, changed:** [`RamDocumentEditor.vue`](../../frontend/src/pages/ram/RamDocumentEditor.vue), [`apis/ram/types.ts`](../../frontend/src/apis/ram/types.ts), and, so a Business Rules document can be created and opened, [`Teams.vue`](../../frontend/src/pages/teams/Teams.vue) (the instructor's create-documents action) and [`RamDocuments.vue`](../../frontend/src/pages/ram/RamDocuments.vue) (the document list).
-- **Reused unchanged:** the document-section lock, `RequirementArtifactService.saveRequirementArtifact`, `DocumentSection.replaceAllRequirementArtifacts`, and the artifact search (`RequirementArtifactSpecs.hasType`, `hasTitleLike`).
+- **Changed:** [`RequirementArtifact`](../../backend/src/main/java/team/projectpulse/ram/requirement/RequirementArtifact.java) (`@Version`), [`RequirementArtifactDto`](../../backend/src/main/java/team/projectpulse/ram/requirement/dto/RequirementArtifactDto.java) (adds `homeDocumentType` and `version`, drops `sourceSectionId`), [`RequirementArtifactDtoToRequirementArtifactConverter`](../../backend/src/main/java/team/projectpulse/ram/requirement/converter/RequirementArtifactDtoToRequirementArtifactConverter.java) (no section lookup), [`RequirementArtifactService`](../../backend/src/main/java/team/projectpulse/ram/requirement/RequirementArtifactService.java), [`RequirementArtifactController`](../../backend/src/main/java/team/projectpulse/ram/requirement/RequirementArtifactController.java), [`DocumentSectionRepository`](../../backend/src/main/java/team/projectpulse/ram/document/DocumentSectionRepository.java), [`DocumentTemplateRegistry`](../../backend/src/main/java/team/projectpulse/ram/document/template/DocumentTemplateRegistry.java), [`DocumentSectionService`](../../backend/src/main/java/team/projectpulse/ram/document/DocumentSectionService.java), [`DocumentSectionDto`](../../backend/src/main/java/team/projectpulse/ram/document/dto/DocumentSectionDto.java) (`requirementArtifacts` read-only), [`RequirementArtifactType`](../../backend/src/main/java/team/projectpulse/ram/requirement/RequirementArtifactType.java) (`hasListHome()`, the four interface types, no `OTHER`) and [`ArtifactKeyPrefix`](../../backend/src/main/java/team/projectpulse/ram/requirement/ArtifactKeyPrefix.java), [`SRS.yml`](../../backend/src/main/resources/requirement-document-templates/SRS.yml).
+- **Removed:** `resolveSectionItems`, `applySectionItems` and `ResolvedItem` from the document section save, and `DocumentSection.replaceAllRequirementArtifacts`, which has no caller left. `SectionItemRejectedException` is renamed `RequirementArtifactRejectedException` (see Refusals).
+- **New:** migration `V11` (see Data model).
+- **Frontend, changed:** [`RamDocumentEditor.vue`](../../frontend/src/pages/ram/RamDocumentEditor.vue) (Add creates through the POST, Edit saves through the PUT with the version, Remove hidden, the section save sends prose only), [`apis/ram/index.ts`](../../frontend/src/apis/ram/index.ts) and [`apis/ram/types.ts`](../../frontend/src/apis/ram/types.ts).
+- **Reused unchanged:** the artifact search (the duplicate warning), key minting in `saveRequirementArtifact`, the 409 mapping for `OptimisticLockException` in `ExceptionHandlerAdvice`, the document section lock for the prose save, and the team route rules in `SecurityConfiguration`.
 
-## Admitted types
+## Homes
 
-Each LIST section declares these `artifactTypes`, one row per SRS homes-table entry. A type with two homes is admitted by both, and a section with two types lets the student choose between them (step 2).
+Each list section declares the types it admits in its template (`artifactTypes`), and the registry inverts that into each type's homes. Which types belong in a list is said once, on the enum: `RequirementArtifactType.hasListHome()` is false for the five types below and true for every other. The registry and the create path both read it. Every list type has exactly one home except `ASSUMPTION` and `DEPENDENCY`, which have two. At startup the registry refuses a list type with no home, a list type other than those two with more than one, and a template that admits a type whose `hasListHome()` is false.
 
 | Template | Section key | Admits |
 |---|---|---|
@@ -88,123 +81,142 @@ Each LIST section declares these `artifactTypes`, one row per SRS homes-table en
 | SRS | `ASSUMPTIONS_DEPENDENCIES` | `ASSUMPTION`, `DEPENDENCY` |
 | SRS | `NON_USE_CASE_FUNCTIONAL_REQUIREMENTS` | `FUNCTIONAL_REQUIREMENT` |
 | SRS | `DATA_REQUIREMENTS` | `DATA_REQUIREMENT` |
-| SRS | `USER_INTERFACES`, `SOFTWARE_INTERFACES`, `HARDWARE_INTERFACES`, `COMMUNICATION_INTERFACES` | `EXTERNAL_INTERFACE_REQUIREMENT` |
+| SRS | `USER_INTERFACES` | `USER_INTERFACE` |
+| SRS | `SOFTWARE_INTERFACES` | `SOFTWARE_INTERFACE` |
+| SRS | `HARDWARE_INTERFACES` | `HARDWARE_INTERFACE` |
+| SRS | `COMMUNICATION_INTERFACES` | `COMMUNICATIONS_INTERFACE` |
 | SRS | `QUALITY_ATTRIBUTES` | `QUALITY_ATTRIBUTE` |
 | Business Rules | `BUSINESS_RULES` | `BUSINESS_RULE` |
 
-No list admits `OTHER`, `USER_STORY` (deferred), `GLOSSARY_TERM` (authored in the glossary), or `USE_CASE`, `PRECONDITION` and `POSTCONDITION` (authored in the use case editor).
+`GLOSSARY_TERM`, `USE_CASE`, `PRECONDITION` and `POSTCONDITION` have no list home and are created through their own use cases; `USER_STORY` is deferred. The create endpoint refuses all five.
 
 ## Sequence
 
-### UC-ART-create-artifact: adding an item and saving the document section
+### UC-ART-create-artifact: creating an artifact in its home
 
 ```mermaid
 sequenceDiagram
   actor S as Student
   participant E as RamDocumentEditor.vue
-  participant AS as artifact search API
-  participant C as DocumentSectionController
-  participant DS as DocumentSectionService
-  participant R as DocumentTemplateRegistry
+  participant C as RequirementArtifactController
   participant RS as RequirementArtifactService
-  S->>E: Add item (step 1)
-  E->>E: type fixed by the section's artifactTypes, or a choice among them (step 2)
+  participant R as DocumentTemplateRegistry
+  participant DB as repositories
+  S->>E: Add item, while holding the section's lock (step 1, a UI gate only)
+  E->>E: type among the section's artifactTypes (step 2)
   S->>E: title, content, priority, notes (step 3)
   E->>E: required fields (step 4, 4a)
-  E->>AS: POST search with type and title (step 5)
-  AS-->>E: possible duplicates, advisory (5a)
-  S->>E: confirm (steps 6-7), and the item shows without a key (step 8)
-  S->>E: Save (UC-DOC-edit-document step 8)
-  E->>C: PUT document section with version and requirementArtifacts
-  C->>C: @Valid on each nested item (step 4 on the server)
-  C->>DS: updateDocumentSectionContent(converted section with its items, version)
-  DS->>DS: resolveSectionItems: pair ids with the section's own rows, build new artifacts (writes nothing)
-  DS->>R: admittedTypes(document type, section key)
-  DS->>DS: each new item's type admitted, else 400 (BR-artifact-home)
-  DS->>DS: version and lock held by the caller (existing checks)
-  DS->>DS: force-increment the version (PESSIMISTIC_FORCE_INCREMENT)
-  DS->>DS: copy editable fields onto paired rows, then set content
-  DS->>RS: saveRequirementArtifact(team, new item): key minted (step 9, BR-artifact-key-unique)
-  DS->>DS: replaceAllRequirementArtifacts(resolved list)
-  DS-->>C: saved document section, new items keyed
+  E->>C: POST search with type and title (step 5)
+  C-->>E: possible duplicates, advisory (5a)
+  S->>E: confirm (steps 6-7)
+  E->>C: POST requirement-artifacts with type, homeDocumentType, title, content, priority, notes
+  C->>C: @Valid (4a on the server)
+  C->>RS: createRequirementArtifact(teamId, draft, homeDocumentType)
+  RS->>R: homesOf(type): 400 if none, or no unique home for the named document type
+  RS->>DB: the team's document of that type and its section with that key: 400 if none (8b)
+  RS->>RS: document SUBMITTED: 400 (8a, BR-review-lock)
+  RS->>DB: findByIdForUpdate(section id): row lock on the home section
+  RS->>RS: section.addRequirementArtifact: appended at the end, home set (POST-3)
+  RS->>RS: saveRequirementArtifact: team, key, one insert (step 8, BR-artifact-key-unique)
+  RS-->>C: the artifact with id, key and version
   C-->>E: 200
+  E->>E: append it to the list, showing its key (step 9)
 ```
 
-A new item is one whose `id` names none of the document section's current rows, or that has no id. A forged id cannot reach another team's row: the id is only ever looked up among this section's own rows, never through a repository, and an id that names nothing there becomes a new artifact in the caller's team. That includes the id of one of the team's artifacts in another document section: it becomes a new copy with a new key, never a move, as an unpaired use case step becomes a new step. The same id twice in one save is refused, as `resolveConditions` refuses a repeated condition.
+Editing an item from the section view uses `PUT …/requirement-artifacts/{id}` with the item's `version`. A stale version is refused with 409 (UC-ART-edit-artifact 10a), and the editor reloads the item.
 
 ## API contract
 
-All routes are under the API base URL and return the `Result` envelope. "Team member" is the existing route rule for document sections.
+All routes are under the API base URL and return the `Result` envelope. "Team member" is the existing route rule for requirement artifacts and document sections.
 
 | Endpoint | Caller (who may) | Request | Success | Errors, by extension |
 |---|---|---|---|---|
-| `GET /teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}` (changed) | team member | none | The document section, now with `artifactTypes`: the admitted types, empty for a RICH_TEXT section | unchanged |
-| `PUT /teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}` (changed) | team member holding the document section's lock (a student on the team, or an instructor of its course section, as today) | `version`, `content`, and `requirementArtifacts` in display order: an existing item sends its `id` with its editable fields (the editor already does); a new item sends `type`, `title`, `content`, `priority`, `notes` and no id. `sourceSectionId` is no longer sent | The stored document section, new items with their keys, and the new `version` | 400 with field errors keyed by item position, for example `requirementArtifacts[2].title` (4a); 400 a new item's type not admitted, naming the type and the document section's title (BR-artifact-home); 400 an item whose id repeats an earlier item's, naming its position; lock and version errors as today |
-| `POST /teams/{teamId}/requirement-artifacts/search` (reused) | team member | `type` and `title` | A page of the team's artifacts of that type whose title contains the text, case-insensitive | none new |
+| `POST /teams/{teamId}/requirement-artifacts` (changed) | team member | `type`, `title`, `content`, `priority`, `notes`, and `homeDocumentType`: the `DocumentType` of the home (`VISION_SCOPE`, `SRS` or `BUSINESS_RULES`), required for `ASSUMPTION` and `DEPENDENCY`, optional otherwise but, when sent, it must be the type's one home. The section view always sends its own document type. Any `id`, `artifactKey` or `version` in the body is ignored | the artifact with its `id`, `artifactKey`, `version` and `homeDocumentType` | 400 field errors (4a); 400 "The request is malformed." for an unknown `type` or `homeDocumentType` value (the existing handler); 400 with a message (see Refusals) for a type with no list home, a missing or wrong home, a home document not created (8b), or a home document locked for review (8a) |
+| `PUT /teams/{teamId}/requirement-artifacts/{requirementArtifactId}` (changed) | team member | `version` (required) and the editable fields `title`, `content`, `priority`, `notes`; type and home are ignored | the artifact with its new `version` | 400 no `version`; 400 field errors; 400 home document locked for review (UC-ART-edit-artifact PRE-3; an artifact with no home, such as a glossary term or a condition, skips this check); 409 stale version (10a); 404 not in the team |
+| `GET …/document-sections/{documentSectionId}` (changed) | team member | none | each nested item now also carries its `version`, which the editor sends back on the PUT | unchanged |
+| `PUT /teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}` (changed) | team member holding the document section's lock | `version` and `content`; `requirementArtifacts` is no longer read | the stored document section | the existing lock and version errors |
+| `POST /teams/{teamId}/requirement-artifacts/search` (reused) | team member | criteria `type` and `title`, page `size=5` | the team's artifacts of that type whose title contains the text (SQL `LIKE`, case-insensitive through the column's MySQL collation) | none new |
+
+A caller who belongs to the team but whose team has no home document gets the 8b 400, not a 404: the team exists and the student needs the message.
+
+### Refusals
+
+One exception, `RequirementArtifactRejectedException` (the renamed `SectionItemRejectedException`, mapped as it is today: HTTP 400, `StatusCode.INVALID_ARGUMENT`, the message shown to the student). The editor shows the message; it does not branch on the cause. Messages, with the document's title filled in:
+
+| Cause | Message |
+|---|---|
+| Type with no list home | "A {type label} is not created here: glossary terms are created in the glossary, and use cases and their conditions in the use case editor." |
+| Two-home type with no home named | "Choose whether this {type label} belongs in the Vision and Scope or the Software Requirements Specification." |
+| Wrong home | "A {type label} belongs in the {home title}, not the {given title}." |
+| 8b | "The team's {home title} has not been created yet. The course admin creates the team's documents." |
+| 8a | "The {home title} is locked for review, so it cannot be changed." |
 
 ### Item rules
 
-The use case's Details table names the fields but leaves their rules blank, so the design fixes them:
-
-- **Required on every item:** `type`, `title` and `content`, through the constraints `RequirementArtifactDto` carries; a title or content of only spaces counts as missing (`@NotBlank`). Every item is checked, existing ones included: the editor sends an existing item's type back with it, and it has never let an item be stored without a title or content.
-- **Optional:** `priority` (one of the `Priority` values; the editor preselects `MEDIUM`) and `notes`. No length limits beyond the columns.
-- **Not set here:** links are added afterwards through UC-LNK-create-link.
-- **Order of checks:** item validation (`@Valid`) runs first, then the admitted-type check while the items are resolved, then the version and lock checks, the same order the use case save uses (references before version and lock). A request with several faults gets the first of these, and nothing is written until all of them pass.
-- **A RICH_TEXT section ignores `requirementArtifacts`,** as it does today.
-
-### The editor
-
-- The type control lists the section's `artifactTypes` in template order, preselects the first, and is hidden when there is only one. An existing item's type is read-only.
-- The item dialog is steps 2 to 7: it shows the details, runs the duplicate search for the chosen type when the student confirms, shows up to five matches as a non-blocking warning, and adds the item on a second confirm. Only saved artifacts are searched; other unsaved items in the same list are not.
-- "Open the existing artifact" (5a2) opens it read-only in a dialog, so the student never leaves the editor with unsaved items.
+- **Required:** `type`, `title` and `content` (`@NotBlank`, so only spaces counts as missing). `title` is at most 255 characters, the column's size (`@Size`). **Optional:** `priority` (one of the `Priority` values; the editor preselects `MEDIUM`) and `notes`. Links are added afterwards through UC-LNK-create-link. The use case's Details table leaves these rules blank, so this design fixes them.
+- **Order of checks:** field validation, then the home (type, document, review lock), then the row lock and the write. Nothing is written until every check passes.
+- **The editor's dialog is steps 2 to 7.** Pressing Add in it confirms (steps 6 and 7). It first runs the duplicate search for the chosen type and title; with no match the artifact is created on that one confirm, and with matches they are shown as a non-blocking warning and a second press creates it anyway (5a2). Changing the type or the title runs the search again. "Open the existing artifact" opens it read-only in a dialog.
+- **A stale edit (10a):** on a 409 the editor GETs the artifact, puts its current details in the dialog with a warning that a teammate changed it, and the student reapplies what she still needs.
+- **The editor's list mirrors the server.** `draftArtifacts` no longer holds unsaved items: a create appends the returned artifact, an edit replaces the item with the returned one, and loading the section refreshes it. Only the prose is a draft, so UC-DOC-edit-document's leave prompt (6a), when it is built, tracks unsaved prose only.
 
 ## Key decisions
 
-- **Admitted types live in the template YAML and are read at save time.** Rejected: copying them into a `document_section` column at provisioning. The templates are fixed and built in, so a copy would only add a second source that every template change has to migrate. At startup the registry refuses a LIST section with no `artifactTypes` and a RICH_TEXT section with some.
-- **The check applies to new items only.** An existing item keeps its type even if the document section does not admit it, such as the `OTHER` rows the old editor created by default. Rejected: refusing the save until such items are fixed, which would block every team with old data. "The type never changes" already holds, because an existing item takes only its four editable fields.
-- **The server validates the nested items with `@Valid`**, so a bad item is a 400 with field errors rather than a 500, as the use case editor does since #136. Rejected: trusting the editor's own check.
-- **The section save follows the use case save's two phases.** The section converter maps each item through the requirement-artifact converter, which now maps the id as a pairing hint, as the use case converter keeps step ids; the controller passes the converted section on whole. That converter's other callers are creates, so `saveRequirementArtifact` clears the id before saving: every create inserts, and a body id can never merge over another team's row (OI-46). Those items are request data, never saved or attached: `resolveSectionItems` is their only reader. `resolveSectionItems` pairs items with the section's own rows by id, builds each new artifact fresh from the accepted fields, and checks admitted types, writing nothing. Only after the version and lock checks does the save copy the editable fields, store new items through `RequirementArtifactService.saveRequirementArtifact` (which sets the team and mints the key, as for a new condition), and hand the list to `replaceAllRequirementArtifacts`. Rejected: keeping `mergeSubmittedArtifacts`, which checks a new item after the lock and after the content is set, attaches the converter-built object itself, and mints keys by hand; pulling the items out in the controller as plain records (as `UseCaseController` builds `SubmittedCondition`), which would let the compiler stop a submitted item being saved but splits the request into two inputs; and keeping the pairing by artifact key. Both are safe, since either is looked up only among the section's own rows, but the key was chosen only because the converter still mapped it after the id mapping was removed (`dd0fa8d`); id matches the use case save, needs no editor change, and still pairs a row whose key is blank, which key pairing would silently duplicate.
-- **Every accepted save increments the document section's version,** through `PESSIMISTIC_FORCE_INCREMENT` after the lock check, as `UseCaseService.updateUseCase` does. `requirementArtifacts` is the `mappedBy` side, so Hibernate does not increment the version when only the list or its rows change, and a list-only save would otherwise leave the version as it was and let the next stale save through. Rejected: relying on `@Version` alone, which covers only a change to `content`.
-- **The save's item refusals raise one exception of their own,** `SectionItemRejectedException`, mapped to 400 with a message written for the student: a new item's type the document section does not admit, and an id repeated in one save. Rejected: `IllegalArgumentException`, whose message text reaches the client from many unrelated places (issue #84), and which `resolveConditions` still uses; and one class per refusal, which adds classes without changing what the client gets.
-- **An artifact appears only in the document section it was created in,** even when its type has a second home (an assumption created in Vision and Scope does not appear in the SRS list). POST-3's "any other document view its type maps to" is met by the requirements graph and the artifact search, not by a second list. Rejected: showing it in both lists, which the one owning section per artifact cannot express, and which would let a save of one list unlink an item the other list holds.
-- **The duplicate warning reuses the artifact search** with the item's type and title. Rejected: a dedicated duplicate-check endpoint with a similarity score, more than an advisory warning needs. The use case's "similar content" is narrowed to "same type, title contains, case-insensitive", and its Associated Information says so.
-- **The template changes apply to new documents only.** No requirement document existed in production when this shipped, so no migration reshapes documents: a document gets the new sections when it is created. Rejected: a migration that inserts, converts and re-guides the sections of existing documents, which would have reshaped nothing in production and only touched test data on staging.
-- **The editor stops sending `sourceSectionId` in the document section save.** The save never needed it, since the document section comes from the URL. The converter that reads it, and the standalone create endpoint, are left alone for OI-46.
+- **One create endpoint, the home resolved from the type.** The two-home types add a document type, never an id. Rejected: a nested `POST …/document-sections/{id}/requirement-artifacts`, which needs a second route for the catalog and puts a section id in the request (OI-46).
+- **Append under a row lock on the home document section.** Two concurrent creates would otherwise both read the same item count and write the same `artifact_index`. `DocumentSectionRepository.findByIdForUpdate` carries `@Lock(PESSIMISTIC_WRITE)` on a one-table `@Query`, as `ArtifactKeySequenceRepository.findForUpdate` does. The service finds the home with a plain team-scoped lookup, then locks it by id, because a lock taken through a join would also lock the document and team rows. The item list is touched only after the lock: the lookup must not initialize `requirementArtifacts` (no fetch join, no access to the list), or the list would be read before the lock and the race would return. **The create runs at `READ COMMITTED`** (`@Transactional(isolation = READ_COMMITTED)` on `createRequirementArtifact`): under MySQL's default `REPEATABLE READ`, the first plain read fixes the transaction's snapshot, so the list loaded after the lock could miss a create committed while this one waited. At `READ COMMITTED` every read sees the latest commit, so the list includes every create that held the lock before. `@OrderColumn` then writes the new item's index from its position in that list, not from a count. Locks are always taken in the order section, then key sequence, and no other path locks a section, so no deadlock cycle exists. Rejected: force-incrementing the section's version, which would make the lock holder's next prose save fail after any teammate's create; and an order-version column, which only reorder needs and which turns a harmless append into a 409 the student must retry.
+- **A create does not change the document section's version.** A requirement artifact is its own aggregate (it carries its own `@Version`), so a create is a save of the artifact, not of the document section, and the architecture's "the version changes on every accepted save" applies to the artifact. `DocumentSection.requirementArtifacts` is the `mappedBy` side, and Hibernate does not increment the owner's version for a change to an inverse collection; the old section save had to force the increment for exactly this reason. So nothing needs to opt out, and the "Lock holder undisturbed" test pins it.
+- **Locked for review means `SUBMITTED`** (and `ACCEPTED`, once the review use cases add it), per BR-review-lock; `DRAFT` and `RETURNED` are open. Both the create and the PUT check it, on the artifact's home document.
+- **The document section lock is a UI gate for items, not a server check,** as BR-edit-lock-required specifies. Rejected: also checking the lock on the artifact endpoints, which would block the catalog and the future graph view.
+- **The document section save stores prose only, and the whole-list replace is deleted.** Rejected: keeping the list in the save for its order, which would unlink an artifact created elsewhere by a stale editor.
+- **Remove is hidden in the section view** until UC-ART-delete-artifact is designed. Rejected: wiring it to today's `DELETE`, which hard-deletes and cascades links away. No requirement artifact exists in production, so nothing is lost meanwhile.
+- **`RequirementArtifact` carries `@Version`, and the PUT compares it with the request** before writing, as the document section save compares its own. Rejected: relying on the merge alone, which has no client version to compare.
+- **The interface split and the removal of `OTHER` ship with this design,** because the registry's homes must be unique per type.
 
 ## Data model
 
-No entity gains a column. The changes are to the templates and the type enum.
+The home stays `requirement_artifact.source_document_section_id`, nullable at the column because glossary terms, use cases and conditions have none. "Every list type has a home" is enforced by the create path, not the schema. Migration `V11`:
 
-- `RequirementArtifactType` gains `OPERATING_ENVIRONMENT` (key prefix `OE`, OI-22) and loses `VISION_STATEMENT` (a vision statement is narrative). `frontend/src/apis/ram/types.ts` follows.
-- `V10__artifact_type_operating_environment.sql` changes only the two `type` enum columns (`requirement_artifact` and `artifact_key_sequence`), adding `OPERATING_ENVIRONMENT` and dropping `VISION_STATEMENT`. It converts no row and reshapes no document (see Key decisions); a row still holding `VISION_STATEMENT` would make it fail and stop the deploy, which the check before deploying rules out.
-- **Before deploying V10,** confirm on production that no requirement document or requirement artifact exists yet, which is why V10 reshapes no document.
-- A document that already exists keeps its old shape: a section still RICH_TEXT stays narrative, and a list whose template no longer admits a type refuses new items of it with a 400. Only staging can hold such documents; recreate them to get the new sections.
-- `BUSINESS_RULES.yml` is the first template for the existing `BUSINESS_RULES` document type: one LIST section, so a team can create the Business Rules document that the SRS now points to.
+- adds `requirement_artifact.version` (`INT NOT NULL DEFAULT 0`);
+- changes the `type` enum on `requirement_artifact` and `artifact_key_sequence`: drops `EXTERNAL_INTERFACE_REQUIREMENT` and `OTHER`, adds `USER_INTERFACE`, `SOFTWARE_INTERFACE`, `HARDWARE_INTERFACE` and `COMMUNICATIONS_INTERFACE`. It converts no row.
+- **Before deploying V11,** confirm on staging and production that no row holds a dropped type; production holds no requirement artifacts.
 
-The rest of OI-21 (the `ARCHITECTURAL_DESIGN` document and the added and reordered SRS sections) is not part of this change.
+`ArtifactKeyPrefix` maps the four interface types to `UI`, `SI`, `HI` and `CI`; `ASSUMPTION` and `DEPENDENCY` keep `ASM` and `DEP`. `frontend/src/apis/ram/types.ts` follows the enum.
 
 ## Tests
 
 | Use case, flow | Level | Asserts |
 |---|---|---|
-| UC-ART-create-artifact, main flow | integration, `DocumentSectionControllerTest` | A new item saved in a list gets the next key for its type, keeps its position, and is found by the artifact search; the save, which changes only the list, returns a higher version, and a second save with the old version is refused with 409 |
-| Step 2, a section with two types | integration | SRS `ASSUMPTIONS_DEPENDENCIES` accepts one `ASSUMPTION` and one `DEPENDENCY` in the same save (the seed holds only an SRS document, so the list tests use its sections) |
-| BR-artifact-home, type not admitted | integration | A new `RISK` in SRS `NON_USE_CASE_FUNCTIONAL_REQUIREMENTS` is refused with 400 naming the type; nothing is stored and the version is unchanged |
-| Extension 4a | integration | A new item with an empty title, an empty content or no type is refused with 400 and field errors, not 500 |
-| Existing item of a type not admitted | integration | A save that keeps a legacy `OTHER` item succeeds, and its type and key are unchanged |
-| Extension 5a | integration, `RequirementArtifactControllerTest` | A search with a type and part of an existing title, in a different letter case, returns that artifact |
-| Cross-team | integration | A non-member is refused with 403; another team's artifact id sent through the caller's own URL becomes a new row in the caller's team, and the other team's row is untouched |
-| Repeated id | integration | Two items with the same id in one save are refused with 400 naming the second position; nothing is written |
-| Admitted types in the GET | integration | A LIST section returns its `artifactTypes`; a RICH_TEXT section returns none |
-| Templates match the homes table | unit | Every LIST section's `artifactTypes` equals the table in [Admitted types](#admitted-types), and every RICH_TEXT section has none |
-| Registry startup check | unit | A LIST section with no types, or a RICH_TEXT section with some, is refused |
-| V10 | integration (at startup), and a dry run recorded in the PR | Flyway applies V1 to V10 at every startup, including each integration test run on its fresh Testcontainers database before `ddl-auto: create` rebuilds the schema there, so every test run checks that V10 applies; a dry run on a scratch MySQL 8 database also shows that afterwards both columns accept `OPERATING_ENVIRONMENT` and refuse `VISION_STATEMENT` |
-| Instructor | integration | An instructor of the team's course section holding the lock can add an item; an instructor of another course section is refused with 403 |
-| Validation order | integration | A request with an invalid item and a stale version gets the 400 for the item; a request with a non-admitted new item and a stale version gets the 400 for the type; neither writes anything |
-| Editor | manual, recorded in the PR | The type control offers only the admitted types and hides when there is one; an existing item's type is read-only; the duplicate warning shows matches and does not block |
+| Main flow, from a section | integration, `RequirementArtifactControllerTest` | A `RISK` lands at the end of Vision and Scope `RISKS` with the next key and version 0, and the caller holds no document section lock |
+| Main flow, from the catalog | integration | A `FEATURE` sent with no home document type lands in `MAJOR_FEATURES` |
+| Two-home type | integration | An `ASSUMPTION` with `SRS` lands in the SRS list; with no home document type it is refused with 400 |
+| Type with no list home | integration | `GLOSSARY_TERM`, `USE_CASE`, `PRECONDITION`, `POSTCONDITION` and `USER_STORY` are each refused with 400 and the no-list-home message |
+| Unknown enum value | integration | A `type` of `OTHER` gets 400 "The request is malformed." |
+| Title length | integration | A 256-character title is refused with a field error |
+| Wrong home | integration | A `RISK` with `SRS` is refused with 400 |
+| Extension 4a | integration | A blank title, a blank content or no type is refused with 400 and field errors |
+| Extension 5a | integration | A search by type and part of an existing title, in another letter case, returns that artifact |
+| Extension 8a | integration | A home document whose status is `SUBMITTED` refuses the create with 400; nothing is stored |
+| Extension 8b | integration | For a team with no SRS, a `FUNCTIONAL_REQUIREMENT` is refused with 400 naming the SRS |
+| Append order and body ids | integration | Two creates in a row get positions n and n+1; an id in the body is ignored, so a new row is created and another team's row is untouched |
+| Concurrent creates | integration, with a latch holding the first transaction open; dropped if it proves flaky on CI | Two simultaneous creates in one document section get distinct positions |
+| Lock holder undisturbed | integration | A teammate's create leaves the document section's version unchanged, and the lock holder's prose save still succeeds |
+| UC-ART-edit-artifact 10a | integration | A PUT with a stale version is refused with 409; with the current one it succeeds and returns the next version; with no version it is refused with 400 |
+| PUT under review | integration | A PUT on an artifact whose home document is `SUBMITTED` is refused with 400 |
+| Versions in the section GET | integration | Each nested item of a list section carries its `version` |
+| Prose-only section save | integration | A `requirementArtifacts` list sent in the document section PUT changes nothing in the list |
+| Cross-team | integration | A non-member is refused with 403 |
+| Instructor | integration | An instructor of the team's course section can create an artifact; an instructor of another course section is refused with 403 |
+| Homes | unit | Every type with `hasListHome()` has exactly one home except `ASSUMPTION` and `DEPENDENCY`, which have two; each interface type maps to its own SRS section; no template admits a type without a list home |
+| V11 | integration, at startup | Flyway applies V1 to V11 on each test run's fresh database |
+| Editor | manual, recorded in the PR | Add and Edit are offered only while holding the lock, Remove is hidden, a new item shows its key at once, and a stale edit reloads the item |
 
 ## Open questions / risks
 
-- **Seed data must follow.** `DataInitializer` writes through repositories, so nothing refuses a seeded artifact in a list that does not admit its type. Checked when this was built: the seed already holds only admitted types in its lists, so it needed no change.
-- **PRE-3 (document not locked for review)** is not checked, because review is not built yet; the other editing use cases are in the same state.
-- **Size.** `/implement` can build this in two slices: the admitted types, validation and duplicate warning first; then the template changes and V10.
+- **Seed data must follow.** `DataInitializer` must hold no `OTHER` or `EXTERNAL_INTERFACE_REQUIREMENT` row; `/implement` checks.
+- **The review lock (8a)** reads `RequirementDocument.status`; review itself is not built, so the test sets the status directly.
+- **Whether a reorder bumps each artifact's version** is unverified. It matters to the reorder design, not to this one.
+- **Reorder and its order version are deferred.** DI-concurrency-control's order version is realized by the reorder design; V11 adds no order column. The editor has no reorder controls today, so nothing needs hiding.
+- **The hard-delete `DELETE` stays callable.** Hiding Remove keeps students away from it, but a direct call still hard-deletes and cascades links away, against BR-deletion-integrity. No requirement artifact exists in production, and UC-ART-delete-artifact's design replaces the endpoint's behavior.
+- **The UI lock gate can be stale.** If the student's document section lock expires while the Add dialog is open, the create still succeeds, because the server does not check the lock for items. This is the specified behavior (BR-edit-lock-required); the next prose save is what the expired lock refuses.
+- **Teammates' creates do not appear live.** An artifact created from the catalog shows in an open section view only when that view reloads, since real-time collaboration (UC-COL-collaborative-edit) is deferred.
+- **The generic PUT also edits artifacts with no home** (glossary terms, preconditions, postconditions), as it does today. Whether it should, given BR-shared-condition-wording and the glossary's own endpoints, is left to UC-ART-edit-artifact's design.
+- **Logical delete and the indexes.** When UC-ART-delete-artifact adds the logical delete, it decides whether a deleted item keeps its place in the list; indexes come from list position, so this design needs no change for it.
