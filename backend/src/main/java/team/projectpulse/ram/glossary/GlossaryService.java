@@ -28,7 +28,7 @@ public class GlossaryService {
     /**
      * Creates a glossary term for the team the URL names.
      *
-     * <p>Three values the request body carries are not the caller's to set, and each is taken back here rather
+     * <p>Two values the request body carries are not the caller's to set, and each is taken back here rather
      * than trusted. <strong>The type</strong> is fixed by the route: this endpoint creates glossary terms, so a
      * body naming any other type is submitting a value the server owns. Left to the body it would create, say, a
      * {@code USE_CASE} row that {@link #findGlossaryTermById} cannot see (it is type-scoped) but the use-case
@@ -36,18 +36,10 @@ public class GlossaryService {
      * {@link RequirementArtifactService#saveRequirementArtifact}, which this method delegates to so that one place
      * mints keys for every artifact; a body-chosen key such as {@code UC-1} would otherwise collide with a real
      * key that sequence has already handed out or will hand out later, and an omitted one left the term keyless.
-     * <strong>The source document section</strong> is cleared: a term created here belongs to no section, and the
-     * association is owned by {@code RequirementArtifact}, so a {@code sourceSectionId} naming another team's
-     * section would insert this row into that team's ordered section list.
-     *
-     * <p>That last line is a stopgap at the wrong layer. The section is resolved by
-     * {@code RequirementArtifactDtoToRequirementArtifactConverter} through an unscoped {@code findById}, which is
-     * the converter-resolution half of OI-46 and is fixed by moving the resolution into the services behind a
-     * team-scoped finder. Delete this line when that lands.
+     * A glossary term has no document section home (BR-artifact-home), and the converter maps none from the body.
      */
     public RequirementArtifact saveGlossaryTerm(Integer teamId, RequirementArtifact glossaryTerm) {
         glossaryTerm.setType(RequirementArtifactType.GLOSSARY_TERM);
-        glossaryTerm.setSourceDocumentSection(null);
         return this.requirementArtifactService.saveRequirementArtifact(teamId, glossaryTerm);
     }
 

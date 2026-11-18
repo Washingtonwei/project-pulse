@@ -165,9 +165,9 @@ public class ExceptionHandlerAdvice {
         return new Result(false, StatusCode.INVALID_ARGUMENT, ex.getMessage());
     }
 
-    @ExceptionHandler(SectionItemRejectedException.class)
+    @ExceptionHandler(RequirementArtifactRejectedException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    Result handleSectionItemRejectedException(SectionItemRejectedException ex) {
+    Result handleRequirementArtifactRejectedException(RequirementArtifactRejectedException ex) {
         return new Result(false, StatusCode.INVALID_ARGUMENT, ex.getMessage());
     }
 

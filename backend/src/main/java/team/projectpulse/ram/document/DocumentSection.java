@@ -78,18 +78,6 @@ public class DocumentSection {
         artifact.setSourceDocumentSection(this);
     }
 
-    /**
-     * Makes {@code newArtifacts} this document section's whole list, in that order. The artifact owns the link
-     * ({@code sourceDocumentSection}; this list is the {@code mappedBy} side), so every current artifact is unlinked
-     * first and each one in {@code newArtifacts} is linked again. An artifact left out of {@code newArtifacts} ends
-     * up in no document section (removing an item does not yet delete it, OI-23).
-     */
-    public void replaceAllRequirementArtifacts(List<RequirementArtifact> newArtifacts) {
-        this.requirementArtifacts.forEach(artifact -> artifact.setSourceDocumentSection(null));
-        this.requirementArtifacts.clear();
-        newArtifacts.forEach(this::addRequirementArtifact);
-    }
-
     public void addCommentThread(CommentThread thread) {
         if (thread == null) return;
         this.commentThreads.add(thread);

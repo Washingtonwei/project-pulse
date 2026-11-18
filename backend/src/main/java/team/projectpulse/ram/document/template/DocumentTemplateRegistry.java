@@ -13,10 +13,13 @@ import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @Component
 public class DocumentTemplateRegistry {
@@ -29,7 +32,17 @@ public class DocumentTemplateRegistry {
             .findAndAddModules()
             .build();
 
+    // The two types with two homes, one in Vision and Scope and one in the SRS (BR-artifact-home). Every other type
+    // with a list home has exactly one.
+    private static final Set<RequirementArtifactType> TWO_HOME_TYPES = EnumSet.of(RequirementArtifactType.ASSUMPTION, RequirementArtifactType.DEPENDENCY);
+
     private final Map<DocumentType, DocumentTemplate> templates = new EnumMap<>(DocumentType.class);
+
+    /**
+     * One home of an artifact type: the list section with {@code sectionKey} in a {@code documentType} document.
+     */
+    public record Home(DocumentType documentType, String sectionKey) {
+    }
 
     /**
      * Loads all YAML template files from src/main/resources/requirement-document-templates/
@@ -50,6 +63,7 @@ public class DocumentTemplateRegistry {
 
             log.info("Successfully loaded {} document template(s)", templates.size());
             validateTemplates();
+            checkHomes(templates);
 
         } catch (IOException e) {
             log.error("Failed to scan for template files", e);
@@ -105,7 +119,51 @@ public class DocumentTemplateRegistry {
             if (section.getType() == SectionType.RICH_TEXT && hasTypes) {
                 throw new IllegalStateException("Template " + type + ": RICH_TEXT section " + section.getSectionKey() + " names artifactTypes.");
             }
+            for (RequirementArtifactType artifactType : section.getArtifactTypes()) {
+                if (!artifactType.hasListHome()) {
+                    throw new IllegalStateException("Template " + type + ": section " + section.getSectionKey() + " admits " + artifactType + ", which has no list home.");
+                }
+            }
         }
+    }
+
+    /**
+     * Refuses a set of templates that breaks BR-artifact-home: every type with a list home must have exactly one home,
+     * except {@code ASSUMPTION} and {@code DEPENDENCY}, which have one in each of two documents. Run at startup, after
+     * every template is loaded, so a template change that leaves a type homeless, or gives it a second home, stops the
+     * application instead of making creates fail or land in the wrong list.
+     */
+    static void checkHomes(Map<DocumentType, DocumentTemplate> templates) {
+        for (RequirementArtifactType artifactType : RequirementArtifactType.values()) {
+            if (!artifactType.hasListHome()) {
+                continue;
+            }
+            List<Home> homes = homesOf(templates, artifactType);
+            int expected = TWO_HOME_TYPES.contains(artifactType) ? 2 : 1;
+            if (homes.size() != expected) {
+                throw new IllegalStateException("Artifact type " + artifactType + " has " + homes.size() + " list home(s) in the templates, expected " + expected + ": " + homes);
+            }
+            if (homes.stream().map(Home::documentType).distinct().count() != homes.size()) {
+                throw new IllegalStateException("Artifact type " + artifactType + " has two homes in one document: " + homes);
+            }
+        }
+    }
+
+    private static List<Home> homesOf(Map<DocumentType, DocumentTemplate> templates, RequirementArtifactType artifactType) {
+        List<Home> homes = new ArrayList<>();
+        templates.forEach((documentType, template) -> template.getSections().stream()
+                .filter(section -> section.getArtifactTypes().contains(artifactType))
+                .forEach(section -> homes.add(new Home(documentType, section.getSectionKey()))));
+        return homes;
+    }
+
+    /**
+     * The homes of {@code artifactType}: the list sections whose template admits it (BR-artifact-home). Exactly one for
+     * a type with a list home, two for {@code ASSUMPTION} and {@code DEPENDENCY} (one per document), none for a type
+     * without one. The startup check guarantees these counts.
+     */
+    public List<Home> homesOf(RequirementArtifactType artifactType) {
+        return homesOf(this.templates, artifactType);
     }
 
     public Optional<DocumentTemplate> find(DocumentType type) {

@@ -44,7 +44,7 @@ public class RequirementArtifactController {
     @PostMapping("/teams/{teamId}/requirement-artifacts")
     public Result addRequirementArtifact(@PathVariable Integer teamId, @Valid @RequestBody RequirementArtifactDto requirementArtifactDto) {
         RequirementArtifact newRequirementArtifact = this.requirementArtifactDtoToRequirementArtifactConverter.convert(requirementArtifactDto);
-        RequirementArtifact savedRequirementArtifact = this.requirementArtifactService.saveRequirementArtifact(teamId, newRequirementArtifact);
+        RequirementArtifact savedRequirementArtifact = this.requirementArtifactService.createRequirementArtifact(teamId, newRequirementArtifact, requirementArtifactDto.homeDocumentType());
         RequirementArtifactDto savedRequirementArtifactDto = this.requirementArtifactToRequirementArtifactDtoConverter.convert(savedRequirementArtifact);
         return new Result(true, StatusCode.SUCCESS, "Add requirement artifact successfully", savedRequirementArtifactDto);
     }
@@ -52,7 +52,7 @@ public class RequirementArtifactController {
     @PutMapping("/teams/{teamId}/requirement-artifacts/{requirementArtifactId}")
     public Result updateRequirementArtifact(@PathVariable Integer teamId, @PathVariable Long requirementArtifactId, @Valid @RequestBody RequirementArtifactDto requirementArtifactDto) {
         RequirementArtifact update = this.requirementArtifactDtoToRequirementArtifactConverter.convert(requirementArtifactDto);
-        RequirementArtifact updatedRequirementArtifact = this.requirementArtifactService.updateRequirementArtifact(teamId, requirementArtifactId, update);
+        RequirementArtifact updatedRequirementArtifact = this.requirementArtifactService.updateRequirementArtifact(teamId, requirementArtifactId, update, requirementArtifactDto.version());
         RequirementArtifactDto updatedRequirementArtifactDto = this.requirementArtifactToRequirementArtifactDtoConverter.convert(updatedRequirementArtifact);
         return new Result(true, StatusCode.SUCCESS, "Update requirement artifact successfully", updatedRequirementArtifactDto);
     }

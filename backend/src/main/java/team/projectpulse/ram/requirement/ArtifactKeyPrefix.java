@@ -31,11 +31,14 @@ public final class ArtifactKeyPrefix {
         MAP.put(RequirementArtifactType.POSTCONDITION, "PSC");
         MAP.put(RequirementArtifactType.USER_STORY, "US");
         MAP.put(RequirementArtifactType.QUALITY_ATTRIBUTE, "QA");
-        MAP.put(RequirementArtifactType.EXTERNAL_INTERFACE_REQUIREMENT, "EIR");
+        // One prefix per interface kind, matching the UI-/SI-/HI-/CI- keys the SRS uses for its own interfaces.
+        MAP.put(RequirementArtifactType.USER_INTERFACE, "UI");
+        MAP.put(RequirementArtifactType.SOFTWARE_INTERFACE, "SI");
+        MAP.put(RequirementArtifactType.HARDWARE_INTERFACE, "HI");
+        MAP.put(RequirementArtifactType.COMMUNICATIONS_INTERFACE, "CI");
         MAP.put(RequirementArtifactType.OPERATING_ENVIRONMENT, "OE");
         MAP.put(RequirementArtifactType.CONSTRAINT, "CON");
         MAP.put(RequirementArtifactType.DATA_REQUIREMENT, "DR");
-        MAP.put(RequirementArtifactType.OTHER, "OTH");
     }
 
 

@@ -44,8 +44,15 @@ public class RequirementArtifact {
     @Enumerated(EnumType.STRING)
     private Priority priority;
 
+    // The artifact's home: the list-type document section it is an item of (BR-artifact-home). Null for the types
+    // with no list home (glossary terms, use cases, preconditions, postconditions).
     @ManyToOne
     private DocumentSection sourceDocumentSection;
+
+    // Optimistic lock: the artifact is its own aggregate, created and edited outside any document section save, so a
+    // stale edit is refused against this version (DI-concurrency-control, UC-ART-edit-artifact 10a).
+    @Version
+    private Integer version;
 
     @Lob
     private String notes;
@@ -233,6 +240,10 @@ public class RequirementArtifact {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    public Integer getVersion() {
+        return version;
     }
 
 }

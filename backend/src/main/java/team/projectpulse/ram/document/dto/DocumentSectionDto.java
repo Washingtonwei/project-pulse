@@ -1,6 +1,5 @@
 package team.projectpulse.ram.document.dto;
 
-import jakarta.validation.Valid;
 import team.projectpulse.ram.requirement.RequirementArtifactType;
 import team.projectpulse.ram.requirement.SectionType;
 import team.projectpulse.ram.requirement.dto.RequirementArtifactDto;
@@ -14,9 +13,9 @@ public record DocumentSectionDto(Long id,
                                  SectionType type,
                                  String title,
                                  String content,
-                                 // @Valid on the element type, so each item's own constraints are checked; @Valid on the
-                                 // request body alone would stop at this list (UC-ART-create-artifact extension 4a).
-                                 List<@Valid RequirementArtifactDto> requirementArtifacts,
+                                 // Read-only: a list section's items, in order. Ignored in a request, so not validated:
+                                 // items are created and edited through the requirement artifact endpoints.
+                                 List<RequirementArtifactDto> requirementArtifacts,
                                  // Read-only: the types this document section admits (BR-artifact-home), empty for
                                  // RICH_TEXT. Filled from the template on every response; ignored in a request.
                                  List<RequirementArtifactType> artifactTypes,

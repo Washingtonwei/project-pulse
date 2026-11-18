@@ -150,6 +150,8 @@ One exception, `RequirementArtifactRejectedException` (the renamed `SectionItemR
 | Wrong home | "A {type label} belongs in the {home title}, not the {given title}." |
 | 8b | "The team's {home title} has not been created yet. The course admin creates the team's documents." |
 | 8a | "The {home title} is locked for review, so it cannot be changed." |
+| Home document predates its list (a document created from an older template, staging only) | "The team's {home title} was created from an older template and has no list for {a type label}." |
+| PUT with no `version` | "The requirement artifact's version is required to save a change." |
 
 ### Item rules
 
@@ -197,7 +199,7 @@ The home stays `requirement_artifact.source_document_section_id`, nullable at th
 | Extension 8a | integration | A home document whose status is `SUBMITTED` refuses the create with 400; nothing is stored |
 | Extension 8b | integration | For a team with no SRS, a `FUNCTIONAL_REQUIREMENT` is refused with 400 naming the SRS |
 | Append order and body ids | integration | Two creates in a row get positions n and n+1; an id in the body is ignored, so a new row is created and another team's row is untouched |
-| Concurrent creates | integration, with a latch holding the first transaction open; dropped if it proves flaky on CI | Two simultaneous creates in one document section get distinct positions |
+| Concurrent creates | not automated | Dropped as allowed: `AbstractIntegrationTest` runs each test in one rolled-back transaction, so two concurrent transactions cannot be staged there. The row lock and `READ COMMITTED` are covered by review, and "Append order" pins the sequential case |
 | Lock holder undisturbed | integration | A teammate's create leaves the document section's version unchanged, and the lock holder's prose save still succeeds |
 | UC-ART-edit-artifact 10a | integration | A PUT with a stale version is refused with 409; with the current one it succeeds and returns the next version; with no version it is refused with 400 |
 | PUT under review | integration | A PUT on an artifact whose home document is `SUBMITTED` is refused with 400 |
