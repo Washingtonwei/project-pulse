@@ -15,11 +15,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 @Component
 public class DocumentTemplateRegistry {
@@ -32,14 +30,10 @@ public class DocumentTemplateRegistry {
             .findAndAddModules()
             .build();
 
-    // The two types with two homes, one in Vision and Scope and one in the SRS (BR-artifact-home). Every other type
-    // with a list home has exactly one.
-    private static final Set<RequirementArtifactType> TWO_HOME_TYPES = EnumSet.of(RequirementArtifactType.ASSUMPTION, RequirementArtifactType.DEPENDENCY);
-
     private final Map<DocumentType, DocumentTemplate> templates = new EnumMap<>(DocumentType.class);
 
     /**
-     * One home of an artifact type: the list section with {@code sectionKey} in a {@code documentType} document.
+     * The home of an artifact type: the list section with {@code sectionKey} in a {@code documentType} document.
      */
     public record Home(DocumentType documentType, String sectionKey) {
     }
@@ -128,10 +122,9 @@ public class DocumentTemplateRegistry {
     }
 
     /**
-     * Refuses a set of templates that breaks BR-artifact-home: every type with a list home must have exactly one home,
-     * except {@code ASSUMPTION} and {@code DEPENDENCY}, which have one in each of two documents. Run at startup, after
-     * every template is loaded, so a template change that leaves a type homeless, or gives it a second home, stops the
-     * application instead of making creates fail or land in the wrong list.
+     * Refuses a set of templates that breaks BR-artifact-home: every type with a list home must have exactly one home.
+     * Run at startup, after every template is loaded, so a template change that leaves a type homeless, or gives it a
+     * second home, stops the application instead of making creates fail or land in the wrong list.
      */
     static void checkHomes(Map<DocumentType, DocumentTemplate> templates) {
         for (RequirementArtifactType artifactType : RequirementArtifactType.values()) {
@@ -139,12 +132,8 @@ public class DocumentTemplateRegistry {
                 continue;
             }
             List<Home> homes = homesOf(templates, artifactType);
-            int expected = TWO_HOME_TYPES.contains(artifactType) ? 2 : 1;
-            if (homes.size() != expected) {
-                throw new IllegalStateException("Artifact type " + artifactType + " has " + homes.size() + " list home(s) in the templates, expected " + expected + ": " + homes);
-            }
-            if (homes.stream().map(Home::documentType).distinct().count() != homes.size()) {
-                throw new IllegalStateException("Artifact type " + artifactType + " has two homes in one document: " + homes);
+            if (homes.size() != 1) {
+                throw new IllegalStateException("Artifact type " + artifactType + " has " + homes.size() + " list home(s) in the templates, expected 1: " + homes);
             }
         }
     }
@@ -158,12 +147,12 @@ public class DocumentTemplateRegistry {
     }
 
     /**
-     * The homes of {@code artifactType}: the list sections whose template admits it (BR-artifact-home). Exactly one for
-     * a type with a list home, two for {@code ASSUMPTION} and {@code DEPENDENCY} (one per document), none for a type
-     * without one. The startup check guarantees these counts.
+     * The home of {@code artifactType}: the one list section whose template admits it (BR-artifact-home), for example
+     * {@code RISK} -> (VISION_SCOPE, "RISKS"). Empty for a type without a list home; the startup check guarantees one
+     * for every other type.
      */
-    public List<Home> homesOf(RequirementArtifactType artifactType) {
-        return homesOf(this.templates, artifactType);
+    public Optional<Home> homeOf(RequirementArtifactType artifactType) {
+        return homesOf(this.templates, artifactType).stream().findFirst();
     }
 
     public Optional<DocumentTemplate> find(DocumentType type) {

@@ -766,14 +766,14 @@ async function saveArtifact() {
     }
     savingArtifact.value = true
     try {
-      // The section's document type names the home, so the artifact lands in this list (BR-artifact-home).
+      // The type alone names the home (BR-artifact-home), and the dialog offers only this section's types, so the
+      // artifact lands in this list.
       const result = await createRequirementArtifact(effectiveTeamId.value, {
         type: draft.type,
         title: draft.title,
         content: draft.content,
         priority: draft.priority,
-        notes: draft.notes,
-        homeDocumentType: document.value?.type ?? null
+        notes: draft.notes
       })
       draftArtifacts.value.push(result.data)
       ElMessage.success(`${result.data.artifactKey} created`)

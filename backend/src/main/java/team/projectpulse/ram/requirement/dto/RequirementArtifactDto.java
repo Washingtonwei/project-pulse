@@ -12,12 +12,12 @@ import java.time.Instant;
 
 /**
  * A requirement artifact on the wire. In a request only {@code type}, {@code title}, {@code content},
- * {@code priority}, {@code notes}, and, depending on the endpoint, {@code homeDocumentType} (create) or
- * {@code version} (update) are read; an {@code id} or {@code artifactKey} in a body is ignored (OI-46).
+ * {@code priority}, {@code notes}, and, on an update, {@code version} are read; an {@code id}, {@code artifactKey} or
+ * {@code homeDocumentType} in a body is ignored (OI-46).
  *
- * @param homeDocumentType the type of the document that holds the artifact's home section (BR-artifact-home). On a
- *                         create it names the home for a two-home type; in a response it is filled for every artifact
- *                         with a home and null for one without.
+ * @param homeDocumentType response only: the type of the document that holds the artifact's home section
+ *                         (BR-artifact-home), null for an artifact without one. A request never needs it, since the
+ *                         type alone names the home.
  * @param version          the artifact's optimistic-lock version (DI-concurrency-control); an update must send it.
  */
 public record RequirementArtifactDto(

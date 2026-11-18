@@ -56,6 +56,8 @@ export const REQUIREMENT_ARTIFACT_TYPES = [
   'BUSINESS_OBJECTIVE',
   'SUCCESS_METRIC',
   'RISK',
+  'BUSINESS_ASSUMPTION',
+  'BUSINESS_DEPENDENCY',
   'ASSUMPTION',
   'DEPENDENCY',
   'STAKEHOLDER',
@@ -103,8 +105,8 @@ export interface RequirementArtifactSummary {
   title: string
   content: string
   priority?: string | null
-  // The type of the document holding the artifact's home section (BR-artifact-home). Sent on a create to name the home
-  // of an assumption or dependency; filled in every response for an artifact with a home.
+  // Response only: the type of the document holding the artifact's home section (BR-artifact-home). A create never
+  // sends it, since the artifact's type alone names its home.
   homeDocumentType?: DocumentType | null
   notes?: string | null
   // Optimistic-lock version (DI-concurrency-control): an update sends back the version it was read at.

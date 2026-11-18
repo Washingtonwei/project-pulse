@@ -18,6 +18,8 @@ public final class ArtifactKeyPrefix {
         MAP.put(RequirementArtifactType.BUSINESS_OPPORTUNITY, "BOP");
         MAP.put(RequirementArtifactType.SUCCESS_METRIC, "SM");
         MAP.put(RequirementArtifactType.RISK, "RSK");
+        MAP.put(RequirementArtifactType.BUSINESS_ASSUMPTION, "BAS");
+        MAP.put(RequirementArtifactType.BUSINESS_DEPENDENCY, "BDE");
         MAP.put(RequirementArtifactType.ASSUMPTION, "ASM");
         MAP.put(RequirementArtifactType.DEPENDENCY, "DEP");
         MAP.put(RequirementArtifactType.STAKEHOLDER, "STK");

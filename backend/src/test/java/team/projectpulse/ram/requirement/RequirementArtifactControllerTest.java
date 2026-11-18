@@ -287,7 +287,7 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
     void createArtifact_MainFlow_FromASection_AppendedWithTheNextKeyAndNoLockNeeded() throws Exception {
         long visionScopeId = createVisionScopeForTeam1();
         // John holds no document section lock: the server does not check it for items (BR-edit-lock-required).
-        JSONObject first = create(1, item("RISK", "Team turnover", "A team member may leave mid-semester.").put("homeDocumentType", "VISION_SCOPE"), this.studentJohnToken);
+        JSONObject first = create(1, item("RISK", "Team turnover", "A team member may leave mid-semester."), this.studentJohnToken);
         assertThat(first.getBoolean("flag")).as(first.toString()).isTrue();
         assertThat(first.getJSONObject("data").getString("artifactKey")).isEqualTo("RSK-1");
         assertThat(first.getJSONObject("data").getInt("version")).isZero();
@@ -308,15 +308,18 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void createArtifact_TwoHomeType_GoesToTheNamedHome_AndNeedsOne() throws Exception {
-        JSONObject created = create(1, item("ASSUMPTION", "Campus SSO stays available", "The university single sign-on remains available.").put("homeDocumentType", "SRS"), this.studentJohnToken);
-        assertThat(created.getBoolean("flag")).as(created.toString()).isTrue();
-        assertThat(itemKeys(1L, "ASSUMPTIONS_DEPENDENCIES")).containsExactly(created.getJSONObject("data").getString("artifactKey"));
+    void createArtifact_AssumptionsAndDependencies_EachKindHasOneHome() throws Exception {
+        // The system-level kind goes to the SRS, the business-level kind to the Vision and Scope; neither names a home.
+        long visionScopeId = createVisionScopeForTeam1();
+        JSONObject assumption = create(1, item("ASSUMPTION", "Campus SSO stays available", "The university single sign-on remains available."), this.studentJohnToken);
+        assertThat(assumption.getBoolean("flag")).as(assumption.toString()).isTrue();
+        assertThat(itemKeys(1L, "ASSUMPTIONS_DEPENDENCIES")).containsExactly(assumption.getJSONObject("data").getString("artifactKey"));
 
-        JSONObject refused = create(1, item("DEPENDENCY", "Email relay", "Notification emails depend on the campus SMTP relay."), this.studentJohnToken);
-        assertThat(refused.getBoolean("flag")).isFalse();
-        assertThat(refused.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
-        assertThat(refused.getString("message")).startsWith("Choose whether this dependency belongs in the");
+        JSONObject businessDependency = create(1, item("BUSINESS_DEPENDENCY", "Course schedule", "The release depends on the semester calendar."), this.studentJohnToken);
+        assertThat(businessDependency.getBoolean("flag")).as(businessDependency.toString()).isTrue();
+        assertThat(businessDependency.getJSONObject("data").getString("artifactKey")).isEqualTo("BDE-1");
+        assertThat(businessDependency.getJSONObject("data").getString("homeDocumentType")).isEqualTo("VISION_SCOPE");
+        assertThat(itemKeys(visionScopeId, "ASSUMPTIONS_DEPENDENCIES")).containsExactly("BDE-1");
     }
 
     @Test
@@ -330,10 +333,13 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void createArtifact_WrongHome_Refused() throws Exception {
-        JSONObject refused = create(1, item("RISK", "Team turnover", "A team member may leave.").put("homeDocumentType", "SRS"), this.studentJohnToken);
-        assertThat(refused.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
-        assertThat(refused.getString("message")).isEqualTo("A risk belongs in the Vision and Scope Document, not the Software Requirements Specification.");
+    void createArtifact_HomeDocumentTypeInTheBody_Ignored() throws Exception {
+        // The type alone names the home: a body naming another document changes nothing.
+        long visionScopeId = createVisionScopeForTeam1();
+        JSONObject created = create(1, item("RISK", "Team turnover", "A team member may leave.").put("homeDocumentType", "SRS"), this.studentJohnToken);
+        assertThat(created.getBoolean("flag")).as(created.toString()).isTrue();
+        assertThat(created.getJSONObject("data").getString("homeDocumentType")).isEqualTo("VISION_SCOPE");
+        assertThat(itemKeys(visionScopeId, "RISKS")).containsExactly(created.getJSONObject("data").getString("artifactKey"));
     }
 
     @Test

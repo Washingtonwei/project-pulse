@@ -41,10 +41,26 @@ public class RequirementArtifactController {
         return new Result(true, StatusCode.SUCCESS, "Find requirement artifact successfully.", requirementArtifactDto);
     }
 
+    /**
+     * Creates a requirement artifact in the home its type gives it (UC-ART-create-artifact). The type alone names the
+     * home, so the body names no document or section. Two examples, both for team 1 (the {@code teamId} argument comes
+     * from the URL, never the body):
+     * <pre>
+     * A stakeholder, POST /teams/1/requirement-artifacts with
+     *   {"type": "STAKEHOLDER", "title": "Course instructor", "content": "Grades the teams' work."}
+     * calls createRequirementArtifact(1, artifact of type STAKEHOLDER with that title and content) and lands at the end
+     * of the Vision and Scope's STAKEHOLDER_PROFILES list with the next key, such as STK-3.
+     *
+     * An assumption, with
+     *   {"type": "ASSUMPTION", "title": "Campus sign-in", "content": "Every user has a university account."}
+     * lands in the SRS's ASSUMPTIONS_DEPENDENCIES list with a key such as ASM-2. A business-level one is a
+     * BUSINESS_ASSUMPTION instead, which lands in the Vision and Scope's list of the same name (BAS-n).
+     * </pre>
+     */
     @PostMapping("/teams/{teamId}/requirement-artifacts")
     public Result addRequirementArtifact(@PathVariable Integer teamId, @Valid @RequestBody RequirementArtifactDto requirementArtifactDto) {
         RequirementArtifact newRequirementArtifact = this.requirementArtifactDtoToRequirementArtifactConverter.convert(requirementArtifactDto);
-        RequirementArtifact savedRequirementArtifact = this.requirementArtifactService.createRequirementArtifact(teamId, newRequirementArtifact, requirementArtifactDto.homeDocumentType());
+        RequirementArtifact savedRequirementArtifact = this.requirementArtifactService.createRequirementArtifact(teamId, newRequirementArtifact);
         RequirementArtifactDto savedRequirementArtifactDto = this.requirementArtifactToRequirementArtifactDtoConverter.convert(savedRequirementArtifact);
         return new Result(true, StatusCode.SUCCESS, "Add requirement artifact successfully", savedRequirementArtifactDto);
     }

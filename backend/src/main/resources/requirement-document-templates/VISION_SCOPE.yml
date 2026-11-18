@@ -176,7 +176,7 @@ sections:
   - sectionKey: "ASSUMPTIONS_DEPENDENCIES"
     title: "Business Assumptions and Dependencies"
     type: "LIST"
-    artifactTypes: ["ASSUMPTION", "DEPENDENCY"]
+    artifactTypes: ["BUSINESS_ASSUMPTION", "BUSINESS_DEPENDENCY"]
     guidance: |
       Record assumptions believed to be true without definitive proof.
 

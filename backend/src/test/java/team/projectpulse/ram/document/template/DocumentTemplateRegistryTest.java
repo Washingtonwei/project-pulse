@@ -53,7 +53,7 @@ class DocumentTemplateRegistryTest {
                 "BUSINESS_OBJECTIVES", List.of(RequirementArtifactType.BUSINESS_OBJECTIVE),
                 "SUCCESS_METRICS", List.of(RequirementArtifactType.SUCCESS_METRIC),
                 "RISKS", List.of(RequirementArtifactType.RISK),
-                "ASSUMPTIONS_DEPENDENCIES", List.of(RequirementArtifactType.ASSUMPTION, RequirementArtifactType.DEPENDENCY),
+                "ASSUMPTIONS_DEPENDENCIES", List.of(RequirementArtifactType.BUSINESS_ASSUMPTION, RequirementArtifactType.BUSINESS_DEPENDENCY),
                 "STAKEHOLDER_PROFILES", List.of(RequirementArtifactType.STAKEHOLDER),
                 "EXTERNAL_SYSTEMS", List.of(RequirementArtifactType.EXTERNAL_SYSTEM),
                 "MAJOR_FEATURES", List.of(RequirementArtifactType.FEATURE)));
@@ -129,27 +129,23 @@ class DocumentTemplateRegistryTest {
     }
 
     /**
-     * docs/design/art.md, Tests, "Homes": every type with a list home has exactly one home, except ASSUMPTION and
-     * DEPENDENCY, which have one in Vision and Scope and one in the SRS; each interface type has its own SRS section.
+     * docs/design/art.md, Tests, "Homes": every type with a list home has exactly one home, and every other type none.
+     * The two kinds of assumption and dependency each have their own document; each interface type has its own SRS
+     * section.
      */
     @Test
-    void homesOf_EachListTypeHasItsHomes() {
+    void homeOf_EachListTypeHasOneHome() {
         for (RequirementArtifactType type : RequirementArtifactType.values()) {
-            List<DocumentTemplateRegistry.Home> homes = this.registry.homesOf(type);
-            if (!type.hasListHome()) {
-                assertThat(homes).as(type.name()).isEmpty();
-            } else if (type == RequirementArtifactType.ASSUMPTION || type == RequirementArtifactType.DEPENDENCY) {
-                assertThat(homes).as(type.name()).containsExactlyInAnyOrder(
-                        new DocumentTemplateRegistry.Home(DocumentType.VISION_SCOPE, "ASSUMPTIONS_DEPENDENCIES"),
-                        new DocumentTemplateRegistry.Home(DocumentType.SRS, "ASSUMPTIONS_DEPENDENCIES"));
-            } else {
-                assertThat(homes).as(type.name()).hasSize(1);
-            }
+            assertThat(this.registry.homeOf(type).isPresent()).as(type.name()).isEqualTo(type.hasListHome());
         }
-        assertThat(this.registry.homesOf(RequirementArtifactType.USER_INTERFACE)).containsExactly(new DocumentTemplateRegistry.Home(DocumentType.SRS, "USER_INTERFACES"));
-        assertThat(this.registry.homesOf(RequirementArtifactType.SOFTWARE_INTERFACE)).containsExactly(new DocumentTemplateRegistry.Home(DocumentType.SRS, "SOFTWARE_INTERFACES"));
-        assertThat(this.registry.homesOf(RequirementArtifactType.HARDWARE_INTERFACE)).containsExactly(new DocumentTemplateRegistry.Home(DocumentType.SRS, "HARDWARE_INTERFACES"));
-        assertThat(this.registry.homesOf(RequirementArtifactType.COMMUNICATIONS_INTERFACE)).containsExactly(new DocumentTemplateRegistry.Home(DocumentType.SRS, "COMMUNICATION_INTERFACES"));
+        assertThat(this.registry.homeOf(RequirementArtifactType.BUSINESS_ASSUMPTION)).contains(new DocumentTemplateRegistry.Home(DocumentType.VISION_SCOPE, "ASSUMPTIONS_DEPENDENCIES"));
+        assertThat(this.registry.homeOf(RequirementArtifactType.BUSINESS_DEPENDENCY)).contains(new DocumentTemplateRegistry.Home(DocumentType.VISION_SCOPE, "ASSUMPTIONS_DEPENDENCIES"));
+        assertThat(this.registry.homeOf(RequirementArtifactType.ASSUMPTION)).contains(new DocumentTemplateRegistry.Home(DocumentType.SRS, "ASSUMPTIONS_DEPENDENCIES"));
+        assertThat(this.registry.homeOf(RequirementArtifactType.DEPENDENCY)).contains(new DocumentTemplateRegistry.Home(DocumentType.SRS, "ASSUMPTIONS_DEPENDENCIES"));
+        assertThat(this.registry.homeOf(RequirementArtifactType.USER_INTERFACE)).contains(new DocumentTemplateRegistry.Home(DocumentType.SRS, "USER_INTERFACES"));
+        assertThat(this.registry.homeOf(RequirementArtifactType.SOFTWARE_INTERFACE)).contains(new DocumentTemplateRegistry.Home(DocumentType.SRS, "SOFTWARE_INTERFACES"));
+        assertThat(this.registry.homeOf(RequirementArtifactType.HARDWARE_INTERFACE)).contains(new DocumentTemplateRegistry.Home(DocumentType.SRS, "HARDWARE_INTERFACES"));
+        assertThat(this.registry.homeOf(RequirementArtifactType.COMMUNICATIONS_INTERFACE)).contains(new DocumentTemplateRegistry.Home(DocumentType.SRS, "COMMUNICATION_INTERFACES"));
     }
 
     @Test

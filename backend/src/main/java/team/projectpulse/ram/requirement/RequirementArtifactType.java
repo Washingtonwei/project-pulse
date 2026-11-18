@@ -12,6 +12,10 @@ public enum RequirementArtifactType {
     BUSINESS_OBJECTIVE,
     SUCCESS_METRIC,
     RISK,
+    // Assumptions and dependencies come in two kinds, one per document, so each type has one home (BR-artifact-home):
+    // the business-level ones in the Vision and Scope, the system-level ones in the SRS.
+    BUSINESS_ASSUMPTION,
+    BUSINESS_DEPENDENCY,
     ASSUMPTION,
     DEPENDENCY,
     STAKEHOLDER,
