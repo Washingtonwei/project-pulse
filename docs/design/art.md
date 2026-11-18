@@ -102,7 +102,7 @@ sequenceDiagram
   participant RS as RequirementArtifactService
   participant R as DocumentTemplateRegistry
   participant DB as repositories
-  S->>E: Add item, while holding the section's lock (step 1; a UI gate only)
+  S->>E: Add item, while holding the section's lock (step 1, a UI gate only)
   E->>E: type among the section's artifactTypes (step 2)
   S->>E: title, content, priority, notes (step 3)
   E->>E: required fields (step 4, 4a)
