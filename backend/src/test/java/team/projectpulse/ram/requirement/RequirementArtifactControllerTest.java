@@ -454,6 +454,43 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
         assertThat(refused.getString("message")).contains("locked for review");
     }
 
+    @Test
+    void updateArtifact_OtherTeamsArtifactThroughOwnTeamUrl_NotFound() throws Exception {
+        // Woody is on team 2 and names team 2 in the URL, so the route rule passes; artifact 9 is team 1's.
+        MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/2/requirement-artifacts/9").contentType(MediaType.APPLICATION_JSON)
+                .content(item("FUNCTIONAL_REQUIREMENT", "Taken", "Not mine.").put("version", 0).toString()).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentWoodyToken)).andReturn();
+        JSONObject response = new JSONObject(result.getResponse().getContentAsString());
+        assertThat(response.getInt("code")).isEqualTo(StatusCode.NOT_FOUND);
+    }
+
+    @Test
+    void updateArtifact_TypeWithNoListHome_Refused() throws Exception {
+        // The generic PUT would otherwise bypass the use case lock, the shared-condition wording rule and the glossary.
+        for (RequirementArtifactType type : List.of(RequirementArtifactType.GLOSSARY_TERM, RequirementArtifactType.USE_CASE, RequirementArtifactType.PRECONDITION)) {
+            RequirementArtifact target = this.requirementArtifactRepository.findAll().stream()
+                    .filter(a -> a.getType() == type && a.getTeam().getTeamId() == 1).findFirst()
+                    .orElseThrow(() -> new AssertionError("No team 1 " + type + " in the seed data"));
+            JSONObject refused = update(target.getId(), item(type.name(), "Renamed here", "Should not save.").put("version", target.getVersion()), this.studentJohnToken);
+            assertThat(refused.getInt("code")).as(type.name()).isEqualTo(StatusCode.INVALID_ARGUMENT);
+            assertThat(refused.getString("message")).as(type.name()).contains("is not edited here");
+        }
+    }
+
+    @Test
+    void deleteArtifact_ItemInAList_LeavesNoGap() throws Exception {
+        // Section 16 holds FR-1 and FR-2; a create appends FR-4, then FR-2 (artifact 10) is deleted from the middle.
+        JSONObject created = create(1, item("FUNCTIONAL_REQUIREMENT", "Audit log", "The system shall log every change."), this.studentJohnToken);
+        assertThat(created.getBoolean("flag")).as(created.toString()).isTrue();
+        MvcResult deleted = this.mockMvc.perform(delete(this.baseUrl + "/teams/1/requirement-artifacts/10")
+                .accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken)).andReturn();
+        assertThat(new JSONObject(deleted.getResponse().getContentAsString()).getBoolean("flag")).isTrue();
+
+        // Reload from the database, past this test's persistence context, so the stored indexes are what is read.
+        this.entityManager.flush();
+        this.entityManager.clear();
+        assertThat(itemKeys(1L, "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS")).containsExactly("FR-1", "FR-4");
+    }
+
     private static JSONObject item(String type, String title, String content) throws Exception {
         return new JSONObject().put("type", type).put("title", title).put("content", content).put("priority", "MEDIUM").put("notes", "");
     }

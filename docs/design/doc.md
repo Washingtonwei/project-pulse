@@ -392,7 +392,7 @@ The step tables and their `*_index` order columns are unchanged. The dev seed ad
 - Optimistic locking (OI-51): `UseCase` is the aggregate root, so its `@Version` covers all three child levels.
 - Artifact keys: `RequirementArtifactService.saveRequirementArtifact` mints the keys of the use case and of every new condition, as it does for every artifact.
 - Error mapping: `ExceptionHandlerAdvice` already maps `MethodArgumentNotValidException` and `IllegalArgumentException` to 400, `ObjectNotFoundException` to 404, the two lock exceptions to 409 and 423, and `OptimisticLockException` to 409.
-- The same pairing rule (ids only select among the parent's own children) is used by `DocumentSectionService.resolveSectionItems` for a document section's requirement artifacts (see [art.md](art.md)).
+- A document section's requirement artifacts no longer pair by id at all: the section save stores prose only, and each artifact is created and edited through its own endpoint (see [art.md](art.md)).
 
 ## Tests
 

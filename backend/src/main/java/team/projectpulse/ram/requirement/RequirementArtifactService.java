@@ -115,10 +115,12 @@ public class RequirementArtifactService {
         DocumentSection section = this.documentSectionRepository.findByIdForUpdate(found.getId())
                 .orElseThrow(() -> new ObjectNotFoundException("document section", found.getId()));
 
-        // Appending first sets the artifact's home, so the row is inserted once, already in its list; the index is
-        // written from its position at the end of the list just read under the lock.
+        // Team and key first: minting the key runs a query, and a query may flush pending changes, so the draft must not
+        // be in the section's cascading list yet. Then appending sets its home, and the row is inserted once, keyed and
+        // already in its list, with its index taken from its position at the end of the list just read under the lock.
+        assignTeamAndKey(teamId, draft);
         section.addRequirementArtifact(draft);
-        return saveRequirementArtifact(teamId, draft);
+        return this.requirementArtifactRepository.save(draft);
     }
 
     /**
@@ -127,6 +129,14 @@ public class RequirementArtifactService {
      * carried.
      */
     public RequirementArtifact saveRequirementArtifact(Integer teamId, RequirementArtifact newRequirementArtifact) {
+        assignTeamAndKey(teamId, newRequirementArtifact);
+        return this.requirementArtifactRepository.save(newRequirementArtifact);
+    }
+
+    /**
+     * Prepares a new artifact for its first insert: clears any id, sets the route's team, and mints its key.
+     */
+    private void assignTeamAndKey(Integer teamId, RequirementArtifact newRequirementArtifact) {
         // Every caller creates, and the object may come straight from a request body, whose id names any row in any
         // team. Saving an entity that has an id merges it over that row, so the id is cleared first: a create can
         // never overwrite another artifact, whatever the converter mapped (OI-46). Updates load the stored row through
@@ -142,10 +152,7 @@ public class RequirementArtifactService {
             throw new IllegalArgumentException("RequirementArtifact.type is required to generate artifactKey.");
         }
 
-        // Generate and set the artifact key
         newRequirementArtifact.setArtifactKey(generateNextArtifactKey(teamId, newRequirementArtifact.getType()));
-
-        return this.requirementArtifactRepository.save(newRequirementArtifact);
     }
 
     /**
@@ -153,8 +160,10 @@ public class RequirementArtifactService {
      * (UC-ART-edit-artifact). Its type, key and home never change here. The save is flushed so the returned artifact
      * carries its new version, which the editor sends with its next change.
      *
-     * @throws RequirementArtifactRejectedException (400) if no version is given, or the home document is locked for
-     *                                              review (PRE-3); an artifact with no home skips that check
+     * @throws RequirementArtifactRejectedException (400) if no version is given, the artifact's type has no list home
+     *                                              (a glossary term, use case or condition, each edited through its
+     *                                              own use case and lock), or the home document is locked for review
+     *                                              (PRE-3)
      * @throws OptimisticLockException              (409) if {@code expectedVersion} is stale (extension 10a)
      */
     public RequirementArtifact updateRequirementArtifact(Integer teamId, Long requirementArtifactId, RequirementArtifact update, Integer expectedVersion) {
@@ -163,6 +172,13 @@ public class RequirementArtifactService {
         }
         RequirementArtifact oldRequirementArtifact = this.requirementArtifactRepository.findByIdAndTeamTeamId(requirementArtifactId, teamId)
                 .orElseThrow(() -> new ObjectNotFoundException("requirement artifact", requirementArtifactId));
+        if (!oldRequirementArtifact.getType().hasListHome()) {
+            // These have their own editors and rules: a use case is edited under its use case lock
+            // (BR-edit-lock-required), a condition only on the condition itself (BR-shared-condition-wording), and a
+            // glossary term through the glossary. This generic route would bypass all three.
+            throw new RequirementArtifactRejectedException(capitalize(withArticle(label(oldRequirementArtifact.getType())))
+                    + " is not edited here: glossary terms are edited in the glossary, and use cases and their conditions in the use case editor.");
+        }
         if (!expectedVersion.equals(oldRequirementArtifact.getVersion())) {
             throw new OptimisticLockException("This requirement artifact has been changed by someone else. Please refresh and try again.");
         }
@@ -176,8 +192,20 @@ public class RequirementArtifactService {
         return this.requirementArtifactRepository.saveAndFlush(oldRequirementArtifact);
     }
 
+    /**
+     * Deletes artifact {@code requirementArtifactId} of {@code teamId}. An artifact in a list is first taken out of its
+     * home's list, under the same row lock a create takes, so the items after it move up and the list keeps no gap: a
+     * gap in {@code artifact_index} would load as a null item. The logical delete and the referenced-artifact block are
+     * UC-ART-delete-artifact's, not yet designed; the editor offers no Remove until then.
+     */
     public void deleteRequirementArtifact(Integer teamId, Long requirementArtifactId) {
         RequirementArtifact existing = this.findRequirementArtifactById(teamId, requirementArtifactId);
+        if (existing.getSourceDocumentSection() != null) {
+            Long sectionId = existing.getSourceDocumentSection().getId();
+            DocumentSection section = this.documentSectionRepository.findByIdForUpdate(sectionId)
+                    .orElseThrow(() -> new ObjectNotFoundException("document section", sectionId));
+            section.getRequirementArtifacts().remove(existing);
+        }
         this.requirementArtifactRepository.delete(existing);
     }
 

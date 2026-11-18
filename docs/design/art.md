@@ -19,7 +19,7 @@ Not covered here, each to be designed on its own:
 
 There is one create endpoint, `POST /teams/{teamId}/requirement-artifacts`, for every surface. The request names the artifact type and may name the home document type. The home document type is required only for `ASSUMPTION` and `DEPENDENCY`, which have two homes; the document section view always sends its own, so the artifact lands in the list the student is looking at, and the catalog sends it only when it asks the student. The server resolves the home: the template registry maps the type (and, for the two-home types, the document type) to one section key, and the team's document of that type holds the section with that key. No document or section id travels in the body.
 
-The service locks the home document section's row, appends the artifact to the section's list (which sets its home), and saves it with a freshly minted key, so the row is inserted once with its home and `artifact_index` is written at the end. It does not check the document section's lock: the section view offers Add and Edit only to the lock holder, as a UI gate (UC-DOC-edit-document, BR-edit-lock-required).
+The service locks the home document section's row, mints the key, appends the artifact to the section's list (which sets its home), and saves it, so the row is inserted once with its key and home and `artifact_index` is written at the end. The key is minted first because minting runs a query, which may flush pending changes, and the draft must not be in the cascading list by then. It does not check the document section's lock: the section view offers Add and Edit only to the lock holder, as a UI gate (UC-DOC-edit-document, BR-edit-lock-required).
 
 ## Components & classes
 
@@ -116,8 +116,8 @@ sequenceDiagram
   RS->>DB: the team's document of that type and its section with that key: 400 if none (8b)
   RS->>RS: document SUBMITTED: 400 (8a, BR-review-lock)
   RS->>DB: findByIdForUpdate(section id): row lock on the home section
-  RS->>RS: section.addRequirementArtifact: appended at the end, home set (POST-3)
-  RS->>RS: saveRequirementArtifact: team, key, one insert (step 8, BR-artifact-key-unique)
+  RS->>RS: team and key, before the draft joins the cascading list (step 8, BR-artifact-key-unique)
+  RS->>RS: section.addRequirementArtifact, then save: one insert, appended at the end (POST-3)
   RS-->>C: the artifact with id, key and version
   C-->>E: 200
   E->>E: append it to the list, showing its key (step 9)
@@ -132,7 +132,7 @@ All routes are under the API base URL and return the `Result` envelope. "Team me
 | Endpoint | Caller (who may) | Request | Success | Errors, by extension |
 |---|---|---|---|---|
 | `POST /teams/{teamId}/requirement-artifacts` (changed) | team member | `type`, `title`, `content`, `priority`, `notes`, and `homeDocumentType`: the `DocumentType` of the home (`VISION_SCOPE`, `SRS` or `BUSINESS_RULES`), required for `ASSUMPTION` and `DEPENDENCY`, optional otherwise but, when sent, it must be the type's one home. The section view always sends its own document type. Any `id`, `artifactKey` or `version` in the body is ignored | the artifact with its `id`, `artifactKey`, `version` and `homeDocumentType` | 400 field errors (4a); 400 "The request is malformed." for an unknown `type` or `homeDocumentType` value (the existing handler); 400 with a message (see Refusals) for a type with no list home, a missing or wrong home, a home document not created (8b), or a home document locked for review (8a) |
-| `PUT /teams/{teamId}/requirement-artifacts/{requirementArtifactId}` (changed) | team member | `version` (required) and the editable fields `title`, `content`, `priority`, `notes`; type and home are ignored | the artifact with its new `version` | 400 no `version`; 400 field errors; 400 home document locked for review (UC-ART-edit-artifact PRE-3; an artifact with no home, such as a glossary term or a condition, skips this check); 409 stale version (10a); 404 not in the team |
+| `PUT /teams/{teamId}/requirement-artifacts/{requirementArtifactId}` (changed) | team member | `version` (required) and the editable fields `title`, `content`, `priority`, `notes`; type and home are ignored | the artifact with its new `version` | 400 no `version`; 400 field errors; 400 a type with no list home (a glossary term, use case or condition is edited through its own use case and lock); 400 home document locked for review (UC-ART-edit-artifact PRE-3); 409 stale version (10a); 404 not in the team |
 | `GET …/document-sections/{documentSectionId}` (changed) | team member | none | each nested item now also carries its `version`, which the editor sends back on the PUT | unchanged |
 | `PUT /teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}` (changed) | team member holding the document section's lock | `version` and `content`; `requirementArtifacts` is no longer read | the stored document section | the existing lock and version errors |
 | `POST /teams/{teamId}/requirement-artifacts/search` (reused) | team member | criteria `type` and `title`, page `size=5` | the team's artifacts of that type whose title contains the text (SQL `LIKE`, case-insensitive through the column's MySQL collation) | none new |
@@ -152,6 +152,7 @@ One exception, `RequirementArtifactRejectedException` (the renamed `SectionItemR
 | 8a | "The {home title} is locked for review, so it cannot be changed." |
 | Home document predates its list (a document created from an older template, staging only) | "The team's {home title} was created from an older template and has no list for {a type label}." |
 | PUT with no `version` | "The requirement artifact's version is required to save a change." |
+| PUT on a type with no list home | "{A type label} is not edited here: glossary terms are edited in the glossary, and use cases and their conditions in the use case editor." |
 
 ### Item rules
 
@@ -206,6 +207,8 @@ The home stays `requirement_artifact.source_document_section_id`, nullable at th
 | Versions in the section GET | integration | Each nested item of a list section carries its `version` |
 | Prose-only section save | integration | A `requirementArtifacts` list sent in the document section PUT changes nothing in the list |
 | Cross-team | integration | A non-member is refused with 403 |
+| PUT on a type with no list home | integration | A glossary term, a use case and a precondition are each refused with 400 |
+| Delete leaves no gap | integration | Deleting the middle item of a list leaves the others in order, reloaded from the database |
 | Instructor | integration | An instructor of the team's course section can create an artifact; an instructor of another course section is refused with 403 |
 | Homes | unit | Every type with `hasListHome()` has exactly one home except `ASSUMPTION` and `DEPENDENCY`, which have two; each interface type maps to its own SRS section; no template admits a type without a list home |
 | V11 | integration, at startup | Flyway applies V1 to V11 on each test run's fresh database |
@@ -217,8 +220,7 @@ The home stays `requirement_artifact.source_document_section_id`, nullable at th
 - **The review lock (8a)** reads `RequirementDocument.status`; review itself is not built, so the test sets the status directly.
 - **Whether a reorder bumps each artifact's version** is unverified. It matters to the reorder design, not to this one.
 - **Reorder and its order version are deferred.** DI-concurrency-control's order version is realized by the reorder design; V11 adds no order column. The editor has no reorder controls today, so nothing needs hiding.
-- **The hard-delete `DELETE` stays callable.** Hiding Remove keeps students away from it, but a direct call still hard-deletes and cascades links away, against BR-deletion-integrity. No requirement artifact exists in production, and UC-ART-delete-artifact's design replaces the endpoint's behavior.
+- **The hard-delete `DELETE` stays callable.** Hiding Remove keeps students away from it, but a direct call still hard-deletes and cascades links away, against BR-deletion-integrity. It does take the item out of its home list first, under the same row lock a create takes, so the list keeps no gap in `artifact_index` (a gap would load as a null item). No requirement artifact exists in production, and UC-ART-delete-artifact's design replaces the endpoint's behavior.
 - **The UI lock gate can be stale.** If the student's document section lock expires while the Add dialog is open, the create still succeeds, because the server does not check the lock for items. This is the specified behavior (BR-edit-lock-required); the next prose save is what the expired lock refuses.
 - **Teammates' creates do not appear live.** An artifact created from the catalog shows in an open section view only when that view reloads, since real-time collaboration (UC-COL-collaborative-edit) is deferred.
-- **The generic PUT also edits artifacts with no home** (glossary terms, preconditions, postconditions), as it does today. Whether it should, given BR-shared-condition-wording and the glossary's own endpoints, is left to UC-ART-edit-artifact's design.
 - **Logical delete and the indexes.** When UC-ART-delete-artifact adds the logical delete, it decides whether a deleted item keeps its place in the list; indexes come from list position, so this design needs no change for it.
