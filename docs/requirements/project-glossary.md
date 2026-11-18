@@ -112,7 +112,7 @@ A requirement artifact may represent:
   - a business rule
   - a functional requirement
   - a quality attribute
-  - an external interface requirement
+  - an external interface requirement: a user interface, a software interface, a hardware interface, or a communications interface
   - a constraint
   - a data requirement
   - an operating environment
@@ -124,7 +124,7 @@ A requirement artifact may represent:
   - an assumption
   - a dependency
 
-These map one-to-one to the `RequirementArtifactType` enumeration in the data model (the SRS's Business Domain Model), which is the authoritative taxonomy; the `OTHER` enum value is an implementation fallback and is not a distinct domain concept. "Background" and the vision statement are document narrative (prose document sections), not tracked artifacts.
+These map one-to-one to the `RequirementArtifactType` enumeration in the data model (the SRS's Business Domain Model), which is the authoritative taxonomy; an external interface requirement is typed as one of its four kinds (`USER_INTERFACE`, `SOFTWARE_INTERFACE`, `HARDWARE_INTERFACE`, `COMMUNICATIONS_INTERFACE`), and there is no catch-all type. "Background" and the vision statement are document narrative (prose document sections), not tracked artifacts.
 
 Requirement artifacts are:
 
@@ -244,7 +244,7 @@ A document section specifies:
 - whether the document section contains narrative text or a list of artifacts
 - for a list, which artifact types it admits
 
-A list-type document section holds the requirement artifacts of the types its template admits (BR-artifact-home). Adding an item to it creates an artifact there, and removing an item deletes that artifact (BR-section-artifact-removal). Artifacts with no document section home, such as a use case's preconditions and postconditions, are authored elsewhere and belong to no document section.
+A list-type document section is the home of the requirement artifacts of the types its template admits, and shows them in the order the team gives them (BR-artifact-home). It is a view of those artifacts, not their owner: an artifact can be created, edited, or deleted from the document section or from outside any document, and it appears in its home either way. Adding an item to a list-type document section creates an artifact there, and removing an item deletes that artifact (BR-section-artifact-removal). Artifacts with no document section home, such as a use case's preconditions and postconditions, are authored elsewhere and belong to no document section.
 
 ## **Section Key**
 
@@ -332,7 +332,7 @@ A requirement artifact describing a measurable non-functional characteristic of 
 
 ## **External Interface Requirement**
 
-A requirement artifact describing how the system interacts with an external entity: users (user interfaces), other software systems (software interfaces and APIs), hardware, or communication channels.
+A requirement artifact describing how the system interacts with an external entity: users (user interfaces), other software systems (software interfaces and APIs), hardware, or communication channels. Each kind is its own artifact type, with its own home document section in the SRS.
 
 ## **Glossary Term**
 
