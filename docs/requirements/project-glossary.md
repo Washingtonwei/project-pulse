@@ -121,6 +121,8 @@ A requirement artifact may represent:
   - a stakeholder
   - an external system
   - a risk
+  - a business assumption
+  - a business dependency
   - an assumption
   - a dependency
 
@@ -356,11 +358,21 @@ A requirement artifact describing a software system, service, or device outside 
 
 A requirement artifact stating a condition taken to be true for purposes of planning or specification but not yet verified. Assumptions that turn out to be false may invalidate requirements that depend on them.
 
-An assumption may be business-level (about adoption, environment, or organizational reality — authored in Vision and Scope's Business Assumptions and Dependencies section) or architecture-level (about the technical environment the system relies on, such as supported browsers or the stability of an external API contract — authored in the Software Requirements Specification's Assumptions and Dependencies section). Both are the same artifact type and share one team-wide `AS-*` key sequence across the two authoring homes.
+An assumption is architecture-level: it concerns the technical environment the system relies on, such as supported browsers or the stability of an external API contract, and is authored in the Software Requirements Specification's Assumptions and Dependencies document section. A business-level one is a business assumption, a separate artifact type with its own home and key sequence.
+
+## **Business Assumption**
+
+An assumption about adoption, environment, or organizational reality rather than the technical environment, such as students having time each week to update their documents. It is authored in the Vision and Scope's Business Assumptions and Dependencies document section. It is a separate artifact type from an assumption, with its own home and key sequence, so each type has exactly one home.
 
 ## **Dependency**
 
 A requirement artifact identifying an external factor outside the project's control that the system relies on (e.g., third-party APIs, infrastructure availability, decisions by other teams). Project success may be affected if a dependency fails or changes.
+
+A dependency is architecture-level, such as a third-party API, and is authored in the Software Requirements Specification's Assumptions and Dependencies document section. A business-level one is a business dependency.
+
+## **Business Dependency**
+
+A dependency on a business or organizational factor rather than a technical one, such as a decision by another team or the course calendar. It is authored in the Vision and Scope's Business Assumptions and Dependencies document section. It is a separate artifact type from a dependency, with its own home and key sequence.
 
 ## **Validation (ReqLint)**
 
