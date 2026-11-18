@@ -17,6 +17,8 @@ import type {
   UseCaseLockResponse,
   GlossaryTermResponse,
   RequirementArtifact,
+  RequirementArtifactResponse,
+  RequirementArtifactSummary,
   UpdateDocumentSectionRequest
 } from './types'
 
@@ -129,6 +131,27 @@ export const lockUseCase = (teamId: number, useCaseId: number, requestBody: UseC
 
 export const unlockUseCase = (teamId: number, useCaseId: number) =>
   request.delete<any, UseCaseLockResponse>(`${API.TEAM_DOCUMENTS}/${teamId}/use-cases/${useCaseId}/lock`)
+
+// UC-ART-create-artifact: the server places the artifact in the home its type gives it (BR-artifact-home) and
+// returns it with its key and version.
+export const createRequirementArtifact = (teamId: number, payload: RequirementArtifactSummary) =>
+  request.post<any, RequirementArtifactResponse>(`${API.TEAM_DOCUMENTS}/${teamId}/requirement-artifacts`, payload)
+
+export const findRequirementArtifactById = (teamId: number, requirementArtifactId: number) =>
+  request.get<any, RequirementArtifactResponse>(
+    `${API.TEAM_DOCUMENTS}/${teamId}/requirement-artifacts/${requirementArtifactId}`
+  )
+
+// UC-ART-edit-artifact: the payload carries the version the artifact was read at; a stale one is refused with 409.
+export const updateRequirementArtifact = (
+  teamId: number,
+  requirementArtifactId: number,
+  payload: RequirementArtifactSummary
+) =>
+  request.put<any, RequirementArtifactResponse>(
+    `${API.TEAM_DOCUMENTS}/${teamId}/requirement-artifacts/${requirementArtifactId}`,
+    payload
+  )
 
 export const getGlossaryTermById = (teamId: number, glossaryTermId: number) =>
   request.get<any, GlossaryTermResponse>(

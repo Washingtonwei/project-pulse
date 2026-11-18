@@ -264,7 +264,9 @@
                 <el-table-column label="Type" prop="type" width="180" />
                 <el-table-column label="Title" prop="title" />
                 <el-table-column label="Priority" prop="priority" width="120" />
-                <el-table-column label="Actions" width="170">
+                <!-- No Delete button yet: removing an item deletes its artifact (BR-section-artifact-removal), which
+                     waits for UC-ART-delete-artifact's logical delete (docs/design/art.md, Scope). -->
+                <el-table-column label="Actions" width="100">
                   <template #default="{ $index }">
                     <div class="actions-cell">
                       <el-button
@@ -273,14 +275,6 @@
                         @click="openEditArtifact($index)"
                       >
                         Edit
-                      </el-button>
-                      <el-button
-                        size="small"
-                        type="danger"
-                        :disabled="!canEdit"
-                        @click="removeArtifact($index)"
-                      >
-                        Delete
                       </el-button>
                     </div>
                   </template>
@@ -344,7 +338,7 @@
       </el-alert>
       <template #footer>
         <el-button @click="artifactDialogVisible = false">Cancel</el-button>
-        <el-button type="primary" :loading="checkingDuplicates" @click="saveArtifact">
+        <el-button type="primary" :loading="checkingDuplicates || savingArtifact" @click="saveArtifact">
           {{ duplicateMatches.length ? 'Add anyway' : 'Save' }}
         </el-button>
       </template>
@@ -406,13 +400,16 @@ import {
   type UpdateDocumentSectionRequest
 } from '@/apis/ram/types'
 import {
+  createRequirementArtifact,
   findDocumentById,
   findDocumentSectionById,
+  findRequirementArtifactById,
   getDocumentSectionLock,
   lockDocumentSection,
   searchRequirementArtifacts,
   unlockDocumentSection,
-  updateDocumentSection
+  updateDocumentSection,
+  updateRequirementArtifact
 } from '@/apis/ram'
 
 const router = useRouter()
@@ -457,9 +454,11 @@ const sectionRequestToken = ref(0)
 // Local loading state for the currently selected section's content and artifacts. This allows showing a loading indicator in the editor area while the section data is being fetched, without blocking the entire document view.
 const sectionLoading = ref(false)
 
-// Local state for the rich text editor content and requirement artifacts list, which are edited before saving to the server
+// The rich text content is a draft until the section is saved. The list of requirement artifacts is not: it mirrors the
+// server, since each create and edit is stored at once through the artifact endpoints (UC-DOC-edit-document).
 const draftContent = ref('')
 const draftArtifacts = ref<RequirementArtifactSummary[]>([])
+const savingArtifact = ref(false)
 
 const artifactDialogVisible = ref(false)
 const artifactDraft = ref<RequirementArtifactSummary>(emptyArtifactDraft(''))
@@ -664,21 +663,8 @@ async function saveSection() {
   try {
     const payload: UpdateDocumentSectionRequest = {
       type: selectedSection.value.type,
-      content: draftContent.value, // For rich text sections, this is the HTML content. For list sections, this can be ignored.
-      // For list sections, the whole list in display order. Each item sends only what the save reads: its id (a stored
-      // item; a new one has none) and its fields. The key and the document section are the server's to set, so they
-      // are not sent. For rich text sections, this can be an empty array.
-      requirementArtifacts:
-        selectedSection.value.type === 'LIST'
-          ? draftArtifacts.value.map((artifact) => ({
-              id: artifact.id,
-              type: artifact.type,
-              title: artifact.title,
-              content: artifact.content,
-              priority: artifact.priority,
-              notes: artifact.notes
-            }))
-          : [],
+      // The section's own content only: its items were already stored as they were added or edited.
+      content: draftContent.value,
       version: selectedSection.value.version ?? null
     }
 
@@ -730,10 +716,6 @@ function openEditArtifact(index: number) {
   artifactDialogVisible.value = true
 }
 
-function removeArtifact(index: number) {
-  draftArtifacts.value.splice(index, 1)
-}
-
 function openDuplicate(match: RequirementArtifact) {
   openedDuplicate.value = match
   duplicateDialogVisible.value = true
@@ -758,14 +740,17 @@ async function findDuplicates(type: string, title: string): Promise<RequirementA
   }
 }
 
-// UC-ART-create-artifact steps 4 to 7: check the required fields, then, for a new item, warn about possible duplicates
-// before adding it. A second confirm of the same type and title adds it anyway (5a1). Editing an item is not checked.
+// UC-ART-create-artifact steps 4 to 9 and UC-ART-edit-artifact. Required fields first; a new item is then checked for
+// possible duplicates (a second confirm of the same type and title creates it anyway, 5a2) and created at once, landing at
+// the end of this list with its key. An edit is saved at once with the version it was read at; a stale one (10a) puts
+// the artifact's current details in the dialog so the student can reapply her change.
 async function saveArtifact() {
   const draft = artifactDraft.value
   if (!draft.type || !draft.title.trim() || !draft.content.trim()) {
     ElMessage.warning('Type, title and content are required.')
     return
   }
+  if (!effectiveTeamId.value) return
 
   if (artifactEditingIndex.value === null) {
     const checkKey = `${draft.type}\n${draft.title.trim()}`
@@ -779,9 +764,50 @@ async function saveArtifact() {
       duplicateCheckedFor.value = checkKey
       if (duplicateMatches.value.length) return
     }
-    draftArtifacts.value.push({ ...draft })
+    savingArtifact.value = true
+    try {
+      // The section's document type names the home, so the artifact lands in this list (BR-artifact-home).
+      const result = await createRequirementArtifact(effectiveTeamId.value, {
+        type: draft.type,
+        title: draft.title,
+        content: draft.content,
+        priority: draft.priority,
+        notes: draft.notes,
+        homeDocumentType: document.value?.type ?? null
+      })
+      draftArtifacts.value.push(result.data)
+      ElMessage.success(`${result.data.artifactKey} created`)
+    } finally {
+      savingArtifact.value = false
+    }
   } else {
-    draftArtifacts.value[artifactEditingIndex.value] = { ...draft }
+    const index = artifactEditingIndex.value
+    const id = draft.id
+    if (id == null) return
+    savingArtifact.value = true
+    try {
+      const result = await updateRequirementArtifact(effectiveTeamId.value, id, {
+        type: draft.type,
+        title: draft.title,
+        content: draft.content,
+        priority: draft.priority,
+        notes: draft.notes,
+        version: draft.version ?? null
+      })
+      draftArtifacts.value[index] = result.data
+      ElMessage.success(`${result.data.artifactKey} saved`)
+    } catch (error: any) {
+      if (error?.response?.status === 409) {
+        const current = await findRequirementArtifactById(effectiveTeamId.value, id)
+        draftArtifacts.value[index] = current.data
+        artifactDraft.value = { ...current.data }
+        ElMessage.warning('The current details are now in the dialog. Reapply your change there.')
+        return
+      }
+      throw error
+    } finally {
+      savingArtifact.value = false
+    }
   }
 
   resetDuplicateCheck()
