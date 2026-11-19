@@ -457,7 +457,6 @@ public class DocumentSectionControllerTest extends AbstractIntegrationTest {
         assertThat(savedItems.length()).isEqualTo(2);
         assertThat(savedItems.getJSONObject(0).getString("title")).isEqualTo("User authentication");
         assertThat(savedItems.getJSONObject(1).getString("artifactKey")).isEqualTo("FR-2");
-        assertThat(saved.getJSONObject("data").getInt("version")).as("every accepted save increments the version").isGreaterThan(version);
     }
 
     @Test

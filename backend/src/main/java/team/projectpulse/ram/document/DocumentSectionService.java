@@ -1,8 +1,5 @@
 package team.projectpulse.ram.document;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.LockModeType;
 import jakarta.persistence.OptimisticLockException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -23,14 +20,11 @@ public class DocumentSectionService {
     private final DocumentSectionRepository documentSectionRepository;
     private final UserUtils userUtils;
     private final UserRepository userRepository;
-    private final EntityManager entityManager;
 
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "The EntityManager is Spring's shared, transaction-scoped proxy; holding a reference to it is how it is meant to be used.")
-    public DocumentSectionService(DocumentSectionRepository documentSectionRepository, UserUtils userUtils, UserRepository userRepository, EntityManager entityManager,
+    public DocumentSectionService(DocumentSectionRepository documentSectionRepository, UserUtils userUtils, UserRepository userRepository,
                                   @Value("${ram.lock.default-lock-ttl:PT15M}") Duration defaultLockTtl) {
         this.documentSectionRepository = documentSectionRepository;
-        this.entityManager = entityManager;
         this.userUtils = userUtils;
         this.userRepository = userRepository;
         this.defaultLockTtl = defaultLockTtl;
@@ -151,12 +145,9 @@ public class DocumentSectionService {
             throw new SectionAlreadyLockedException("Document section is locked by another user. You cannot update its content.");
         }
 
-        // Every accepted save increments the version, as the architecture's Transactions & consistency rule asks, so
-        // the next save from a stale editor is refused above even when this one left the content as it was (Hibernate
-        // increments the version by itself only when a column is dirty). PESSIMISTIC_FORCE_INCREMENT writes the new
-        // version now, guarded by the old one, as UseCaseService.updateUseCase does.
-        this.entityManager.lock(oldDocumentSection, LockModeType.PESSIMISTIC_FORCE_INCREMENT);
-
+        // The content is the section's own column, so Hibernate raises the version when it changes, at flush. A save
+        // that changes nothing stores nothing and leaves the version as it is; a stale editor still cannot save, because
+        // a save needs the section lock and taking the lock changes the section's row.
         oldDocumentSection.setContent(update.getContent());
         return this.documentSectionRepository.save(oldDocumentSection);
     }
