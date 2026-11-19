@@ -264,10 +264,10 @@
                 <el-table-column label="Type" prop="type" width="180" />
                 <el-table-column label="Title" prop="title" />
                 <el-table-column label="Priority" prop="priority" width="120" />
-                <!-- No Delete button yet: removing an item deletes its artifact (BR-section-artifact-removal), which
-                     waits for UC-ART-delete-artifact's logical delete (docs/design/art.md, Scope). -->
-                <el-table-column label="Actions" width="100">
-                  <template #default="{ $index }">
+                <!-- Remove deletes the artifact for good (BR-section-artifact-removal, UC-ART-delete-artifact), and is
+                     offered under the same condition as Add and Edit: holding the document section's lock. -->
+                <el-table-column label="Actions" width="170">
+                  <template #default="{ row, $index }">
                     <div class="actions-cell">
                       <el-button
                         size="small"
@@ -275,6 +275,16 @@
                         @click="openEditArtifact($index)"
                       >
                         Edit
+                      </el-button>
+                      <el-button
+                        size="small"
+                        type="danger"
+                        plain
+                        :disabled="!canEdit || (removingId !== null && removingId !== row.id)"
+                        :loading="removingId === row.id"
+                        @click="removeArtifact(row.id)"
+                      >
+                        Remove
                       </el-button>
                     </div>
                   </template>
@@ -382,7 +392,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { EditorContent, useEditor } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
@@ -392,6 +402,7 @@ import type { Instructor } from '@/apis/instructor/types'
 import type { Student } from '@/apis/student/types'
 import {
   PRIORITIES,
+  type ArtifactReferrer,
   type RequirementArtifact,
   type RequirementArtifactSummary,
   type RequirementDocument,
@@ -401,9 +412,11 @@ import {
 } from '@/apis/ram/types'
 import {
   createRequirementArtifact,
+  deleteRequirementArtifact,
   findDocumentById,
   findDocumentSectionById,
   findRequirementArtifactById,
+  getArtifactReferences,
   getDocumentSectionLock,
   lockDocumentSection,
   searchRequirementArtifacts,
@@ -459,6 +472,8 @@ const sectionLoading = ref(false)
 const draftContent = ref('')
 const draftArtifacts = ref<RequirementArtifactSummary[]>([])
 const savingArtifact = ref(false)
+// The id of the item whose Remove is running: its button shows a spinner, and every Remove waits (UC-ART-delete-artifact).
+const removingId = ref<number | null>(null)
 
 const artifactDialogVisible = ref(false)
 const artifactDraft = ref<RequirementArtifactSummary>(emptyArtifactDraft(''))
@@ -812,6 +827,115 @@ async function saveArtifact() {
 
   resetDuplicateCheck()
   artifactDialogVisible.value = false
+}
+
+// "the link FR-1 DERIVES_FROM UC-1", "UC-1 names it as its primary actor": a link always reads source, type, target,
+// as in the server's 4a message.
+function describeReferrer(key: string, referrer: ArtifactReferrer): string {
+  switch (referrer.relation) {
+    case 'LINK_FROM':
+      return `the link ${key} ${referrer.linkType} ${referrer.artifactKey}`
+    case 'LINK_TO':
+      return `the link ${referrer.artifactKey} ${referrer.linkType} ${key}`
+    case 'PRIMARY_ACTOR':
+      return `${referrer.artifactKey} names it as its primary actor`
+    default:
+      return `${referrer.artifactKey} names it as a secondary actor`
+  }
+}
+
+// The position of the item with this id in the list shown now. The list can change while Remove waits on the server or
+// on a dialog (a section switch, a reload), so Remove finds its item again by id after every wait, never by an old index.
+function indexOfArtifact(id: number): number {
+  return draftArtifacts.value.findIndex((artifact) => artifact.id === id)
+}
+
+// Drops the item with this id from the list shown now, if it is still there.
+function dropArtifact(id: number) {
+  const index = indexOfArtifact(id)
+  if (index >= 0) draftArtifacts.value.splice(index, 1)
+}
+
+// UC-ART-delete-artifact, steps 1 to 7 (docs/design/art.md, Item rules). The item as the list shows it is step 2's view.
+// One Remove runs at a time: every row's Remove is disabled while removingId is set.
+async function removeArtifact(id: number | undefined) {
+  if (id == null || !effectiveTeamId.value || removingId.value !== null) return
+  const teamId = effectiveTeamId.value
+  let item = draftArtifacts.value[indexOfArtifact(id)]
+  if (!item) return
+  const key = item.artifactKey ?? 'This requirement'
+  removingId.value = id
+  try {
+    // The DELETE needs the version this editor read (7a). An item shown without one is read again, so the delete is
+    // never sent at a guessed version.
+    if (item.version == null) {
+      // A 404 here (a teammate deleted it) reaches the catch below, which drops the item.
+      item = (await findRequirementArtifactById(teamId, id, true)).data
+      const index = indexOfArtifact(id)
+      if (index >= 0) draftArtifacts.value[index] = item
+    }
+
+    // Step 4: what refers to it. Anything at all is extension 4a: list it, offer only Close, delete nothing.
+    const references = await getArtifactReferences(teamId, id)
+    if (references.data.length) {
+      const referrers = references.data
+        .map((referrer) => describeReferrer(key, referrer))
+        .join('; ')
+      await ElMessageBox.alert(
+        `${key} cannot be deleted while other artifacts refer to it: ${referrers}. Remove or repoint these references first.`,
+        `Cannot delete ${key}`,
+        { type: 'warning', confirmButtonText: 'Close' }
+      ).catch(() => undefined)
+      return
+    }
+
+    // Steps 5 and 6: the consequences, and the confirm. Cancel ends the use case with nothing changed.
+    const confirmed = await ElMessageBox.confirm(
+      `${key} ${item.title} and its comment threads will be deleted permanently and cannot be recovered. Delete it?`,
+      `Delete ${key}`,
+      { type: 'warning', confirmButtonText: 'Delete', cancelButtonText: 'Cancel' }
+    )
+      .then(() => true)
+      .catch(() => false)
+    if (!confirmed) return
+
+    // Step 7: delete at the version this editor read. The server checks the references again.
+    await deleteRequirementArtifact(teamId, id, item.version as number)
+    dropArtifact(id)
+    ElMessage.success(`${key} has been deleted`)
+  } catch (error: any) {
+    const status = error?.response?.status
+    if (status === 404) {
+      // A teammate deleted it first. The interceptor leaves this 404 to us (handleNotFound), so the page and any
+      // unsaved prose stay; the item just leaves the list.
+      dropArtifact(id)
+      ElMessage.info(`${key} was already deleted by a teammate.`)
+      return
+    }
+    if (status === 409) {
+      // 7a: a teammate changed it. Show its current details by re-reading this one item; reloading the whole document
+      // section would also reset unsaved prose. The student may press Remove again (7a2).
+      try {
+        const current = await findRequirementArtifactById(teamId, id, true)
+        const index = indexOfArtifact(id)
+        if (index >= 0) draftArtifacts.value[index] = current.data
+        ElMessage.warning(
+          `A teammate changed ${key}. Its current details are shown; press Remove again to delete it.`
+        )
+      } catch (rereadError: any) {
+        // The teammate deleted it after changing it: the same as the 404 above. Any other failure has had its toast.
+        if (rereadError?.response?.status === 404) {
+          dropArtifact(id)
+          ElMessage.info(`${key} was already deleted by a teammate.`)
+        }
+      }
+      return
+    }
+    // Any other refusal (4a after a teammate linked it, a review lock, a server error) has already reached the student
+    // through the shared toast; there is nothing more to do here.
+  } finally {
+    removingId.value = null
+  }
 }
 
 function openLinkDialog() {

@@ -6,10 +6,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 import team.projectpulse.ram.requirement.converter.RequirementArtifactDtoToRequirementArtifactConverter;
 import team.projectpulse.ram.requirement.converter.RequirementArtifactToRequirementArtifactDtoConverter;
+import team.projectpulse.ram.requirement.dto.ArtifactReferrerDto;
 import team.projectpulse.ram.requirement.dto.RequirementArtifactDto;
 import team.projectpulse.system.Result;
 import team.projectpulse.system.StatusCode;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -78,9 +80,27 @@ public class RequirementArtifactController {
         return new Result(true, StatusCode.SUCCESS, "Update requirement artifact successfully", updatedRequirementArtifactDto);
     }
 
+    /**
+     * What refers to a requirement artifact, asked by the editor before it offers the delete (UC-ART-delete-artifact
+     * step 4). For example, {@code GET /teams/1/requirement-artifacts/9/references} for FR-1 returns its link to UC-1;
+     * an empty list means the delete may go ahead. The DELETE checks again, so this answer is advisory.
+     */
+    @GetMapping("/teams/{teamId}/requirement-artifacts/{requirementArtifactId}/references")
+    public Result findReferences(@PathVariable Integer teamId, @PathVariable Long requirementArtifactId) {
+        List<ArtifactReferrerDto> referrers = this.requirementArtifactService.findReferences(teamId, requirementArtifactId);
+        return new Result(true, StatusCode.SUCCESS, "Find requirement artifact references successfully.", referrers);
+    }
+
+    /**
+     * Deletes a requirement artifact for good (UC-ART-delete-artifact), for example
+     * {@code DELETE /teams/1/requirement-artifacts/11?version=0} for FR-3. The version is a query parameter, since a
+     * body on DELETE is unreliable; it is optional here so that its absence gets the service's message rather than the
+     * generic "malformed" one.
+     */
     @DeleteMapping("/teams/{teamId}/requirement-artifacts/{requirementArtifactId}")
-    public Result deleteRequirementArtifact(@PathVariable Integer teamId, @PathVariable Long requirementArtifactId) {
-        this.requirementArtifactService.deleteRequirementArtifact(teamId, requirementArtifactId);
+    public Result deleteRequirementArtifact(@PathVariable Integer teamId, @PathVariable Long requirementArtifactId,
+                                            @RequestParam(required = false) Integer version) {
+        this.requirementArtifactService.deleteRequirementArtifact(teamId, requirementArtifactId, version);
         return new Result(true, StatusCode.SUCCESS, "Delete requirement artifact successfully", null);
     }
 

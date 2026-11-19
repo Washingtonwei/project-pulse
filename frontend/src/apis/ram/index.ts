@@ -19,7 +19,9 @@ import type {
   RequirementArtifact,
   RequirementArtifactResponse,
   RequirementArtifactSummary,
-  UpdateDocumentSectionRequest
+  UpdateDocumentSectionRequest,
+  ArtifactReferrersResponse,
+  DeleteRequirementArtifactResponse
 } from './types'
 
 enum API {
@@ -137,9 +139,16 @@ export const unlockUseCase = (teamId: number, useCaseId: number) =>
 export const createRequirementArtifact = (teamId: number, payload: RequirementArtifactSummary) =>
   request.post<any, RequirementArtifactResponse>(`${API.TEAM_DOCUMENTS}/${teamId}/requirement-artifacts`, payload)
 
-export const findRequirementArtifactById = (teamId: number, requirementArtifactId: number) =>
+// handleNotFound: the caller handles a 404 itself (see utils/request.ts), as Remove does when a teammate deleted the
+// artifact first.
+export const findRequirementArtifactById = (
+  teamId: number,
+  requirementArtifactId: number,
+  handleNotFound = false
+) =>
   request.get<any, RequirementArtifactResponse>(
-    `${API.TEAM_DOCUMENTS}/${teamId}/requirement-artifacts/${requirementArtifactId}`
+    `${API.TEAM_DOCUMENTS}/${teamId}/requirement-artifacts/${requirementArtifactId}`,
+    { handleNotFound }
   )
 
 // UC-ART-edit-artifact: the payload carries the version the artifact was read at; a stale one is refused with 409.
@@ -151,6 +160,26 @@ export const updateRequirementArtifact = (
   request.put<any, RequirementArtifactResponse>(
     `${API.TEAM_DOCUMENTS}/${teamId}/requirement-artifacts/${requirementArtifactId}`,
     payload
+  )
+
+// UC-ART-delete-artifact step 4: what refers to the artifact. Advisory: the DELETE checks again. The editor handles
+// a 404 (a teammate already deleted it) itself, so the interceptor does not leave the page.
+export const getArtifactReferences = (teamId: number, requirementArtifactId: number) =>
+  request.get<any, ArtifactReferrersResponse>(
+    `${API.TEAM_DOCUMENTS}/${teamId}/requirement-artifacts/${requirementArtifactId}/references`,
+    { handleNotFound: true }
+  )
+
+// UC-ART-delete-artifact: a physical delete at the version the artifact was read at; a stale one is refused with 409,
+// a referenced artifact with 400 (4a), and a 404 is the editor's to handle, as for the references.
+export const deleteRequirementArtifact = (
+  teamId: number,
+  requirementArtifactId: number,
+  version: number
+) =>
+  request.delete<any, DeleteRequirementArtifactResponse>(
+    `${API.TEAM_DOCUMENTS}/${teamId}/requirement-artifacts/${requirementArtifactId}`,
+    { params: { version }, handleNotFound: true }
   )
 
 export const getGlossaryTermById = (teamId: number, glossaryTermId: number) =>

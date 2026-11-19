@@ -10,6 +10,16 @@ const devBaseURL = import.meta.env.VITE_SERVER_URL as string | undefined
 const baseURL = import.meta.env.DEV ? devBaseURL : '/api/v1'
 const requestInstance = axios.create({ baseURL, timeout: 10_000 }) // 10 seconds
 
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    // Set on a call whose caller handles a 404 itself: the response interceptor then neither toasts nor routes to the
+    // not-found page, which would leave the page and lose unsaved work. For example, the document section editor's
+    // Remove passes it, and on a 404 (a teammate already deleted the item) drops the item from its list instead.
+    // Every other status is handled as usual.
+    handleNotFound?: boolean
+  }
+}
+
 // Simple toast cooldown (prevents spam on cascading failures)
 let lastToastAt = 0
 
@@ -107,6 +117,22 @@ requestInstance.interceptors.response.use(
 
     const { status, data } = error.response
     const msg = (data && (data.message || data.error)) || `HTTP ${status}: Something went wrong`
+
+    // The caller asked to handle a 404 itself (see handleNotFound above): no toast, no routing.
+    //
+    // How the flag gets here: error.config is not part of the server's answer. It is the config this request was sent
+    // with, which Axios builds in the browser (url, method, params, headers, plus anything extra the API function
+    // passed, such as handleNotFound) and attaches to every error, so a handler can tell which request failed. The
+    // server's answer is error.response. Axios builds the HTTP request only from the fields it knows, so handleNotFound
+    // never reaches the server; it is a note this request carries for this interceptor. For example:
+    //   request.delete(url, { params: { version: 0 }, handleNotFound: true }) and the server answers 404
+    //   error.config   -> { url, method: 'delete', params: { version: 0 }, handleNotFound: true, ... }  (what we sent)
+    //   error.response -> { status: 404, data: { flag: false, code: 404, message: '...' } }              (what came back)
+    // A call that does not pass the flag has error.config.handleNotFound undefined and takes the usual path below.
+    // error.config can be missing on some errors, hence the ?. (the check is then false).
+    if (status === 404 && error.config?.handleNotFound) {
+      return Promise.reject(error)
+    }
 
     // Avoid toasting on 401 (we redirect instead)
     if (status !== 401) toastOnce(msg)

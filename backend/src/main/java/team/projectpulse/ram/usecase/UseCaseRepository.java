@@ -3,6 +3,7 @@ package team.projectpulse.ram.usecase;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import team.projectpulse.ram.requirement.RequirementArtifact;
 
 import java.util.Collection;
 import java.util.List;
@@ -108,5 +109,33 @@ public interface UseCaseRepository extends JpaRepository<UseCase, Long> {
                 order by uc.id
             """)
     List<ConditionUse> findOtherUseCasesReferencingPostconditions(@Param("conditionIds") Collection<Long> conditionIds, @Param("useCaseId") Long useCaseId);
+
+    /**
+     * The own artifacts of team {@code teamId}'s use cases that name artifact {@code actorId} as their primary actor,
+     * for the reference check of a delete (UC-ART-delete-artifact, BR-deletion-integrity). For example, for the seeded
+     * stakeholder "Student" it returns UC-1's artifact. Called by {@code RequirementArtifactService}, a read of this
+     * sibling's repository that MNT-feature-locality forbids, recorded as OI-76.
+     */
+    @Query("""
+                select a
+                from UseCase uc
+                join uc.artifact a
+                where uc.primaryActor.id = :actorId
+                and a.team.teamId = :teamId
+                order by a.artifactKey
+            """)
+    List<RequirementArtifact> findUseCaseArtifactsNamingPrimaryActor(@Param("actorId") Long actorId, @Param("teamId") Integer teamId);
+
+    /** As {@link #findUseCaseArtifactsNamingPrimaryActor}, for the secondary actors (the {@code use_case_secondary_actor} join table). */
+    @Query("""
+                select a
+                from UseCase uc
+                join uc.artifact a
+                join uc.secondaryActors s
+                where s.id = :actorId
+                and a.team.teamId = :teamId
+                order by a.artifactKey
+            """)
+    List<RequirementArtifact> findUseCaseArtifactsNamingSecondaryActor(@Param("actorId") Long actorId, @Param("teamId") Integer teamId);
 
 }
