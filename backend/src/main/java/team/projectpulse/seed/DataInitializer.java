@@ -939,8 +939,8 @@ public class DataInitializer implements CommandLineRunner {
         RequirementArtifact stakeholder1 = new RequirementArtifact(team1, RequirementArtifactType.STAKEHOLDER, "Student", "A student in the senior design team.", "");
         RequirementArtifact stakeholder2 = new RequirementArtifact(team1, RequirementArtifactType.STAKEHOLDER, "Instructor", "An instructor of the senior design project.", "");
 
-        this.requirementArtifactService.saveRequirementArtifact(1, stakeholder1);
-        this.requirementArtifactService.saveRequirementArtifact(1, stakeholder2);
+        this.requirementArtifactService.createArtifactWithoutHome(1, stakeholder1);
+        this.requirementArtifactService.createArtifactWithoutHome(1, stakeholder2);
 
         // The conditions are submitted as new entries; saveUseCase stores each as a requirement artifact with its
         // key (PRC-n, PSC-n), after the use case's own artifact, so the seeded ids stay as they were.
@@ -1013,10 +1013,10 @@ public class DataInitializer implements CommandLineRunner {
         RequirementArtifact bo1 = new RequirementArtifact(team1, RequirementArtifactType.BUSINESS_OBJECTIVE, "Improve Student Requirements Quality", "Improve the quality of student-written requirements through structure, templates, standards, traceability, AI feedback, and consistency checks.", "");
         bo1.setPriority(Priority.CRITICAL);
 
-        this.requirementArtifactService.saveRequirementArtifact(1, fr1);
-        this.requirementArtifactService.saveRequirementArtifact(1, fr2);
-        this.requirementArtifactService.saveRequirementArtifact(1, fr3);
-        this.requirementArtifactService.saveRequirementArtifact(1, bo1);
+        this.requirementArtifactService.createArtifactWithoutHome(1, fr1);
+        this.requirementArtifactService.createArtifactWithoutHome(1, fr2);
+        this.requirementArtifactService.createArtifactWithoutHome(1, fr3);
+        this.requirementArtifactService.createArtifactWithoutHome(1, bo1);
 
         // Find the "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS" section in the document and add the functional requirements to it
         doc.getSections().stream()
@@ -1168,8 +1168,8 @@ public class DataInitializer implements CommandLineRunner {
         // artifact could not be expressed at all. Seeded last so no existing id shifts.
         RequirementArtifact team2Stakeholder = new RequirementArtifact(team2, RequirementArtifactType.STAKEHOLDER, "Client", "The external client sponsoring team 2's project.", "");
         RequirementArtifact team2Fr = new RequirementArtifact(team2, RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "Data export", "The system shall let the client export project data as a CSV file.", "");
-        this.requirementArtifactService.saveRequirementArtifact(2, team2Stakeholder);
-        this.requirementArtifactService.saveRequirementArtifact(2, team2Fr);
+        this.requirementArtifactService.createArtifactWithoutHome(2, team2Stakeholder);
+        this.requirementArtifactService.createArtifactWithoutHome(2, team2Fr);
 
         // ---- Glossary terms, one per team ----
         // The glossary endpoints had no seeded content at all, so a cross-team glossary test
@@ -1177,15 +1177,15 @@ public class DataInitializer implements CommandLineRunner {
         // directions expressible. Seeded last, like the block above, so no existing id shifts.
         RequirementArtifact team1GlossaryTerm = new RequirementArtifact(team1, RequirementArtifactType.GLOSSARY_TERM, "Artifact", "A uniquely identified requirement item that can be traced, such as a use case, a functional requirement, or a glossary term.", "");
         RequirementArtifact team2GlossaryTerm = new RequirementArtifact(team2, RequirementArtifactType.GLOSSARY_TERM, "Deliverable", "A tangible output the team hands to the client at the end of a phase.", "");
-        this.requirementArtifactService.saveRequirementArtifact(1, team1GlossaryTerm);
-        this.requirementArtifactService.saveRequirementArtifact(2, team2GlossaryTerm);
+        this.requirementArtifactService.createArtifactWithoutHome(1, team1GlossaryTerm);
+        this.requirementArtifactService.createArtifactWithoutHome(2, team2GlossaryTerm);
 
         // ---- An external system ----
         // A non-human actor (BR-use-case-actor-types), so a use case can name an external system as an actor in
         // dev and in tests. Seeded last, like the blocks above, so no existing id shifts; for the same reason it is
         // not attached to the seeded use case, whose save comes much earlier.
         RequirementArtifact team1ExternalSystem = new RequirementArtifact(team1, RequirementArtifactType.EXTERNAL_SYSTEM, "Email service", "The SMTP service that delivers the system's notification emails.", "");
-        this.requirementArtifactService.saveRequirementArtifact(1, team1ExternalSystem);
+        this.requirementArtifactService.createArtifactWithoutHome(1, team1ExternalSystem);
     }
 
     private void applyTemplate(RequirementDocument doc, DocumentTemplate tpl) {

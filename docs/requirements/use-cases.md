@@ -3491,7 +3491,7 @@ Details:
 | ---- | ---- | ---- | ---- | ---- | ---- |
 | Requirement artifact type | `RequirementArtifactType` | Set once, at creation | A type with a document section home; created from a document section, one of the types that document section admits (BR-artifact-home) | None; the type cannot be changed later |  |
 | Title |  | Yes |  |  |  |
-| Home | document section | Set at creation; may later change only as UC-ART-edit-artifact allows | One of the type's home document sections (BR-artifact-home) | The artifact is appended to the end of that document section's list |  |
+| Home | document section | Set at creation from the type; never changes | The type's one home document section (BR-artifact-home) | The artifact is appended to the end of that document section's list |  |
 | Content |  |  |  |  |  |
 | Links |  |  |  |  |  |
 | Metadata: priority |  |  |  |  |  |
@@ -3501,7 +3501,7 @@ Details:
 
 Type and home:
 - Created from a list-type document section: the student chooses among only the types that document section admits, and no choice is offered when it admits one. That document section is the artifact's home.
-- Created from the artifact catalog (and, in a future release, from the requirements graph view): the student chooses the type among the types that have a document section home. The type determines the home through the artifact type → authoring home table in the SRS's [Business Domain Model](software-requirements-specification.md#business-domain-model). Only for a type with two homes (Assumption, Dependency) does the student also choose the home.
+- Created from the artifact catalog (and, in a future release, from the requirements graph view): the student chooses the type among the types that have a document section home. The type determines the home through the artifact type → authoring home table in the SRS's [Business Domain Model](software-requirements-specification.md#business-domain-model); every type has exactly one, so the student never chooses a home.
 - Artifacts with no document section home (glossary terms, use cases, preconditions, postconditions) are created through their own use cases, not this one.
 
 Duplication detection rules: Advisory only — the system warns when an artifact of the same type has similar content (fuzzy match) but does not block creation; the student decides whether to proceed, revise, or open the existing artifact. In the MVP, "similar content" means an artifact of the same type whose title contains the new title, ignoring letter case.
@@ -3571,7 +3571,7 @@ This use case may be revisited in future versions if free-text authoring or refa
 
 **Priority:** High
 **Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
-**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-artifact-home (the artifact's type never changes; only an Assumption or Dependency may move between its two homes); BR-edit-lock-required (a requirement artifact is protected by versioning, not by a lock; extension 10a).
+**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-artifact-home (the artifact's type never changes, and each type has one home, so an artifact never moves); BR-edit-lock-required (a requirement artifact is protected by versioning, not by a lock; extension 10a).
 **Associated Information:**
 
 Details:
@@ -3579,7 +3579,6 @@ Details:
 | Property name | Data type | Editability | Validation rule | Effect of change | Warning | Reference to glossary |
 | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
 | Requirement artifact type |  | No; set once, at creation (BR-artifact-home) |  |  |  |  |
-| Home | document section | Only for an Assumption or Dependency, and only between its two homes (Vision and Scope, SRS) | One of the type's home document sections (BR-artifact-home) | The artifact leaves its old home document section's list and is appended to the end of the new one's; its artifact key, links, and comment threads are unchanged |  |  |
 | Content |  | Yes |  |  |  |  |
 | Notes |  | Yes |  |  |  |  |
 | Metadata: priority |  | Yes |  |  |  |  |

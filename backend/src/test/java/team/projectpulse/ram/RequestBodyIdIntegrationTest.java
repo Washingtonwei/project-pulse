@@ -240,9 +240,10 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("A LIST section update naming another team's artifact must not pull that artifact into the section")
     void testStudentJohnCannotAdoptAnotherTeamsArtifactThroughSectionUpdate() throws Exception {
-        // DocumentSection.requirementArtifacts is @OneToMany(cascade = ALL) and replaceAllRequirementArtifacts
-        // points every artifact's back-reference at the section, so an artifact named by the body used to be a
-        // detached row handed to a cascade, which also stamped this section's team onto it.
+        // DocumentSection.requirementArtifacts is @OneToMany(cascade = ALL), so an artifact named by the body used
+        // to be a detached row handed to a cascade, which also stamped this section's team onto it. The section save
+        // now stores the section's content only and ignores requirementArtifacts (UC-DOC-edit-document; items are
+        // created and edited through the requirement artifact endpoints), and this probe keeps that true.
         RequirementArtifact victim = team2Artifact("Data export");
 
         // Section 16 belongs to team 1's document 1 and is a LIST section. It has to be locked before its content
@@ -274,7 +275,6 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
                             "title": "Stolen",
                             "content": "Stolen content",
                             "priority": "CRITICAL",
-                            "sourceSectionId": 16,
                             "notes": ""
                         }
                     ],
@@ -422,11 +422,11 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("A LIST section entry whose id names none of the section's own rows becomes a new artifact")
-    void testSectionUpdateWithAnUnmatchedIdCreatesANewArtifact() throws Exception {
-        // The section save pairs an item by id with the section's own rows only (DocumentSectionService.resolveSectionItems),
-        // so team 2's id falls through and the item becomes a new row. The artifact key sent with it is ignored
-        // altogether: the new row is keyed from team 1's sequence.
+    @DisplayName("A LIST section update ignores its requirementArtifacts: no artifact is created, changed or adopted")
+    void testSectionUpdateIgnoresItsItems() throws Exception {
+        // The section save stores the document section's content only (UC-DOC-edit-document step 9); its items are
+        // created and edited through the requirement artifact endpoints. So an entry naming team 2's artifact, and a
+        // new entry with no id, both leave the database as it was.
         RequirementArtifact victim = team2Artifact("Data export");
         long artifactCountBefore = this.requirementArtifactRepository.count();
 
@@ -443,20 +443,23 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
 
         String json = """
                 {
-                    "id": 16,
-                    "sectionKey": "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS",
                     "type": "LIST",
-                    "title": "Non-Use Case Functional Requirements",
                     "content": "Updated section content goes here.",
                     "requirementArtifacts": [
                         {
                             "id": %d,
                             "type": "FUNCTIONAL_REQUIREMENT",
                             "artifactKey": "FR-999",
+                            "title": "Stolen",
+                            "content": "Stolen content",
+                            "priority": "CRITICAL",
+                            "notes": ""
+                        },
+                        {
+                            "type": "FUNCTIONAL_REQUIREMENT",
                             "title": "Brand new",
                             "content": "Brand new content",
                             "priority": "CRITICAL",
-                            "sourceSectionId": 16,
                             "notes": ""
                         }
                     ],
@@ -467,16 +470,15 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
         MvcResult mvcResult = this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/16").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andDo(print()).andReturn();
         JSONObject response = new JSONObject(mvcResult.getResponse().getContentAsString());
-        assertThat(response.getBoolean("flag")).isTrue();
+        assertThat(response.getBoolean("flag")).as(response.toString()).isTrue();
 
-        // A new row, keyed from team 1's sequence rather than from the "FR-999" the body asked for, and nothing
-        // reached the artifact whose id the body carried.
-        JSONObject savedArtifact = response.getJSONObject("data").getJSONArray("requirementArtifacts").getJSONObject(0);
-        assertThat(savedArtifact.getLong("id")).isNotEqualTo(victim.getId());
-        assertThat(savedArtifact.getString("artifactKey")).isNotEqualTo("FR-999");
-        assertThat(savedArtifact.getString("title")).isEqualTo("Brand new");
+        // The two seeded items, unchanged, and nothing new anywhere.
+        JSONArray items = response.getJSONObject("data").getJSONArray("requirementArtifacts");
+        assertThat(items.length()).isEqualTo(2);
+        assertThat(items.getJSONObject(0).getString("artifactKey")).isEqualTo("FR-1");
+        assertThat(items.getJSONObject(1).getString("artifactKey")).isEqualTo("FR-2");
         assertStillOwnedByTeam2(victim.getId(), "Data export");
-        assertThat(this.requirementArtifactRepository.count()).isEqualTo(artifactCountBefore + 1);
+        assertThat(this.requirementArtifactRepository.count()).isEqualTo(artifactCountBefore);
     }
 
 }

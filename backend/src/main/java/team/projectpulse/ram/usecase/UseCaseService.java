@@ -147,10 +147,10 @@ public class UseCaseService {
         useCase.setPrimaryActor(actors.primary());
         useCase.replaceSecondaryActors(actors.secondaries());
         // The use case's own artifact (title, description, priority, notes, type USE_CASE from the converter):
-        // saveRequirementArtifact sets its team from the route and mints its key (UC-n). The use case shares its id
+        // createArtifactWithoutHome sets its team from the route and mints its key (UC-n). The use case shares its id
         // (@MapsId). Saved before the new conditions, so the use case takes the lower id, as it did when the
         // conditions were cascaded.
-        this.requirementArtifactService.saveRequirementArtifact(teamId, useCase.getArtifact());
+        this.requirementArtifactService.createArtifactWithoutHome(teamId, useCase.getArtifact());
         useCase.replacePreconditions(saveNewConditions(teamId, preconditions));
         useCase.replacePostconditions(saveNewConditions(teamId, postconditions));
         return this.useCaseRepository.save(useCase);
@@ -473,13 +473,13 @@ public class UseCaseService {
 
     /**
      * Saves the new conditions of a list that {@link #resolveConditions} checked, through
-     * {@link RequirementArtifactService#saveRequirementArtifact}, which sets the route's team and mints the key (PRC-n
+     * {@link RequirementArtifactService#createArtifactWithoutHome}, which sets the route's team and mints the key (PRC-n
      * or PSC-n), as it does for every artifact. Existing conditions pass through unchanged. Returns the list in the
      * same order, ready to become the use case's list; a condition left out of it loses only its link to this use case.
      */
     private List<RequirementArtifact> saveNewConditions(Integer teamId, List<RequirementArtifact> conditions) {
         return conditions.stream()
-                .map(condition -> condition.getId() == null ? this.requirementArtifactService.saveRequirementArtifact(teamId, condition) : condition)
+                .map(condition -> condition.getId() == null ? this.requirementArtifactService.createArtifactWithoutHome(teamId, condition) : condition)
                 .toList();
     }
 

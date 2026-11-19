@@ -56,6 +56,8 @@ export const REQUIREMENT_ARTIFACT_TYPES = [
   'BUSINESS_OBJECTIVE',
   'SUCCESS_METRIC',
   'RISK',
+  'BUSINESS_ASSUMPTION',
+  'BUSINESS_DEPENDENCY',
   'ASSUMPTION',
   'DEPENDENCY',
   'STAKEHOLDER',
@@ -68,11 +70,13 @@ export const REQUIREMENT_ARTIFACT_TYPES = [
   'POSTCONDITION',
   'USER_STORY',
   'QUALITY_ATTRIBUTE',
-  'EXTERNAL_INTERFACE_REQUIREMENT',
+  'USER_INTERFACE',
+  'SOFTWARE_INTERFACE',
+  'HARDWARE_INTERFACE',
+  'COMMUNICATIONS_INTERFACE',
   'OPERATING_ENVIRONMENT',
   'CONSTRAINT',
-  'DATA_REQUIREMENT',
-  'OTHER'
+  'DATA_REQUIREMENT'
 ] as const
 
 export const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as const
@@ -101,8 +105,12 @@ export interface RequirementArtifactSummary {
   title: string
   content: string
   priority?: string | null
-  sourceSectionId?: number | null
+  // Response only: the type of the document holding the artifact's home section (BR-artifact-home). A create never
+  // sends it, since the artifact's type alone names its home.
+  homeDocumentType?: DocumentType | null
   notes?: string | null
+  // Optimistic-lock version (DI-concurrency-control): an update sends back the version it was read at.
+  version?: number | null
 }
 
 export interface RequirementArtifact extends RequirementArtifactSummary {
@@ -161,10 +169,11 @@ export interface CreateRequirementDocumentRequest {
 
 export interface CreateDocumentResponse extends ApiResult<RequirementDocument> {}
 
+// The document section save stores the section's own content only; its items are requirement artifacts, created and
+// edited through the requirement artifact endpoints (UC-DOC-edit-document).
 export interface UpdateDocumentSectionRequest {
   type?: string
   content?: string
-  requirementArtifacts?: RequirementArtifactSummary[]
   version?: number | null
 }
 
@@ -179,6 +188,8 @@ export interface GetDocumentSectionLockResponse extends ApiResult<RequirementDoc
 export interface LockDocumentSectionResponse extends ApiResult<RequirementDocumentSectionLock> {}
 
 export interface SearchRequirementArtifactsResponse extends ApiResult<Page<RequirementArtifact>> {}
+
+export interface RequirementArtifactResponse extends ApiResult<RequirementArtifact> {}
 
 // The following interfaces define the structure of Use Cases and Glossary Terms, which are specific types of Requirement Artifacts.
 // Another use case that references the same precondition or postcondition (extension 6b1 of UC-DOC-edit-use-case).
