@@ -56,9 +56,14 @@ public class RequirementArtifactController {
      * lands in the SRS's ASSUMPTIONS_DEPENDENCIES list with a key such as ASM-2. A business-level one is a
      * BUSINESS_ASSUMPTION instead, which lands in the Vision and Scope's list of the same name (BAS-n).
      * </pre>
+     * A type with no list home (a glossary term, use case, precondition, postcondition or user story) is refused here,
+     * because each has its own editor. The service would create it, since its own editor calls the same method.
      */
     @PostMapping("/teams/{teamId}/requirement-artifacts")
     public Result addRequirementArtifact(@PathVariable Integer teamId, @Valid @RequestBody RequirementArtifactDto requirementArtifactDto) {
+        if (!requirementArtifactDto.type().hasListHome()) {
+            throw RequirementArtifactService.notCreatedHere(requirementArtifactDto.type());
+        }
         RequirementArtifact newRequirementArtifact = this.requirementArtifactDtoToRequirementArtifactConverter.convert(requirementArtifactDto);
         RequirementArtifact savedRequirementArtifact = this.requirementArtifactService.createRequirementArtifact(teamId, newRequirementArtifact);
         RequirementArtifactDto savedRequirementArtifactDto = this.requirementArtifactToRequirementArtifactDtoConverter.convert(savedRequirementArtifact);

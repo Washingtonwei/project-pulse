@@ -33,14 +33,14 @@ public class GlossaryService {
      * body naming any other type is submitting a value the server owns. Left to the body it would create, say, a
      * {@code USE_CASE} row that {@link #findGlossaryTermById} cannot see (it is type-scoped) but the use-case
      * listings can. <strong>The artifact key</strong> is minted from the team's {@code GLO} sequence by
-     * {@link RequirementArtifactService#createArtifactWithoutHome}, which this method delegates to so that one place
+     * {@link RequirementArtifactService#createRequirementArtifact}, which this method delegates to so that one place
      * mints keys for every artifact; a body-chosen key such as {@code UC-1} would otherwise collide with a real
      * key that sequence has already handed out or will hand out later, and an omitted one left the term keyless.
      * A glossary term has no document section home (BR-artifact-home), and the converter maps none from the body.
      */
     public RequirementArtifact saveGlossaryTerm(Integer teamId, RequirementArtifact glossaryTerm) {
         glossaryTerm.setType(RequirementArtifactType.GLOSSARY_TERM);
-        return this.requirementArtifactService.createArtifactWithoutHome(teamId, glossaryTerm);
+        return this.requirementArtifactService.createRequirementArtifact(teamId, glossaryTerm);
     }
 
 

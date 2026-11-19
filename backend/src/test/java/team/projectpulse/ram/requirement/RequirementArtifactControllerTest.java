@@ -56,6 +56,8 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
 
     String studentWoodyToken; // Woody is on team 2 in section 2
 
+    String studentMavisToken; // Mavis is on team 3 in section 2, which has no requirement documents
+
     @Value("${api.endpoint.base-url}")
     String baseUrl;
 
@@ -90,6 +92,12 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
         contentAsString = mvcResult.getResponse().getContentAsString();
         json = new JSONObject(contentAsString);
         this.studentWoodyToken = "Bearer " + json.getJSONObject("data").getString("token");
+
+        resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("m.huber@abc.edu", "123456"))); // httpBasic() is from spring-security-test.
+        mvcResult = resultActions.andDo(print()).andReturn();
+        contentAsString = mvcResult.getResponse().getContentAsString();
+        json = new JSONObject(contentAsString);
+        this.studentMavisToken = "Bearer " + json.getJSONObject("data").getString("token");
     }
 
     @Test
@@ -279,13 +287,15 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
 
 
     // ---- UC-ART-create-artifact (docs/design/art.md, Tests) ----
-    // The seed gives team 1 one document, its SRS (document 1): section 16 is NON_USE_CASE_FUNCTIONAL_REQUIREMENTS
-    // (FR-1, FR-2) and section 13 is ASSUMPTIONS_DEPENDENCIES. Team 2 has no document. A test that needs team 1's Vision
-    // and Scope creates it first, inside the test's rolled-back transaction.
+    // The seed gives team 1 two documents. Its SRS is document 1: section 16 is NON_USE_CASE_FUNCTIONAL_REQUIREMENTS
+    // (FR-1, FR-2, FR-3) and section 13 is ASSUMPTIONS_DEPENDENCIES. Its Vision and Scope is document 2, with no risks,
+    // features or business assumptions seeded. Team 2 has documents 3 and 4; team 3 has none.
+
+    private static final long TEAM_1_VISION_SCOPE_ID = 2L;
 
     @Test
     void createArtifact_MainFlow_FromASection_AppendedWithTheNextKeyAndNoLockNeeded() throws Exception {
-        long visionScopeId = createVisionScopeForTeam1();
+        long visionScopeId = TEAM_1_VISION_SCOPE_ID;
         // John holds no document section lock: the server does not check it for items (BR-edit-lock-required).
         JSONObject first = create(1, item("RISK", "Team turnover", "A team member may leave mid-semester."), this.studentJohnToken);
         assertThat(first.getBoolean("flag")).as(first.toString()).isTrue();
@@ -301,7 +311,7 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
 
     @Test
     void createArtifact_MainFlow_FromTheCatalog_HomeFromTheType() throws Exception {
-        long visionScopeId = createVisionScopeForTeam1();
+        long visionScopeId = TEAM_1_VISION_SCOPE_ID;
         JSONObject created = create(1, item("FEATURE", "Requirement graph", "Browse every artifact and its links."), this.studentJohnToken);
         assertThat(created.getBoolean("flag")).as(created.toString()).isTrue();
         assertThat(itemKeys(visionScopeId, "MAJOR_FEATURES")).containsExactly(created.getJSONObject("data").getString("artifactKey"));
@@ -310,7 +320,7 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
     @Test
     void createArtifact_AssumptionsAndDependencies_EachKindHasOneHome() throws Exception {
         // The system-level kind goes to the SRS, the business-level kind to the Vision and Scope; neither names a home.
-        long visionScopeId = createVisionScopeForTeam1();
+        long visionScopeId = TEAM_1_VISION_SCOPE_ID;
         JSONObject assumption = create(1, item("ASSUMPTION", "Campus SSO stays available", "The university single sign-on remains available."), this.studentJohnToken);
         assertThat(assumption.getBoolean("flag")).as(assumption.toString()).isTrue();
         assertThat(itemKeys(1L, "ASSUMPTIONS_DEPENDENCIES")).containsExactly(assumption.getJSONObject("data").getString("artifactKey"));
@@ -339,7 +349,7 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
     @Test
     void createArtifact_HomeDocumentTypeInTheBody_Ignored() throws Exception {
         // The type alone names the home: a body naming another document changes nothing.
-        long visionScopeId = createVisionScopeForTeam1();
+        long visionScopeId = TEAM_1_VISION_SCOPE_ID;
         JSONObject created = create(1, item("RISK", "Team turnover", "A team member may leave.").put("homeDocumentType", "SRS"), this.studentJohnToken);
         assertThat(created.getBoolean("flag")).as(created.toString()).isTrue();
         assertThat(created.getJSONObject("data").getString("homeDocumentType")).isEqualTo("VISION_SCOPE");
@@ -376,13 +386,13 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
         JSONObject refused = create(1, item("FUNCTIONAL_REQUIREMENT", "Late addition", "The system shall do one more thing."), this.studentJohnToken);
         assertThat(refused.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
         assertThat(refused.getString("message")).isEqualTo("The Software Requirements Specification is locked for review, so it cannot be changed.");
-        assertThat(itemKeys(1L, "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS")).containsExactly("FR-1", "FR-2");
+        assertThat(itemKeys(1L, "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS")).containsExactly("FR-1", "FR-2", "FR-3");
     }
 
     @Test
     void createArtifact_Extension8b_HomeDocumentNotCreated_Refused() throws Exception {
-        // Woody is on team 2, which has no documents.
-        JSONObject refused = create(2, item("FUNCTIONAL_REQUIREMENT", "Export", "The system shall export data."), this.studentWoodyToken);
+        // Mavis is on team 3, which has no documents.
+        JSONObject refused = create(3, item("FUNCTIONAL_REQUIREMENT", "Export", "The system shall export data."), this.studentMavisToken);
         assertThat(refused.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
         assertThat(refused.getString("message")).isEqualTo("The team's Software Requirements Specification has not been created yet. The course admin creates the team's documents.");
     }
@@ -397,7 +407,7 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
         assertThat(data.getLong("id")).isNotEqualTo(team2Fr.getId());
         assertThat(data.getString("artifactKey")).isEqualTo("FR-4"); // FR-1 to FR-3 are seeded
         assertThat(data.getInt("version")).isZero();
-        assertThat(itemKeys(1L, "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS")).containsExactly("FR-1", "FR-2", "FR-4");
+        assertThat(itemKeys(1L, "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS")).containsExactly("FR-1", "FR-2", "FR-3", "FR-4");
 
         this.entityManager.flush();
         this.entityManager.clear();
@@ -424,7 +434,7 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
                 .content(body.toString()).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken)).andReturn();
         JSONObject saved = new JSONObject(result.getResponse().getContentAsString());
         assertThat(saved.getBoolean("flag")).as(saved.toString()).isTrue();
-        assertThat(saved.getJSONObject("data").getJSONArray("requirementArtifacts").length()).isEqualTo(3);
+        assertThat(saved.getJSONObject("data").getJSONArray("requirementArtifacts").length()).isEqualTo(4);
     }
 
     @Test
@@ -488,7 +498,7 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
 
     @Test
     void deleteArtifact_ItemInAList_LeavesNoGap() throws Exception {
-        // Section 16 holds FR-1 and FR-2; a create appends FR-4, then FR-2 (artifact 10) is deleted from the middle.
+        // Section 16 holds FR-1 to FR-3; a create appends FR-4, then FR-2 (artifact 10) is deleted from the middle.
         JSONObject created = create(1, item("FUNCTIONAL_REQUIREMENT", "Audit log", "The system shall log every change."), this.studentJohnToken);
         assertThat(created.getBoolean("flag")).as(created.toString()).isTrue();
         MvcResult deleted = this.mockMvc.perform(delete(this.baseUrl + "/teams/1/requirement-artifacts/10")
@@ -498,7 +508,7 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
         // Reload from the database, past this test's persistence context, so the stored indexes are what is read.
         this.entityManager.flush();
         this.entityManager.clear();
-        assertThat(itemKeys(1L, "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS")).containsExactly("FR-1", "FR-4");
+        assertThat(itemKeys(1L, "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS")).containsExactly("FR-1", "FR-3", "FR-4");
     }
 
     private static JSONObject item(String type, String title, String content) throws Exception {
@@ -515,15 +525,6 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
         MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/requirement-artifacts/" + artifactId).contentType(MediaType.APPLICATION_JSON)
                 .content(body.toString()).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, token)).andReturn();
         return new JSONObject(result.getResponse().getContentAsString());
-    }
-
-    /** Creates team 1's Vision and Scope document through the documents endpoint and returns its id. */
-    private long createVisionScopeForTeam1() throws Exception {
-        MvcResult result = this.mockMvc.perform(post(this.baseUrl + "/teams/1/documents").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"type\": \"VISION_SCOPE\"}").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken)).andReturn();
-        JSONObject response = new JSONObject(result.getResponse().getContentAsString());
-        assertThat(response.getBoolean("flag")).as(response.toString()).isTrue();
-        return response.getJSONObject("data").getLong("id");
     }
 
     /** The artifact keys of a document's list section, in list order, as the document section GET serves them. */

@@ -121,12 +121,13 @@ public class DocumentControllerTest extends AbstractIntegrationTest {
 
     @Test
     void createVisionScopeDocument() throws Exception {
+        // Team 3, which the seed gives no documents: teams 1 and 2 already have a Vision and Scope.
         String json = """
                 {
                     "type": "VISION_SCOPE"
                 }
                 """;
-        this.mockMvc.perform(post(this.baseUrl + "/teams/1/documents").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+        this.mockMvc.perform(post(this.baseUrl + "/teams/3/documents").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
                 .andExpect(jsonPath("$.flag").value(true))
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.message").value("Create requirement document successfully"))

@@ -33,8 +33,7 @@ public class UseCaseDtoToUseCaseConverter implements Converter<UseCaseDto, UseCa
 
         RequirementArtifact useCaseArtifact = new RequirementArtifact();
         useCaseArtifact.setType(RequirementArtifactType.USE_CASE);
-        // No artifact key: it used to be built from the payload id, and the real one is minted server-side by
-        // RequirementArtifactService.createArtifactWithoutHome.
+        // No artifact key here: the server mints it (UC-n) when the use case is saved, never from the payload.
         useCaseArtifact.setTitle(source.title());
         useCaseArtifact.setContent(source.description());
         useCaseArtifact.setPriority(source.priority());

@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  *
  * <p>{@code POST /teams/{teamId}/glossary-terms} creates a glossary term and nothing else. Its type is fixed by
  * the route and its artifact key is minted from the team's {@code GLO} sequence, exactly as
- * {@code RequirementArtifactService.createArtifactWithoutHome} does for the generic artifact route. A body that
+ * {@code RequirementArtifactService.createRequirementArtifact} does for the generic artifact route. A body that
  * names a different type, or supplies a key of its own, is submitting values the server owns.
  *
  * <p>Nothing here is a cross-team reach: the team is taken from the path. What a forged type or key corrupts is
