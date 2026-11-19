@@ -255,8 +255,10 @@ public class RequirementArtifactService {
         return type.name().toLowerCase(Locale.ROOT).replace('_', ' ');
     }
 
+    // "an" before a vowel sound. Every type label that starts with "u" (use case, user story, user interface) starts
+    // with a "you" sound, so "u" takes "a": "a use case", not "an use case".
     private static String withArticle(String noun) {
-        return ("aeiou".indexOf(noun.charAt(0)) >= 0 ? "an " : "a ") + noun;
+        return ("aeio".indexOf(noun.charAt(0)) >= 0 ? "an " : "a ") + noun;
     }
 
     private static String capitalize(String text) {

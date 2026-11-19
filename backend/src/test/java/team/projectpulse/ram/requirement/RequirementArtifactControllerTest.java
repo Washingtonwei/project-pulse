@@ -330,6 +330,10 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
             assertThat(refused.getInt("code")).as(type).isEqualTo(StatusCode.INVALID_ARGUMENT);
             assertThat(refused.getString("message")).as(type).contains("is not created here");
         }
+        // The article follows the sound: "a use case", "a user story", and "an" only before a, e, i, o.
+        assertThat(create(1, item("USE_CASE", "Not here", "x"), this.studentJohnToken).getString("message")).startsWith("A use case is not created here");
+        assertThat(create(1, item("USER_STORY", "Not here", "x"), this.studentJohnToken).getString("message")).startsWith("A user story is not created here");
+        assertThat(create(1, item("GLOSSARY_TERM", "Not here", "x"), this.studentJohnToken).getString("message")).startsWith("A glossary term is not created here");
     }
 
     @Test

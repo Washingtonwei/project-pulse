@@ -145,9 +145,10 @@ public class DocumentSectionService {
             throw new SectionAlreadyLockedException("Document section is locked by another user. You cannot update its content.");
         }
 
-        // The content is the section's own column, so Hibernate raises the version when it changes, at flush. A save
-        // that changes nothing stores nothing and leaves the version as it is; a stale editor still cannot save, because
-        // a save needs the section lock and taking the lock changes the section's row.
+        // The content is the section's own column, so Hibernate raises the version whenever it changes, at flush. A
+        // stale editor is therefore refused by the version check above whenever the content changed after it loaded. A
+        // save that changes nothing stores nothing and leaves the version as it is, so nothing can be lost. (Taking or
+        // releasing the lock does not raise it: DocumentSectionLock is a separate entity with its own version.)
         oldDocumentSection.setContent(update.getContent());
         return this.documentSectionRepository.save(oldDocumentSection);
     }
