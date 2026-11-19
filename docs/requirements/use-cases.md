@@ -2925,9 +2925,8 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Associated Information:**
 
 Deletion strategy:
-- Logical delete: The glossary term is marked as deleted and removed from active use.
-- Deleted glossary terms are not visible to students and cannot be reused.
-- Only privileged administrative users may view deleted terms for audit purposes.
+- Physical delete: the glossary term is permanently removed from the database and cannot be recovered.
+- Its artifact key is never reissued to another glossary term.
 
 Referring objects handling strategy:
 - Deletion is blocked if the glossary term is referenced by any requirement artifact.
@@ -3606,7 +3605,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Preconditions:**
 - PRE-1. The student is logged into the system.
 - PRE-2. The student is a member of the team that owns the requirement artifact.
-- PRE-3. The requirement artifact is not locked for review.
+- PRE-3. The requirement artifact's home document is not locked for review.
 
 **Postconditions:**
 - POST-1. The requirement artifact is deleted from the system according to the "Deletion strategy" defined in the Associated Information of this use case.
@@ -3632,13 +3631,12 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 **Priority:** High
 **Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
-**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-deletion-integrity (a referenced artifact cannot be deleted; deletion is logical); BR-edit-lock-required (a requirement artifact is protected by versioning, not by a lock; extension 7a); BR-section-artifact-removal (removing an item from a list-type document section deletes it by this use case's strategies).
+**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-deletion-integrity (a referenced artifact cannot be deleted; deletion is physical); BR-review-lock (PRE-3); BR-edit-lock-required (a requirement artifact is protected by versioning, not by a lock; extension 7a); BR-section-artifact-removal (removing an item from a list-type document section deletes it by this use case's strategies).
 **Associated Information:**
 
 Deletion strategy:
-- Logical delete: The requirement artifact is marked as deleted and removed from active use.
-- Deleted requirement artifacts are not visible to students and cannot be reused.
-- Only privileged administrative users may view deleted requirement artifacts for audit purposes.
+- Physical delete: the requirement artifact is permanently removed from the database and cannot be recovered. Its comment threads are removed with it.
+- Its artifact key is never reissued to another requirement artifact.
 
 Referring objects handling strategy:
 - Deletion is blocked if the requirement artifact is referenced by any requirement artifact.

@@ -1,16 +1,16 @@
 # Requirement Artifacts (ART) Design
 
-> Realizes: UC-ART-create-artifact
-> Depends on: BR-artifact-home, BR-artifact-key-unique, BR-edit-lock-required, BR-review-lock, BR-team-scoped-access, DI-concurrency-control, DI-artifact-key-assignment, OI-46 (no ids from the request body)
+> Realizes: UC-ART-create-artifact, UC-ART-delete-artifact
+> Depends on: BR-artifact-home, BR-artifact-key-unique, BR-deletion-integrity, BR-section-artifact-removal, BR-edit-lock-required, BR-review-lock, BR-team-scoped-access, DI-concurrency-control, DI-artifact-key-assignment, DI-referential-integrity, OI-46 (no ids from the request body)
 > See: [use cases](../requirements/use-cases.md#requirement-artifacts), [Business Domain Model](../requirements/software-requirements-specification.md#business-domain-model) (the artifact type → authoring home table), [architectural-design.md](architectural-design.md#domain--aggregate-model) (Domain & aggregate model, Transactions & consistency, Authorization), [doc.md](doc.md) (the DOC area, which owns the document section editor)
-> History: first designed 2026-11-16 with new items saved inside the document section save. Revised 2026-11-17 after the spec made requirement artifacts first-class (OI-23): an artifact is created on its own, stored at once, and guarded by versioning instead of the document section's lock.
+> History: first designed 2026-11-16 with new items saved inside the document section save. Revised 2026-11-17 after the spec made requirement artifacts first-class (OI-23): an artifact is created on its own, stored at once, and guarded by versioning instead of the document section's lock. Revised 2026-11-19 to add UC-ART-delete-artifact, after the spec changed deletion from logical to physical (BR-deletion-integrity).
 
 ## Scope
 
-This doc is the ART area's design-of-record. It covers creating a requirement artifact from any authoring surface, resolving its home document section from its type, and the cutover the new model needs in the document section editor: items are created and edited through the artifact endpoints, and the document section save stores prose only.
+This doc is the ART area's design-of-record. It covers creating a requirement artifact from any authoring surface, resolving its home document section from its type, deleting it (refused while anything refers to it), and the cutover the new model needs in the document section editor: items are created, edited and removed through the artifact endpoints, and the document section save stores prose only.
 
 Not covered here, each to be designed on its own:
-- **Removing an item** belongs to UC-ART-delete-artifact (logical delete, refused while referenced). Until it is designed, the document section view hides its Remove button, because today's `DELETE` hard-deletes and cascades links away, against BR-deletion-integrity.
+- **Deleting a glossary term** belongs to UC-GLO-delete-term, which follows the same rule (BR-deletion-integrity) but has its own editor.
 - **Reordering items** (UC-DOC-edit-document 6b) and the order version it needs. Until then the order is creation order.
 - **The artifact catalog page** belongs to UC-ART-find-artifacts. The create endpoint already serves it.
 
@@ -19,6 +19,8 @@ Not covered here, each to be designed on its own:
 There is one create endpoint, `POST /teams/{teamId}/requirement-artifacts`, for every surface. The request names the artifact type, and the type alone names the home: every type has exactly one. The section view offers only its own section's types, so the artifact lands in the list the student is looking at. The server resolves the home: the template registry maps the type to one (document type, section key) pair, and the team's document of that type holds the section with that key. No document or section id travels in the body.
 
 The service locks the home document section's row, mints the key, appends the artifact to the section's list (which sets its home), and saves it, so the row is inserted once with its key and home and `artifact_index` is written at the end. The key is minted first because minting runs a query, which may flush pending changes, and the draft must not be in the cascading list by then. It does not check the document section's lock: the section view offers Add and Edit only to the lock holder, as a UI gate (UC-DOC-edit-document, BR-edit-lock-required).
+
+A delete is physical and refused while the artifact is referenced. Before the confirm, the editor asks `GET …/requirement-artifacts/{id}/references` what refers to the artifact: a link with it at either end, or a use case naming it as an actor. If anything does, the student sees extension 4a and nothing is deleted. Otherwise, after the confirm, `DELETE …/requirement-artifacts/{id}?version=n` checks the version (7a), the same refusals as the PUT, and the references again. It then takes the item out of its home list under the same row lock a create takes, and removes the row. The artifact's comment threads go with it; no link can, because a referenced artifact is refused.
 
 ## Components & classes
 
@@ -38,18 +40,31 @@ classDiagram
   class RequirementArtifactController {
     addRequirementArtifact()
     updateRequirementArtifact() +version
+    deleteRequirementArtifact() +version
+    +findReferences()
   }
   class RequirementArtifactService {
     +createRequirementArtifact(teamId, draft) the only create, mints the key
     updateRequirementArtifact() +version check
+    deleteRequirementArtifact() +version, refusals, references
+    +findReferences(teamId, id)
   }
   class DocumentSectionService {
     updateDocumentSectionContent() prose only
+  }
+  class ArtifactLinkRepository {
+    findBySourceArtifactId()
+    findByTargetArtifactId()
+  }
+  class UseCaseRepository {
+    +findUseCasesNamingActor(artifactId, teamId)
   }
   RequirementArtifactController --> RequirementArtifactService
   RequirementArtifactService --> DocumentTemplateRegistry
   RequirementArtifactService --> DocumentRepository
   RequirementArtifactService --> DocumentSectionRepository
+  RequirementArtifactService --> ArtifactLinkRepository
+  RequirementArtifactService --> UseCaseRepository
 ```
 
 `+` marks what this design adds. Files:
@@ -57,8 +72,9 @@ classDiagram
 - **Changed:** [`RequirementArtifact`](../../backend/src/main/java/team/projectpulse/ram/requirement/RequirementArtifact.java) (`@Version`), [`RequirementArtifactDto`](../../backend/src/main/java/team/projectpulse/ram/requirement/dto/RequirementArtifactDto.java) (adds `homeDocumentType`, response only, and `version`; drops `sourceSectionId`), [`RequirementArtifactDtoToRequirementArtifactConverter`](../../backend/src/main/java/team/projectpulse/ram/requirement/converter/RequirementArtifactDtoToRequirementArtifactConverter.java) (no section lookup), [`RequirementArtifactService`](../../backend/src/main/java/team/projectpulse/ram/requirement/RequirementArtifactService.java), [`RequirementArtifactController`](../../backend/src/main/java/team/projectpulse/ram/requirement/RequirementArtifactController.java), [`DocumentSectionRepository`](../../backend/src/main/java/team/projectpulse/ram/document/DocumentSectionRepository.java), [`DocumentTemplateRegistry`](../../backend/src/main/java/team/projectpulse/ram/document/template/DocumentTemplateRegistry.java), [`DocumentSectionService`](../../backend/src/main/java/team/projectpulse/ram/document/DocumentSectionService.java), [`DocumentSectionDto`](../../backend/src/main/java/team/projectpulse/ram/document/dto/DocumentSectionDto.java) (`requirementArtifacts` read-only), [`RequirementArtifactType`](../../backend/src/main/java/team/projectpulse/ram/requirement/RequirementArtifactType.java) (`hasListHome()`, the four interface types, the two business-level types, no `OTHER`) and [`ArtifactKeyPrefix`](../../backend/src/main/java/team/projectpulse/ram/requirement/ArtifactKeyPrefix.java), [`SRS.yml`](../../backend/src/main/resources/requirement-document-templates/SRS.yml), [`VISION_SCOPE.yml`](../../backend/src/main/resources/requirement-document-templates/VISION_SCOPE.yml).
 - **Removed:** `resolveSectionItems`, `applySectionItems` and `ResolvedItem` from the document section save, and `DocumentSection.replaceAllRequirementArtifacts`, which has no caller left. `SectionItemRejectedException` is renamed `RequirementArtifactRejectedException` (see Refusals).
 - **New:** migration `V11` (see Data model).
-- **Frontend, changed:** [`RamDocumentEditor.vue`](../../frontend/src/pages/ram/RamDocumentEditor.vue) (Add creates through the POST, Edit saves through the PUT with the version, Remove hidden, the section save sends prose only), [`apis/ram/index.ts`](../../frontend/src/apis/ram/index.ts) and [`apis/ram/types.ts`](../../frontend/src/apis/ram/types.ts).
-- **Reused unchanged:** the artifact search (the duplicate warning), key minting (`createRequirementArtifact` is the only create method since OI-73: a type with no list home is only keyed and inserted), the 409 mapping for `OptimisticLockException` in `ExceptionHandlerAdvice`, the document section lock for the prose save, and the team route rules in `SecurityConfiguration`.
+- **Changed for the delete:** [`RequirementArtifact`](../../backend/src/main/java/team/projectpulse/ram/requirement/RequirementArtifact.java) (no cascade or orphan removal on its two link sets), [`UseCaseRepository`](../../backend/src/main/java/team/projectpulse/ram/usecase/UseCaseRepository.java) (the use cases naming an artifact as primary or secondary actor, a projection like its `ConditionUse`), [`SecurityConfiguration`](../../backend/src/main/java/team/projectpulse/security/SecurityConfiguration.java) (one team-membership rule for the references GET), [`RequirementArtifactRejectedException`](../../backend/src/main/java/team/projectpulse/system/exception/RequirementArtifactRejectedException.java) and [`ExceptionHandlerAdvice`](../../backend/src/main/java/team/projectpulse/system/exception/ExceptionHandlerAdvice.java) (an optional payload for 4a), and a new `ArtifactReferrerDto` in `ram/requirement/dto`. The test for the old delete is the only caller of the `DELETE` route today. No schema change.
+- **Frontend, changed:** [`RamDocumentEditor.vue`](../../frontend/src/pages/ram/RamDocumentEditor.vue) (Add creates through the POST, Edit saves through the PUT with the version, Remove checks the references and deletes through the DELETE with the version, the section save sends prose only), [`apis/ram/index.ts`](../../frontend/src/apis/ram/index.ts) and [`apis/ram/types.ts`](../../frontend/src/apis/ram/types.ts).
+- **Reused unchanged:** the artifact search (the duplicate warning), key minting (`createRequirementArtifact` is the only create method since OI-73: a type with no list home is only keyed and inserted), [`ArtifactLinkRepository`](../../backend/src/main/java/team/projectpulse/ram/requirement/ArtifactLinkRepository.java)'s outgoing and incoming link queries, the 409 mapping for `OptimisticLockException` in `ExceptionHandlerAdvice`, the document section lock for the prose save, the cascade that removes an artifact's comment threads, and the team route rules in `SecurityConfiguration`.
 
 ## Homes
 
@@ -124,6 +140,41 @@ sequenceDiagram
 
 Editing an item from the section view uses `PUT …/requirement-artifacts/{id}` with the item's `version`. A stale version is refused with 409 (UC-ART-edit-artifact 10a), and the editor reloads the item.
 
+### UC-ART-delete-artifact: deleting an artifact nothing refers to
+
+```mermaid
+sequenceDiagram
+  actor S as Student
+  participant E as RamDocumentEditor.vue
+  participant C as RequirementArtifactController
+  participant RS as RequirementArtifactService
+  participant DB as repositories
+  S->>E: Remove on an item, while holding the section's lock (steps 1-3, a UI gate only)
+  E->>C: GET requirement-artifacts/{id}/references (step 4)
+  C->>RS: findReferences(teamId, id)
+  RS->>DB: links with it as source or target; use cases naming it as an actor
+  RS-->>E: the referrers, each with key, title and relation
+  alt something refers to it (4a)
+    E->>S: the referrers and what to do: remove or repoint them first (4a1-4a3)
+  else nothing does
+    E->>S: deleted permanently, cannot be recovered: confirm? (step 5)
+    S->>E: confirm (step 6)
+    E->>C: DELETE requirement-artifacts/{id}?version=n
+    C->>RS: deleteRequirementArtifact(teamId, id, n), at READ COMMITTED
+    RS->>DB: findByIdAndTeamTeamId: 404 if not the team's
+    RS->>RS: no list home: 400; home document SUBMITTED: 400 (PRE-3)
+    RS->>RS: version is not n: 409 (7a)
+    RS->>DB: the references again: 400 naming them (4a)
+    RS->>DB: findByIdForUpdate(home section): row lock, then load its list
+    RS->>RS: remove it from the list, so later items move up
+    RS->>DB: delete the row, and its comment threads by cascade (step 7, POST-1)
+    RS-->>C: done
+    C-->>E: 200
+    E->>S: "{key} has been deleted"; the item leaves the list (step 7)
+  end
+  Note over E,C: On 409 the editor GETs the artifact and shows its current details (7a1); the student removes it again or abandons (7a2)
+```
+
 ## API contract
 
 All routes are under the API base URL and return the `Result` envelope. "Team member" is the existing route rule for requirement artifacts and document sections.
@@ -134,9 +185,13 @@ All routes are under the API base URL and return the `Result` envelope. "Team me
 | `PUT /teams/{teamId}/requirement-artifacts/{requirementArtifactId}` (changed) | team member | `version` (required) and the editable fields `title`, `content`, `priority`, `notes`; type and home are ignored | the artifact with its new `version` | 400 no `version`; 400 field errors; 400 a type with no list home (a glossary term, use case or condition is edited through its own use case and lock); 400 home document locked for review (UC-ART-edit-artifact PRE-3); 409 stale version (10a); 404 not in the team |
 | `GET …/document-sections/{documentSectionId}` (changed) | team member | none | each nested item now also carries its `version`, which the editor sends back on the PUT | unchanged |
 | `PUT /teams/{teamId}/documents/{documentId}/document-sections/{documentSectionId}` (changed) | team member holding the document section's lock | `version` and `content`; `requirementArtifacts` is no longer read | the stored document section | the existing lock and version errors |
+| `GET /teams/{teamId}/requirement-artifacts/{requirementArtifactId}/references` (new) | team member | none | a list of referrers (`ArtifactReferrerDto`), one per reference: `id`, `artifactKey` and `title` of the other artifact (for an actor reference, the use case's own artifact, which shares the use case's id), `relation`, and `linkType` (the link's type, null for an actor). `relation` is `LINK_FROM` when the artifact being deleted is the link's source, `LINK_TO` when it is the target, `PRIMARY_ACTOR` or `SECONDARY_ACTOR` when a use case names it in that slot. A self-link is one entry, `LINK_FROM`. An empty list if none | 404 not in the team |
+| `DELETE /teams/{teamId}/requirement-artifacts/{requirementArtifactId}?version=n` (changed) | team member | `version` (query parameter, optional at the binding so its absence gets the message below; a non-numeric value gets the existing "The request is malformed.") | no data, message "Delete requirement artifact successfully" | 400 no `version`; 400 a type with no list home; 400 home document locked for review (PRE-3); 400 referenced (4a), with the referrers as `data`, the same shape as the GET; 409 stale version (7a); 404 not in the team |
 | `POST /teams/{teamId}/requirement-artifacts/search` (reused) | team member | criteria `type` and `title`, page `size=5` | the team's artifacts of that type whose title contains the text (SQL `LIKE`, case-insensitive through the column's MySQL collation) | none new |
 
 A caller who belongs to the team but whose team has no home document gets the 8b 400, not a 404: the team exists and the student needs the message.
+
+"Team member" admits an instructor of the team's course section, as on every artifact route (the Instructor test pins it for the create), so an instructor may delete too. The references GET gets the same rule as its sibling artifact routes in `SecurityConfiguration`.
 
 ### Refusals
 
@@ -150,6 +205,13 @@ One exception, `RequirementArtifactRejectedException` (the renamed `SectionItemR
 | Home document predates its list (a document created from an older template, staging only) | "The team's {home title} was created from an older template and has no list for {a type label}." |
 | PUT with no `version` | "The requirement artifact's version is required to save a change." |
 | PUT on a type with no list home | "{A type label} is not edited here: glossary terms are edited in the glossary, and use cases and their conditions in the use case editor." |
+| DELETE with no `version` | "The requirement artifact's version is required to delete it." |
+| DELETE on a type with no list home | "{A type label} is not deleted here: glossary terms are deleted in the glossary, and use cases and their conditions in the use case editor." |
+| DELETE of a referenced artifact (4a) | "{key} cannot be deleted while other artifacts refer to it: {referrers}. Remove or repoint these references first." Links come first, then actor references, each group in artifact-key order, joined with "; ", never truncated. A link always reads source, type, target ("the link FR-1 DERIVES_FROM UC-1", "the link UC-1 DERIVES_FROM BO-1"); an actor reads "UC-1 names it as its primary actor". |
+
+For 4a, `RequirementArtifactRejectedException` gains an optional payload, and `ExceptionHandlerAdvice` puts it in `Result.data`; every other refusal carries none, as today.
+
+The DELETE under review uses the 8a message, and a stale DELETE gets the existing 409 message ("This requirement artifact has been changed by someone else. Please refresh and try again.").
 
 ### Item rules
 
@@ -157,7 +219,10 @@ One exception, `RequirementArtifactRejectedException` (the renamed `SectionItemR
 - **Order of checks:** field validation, then the home (type, document, review lock), then the row lock and the write. Nothing is written until every check passes.
 - **The editor's dialog is steps 2 to 7.** Pressing Add in it confirms (steps 6 and 7). It first runs the duplicate search for the chosen type and title; with no match the artifact is created on that one confirm, and with matches they are shown as a non-blocking warning and a second press creates it anyway (5a2). Changing the type or the title runs the search again. "Open the existing artifact" opens it read-only in a dialog.
 - **A stale edit (10a):** on a 409 the editor GETs the artifact, puts its current details in the dialog with a warning that a teammate changed it, and the student reapplies what she still needs.
-- **The editor's list mirrors the server.** `draftArtifacts` no longer holds unsaved items: a create appends the returned artifact, an edit replaces the item with the returned one, and loading the section refreshes it. Only the prose is a draft, so UC-DOC-edit-document's leave prompt (6a), when it is built, tracks unsaved prose only.
+- **Delete, order of checks:** the artifact (404), its type (no list home), its home document (review lock), the version (409), then the references (4a), then the row lock and the delete. A refusal changes nothing. The review-lock check reads the home section and its document but must not touch the section's `requirementArtifacts` before the row lock, as on the create. A list-type artifact with no home cannot exist since OI-73; if one is found, it is deleted without the list step.
+- **The editor's Remove is steps 1 to 7.** It is enabled exactly when Add and Edit are (`canEdit`), so the section view is the one place to delete until the catalog page (UC-ART-find-artifacts) exists. The item as the list shows it (key, title, content) is step 2's view. Remove first GETs the references. If there are any, a dialog lists them with the 4a message and offers only Close (4a2 is that instruction; it links to no other editor). If there are none, it asks: "{key} {title} and its comment threads will be deleted permanently and cannot be recovered. Delete it?"
+- **Refusals from the DELETE reach the student through the shared toast** that the Axios instance shows for every error, and the editor opens no second dialog. On a 4a refusal (a teammate linked the artifact after the check) the toast carries the full message. On a 409 the editor reloads the section, so the item shows its current details (7a1), and the student may press Remove again (7a2). A 404 (a teammate deleted it first) follows the shared not-found routing; the use case has no extension for it, and the next load shows the list without it.
+- **The editor's list mirrors the server.** `draftArtifacts` no longer holds unsaved items: a create appends the returned artifact, an edit replaces the item with the returned one, a delete removes it, and loading the section refreshes it. Only the prose is a draft, so UC-DOC-edit-document's leave prompt (6a), when it is built, tracks unsaved prose only.
 
 ## Key decisions
 
@@ -167,7 +232,13 @@ One exception, `RequirementArtifactRejectedException` (the renamed `SectionItemR
 - **Locked for review means `SUBMITTED`** (and `ACCEPTED`, once the review use cases add it), per BR-review-lock; `DRAFT` and `RETURNED` are open. Both the create and the PUT check it, on the artifact's home document.
 - **The document section lock is a UI gate for items, not a server check,** as BR-edit-lock-required specifies. Rejected: also checking the lock on the artifact endpoints, which would block the catalog and the future graph view.
 - **The document section save stores prose only, and the whole-list replace is deleted.** Rejected: keeping the list in the save for its order, which would unlink an artifact created elsewhere by a stale editor.
-- **Remove is hidden in the section view** until UC-ART-delete-artifact is designed. Rejected: wiring it to today's `DELETE`, which hard-deletes and cascades links away. No requirement artifact exists in production, so nothing is lost meanwhile.
+- **A delete is physical and refused while referenced** (BR-deletion-integrity, as changed 2026-11-19). Because nothing can refer to a deleted artifact, removing the row breaks nothing, and the key sequence never reissues its key. Rejected: a logical delete (a `deleted_at` marker and an entity-wide `@SQLRestriction`), which kept an audit trail the user decided the course does not need, at the cost of a migration and a filter on every read.
+- **A reference is a link with the artifact at either end, or a use case naming it as an actor.** A link needs both its ends, so either end being deleted would break it (the foreign key refuses that, since links are not cascaded; see below). Comment threads are not references: they belong to the artifact and go with it, comments included. An artifact key written in prose (a document section's content, a use case step, notes) is not a reference either: the model does not track it, and the student can edit the text. Rejected: counting only incoming links, which would let a delete silently drop the artifact's own trace links.
+- **Links are not cascaded from the artifact; the foreign key is the backstop.** `RequirementArtifact.outgoingArtifactLinks` and `incomingArtifactLinks` lose `cascade = ALL` and `orphanRemoval = true` and stay plain `mappedBy` sets. Link creation and deletion already save and delete the `ArtifactLink` themselves, so neither needs the cascade; its only effect was to delete every link touching an artifact when the artifact was deleted, which BR-deletion-integrity forbids. Without it, a delete that slips past the reference check (a future delete path, or OI-75's race) fails on the `artifact_link` foreign key instead of losing the link, as an actor reference already does. `commentThreads` keeps its cascade: threads belong to the artifact. Rejected: keeping the cascade and relying on the reference check alone, which turns any missed check into silent data loss.
+- **The references GET is advisory; the DELETE checks again.** Step 4 needs the answer before the confirm, so the editor asks first. The DELETE re-checks inside its own transaction at `READ COMMITTED`, so a link a teammate created between the GET and the confirm is still refused. Rejected: checking only in the DELETE, which would ask the student to confirm a delete and then refuse it, against the use case's order. A reference committed during the delete's own transaction is not seen; that window is OI-75.
+- **The delete runs at `READ COMMITTED` and takes the home section's row lock before loading its list,** as the create does, for the same reason: under `REPEATABLE READ` the list could come from a snapshot that misses a create committed while the delete waited, and the rewritten indexes would leave a gap that loads as a null item. Locks are taken in the same order as the create's, so no deadlock cycle exists.
+- **The DELETE carries the version as a query parameter** and compares it before deleting (7a): a mismatch throws `OptimisticLockException`, which the existing handler maps to 409, and the versioned `DELETE … WHERE version = ?` Hibernate issues catches an edit that commits between the compare and the delete. Only a change to the artifact's own fields bumps its version; a new comment or link does not (both are the `mappedBy` side), and a link blocks the delete anyway. Like the create, the delete leaves the home document section's version alone. The row goes by removing it from the section's list and then deleting it, as today's code does. Rejected: a request body, which clients and proxies handle unreliably on DELETE; and no version check, which would let a student delete content a teammate just rewrote.
+- **The DELETE refuses what the PUT refuses:** a type with no list home (glossary terms, use cases and conditions have their own delete use cases and rules) and a home document locked for review. Like Add and Edit, it does not check the document section lock (BR-edit-lock-required).
 - **`RequirementArtifact` carries `@Version`, and the PUT compares it with the request** before writing, as the document section save compares its own. Rejected: relying on the merge alone, which has no client version to compare.
 - **The interface split and the removal of `OTHER` ship with this design,** because the registry's homes must be unique per type.
 
@@ -205,11 +276,25 @@ The home stays `requirement_artifact.source_document_section_id`, nullable at th
 | Prose-only section save | integration | A `requirementArtifacts` list sent in the document section PUT changes nothing in the list |
 | Cross-team | integration | A non-member is refused with 403 |
 | PUT on a type with no list home | integration | A glossary term, a use case and a precondition are each refused with 400 |
-| Delete leaves no gap | integration | Deleting the middle item of a list leaves the others in order, reloaded from the database |
+| UC-ART-delete-artifact, main flow | integration | Deleting FR-3 (the one seeded functional requirement with no link) at its version returns 200; the row is gone from the database, the search and the GET (404); section 16 reloads as FR-1, FR-2 with no null |
+| Delete, references none | integration | The seeded external system (no link, no actor use) has an empty references list |
+| Delete, references listed | integration | FR-1 lists its link to UC-1 as `LINK_FROM`; BO-1 lists UC-1's link to it as `LINK_TO`; stakeholder 1 lists the seeded use case as `PRIMARY_ACTOR`, stakeholder 2 as `SECONDARY_ACTOR` |
+| Delete, extension 4a | integration | Deleting FR-1 or stakeholder 1 is refused with 400 naming each referrer and carrying them as data; the artifact and its links are unchanged |
+| Delete, 4a after the check | integration | With an empty references list, a link to the artifact is created, then the DELETE is refused with 400 |
+| Delete, extension 7a | integration | A DELETE with a stale version is refused with 409 and the artifact is unchanged; with no version it is refused with 400 |
+| Delete under review (PRE-3) | integration | With the SRS `SUBMITTED`, deleting FR-3 is refused with 400 |
+| Delete, type with no list home | integration | Deleting the glossary term, the use case's artifact and a precondition is each refused with 400; nothing changes |
+| Delete, cross-team | integration | A non-member is refused with 403; a member of team 2 naming team 1's artifact through team 2's URL gets 404, on both the DELETE and the references GET |
+| No link cascade | integration | Deleting a linked artifact through the repository, past the service's check, fails on the foreign key and leaves the link in place |
+| Delete, comment threads | integration | A functional requirement created in the test, with a comment thread and a comment, is deleted; the thread and the comment are gone |
+| Delete, instructor | integration | An instructor of the team's course section can delete FR-3 |
+| Delete, lock holder undisturbed | integration | A teammate's delete leaves the document section's version unchanged, and the lock holder's prose save still succeeds |
+| Delete, key not reused | integration | After FR-3 is deleted, the next functional requirement is FR-4 |
+| Delete leaves no gap | integration | Create FR-4, delete FR-3 from the middle of the list, reload from the database: FR-1, FR-2, FR-4 |
 | Instructor | integration | An instructor of the team's course section can create an artifact; an instructor of another course section is refused with 403 |
 | Homes | unit | Every type with `hasListHome()` has exactly one home and every other type none; the business-level kinds map to the Vision and Scope and the plain ones to the SRS; each interface type maps to its own SRS section; no template admits a type without a list home |
 | V11 | integration, at startup | Flyway applies V1 to V11 on each test run's fresh database |
-| Editor | manual, recorded in the PR | Add and Edit are offered only while holding the lock, Remove is hidden, a new item shows its key at once, and a stale edit reloads the item |
+| Editor | manual, recorded in the PR | Add, Edit and Remove are offered only while holding the lock; a new item shows its key at once; a stale edit or delete reloads the item; a referenced item's Remove shows the referrers and deletes nothing; a confirmed Remove takes the item out of the list |
 
 ## Open questions / risks
 
@@ -217,7 +302,8 @@ The home stays `requirement_artifact.source_document_section_id`, nullable at th
 - **The review lock (8a)** reads `RequirementDocument.status`; review itself is not built, so the test sets the status directly.
 - **Whether a reorder bumps each artifact's version** is unverified. It matters to the reorder design, not to this one.
 - **Reorder and its order version are deferred.** DI-concurrency-control's order version is realized by the reorder design; V11 adds no order column. The editor has no reorder controls today, so nothing needs hiding.
-- **The hard-delete `DELETE` stays callable.** Hiding Remove keeps students away from it, but a direct call still hard-deletes and cascades links away, against BR-deletion-integrity. It does take the item out of its home list first, under the same row lock a create takes, so the list keeps no gap in `artifact_index` (a gap would load as a null item). No requirement artifact exists in production, and UC-ART-delete-artifact's design replaces the endpoint's behavior. That design must also close two gaps a code review found on 2026-11-18. (1) The delete takes the row lock at the default `REPEATABLE READ`, so the list it loads after the lock comes from the snapshot fixed by its first read; a create committed while it waited is missed, and the rewritten indexes leave a gap that loads as a null item. It needs `READ COMMITTED`, as the create has. (2) The delete skips both refusals the PUT has: it accepts a type with no list home (deleting a use case's artifact or a referenced condition fails on a foreign key with a 500, and a glossary term bypasses the glossary), and it deletes items of a document locked for review, against BR-review-lock.
+- **Until UC-ART-delete-artifact is built, the old `DELETE` stays callable.** It hard-deletes with no reference check, version or refusals, and the editor hides Remove meanwhile. The two gaps a code review found on 2026-11-18 (the `REPEATABLE READ` row lock, and the missing refusals) are closed by this design's delete.
+- **A reference committed during the delete's own transaction is not seen by the re-check** (OI-75). With the link cascade removed, nothing is lost: the delete fails on the foreign key of the new link or actor reference, and the student gets a 500 instead of the 4a message. The proposed fix is a `FOR SHARE` read of the referenced artifacts in link creation and actor resolution.
+- **The audit trail is gone by decision.** A deleted artifact cannot be recovered by anyone, including an instructor (BR-deletion-integrity, changed 2026-11-19).
 - **The UI lock gate can be stale.** If the student's document section lock expires while the Add dialog is open, the create still succeeds, because the server does not check the lock for items. This is the specified behavior (BR-edit-lock-required); the next prose save is what the expired lock refuses.
 - **Teammates' creates do not appear live.** An artifact created from the catalog shows in an open section view only when that view reloads, since real-time collaboration (UC-COL-collaborative-edit) is deferred.
-- **Logical delete and the indexes.** When UC-ART-delete-artifact adds the logical delete, it decides whether a deleted item keeps its place in the list; indexes come from list position, so this design needs no change for it.
