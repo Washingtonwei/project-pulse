@@ -71,7 +71,7 @@ classDiagram
     }
     class RequirementArtifactService {
         +findRequirementArtifactById(teamId, id)
-        +saveRequirementArtifact(teamId, artifact)
+        +createArtifactWithoutHome(teamId, artifact)
     }
     class UseCase {
         +reviseMainSteps(submitted)
@@ -159,8 +159,8 @@ sequenceDiagram
     R-->>E: 404 if an actor is not in this team (step 4, BR-team-scoped-access)
     S->>S: requireActor type check, else 400 (extension 4a)
     S->>S: resolveConditions: check every entry (see Preconditions and postconditions), else 400 or 404
-    S->>R: saveRequirementArtifact(teamId, artifact): team from route, key UC-n
-    S->>R: saveRequirementArtifact for each new condition: type from its list, key PRC-n or PSC-n
+    S->>R: createArtifactWithoutHome(teamId, artifact): team from route, key UC-n
+    S->>R: createArtifactWithoutHome for each new condition: type from its list, key PRC-n or PSC-n
     S->>DB: save use case (steps cascade, conditions are links only)
     C-->>E: Result with the use case, its step ids and version
 ```
@@ -189,7 +189,7 @@ sequenceDiagram
     S->>S: lock held by the caller (409 not locked, 423 someone else)
     S->>DB: lock(useCase, PESSIMISTIC_FORCE_INCREMENT)
     S->>U: artifact fields, trigger, actors
-    S->>R: saveNewConditions: saveRequirementArtifact for each new one (PRC-n, PSC-n)
+    S->>R: saveNewConditions: createArtifactWithoutHome for each new one (PRC-n, PSC-n)
     S->>U: replace the ordered condition lists (links only)
     S->>U: reviseMainSteps(submitted steps)
     U->>U: OwnedChildren.revise, recursively per level
@@ -206,7 +206,7 @@ Each condition entry in a request is `{ id?, condition }`, in list order, and `r
 ```mermaid
 flowchart TD
     A[Submitted entry, in its list] --> B{Has an id?}
-    B -- no --> N[New condition, built now and saved after the version and lock checks:<br/>saveRequirementArtifact, type from the list,<br/>team from the route, key PRC-n or PSC-n]
+    B -- no --> N[New condition, built now and saved after the version and lock checks:<br/>createArtifactWithoutHome, type from the list,<br/>team from the route, key PRC-n or PSC-n]
     B -- yes --> D{Repeated in this list?}
     D -- yes --> X400d[400]
     D -- no --> L[findRequirementArtifactById in the route's team]
@@ -328,7 +328,7 @@ The editor lists a team's use cases through the requirement artifact search, `PO
 | A list missing from the body | 400 by `@NotNull`, at every level of the step tree | Treating it as empty: on a PUT that would silently remove every secondary actor, condition or step |
 | The body's `teamId` | Kept in the DTO and ignored by the server | Removing it: reaches into the frontend for no behavior change; it can go when the DTO is next reshaped |
 | How a condition is named in a request | `{ id?, condition }` per entry, resolved by the service in the route's team | Conditions as entities built by the converter (as before): every save inserted new rows, and a converter can't scope ids |
-| How a new condition is stored | `saveRequirementArtifact`, then linked; the cascade is removed | Cascade PERSIST from `UseCase` (as before): skipped the key and let the body choose the type. It is also why the actors slice needed the `giveConditionsTheTeam` stopgap, which is deleted. |
+| How a new condition is stored | `createArtifactWithoutHome`, then linked; the cascade is removed | Cascade PERSIST from `UseCase` (as before): skipped the key and let the body choose the type. It is also why the actors slice needed the `giveConditionsTheTeam` stopgap, which is deleted. |
 | Same wording as an existing condition | Always a new condition | Reuse by wording: makes "Make a separate copy" impossible, and needs a rule for how exact a match must be |
 | Who may reword a condition through a use case | No one, shared or not (BR-shared-condition-wording, since 2026-11-15) | Only while no other use case references it (as first built): needed a sharing query on every save, a check-then-write plan type, and carried a race between rewording and linking. Always: would silently change the other use cases |
 | An entry with an `id` and a different wording | The wording is ignored; the stored condition is linked as it is, and the response carries its stored wording (since 2026-11-15) | Refused with a 400 by exact string equality (as first built): a check, an error message and a keyless fallback name for a case the read-only editor never sends, and a misleading "can't be reworded" 400 on an untouched save after a teammate reworded the condition through the artifact route. Entries as `{ id }` or `{ condition }`, never both: loses `@NotBlank`'s field-path error and changes the frontend payload |
@@ -390,7 +390,7 @@ The step tables and their `*_index` order columns are unchanged. The dev seed ad
 - Authorization: the route rule (`TeamMembershipAuthorizationManager`) and the team-scoped query, as the architecture-of-record's [Authorization](architectural-design.md#authorization) requires; `RequirementArtifactService.findRequirementArtifactById` is the scoped finder for actors and conditions.
 - Use case locking (BR-edit-lock-required, BR-lock-expiry): the save is refused unless the caller holds the lock.
 - Optimistic locking (OI-51): `UseCase` is the aggregate root, so its `@Version` covers all three child levels.
-- Artifact keys: `RequirementArtifactService.saveRequirementArtifact` mints the keys of the use case and of every new condition, as it does for every artifact.
+- Artifact keys: `RequirementArtifactService.createArtifactWithoutHome` mints the keys of the use case and of every new condition, as it does for every artifact.
 - Error mapping: `ExceptionHandlerAdvice` already maps `MethodArgumentNotValidException` and `IllegalArgumentException` to 400, `ObjectNotFoundException` to 404, the two lock exceptions to 409 and 423, and `OptimisticLockException` to 409.
 - A document section's requirement artifacts no longer pair by id at all: the section save stores prose only, and each artifact is created and edited through its own endpoint (see [art.md](art.md)).
 
@@ -404,7 +404,7 @@ The step tables and their `*_index` order columns are unchanged. The dev seed ad
 | UC-DOC-edit-use-case, extension 7a | integration, `UseCaseControllerTest` | The same two refusals on PUT; the stored actors and version are unchanged |
 | Actor from another team (create and edit) | integration, `UseCaseControllerTest` | Refused with 404, with the same message as an id that names nothing |
 | Missing fields (create and edit) | integration, `UseCaseControllerTest` | Each of `primaryActorId`, `secondaryActorIds`, `preconditions`, `postconditions` and `mainSteps` omitted gives 400, not 500; so does a null nested list in the step tree (a main step's `extensions`, an extension's `steps`), with the error keyed by its field path |
-| Body `teamId` is ignored (OI-46) | integration, `RequestBodyIdIntegrationTest` | With another team's id in the body, every stored condition belongs to the route's team and the other team gains no rows. Written first and run against the unchanged code; still holds with new conditions saved through `saveRequirementArtifact`. A body with no `teamId` saves too (`UseCaseControllerTest.addUseCase_WithoutTeamId`) |
+| Body `teamId` is ignored (OI-46) | integration, `RequestBodyIdIntegrationTest` | With another team's id in the body, every stored condition belongs to the route's team and the other team gains no rows. Written first and run against the unchanged code; still holds with new conditions saved through `createArtifactWithoutHome`. A body with no `teamId` saves too (`UseCaseControllerTest.addUseCase_WithoutTeamId`) |
 | A condition id from another team (OI-46) | integration, `RequestBodyIdIntegrationTest` | The update probe naming team 2's artifact as a precondition now gets 404, and team 2's artifact is unchanged |
 | External system key | unit, `ArtifactKeyPrefixTest`; integration | `ArtifactKeyPrefix.of(EXTERNAL_SYSTEM)` is `SYS`, and no artifact type falls back to `UNK`; the seeded external system has the key `SYS-1` (asserted in the create main-flow test) |
 | Pairing rules | unit, `UseCaseStepRevisionTest` | Paired child updated in place; unpaired, foreign and repeated ids become fresh copies; omitted children removed; order follows the submission; extension ids pair only within their own step; `label` and `resumeStepNo` survive |

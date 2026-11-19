@@ -129,12 +129,17 @@ public class RequirementArtifactService {
     }
 
     /**
-     * Saves {@code newRequirementArtifact} in team {@code teamId} as a new row. The team comes from the route and the
+     * Creates {@code newRequirementArtifact} in team {@code teamId} without placing it in any document section's list:
+     * for the types with no list home (glossary terms, use cases, preconditions, postconditions), whose own services
+     * call this. A list type belongs through {@link #createRequirementArtifact}; nothing here enforces that yet, and the
+     * seed data still uses this for list types (OI-73).
+     * <p>
+     * It inserts a new row. The team comes from the route and the
      * artifact key is minted here (BR-artifact-key-unique), replacing whatever the object carried. The object must be
      * new: every caller builds it with {@code new}, and no converter maps an id (OI-46). Its null version makes the
      * save an insert, so an object carrying an id fails instead of updating a row.
      */
-    public RequirementArtifact saveRequirementArtifact(Integer teamId, RequirementArtifact newRequirementArtifact) {
+    public RequirementArtifact createArtifactWithoutHome(Integer teamId, RequirementArtifact newRequirementArtifact) {
         assignTeamAndKey(teamId, newRequirementArtifact);
         return this.requirementArtifactRepository.save(newRequirementArtifact);
     }
