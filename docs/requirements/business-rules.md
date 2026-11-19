@@ -106,7 +106,7 @@ The artifact types named here are the canonical `RequirementArtifactType` set (g
 
 # **Deletion Integrity**
 
-- **BR-deletion-integrity:** A glossary term or requirement artifact that is still referenced by another artifact may not be deleted; the references must be removed or repointed first. Deletion is logical (soft delete): deleted items leave active use but are retained for audit and are not reusable.
+- **BR-deletion-integrity:** A glossary term or requirement artifact that is still referenced by another artifact may not be deleted; the references must be removed or repointed first. Deletion is physical: a deleted item is permanently removed, cannot be recovered, and its key is never reissued.
 
 # **Review and Submission**
 
