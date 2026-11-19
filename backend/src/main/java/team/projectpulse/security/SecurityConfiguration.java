@@ -260,6 +260,8 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/requirement-artifacts/{artifactId}").access(this.teamMembershipAuthorizationManager)
                         .requestMatchers(HttpMethod.PUT, this.baseUrl + "/teams/{teamId}/requirement-artifacts/{artifactId}").access(this.teamMembershipAuthorizationManager)
                         .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/teams/{teamId}/requirement-artifacts/{artifactId}").access(this.teamMembershipAuthorizationManager)
+                        // What refers to an artifact, asked before its delete (UC-ART-delete-artifact step 4).
+                        .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/requirement-artifacts/{artifactId}/references").access(this.teamMembershipAuthorizationManager)
 
                         // Security rules for the RAM /teams/{teamId}/glossary-terms/** endpoint.
                         .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/glossary-terms/{glossaryTermId}").access(this.teamMembershipAuthorizationManager)
