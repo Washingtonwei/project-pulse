@@ -30,7 +30,7 @@ classDiagram
   class DocumentTemplateRegistry {
     admittedTypes(DocumentType, sectionKey)
     +homeOf(RequirementArtifactType)
-    +validateAtStartup() every list type has one home
+    +buildHomes() at startup, one home per list type
   }
   class DocumentSectionRepository {
     +findByIdForUpdate(id)

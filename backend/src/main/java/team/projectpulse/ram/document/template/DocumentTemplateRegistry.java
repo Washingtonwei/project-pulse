@@ -13,7 +13,6 @@ import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +30,9 @@ public class DocumentTemplateRegistry {
             .build();
 
     private final Map<DocumentType, DocumentTemplate> templates = new EnumMap<>(DocumentType.class);
+
+    // Each list type's one home (BR-artifact-home), built once at startup by buildHomes.
+    private final Map<RequirementArtifactType, Home> homes = new EnumMap<>(RequirementArtifactType.class);
 
     /**
      * The home of an artifact type: the list section with {@code sectionKey} in a {@code documentType} document.
@@ -57,7 +59,7 @@ public class DocumentTemplateRegistry {
 
             log.info("Successfully loaded {} document template(s)", templates.size());
             validateTemplates();
-            checkHomes(templates);
+            homes.putAll(buildHomes(templates));
 
         } catch (IOException e) {
             log.error("Failed to scan for template files", e);
@@ -122,37 +124,39 @@ public class DocumentTemplateRegistry {
     }
 
     /**
-     * Refuses a set of templates that breaks BR-artifact-home: every type with a list home must have exactly one home.
-     * Run at startup, after every template is loaded, so a template change that leaves a type homeless, or gives it a
-     * second home, stops the application instead of making creates fail or land in the wrong list.
+     * Maps each list type to its one home (BR-artifact-home): the list section whose template admits it, for example
+     * {@code RISK} -> (VISION_SCOPE, "RISKS"). Run once at startup, after every template is loaded. The templates are
+     * YAML data and can break the rule, so a type admitted by a second section, or a list type admitted by none, is
+     * refused here and stops the application, instead of making creates fail or land in the wrong list. Static, taking
+     * the templates as an argument, so the unit tests can pass hand-built templates with a missing or extra home.
      */
-    static void checkHomes(Map<DocumentType, DocumentTemplate> templates) {
-        for (RequirementArtifactType artifactType : RequirementArtifactType.values()) {
-            if (!artifactType.hasListHome()) {
-                continue;
+    static Map<RequirementArtifactType, Home> buildHomes(Map<DocumentType, DocumentTemplate> templates) {
+        Map<RequirementArtifactType, Home> homes = new EnumMap<>(RequirementArtifactType.class);
+        templates.forEach((documentType, template) -> {
+            for (DocumentTemplate.SectionTemplate section : template.getSections()) {
+                for (RequirementArtifactType artifactType : section.getArtifactTypes()) {
+                    Home home = new Home(documentType, section.getSectionKey());
+                    Home earlier = homes.putIfAbsent(artifactType, home);
+                    if (earlier != null) {
+                        throw new IllegalStateException("Artifact type " + artifactType + " has two homes in the templates: " + earlier + " and " + home + ".");
+                    }
+                }
             }
-            List<Home> homes = homesOf(templates, artifactType);
-            if (homes.size() != 1) {
-                throw new IllegalStateException("Artifact type " + artifactType + " has " + homes.size() + " list home(s) in the templates, expected 1: " + homes);
+        });
+        for (RequirementArtifactType artifactType : RequirementArtifactType.values()) {
+            if (artifactType.hasListHome() && !homes.containsKey(artifactType)) {
+                throw new IllegalStateException("Artifact type " + artifactType + " has no home in the templates.");
             }
         }
-    }
-
-    private static List<Home> homesOf(Map<DocumentType, DocumentTemplate> templates, RequirementArtifactType artifactType) {
-        List<Home> homes = new ArrayList<>();
-        templates.forEach((documentType, template) -> template.getSections().stream()
-                .filter(section -> section.getArtifactTypes().contains(artifactType))
-                .forEach(section -> homes.add(new Home(documentType, section.getSectionKey()))));
         return homes;
     }
 
     /**
-     * The home of {@code artifactType}: the one list section whose template admits it (BR-artifact-home), for example
-     * {@code RISK} -> (VISION_SCOPE, "RISKS"). Empty for a type without a list home; the startup check guarantees one
-     * for every other type.
+     * The home of {@code artifactType}, for example {@code RISK} -> (VISION_SCOPE, "RISKS"). Empty for a type without
+     * a list home; {@link #buildHomes} guarantees one for every other type.
      */
     public Optional<Home> homeOf(RequirementArtifactType artifactType) {
-        return homesOf(this.templates, artifactType).stream().findFirst();
+        return Optional.ofNullable(this.homes.get(artifactType));
     }
 
     public Optional<DocumentTemplate> find(DocumentType type) {

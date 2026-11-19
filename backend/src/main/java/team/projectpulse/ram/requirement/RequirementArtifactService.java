@@ -81,10 +81,8 @@ public class RequirementArtifactService {
 
     /**
      * Creates {@code draft} in team {@code teamId} as an item of its home document section, appended at the end
-     * (UC-ART-create-artifact). The home comes from the artifact's type alone (BR-artifact-home); nothing in the
-     * request names a document or a section. The document
-     * section's own lock is not checked: the section view offers Add only to its holder, as a UI gate
-     * (BR-edit-lock-required).
+     * (UC-ART-create-artifact). The home comes from the artifact's type alone (BR-artifact-home). The document
+     * section's own lock is not checked: the section view offers Add only to its holder, as a UI gate (BR-edit-lock-required).
      * <p>
      * Concurrency: the home section's row is locked ({@link DocumentSectionRepository#findByIdForUpdate}) before its
      * list is read, so two creates in one section append one after the other instead of taking the same
@@ -228,7 +226,7 @@ public class RequirementArtifactService {
             throw new RequirementArtifactRejectedException(capitalize(withArticle(label(type)))
                     + " is not created here: glossary terms are created in the glossary, and use cases and their conditions in the use case editor.");
         }
-        // The startup check (DocumentTemplateRegistry.checkHomes) gives every type with a list home exactly one home.
+        // The startup check (DocumentTemplateRegistry.buildHomes) gives every type with a list home exactly one home.
         return this.documentTemplateRegistry.homeOf(type)
                 .orElseThrow(() -> new IllegalStateException("The templates give " + type + " no home."));
     }
