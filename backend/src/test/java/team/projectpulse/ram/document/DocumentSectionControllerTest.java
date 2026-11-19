@@ -155,9 +155,9 @@ public class DocumentSectionControllerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.message").value("Update document section content successfully"))
                 .andExpect(jsonPath("$.data.id").value(16))
                 .andExpect(jsonPath("$.data.content").value("Updated section content goes here."))
-                // The save stores the content only: the list keeps its two seeded items, and the new entry sent
+                // The save stores the content only: the list keeps its three seeded items, and the new entry sent
                 // with them is not created (UC-DOC-edit-document; items go through the artifact endpoints).
-                .andExpect(jsonPath("$.data.requirementArtifacts", Matchers.hasSize(2)))
+                .andExpect(jsonPath("$.data.requirementArtifacts", Matchers.hasSize(3)))
                 .andExpect(jsonPath("$.data.requirementArtifacts[0].artifactKey").value("FR-1"));
     }
 
@@ -207,7 +207,7 @@ public class DocumentSectionControllerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.data.id").value(16))
                 .andExpect(jsonPath("$.data.content").value("Updated section content goes here."))
                 // A list sent with only one entry neither drops the seeded items nor adds the new one.
-                .andExpect(jsonPath("$.data.requirementArtifacts", Matchers.hasSize(2)));
+                .andExpect(jsonPath("$.data.requirementArtifacts", Matchers.hasSize(3)));
     }
 
     @Test
@@ -439,8 +439,8 @@ public class DocumentSectionControllerTest extends AbstractIntegrationTest {
 
 
     // ---- The document section save after requirement artifacts became first-class (docs/design/art.md, Tests) ----
-    // The seed has one document, team 1's SRS (document 1). Section 16 is NON_USE_CASE_FUNCTIONAL_REQUIREMENTS, which
-    // holds FR-1 and FR-2; section 13 is ASSUMPTIONS_DEPENDENCIES; section 1 is the RICH_TEXT INTRODUCTION.
+    // Team 1's SRS is document 1. Section 16 is NON_USE_CASE_FUNCTIONAL_REQUIREMENTS, which holds FR-1, FR-2 and FR-3;
+    // section 13 is ASSUMPTIONS_DEPENDENCIES; section 1 is the RICH_TEXT INTRODUCTION.
 
     @Test
     void sectionSave_ProseOnly_ItemsSentWithItChangeNothing() throws Exception {
@@ -454,7 +454,7 @@ public class DocumentSectionControllerTest extends AbstractIntegrationTest {
         JSONObject saved = putSection(16, version, items, this.studentJohnToken);
         assertThat(saved.getBoolean("flag")).as(saved.toString()).isTrue();
         JSONArray savedItems = saved.getJSONObject("data").getJSONArray("requirementArtifacts");
-        assertThat(savedItems.length()).isEqualTo(2);
+        assertThat(savedItems.length()).isEqualTo(3);
         assertThat(savedItems.getJSONObject(0).getString("title")).isEqualTo("User authentication");
         assertThat(savedItems.getJSONObject(1).getString("artifactKey")).isEqualTo("FR-2");
     }
@@ -462,7 +462,7 @@ public class DocumentSectionControllerTest extends AbstractIntegrationTest {
     @Test
     void findDocumentSectionById_ItemsCarryTheirVersion() throws Exception {
         JSONArray items = currentItems(16, this.studentJohnToken);
-        assertThat(items.length()).isEqualTo(2);
+        assertThat(items.length()).isEqualTo(3);
         assertThat(items.getJSONObject(0).get("version")).isInstanceOf(Integer.class);
         assertThat(items.getJSONObject(0).getString("homeDocumentType")).isEqualTo("SRS");
     }

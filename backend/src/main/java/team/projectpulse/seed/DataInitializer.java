@@ -933,14 +933,39 @@ public class DataInitializer implements CommandLineRunner {
         UserInvitation userInvitationForLucas = new UserInvitation("l.santos@abc.edu", 1, 2, "registrationToken", "student");
         this.userInvitationRepository.saveAll(List.of(userInvitationForElon, userInvitationForLucas));
 
-        // Initialize some requirement artifacts and use cases for team1 in section1 of course1
+        // ---- Team 1's requirement documents ----
+        // Created before any artifact, because createRequirementArtifact puts each list-type artifact into its home
+        // document section (BR-artifact-home), so the home must exist first. Each document is saved once, complete,
+        // and never saved again: this method runs outside a transaction, so `doc` is detached after the save, and
+        // saving it again once its lists hold items would merge its stale, empty lists over them. The SRS comes first
+        // so it stays document 1 with the same section ids; the Vision and Scope is document 2.
+        RequirementDocument doc = newDocument(team1, DocumentType.SRS);
+
+        // Lock the SRS's "INTRODUCTION" section, held by John.
+        doc.getSections().stream()
+                .filter(section -> "INTRODUCTION".equals(section.getSectionKey()))
+                .findFirst()
+                .ifPresent(section -> {
+                    DocumentSectionLock sectionLock = section.getLock();
+                    PeerEvaluationUser currentUser = john;
+                    Instant now = Instant.now();
+                    Instant expiresAt = now.plus(Duration.ofMinutes(15));
+                    sectionLock.lock(currentUser, now, expiresAt, "Locking section for editing");
+                });
+
+        this.documentRepository.save(doc);
+        this.documentRepository.save(newDocument(team1, DocumentType.VISION_SCOPE));
+
+        // Initialize some requirement artifacts and use cases for team1 in section2 of course1. Every artifact is
+        // created through createRequirementArtifact, which mints its key and, for a list type, appends it to its home.
         RequirementArtifact createUseCase = new RequirementArtifact(team1, RequirementArtifactType.USE_CASE, "Create a use case", "The Student wants to create a new use case in the use case document so that a new user requirement is added in the document.", "");
         createUseCase.setPriority(Priority.CRITICAL);
         RequirementArtifact stakeholder1 = new RequirementArtifact(team1, RequirementArtifactType.STAKEHOLDER, "Student", "A student in the senior design team.", "");
         RequirementArtifact stakeholder2 = new RequirementArtifact(team1, RequirementArtifactType.STAKEHOLDER, "Instructor", "An instructor of the senior design project.", "");
 
-        this.requirementArtifactService.createArtifactWithoutHome(1, stakeholder1);
-        this.requirementArtifactService.createArtifactWithoutHome(1, stakeholder2);
+        // Both land in the Vision and Scope's STAKEHOLDER_PROFILES list.
+        this.requirementArtifactService.createRequirementArtifact(1, stakeholder1);
+        this.requirementArtifactService.createRequirementArtifact(1, stakeholder2);
 
         // The conditions are submitted as new entries; saveUseCase stores each as a requirement artifact with its
         // key (PRC-n, PSC-n), after the use case's own artifact, so the seeded ids stay as they were.
@@ -990,19 +1015,6 @@ public class DataInitializer implements CommandLineRunner {
 
         this.useCaseService.saveUseCase(1, useCase, new UseCaseReferences(stakeholder1.getId(), Set.of(stakeholder2.getId()), preconditions, postconditions));
 
-        // Create a requirement document
-        RequirementDocument doc = new RequirementDocument();
-        doc.setType(DocumentType.SRS);
-        doc.setTeam(team1);
-        doc.setDocumentKey(DocumentType.SRS.name());
-
-        this.documentTemplateRegistry.find(DocumentType.SRS).ifPresentOrElse(
-                tpl -> applyTemplate(doc, tpl),
-                () -> doc.setTitle(DocumentType.SRS.name()) // fallback title if no template file exists
-        );
-
-        this.documentRepository.save(doc);
-
         // Create some requirement artifacts
         RequirementArtifact fr1 = new RequirementArtifact(team1, RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "User authentication", "The system shall allow users to log in using their email and password.", "");
         fr1.setPriority(Priority.CRITICAL);
@@ -1013,34 +1025,12 @@ public class DataInitializer implements CommandLineRunner {
         RequirementArtifact bo1 = new RequirementArtifact(team1, RequirementArtifactType.BUSINESS_OBJECTIVE, "Improve Student Requirements Quality", "Improve the quality of student-written requirements through structure, templates, standards, traceability, AI feedback, and consistency checks.", "");
         bo1.setPriority(Priority.CRITICAL);
 
-        this.requirementArtifactService.createArtifactWithoutHome(1, fr1);
-        this.requirementArtifactService.createArtifactWithoutHome(1, fr2);
-        this.requirementArtifactService.createArtifactWithoutHome(1, fr3);
-        this.requirementArtifactService.createArtifactWithoutHome(1, bo1);
-
-        // Find the "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS" section in the document and add the functional requirements to it
-        doc.getSections().stream()
-                .filter(section -> "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS".equals(section.getSectionKey()))
-                .findFirst()
-                .ifPresent(section -> {
-                    section.addRequirementArtifact(fr1);
-                    section.addRequirementArtifact(fr2);
-
-                });
-
-        // Find the "INTRODUCTION" section in the document and lock it.
-        doc.getSections().stream()
-                .filter(section -> "INTRODUCTION".equals(section.getSectionKey()))
-                .findFirst()
-                .ifPresent(section -> {
-                    DocumentSectionLock sectionLock = section.getLock();
-                    PeerEvaluationUser currentUser = john;
-                    Instant now = Instant.now();
-                    Instant expiresAt = now.plus(Duration.ofMinutes(15));
-                    sectionLock.lock(currentUser, now, expiresAt, "Locking section for editing");
-                });
-
-        this.documentRepository.save(doc);
+        // The three functional requirements land in the SRS's NON_USE_CASE_FUNCTIONAL_REQUIREMENTS list, in this order,
+        // and the business objective in the Vision and Scope's BUSINESS_OBJECTIVES list.
+        this.requirementArtifactService.createRequirementArtifact(1, fr1);
+        this.requirementArtifactService.createRequirementArtifact(1, fr2);
+        this.requirementArtifactService.createRequirementArtifact(1, fr3);
+        this.requirementArtifactService.createRequirementArtifact(1, bo1);
 
         ArtifactLink link1 = new ArtifactLink();
         link1.setTeam(team1);
@@ -1165,11 +1155,14 @@ public class DataInitializer implements CommandLineRunner {
         // ---- Team 2 requirement artifacts ----
         // Team 2 owns a little requirement content of its own. Without it every cross-team
         // test could only run in one direction, and a caller pointing at another team's
-        // artifact could not be expressed at all. Seeded last so no existing id shifts.
+        // artifact could not be expressed at all. Seeded last so no existing id shifts. Its two documents (3, the Vision
+        // and Scope, and 4, the SRS) come first, so each artifact has its home list to land in.
+        this.documentRepository.save(newDocument(team2, DocumentType.VISION_SCOPE));
+        this.documentRepository.save(newDocument(team2, DocumentType.SRS));
         RequirementArtifact team2Stakeholder = new RequirementArtifact(team2, RequirementArtifactType.STAKEHOLDER, "Client", "The external client sponsoring team 2's project.", "");
         RequirementArtifact team2Fr = new RequirementArtifact(team2, RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "Data export", "The system shall let the client export project data as a CSV file.", "");
-        this.requirementArtifactService.createArtifactWithoutHome(2, team2Stakeholder);
-        this.requirementArtifactService.createArtifactWithoutHome(2, team2Fr);
+        this.requirementArtifactService.createRequirementArtifact(2, team2Stakeholder);
+        this.requirementArtifactService.createRequirementArtifact(2, team2Fr);
 
         // ---- Glossary terms, one per team ----
         // The glossary endpoints had no seeded content at all, so a cross-team glossary test
@@ -1177,18 +1170,43 @@ public class DataInitializer implements CommandLineRunner {
         // directions expressible. Seeded last, like the block above, so no existing id shifts.
         RequirementArtifact team1GlossaryTerm = new RequirementArtifact(team1, RequirementArtifactType.GLOSSARY_TERM, "Artifact", "A uniquely identified requirement item that can be traced, such as a use case, a functional requirement, or a glossary term.", "");
         RequirementArtifact team2GlossaryTerm = new RequirementArtifact(team2, RequirementArtifactType.GLOSSARY_TERM, "Deliverable", "A tangible output the team hands to the client at the end of a phase.", "");
-        this.requirementArtifactService.createArtifactWithoutHome(1, team1GlossaryTerm);
-        this.requirementArtifactService.createArtifactWithoutHome(2, team2GlossaryTerm);
+        this.requirementArtifactService.createRequirementArtifact(1, team1GlossaryTerm);
+        this.requirementArtifactService.createRequirementArtifact(2, team2GlossaryTerm);
 
         // ---- An external system ----
         // A non-human actor (BR-use-case-actor-types), so a use case can name an external system as an actor in
         // dev and in tests. Seeded last, like the blocks above, so no existing id shifts; for the same reason it is
-        // not attached to the seeded use case, whose save comes much earlier.
+        // not attached to the seeded use case, whose save comes much earlier. It lands in team 1's Vision and Scope's
+        // EXTERNAL_SYSTEMS list.
         RequirementArtifact team1ExternalSystem = new RequirementArtifact(team1, RequirementArtifactType.EXTERNAL_SYSTEM, "Email service", "The SMTP service that delivers the system's notification emails.", "");
-        this.requirementArtifactService.createArtifactWithoutHome(1, team1ExternalSystem);
+        this.requirementArtifactService.createRequirementArtifact(1, team1ExternalSystem);
     }
 
+    /** A new, unsaved document of {@code type} for {@code team}, with its document sections from the template. */
+    private RequirementDocument newDocument(Team team, DocumentType type) {
+        RequirementDocument document = new RequirementDocument();
+        document.setType(type);
+        document.setTeam(team);
+        document.setDocumentKey(type.name());
+        this.documentTemplateRegistry.find(type).ifPresentOrElse(
+                tpl -> applyTemplate(document, tpl),
+                () -> document.setTitle(type.name()) // fallback title if no template file exists
+        );
+        return document;
+    }
+
+    /**
+     * Fills the new, unsaved {@code doc} from its template {@code tpl}: the template's title, and one empty document
+     * section per template section, in the template's order. Nothing is saved here; the caller saves the document,
+     * and its sections cascade with it.
+     * <p>
+     * For example, the SRS template gives the document the title "Software Requirements Specification" and 30
+     * document sections: INTRODUCTION (rich text) first, and NON_USE_CASE_FUNCTIONAL_REQUIREMENTS (a list) as the
+     * 16th. Because the sections are created in template order, their ids follow that order too, which is why the
+     * tests can name team 1's SRS sections by id (section 16 is its functional requirement list).
+     */
     private void applyTemplate(RequirementDocument doc, DocumentTemplate tpl) {
+        // A template with no title of its own falls back to the document type's name, such as "SRS".
         doc.setTitle(tpl.getTitle() != null ? tpl.getTitle() : doc.getType().name());
 
         if (tpl.getSections() == null || tpl.getSections().isEmpty()) {
@@ -1197,14 +1215,20 @@ public class DataInitializer implements CommandLineRunner {
 
         for (DocumentTemplate.SectionTemplate sectionTemplate : tpl.getSections()) {
             DocumentSection section = new DocumentSection();
+            // The section key is the stable handle (BR-artifact-home names a list home by it); the title is display.
             section.setSectionKey(sectionTemplate.getSectionKey());
             section.setTitle(sectionTemplate.getTitle());
             section.setType(sectionTemplate.getType());
+            // A new section starts with no prose: the students write it.
             section.setContent(null);
+            // A LIST section holds requirement artifacts as its items, and starts with none. Items are added later
+            // through RequirementArtifactService.createRequirementArtifact, never here.
             if (sectionTemplate.getType() == SectionType.LIST) {
                 section.setRequirementArtifacts(new ArrayList<>());
             }
+            // The template's guidance tells the students what belongs in this section.
             section.setGuidance(sectionTemplate.getGuidance());
+            // Every section gets its lock row now, unheld, so locking it later only updates that row.
             section.initLockIfMissing();
 
             doc.addSection(section);

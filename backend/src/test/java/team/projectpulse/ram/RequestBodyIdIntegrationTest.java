@@ -472,11 +472,12 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
         JSONObject response = new JSONObject(mvcResult.getResponse().getContentAsString());
         assertThat(response.getBoolean("flag")).as(response.toString()).isTrue();
 
-        // The two seeded items, unchanged, and nothing new anywhere.
+        // The three seeded items, unchanged, and nothing new anywhere.
         JSONArray items = response.getJSONObject("data").getJSONArray("requirementArtifacts");
-        assertThat(items.length()).isEqualTo(2);
+        assertThat(items.length()).isEqualTo(3);
         assertThat(items.getJSONObject(0).getString("artifactKey")).isEqualTo("FR-1");
         assertThat(items.getJSONObject(1).getString("artifactKey")).isEqualTo("FR-2");
+        assertThat(items.getJSONObject(2).getString("artifactKey")).isEqualTo("FR-3");
         assertStillOwnedByTeam2(victim.getId(), "Data export");
         assertThat(this.requirementArtifactRepository.count()).isEqualTo(artifactCountBefore);
     }

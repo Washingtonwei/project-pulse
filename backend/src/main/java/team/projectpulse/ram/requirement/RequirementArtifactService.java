@@ -80,11 +80,25 @@ public class RequirementArtifactService {
     }
 
     /**
-     * Creates {@code draft} in team {@code teamId} as an item of its home document section, appended at the end
-     * (UC-ART-create-artifact). The home comes from the artifact's type alone (BR-artifact-home). The document
-     * section's own lock is not checked: the section view offers Add only to its holder, as a UI gate (BR-edit-lock-required).
+     * Creates {@code draft} in team {@code teamId}. This is the only way to create a requirement artifact, so
+     * BR-artifact-home holds for every caller. The team comes from the route and the artifact key is minted here
+     * (BR-artifact-key-unique), replacing whatever the object carried. The object must be new: every caller builds it
+     * with {@code new}, and no converter maps an id (OI-46), so its null version makes the save an insert.
      * <p>
-     * Concurrency: the home section's row is locked ({@link DocumentSectionRepository#findByIdForUpdate}) before its
+     * The type decides what else happens:
+     * <ul>
+     *   <li>A type with no list home (glossary term, use case, precondition, postcondition, user story) is only keyed
+     *   and inserted, with any document section reference cleared. Its own service calls this
+     *   ({@code GlossaryService}, {@code UseCaseService}), and so does the dev seed. The call joins the caller's
+     *   transaction when there is one (the services'), and runs in its own when there is none (the seed's, so each
+     *   seeded artifact commits on its own). This branch reads no document and takes no lock. The generic endpoint refuses
+     *   these types before calling here ({@link #notCreatedHere}), since each has its own editor.</li>
+     *   <li>A list type becomes an item of its home document section, appended at the end (UC-ART-create-artifact).
+     *   The home comes from the type alone. The document section's own lock is not checked: the section view offers
+     *   Add only to its holder, as a UI gate (BR-edit-lock-required).</li>
+     * </ul>
+     * <p>
+     * Concurrency (list types): the home section's row is locked ({@link DocumentSectionRepository#findByIdForUpdate}) before its
      * list is read, so two creates in one section append one after the other instead of taking the same
      * {@code artifact_index}. The method runs at {@code READ COMMITTED} because under MySQL's default
      * {@code REPEATABLE READ} the snapshot fixed by the first plain read below would hide a create committed while this
@@ -92,16 +106,29 @@ public class RequirementArtifactService {
      * {@code requirementArtifacts} is the {@code mappedBy} side, so the teammate editing the section's prose is not
      * made stale.
      *
-     * @throws RequirementArtifactRejectedException (400) for a type with no list home, a home document not created
-     *                                              (8b), or one locked for review (8a)
+     * @throws RequirementArtifactRejectedException (400) for a list type whose home document is not created (8b), or is
+     *                                              locked for review (8a)
      */
     // READ COMMITTED, so the list loaded after the row lock sees a teammate's just-committed item. Under MySQL's default
     // REPEATABLE READ it would read the snapshot from before the lock, and two concurrent creates could take the same
     // position. Named in full: the class imports jakarta.transaction.Transactional, which has no isolation setting.
     @org.springframework.transaction.annotation.Transactional(isolation = Isolation.READ_COMMITTED)
     public RequirementArtifact createRequirementArtifact(Integer teamId, RequirementArtifact draft) {
-        // For example: a RISK resolves to (VISION_SCOPE, "RISKS"), an ASSUMPTION to (SRS, "ASSUMPTIONS_DEPENDENCIES"),
-        // and a GLOSSARY_TERM is refused, since it has no list home at all.
+        if (draft.getType() == null) {
+            throw new IllegalArgumentException("RequirementArtifact.type is required to generate artifactKey.");
+        }
+        // No list home (a glossary term, use case, precondition, postcondition or user story): it sits in no document
+        // section's list, so there is no home to look up, no document to check and no row to lock. It only gets the
+        // route's team and its key, then is inserted. For example, a new glossary term from GlossaryService becomes
+        // GLO-n, and a use case's new precondition from UseCaseService becomes PRC-n.
+        if (!draft.getType().hasListHome()) {
+            // Cleared, so a draft that arrives carrying a document section still lands in no list (BR-artifact-home).
+            draft.setSourceDocumentSection(null);
+            assignTeamAndKey(teamId, draft);
+            return this.requirementArtifactRepository.save(draft);
+        }
+
+        // For example: a RISK resolves to (VISION_SCOPE, "RISKS"), an ASSUMPTION to (SRS, "ASSUMPTIONS_DEPENDENCIES").
         Home home = resolveHome(draft.getType());
 
         RequirementDocument document = this.documentRepository.findByTeamTeamIdAndType(teamId, home.documentType())
@@ -129,30 +156,10 @@ public class RequirementArtifactService {
     }
 
     /**
-     * Creates {@code newRequirementArtifact} in team {@code teamId} without placing it in any document section's list:
-     * for the types with no list home (glossary terms, use cases, preconditions, postconditions), whose own services
-     * call this. A list type belongs through {@link #createRequirementArtifact}; nothing here enforces that yet, and the
-     * seed data still uses this for list types (OI-73).
-     * <p>
-     * It inserts a new row. The team comes from the route and the
-     * artifact key is minted here (BR-artifact-key-unique), replacing whatever the object carried. The object must be
-     * new: every caller builds it with {@code new}, and no converter maps an id (OI-46). Its null version makes the
-     * save an insert, so an object carrying an id fails instead of updating a row.
-     */
-    public RequirementArtifact createArtifactWithoutHome(Integer teamId, RequirementArtifact newRequirementArtifact) {
-        assignTeamAndKey(teamId, newRequirementArtifact);
-        return this.requirementArtifactRepository.save(newRequirementArtifact);
-    }
-
-    /**
      * Prepares a new artifact for its first insert: sets the route's team and mints its key. Its id is never taken from
      * a request body (no converter maps one, OI-46), and its version is null until the insert, so the save inserts.
      */
     private void assignTeamAndKey(Integer teamId, RequirementArtifact newRequirementArtifact) {
-        if (newRequirementArtifact.getType() == null) {
-            throw new IllegalArgumentException("RequirementArtifact.type is required to generate artifactKey.");
-        }
-
         Team team = this.teamRepository.findById(teamId)
                 .orElseThrow(() -> new ObjectNotFoundException("team", teamId));
 
@@ -221,19 +228,24 @@ public class RequirementArtifactService {
      * RISK                 (VISION_SCOPE, "RISKS")
      * BUSINESS_ASSUMPTION  (VISION_SCOPE, "ASSUMPTIONS_DEPENDENCIES")
      * ASSUMPTION           (SRS, "ASSUMPTIONS_DEPENDENCIES")
-     * GLOSSARY_TERM        refused: "A glossary term is not created here: glossary terms are created in the glossary,
-     *                      and use cases and their conditions in the use case editor."
      * </pre>
+     * Called only for a type that {@link RequirementArtifactType#hasListHome() has a list home}.
      */
     private Home resolveHome(RequirementArtifactType type) {
-        // No list home at all (glossary term, use case, precondition, postcondition, user story): each has its own editor.
-        if (!type.hasListHome()) {
-            throw new RequirementArtifactRejectedException(capitalize(withArticle(label(type)))
-                    + " is not created here: glossary terms are created in the glossary, and use cases and their conditions in the use case editor.");
-        }
         // The startup check (DocumentTemplateRegistry.buildHomes) gives every type with a list home exactly one home.
         return this.documentTemplateRegistry.homeOf(type)
                 .orElseThrow(() -> new IllegalStateException("The templates give " + type + " no home."));
+    }
+
+    /**
+     * The generic endpoint's refusal for a type with no list home (glossary term, use case, precondition, postcondition,
+     * user story): each is created through its own editor, so {@code RequirementArtifactController} refuses it there.
+     * For example: "A glossary term is not created here: glossary terms are created in the glossary, and use cases and
+     * their conditions in the use case editor."
+     */
+    static RequirementArtifactRejectedException notCreatedHere(RequirementArtifactType type) {
+        return new RequirementArtifactRejectedException(capitalize(withArticle(label(type)))
+                + " is not created here: glossary terms are created in the glossary, and use cases and their conditions in the use case editor.");
     }
 
     /**

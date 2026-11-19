@@ -40,8 +40,7 @@ classDiagram
     updateRequirementArtifact() +version
   }
   class RequirementArtifactService {
-    +createRequirementArtifact(teamId, draft)
-    createArtifactWithoutHome() mints the key
+    +createRequirementArtifact(teamId, draft) the only create, mints the key
     updateRequirementArtifact() +version check
   }
   class DocumentSectionService {
@@ -59,7 +58,7 @@ classDiagram
 - **Removed:** `resolveSectionItems`, `applySectionItems` and `ResolvedItem` from the document section save, and `DocumentSection.replaceAllRequirementArtifacts`, which has no caller left. `SectionItemRejectedException` is renamed `RequirementArtifactRejectedException` (see Refusals).
 - **New:** migration `V11` (see Data model).
 - **Frontend, changed:** [`RamDocumentEditor.vue`](../../frontend/src/pages/ram/RamDocumentEditor.vue) (Add creates through the POST, Edit saves through the PUT with the version, Remove hidden, the section save sends prose only), [`apis/ram/index.ts`](../../frontend/src/apis/ram/index.ts) and [`apis/ram/types.ts`](../../frontend/src/apis/ram/types.ts).
-- **Reused unchanged:** the artifact search (the duplicate warning), key minting in `createArtifactWithoutHome`, the 409 mapping for `OptimisticLockException` in `ExceptionHandlerAdvice`, the document section lock for the prose save, and the team route rules in `SecurityConfiguration`.
+- **Reused unchanged:** the artifact search (the duplicate warning), key minting (`createRequirementArtifact` is the only create method since OI-73: a type with no list home is only keyed and inserted), the 409 mapping for `OptimisticLockException` in `ExceptionHandlerAdvice`, the document section lock for the prose save, and the team route rules in `SecurityConfiguration`.
 
 ## Homes
 
@@ -110,8 +109,9 @@ sequenceDiagram
   S->>E: confirm (steps 6-7)
   E->>C: POST requirement-artifacts with type, title, content, priority, notes
   C->>C: @Valid (4a on the server)
+  C->>C: type has no list home: 400 (notCreatedHere)
   C->>RS: createRequirementArtifact(teamId, draft)
-  RS->>R: homeOf(type): 400 if the type has no list home
+  RS->>R: homeOf(type): the home's document type and section key
   RS->>DB: the team's document of that type and its section with that key: 400 if none (8b)
   RS->>RS: document SUBMITTED: 400 (8a, BR-review-lock)
   RS->>DB: findByIdForUpdate(section id): row lock on the home section
