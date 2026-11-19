@@ -267,7 +267,7 @@ public class RequirementArtifactService {
                 links.add(referrer(link.getSourceArtifact(), Relation.LINK_TO, link.getType()));
             }
         }
-        links.sort(Comparator.comparing(ArtifactReferrerDto::artifactKey, Comparator.nullsLast(Comparator.naturalOrder())));
+        links.sort(BY_ARTIFACT_KEY);
 
         List<ArtifactReferrerDto> actors = new ArrayList<>();
         for (RequirementArtifact useCase : this.useCaseRepository.findUseCaseArtifactsNamingPrimaryActor(id, teamId)) {
@@ -276,10 +276,34 @@ public class RequirementArtifactService {
         for (RequirementArtifact useCase : this.useCaseRepository.findUseCaseArtifactsNamingSecondaryActor(id, teamId)) {
             actors.add(referrer(useCase, Relation.SECONDARY_ACTOR, null));
         }
-        actors.sort(Comparator.comparing(ArtifactReferrerDto::artifactKey, Comparator.nullsLast(Comparator.naturalOrder())));
+        actors.sort(BY_ARTIFACT_KEY);
 
         links.addAll(actors);
         return List.copyOf(links);
+    }
+
+    // Artifact-key order as a student reads it: by prefix, then by number, so UC-2 comes before UC-10 (a plain string
+    // sort would put "UC-10" first). A key that is missing or has no number sorts last.
+    private static final Comparator<ArtifactReferrerDto> BY_ARTIFACT_KEY = Comparator
+            .comparing((ArtifactReferrerDto referrer) -> keyPrefix(referrer.artifactKey()), Comparator.nullsLast(Comparator.naturalOrder()))
+            .thenComparingLong(referrer -> keyNumber(referrer.artifactKey()));
+
+    // "UC-10" -> "UC"; null for a missing key.
+    private static String keyPrefix(String artifactKey) {
+        if (artifactKey == null) {
+            return null;
+        }
+        int dash = artifactKey.lastIndexOf('-');
+        return dash < 0 ? artifactKey : artifactKey.substring(0, dash);
+    }
+
+    // "UC-10" -> 10; Long.MAX_VALUE for a missing key or one with no number after its last dash.
+    private static long keyNumber(String artifactKey) {
+        if (artifactKey == null) {
+            return Long.MAX_VALUE;
+        }
+        String digits = artifactKey.substring(artifactKey.lastIndexOf('-') + 1);
+        return digits.isEmpty() || !digits.chars().allMatch(Character::isDigit) ? Long.MAX_VALUE : Long.parseLong(digits);
     }
 
     private static ArtifactReferrerDto referrer(RequirementArtifact other, Relation relation, ArtifactLinkType linkType) {
