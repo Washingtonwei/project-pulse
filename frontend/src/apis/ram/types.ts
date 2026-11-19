@@ -191,6 +191,21 @@ export interface SearchRequirementArtifactsResponse extends ApiResult<Page<Requi
 
 export interface RequirementArtifactResponse extends ApiResult<RequirementArtifact> {}
 
+// One reference that blocks a requirement artifact's delete (UC-ART-delete-artifact step 4, 4a). id, artifactKey and
+// title are the other artifact's: the link's other end, or the use case naming it as an actor.
+export interface ArtifactReferrer {
+  id: number
+  artifactKey: string
+  title: string
+  // LINK_FROM: the artifact being deleted is the link's source; LINK_TO: its target.
+  relation: 'LINK_FROM' | 'LINK_TO' | 'PRIMARY_ACTOR' | 'SECONDARY_ACTOR'
+  linkType: string | null
+}
+
+export interface ArtifactReferrersResponse extends ApiResult<ArtifactReferrer[]> {}
+
+export interface DeleteRequirementArtifactResponse extends ApiResult<null> {}
+
 // The following interfaces define the structure of Use Cases and Glossary Terms, which are specific types of Requirement Artifacts.
 // Another use case that references the same precondition or postcondition (extension 6b1 of UC-DOC-edit-use-case).
 export interface OtherUseCase {

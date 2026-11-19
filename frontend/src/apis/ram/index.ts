@@ -19,7 +19,9 @@ import type {
   RequirementArtifact,
   RequirementArtifactResponse,
   RequirementArtifactSummary,
-  UpdateDocumentSectionRequest
+  UpdateDocumentSectionRequest,
+  ArtifactReferrersResponse,
+  DeleteRequirementArtifactResponse
 } from './types'
 
 enum API {
@@ -151,6 +153,24 @@ export const updateRequirementArtifact = (
   request.put<any, RequirementArtifactResponse>(
     `${API.TEAM_DOCUMENTS}/${teamId}/requirement-artifacts/${requirementArtifactId}`,
     payload
+  )
+
+// UC-ART-delete-artifact step 4: what refers to the artifact. Advisory: the DELETE checks again.
+export const getArtifactReferences = (teamId: number, requirementArtifactId: number) =>
+  request.get<any, ArtifactReferrersResponse>(
+    `${API.TEAM_DOCUMENTS}/${teamId}/requirement-artifacts/${requirementArtifactId}/references`
+  )
+
+// UC-ART-delete-artifact: a physical delete at the version the artifact was read at; a stale one is refused with 409,
+// a referenced artifact with 400 (4a).
+export const deleteRequirementArtifact = (
+  teamId: number,
+  requirementArtifactId: number,
+  version: number
+) =>
+  request.delete<any, DeleteRequirementArtifactResponse>(
+    `${API.TEAM_DOCUMENTS}/${teamId}/requirement-artifacts/${requirementArtifactId}`,
+    { params: { version } }
   )
 
 export const getGlossaryTermById = (teamId: number, glossaryTermId: number) =>

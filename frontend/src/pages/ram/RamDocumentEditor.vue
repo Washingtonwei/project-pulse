@@ -264,9 +264,9 @@
                 <el-table-column label="Type" prop="type" width="180" />
                 <el-table-column label="Title" prop="title" />
                 <el-table-column label="Priority" prop="priority" width="120" />
-                <!-- No Delete button yet: removing an item deletes its artifact (BR-section-artifact-removal), which
-                     waits for UC-ART-delete-artifact's logical delete (docs/design/art.md, Scope). -->
-                <el-table-column label="Actions" width="100">
+                <!-- Remove deletes the artifact for good (BR-section-artifact-removal, UC-ART-delete-artifact), and is
+                     offered under the same condition as Add and Edit: holding the document section's lock. -->
+                <el-table-column label="Actions" width="170">
                   <template #default="{ $index }">
                     <div class="actions-cell">
                       <el-button
@@ -275,6 +275,16 @@
                         @click="openEditArtifact($index)"
                       >
                         Edit
+                      </el-button>
+                      <el-button
+                        size="small"
+                        type="danger"
+                        plain
+                        :disabled="!canEdit"
+                        :loading="removingIndex === $index"
+                        @click="removeArtifact($index)"
+                      >
+                        Remove
                       </el-button>
                     </div>
                   </template>
@@ -382,7 +392,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { EditorContent, useEditor } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
@@ -392,6 +402,7 @@ import type { Instructor } from '@/apis/instructor/types'
 import type { Student } from '@/apis/student/types'
 import {
   PRIORITIES,
+  type ArtifactReferrer,
   type RequirementArtifact,
   type RequirementArtifactSummary,
   type RequirementDocument,
@@ -401,9 +412,11 @@ import {
 } from '@/apis/ram/types'
 import {
   createRequirementArtifact,
+  deleteRequirementArtifact,
   findDocumentById,
   findDocumentSectionById,
   findRequirementArtifactById,
+  getArtifactReferences,
   getDocumentSectionLock,
   lockDocumentSection,
   searchRequirementArtifacts,
@@ -459,6 +472,8 @@ const sectionLoading = ref(false)
 const draftContent = ref('')
 const draftArtifacts = ref<RequirementArtifactSummary[]>([])
 const savingArtifact = ref(false)
+// The row whose Remove is running, so its button shows a spinner (UC-ART-delete-artifact).
+const removingIndex = ref<number | null>(null)
 
 const artifactDialogVisible = ref(false)
 const artifactDraft = ref<RequirementArtifactSummary>(emptyArtifactDraft(''))
@@ -812,6 +827,75 @@ async function saveArtifact() {
 
   resetDuplicateCheck()
   artifactDialogVisible.value = false
+}
+
+// "the link FR-1 DERIVES_FROM UC-1", "UC-1 names it as its primary actor": a link always reads source, type, target,
+// as in the server's 4a message.
+function describeReferrer(key: string, referrer: ArtifactReferrer): string {
+  switch (referrer.relation) {
+    case 'LINK_FROM':
+      return `the link ${key} ${referrer.linkType} ${referrer.artifactKey}`
+    case 'LINK_TO':
+      return `the link ${referrer.artifactKey} ${referrer.linkType} ${key}`
+    case 'PRIMARY_ACTOR':
+      return `${referrer.artifactKey} names it as its primary actor`
+    default:
+      return `${referrer.artifactKey} names it as a secondary actor`
+  }
+}
+
+// UC-ART-delete-artifact, steps 1 to 7 (docs/design/art.md, Item rules). The item as the list shows it is step 2's view.
+async function removeArtifact(index: number) {
+  const item = draftArtifacts.value[index]
+  if (!item || item.id == null || !effectiveTeamId.value) return
+  const id = item.id
+  const key = item.artifactKey ?? 'This requirement'
+  removingIndex.value = index
+  try {
+    // Step 4: what refers to it. Anything at all is extension 4a: list it, offer only Close, delete nothing.
+    const references = await getArtifactReferences(effectiveTeamId.value, id)
+    if (references.data.length) {
+      const referrers = references.data
+        .map((referrer) => describeReferrer(key, referrer))
+        .join('; ')
+      await ElMessageBox.alert(
+        `${key} cannot be deleted while other artifacts refer to it: ${referrers}. Remove or repoint these references first.`,
+        `Cannot delete ${key}`,
+        { type: 'warning', confirmButtonText: 'Close' }
+      ).catch(() => undefined)
+      return
+    }
+
+    // Steps 5 and 6: the consequences, and the confirm. Cancel ends the use case with nothing changed.
+    const confirmed = await ElMessageBox.confirm(
+      `${key} ${item.title} and its comment threads will be deleted permanently and cannot be recovered. Delete it?`,
+      `Delete ${key}`,
+      { type: 'warning', confirmButtonText: 'Delete', cancelButtonText: 'Cancel' }
+    )
+      .then(() => true)
+      .catch(() => false)
+    if (!confirmed) return
+
+    // Step 7: delete at the version this editor read. The server checks the references again.
+    await deleteRequirementArtifact(effectiveTeamId.value, id, item.version ?? 0)
+    draftArtifacts.value.splice(index, 1)
+    ElMessage.success(`${key} has been deleted`)
+  } catch (error: any) {
+    // A refusal already reached the student through the shared toast (4a: a teammate linked it after the check).
+    if (error?.response?.status === 409) {
+      // 7a: a teammate changed it. Show its current details by re-reading this one item; reloading the whole document
+      // section would also reset unsaved prose. The student may press Remove again (7a2).
+      const current = await findRequirementArtifactById(effectiveTeamId.value, id)
+      draftArtifacts.value[index] = current.data
+      ElMessage.warning(
+        `A teammate changed ${key}. Its current details are shown; press Remove again to delete it.`
+      )
+      return
+    }
+    throw error
+  } finally {
+    removingIndex.value = null
+  }
 }
 
 function openLinkDialog() {
