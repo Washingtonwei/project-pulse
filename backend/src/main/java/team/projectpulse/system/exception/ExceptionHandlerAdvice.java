@@ -168,7 +168,8 @@ public class ExceptionHandlerAdvice {
     @ExceptionHandler(RequirementArtifactRejectedException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     Result handleRequirementArtifactRejectedException(RequirementArtifactRejectedException ex) {
-        return new Result(false, StatusCode.INVALID_ARGUMENT, ex.getMessage());
+        // data is null except for a refused delete of a referenced artifact (4a), which carries its referrers.
+        return new Result(false, StatusCode.INVALID_ARGUMENT, ex.getMessage(), ex.getData());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

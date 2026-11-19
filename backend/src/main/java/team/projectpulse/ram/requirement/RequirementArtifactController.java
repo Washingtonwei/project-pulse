@@ -78,9 +78,16 @@ public class RequirementArtifactController {
         return new Result(true, StatusCode.SUCCESS, "Update requirement artifact successfully", updatedRequirementArtifactDto);
     }
 
+    /**
+     * Deletes a requirement artifact for good (UC-ART-delete-artifact), for example
+     * {@code DELETE /teams/1/requirement-artifacts/11?version=0} for FR-3. The version is a query parameter, since a
+     * body on DELETE is unreliable; it is optional here so that its absence gets the service's message rather than the
+     * generic "malformed" one.
+     */
     @DeleteMapping("/teams/{teamId}/requirement-artifacts/{requirementArtifactId}")
-    public Result deleteRequirementArtifact(@PathVariable Integer teamId, @PathVariable Long requirementArtifactId) {
-        this.requirementArtifactService.deleteRequirementArtifact(teamId, requirementArtifactId);
+    public Result deleteRequirementArtifact(@PathVariable Integer teamId, @PathVariable Long requirementArtifactId,
+                                            @RequestParam(required = false) Integer version) {
+        this.requirementArtifactService.deleteRequirementArtifact(teamId, requirementArtifactId, version);
         return new Result(true, StatusCode.SUCCESS, "Delete requirement artifact successfully", null);
     }
 

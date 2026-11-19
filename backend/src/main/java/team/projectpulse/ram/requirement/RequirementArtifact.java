@@ -57,14 +57,17 @@ public class RequirementArtifact {
     @Lob
     private String notes;
 
-    // Links where this artifact is the source
-    @OneToMany(mappedBy = "sourceArtifact", cascade = CascadeType.ALL, orphanRemoval = true)
+    // Links where this artifact is the source, and where it is the target. Neither set cascades: ArtifactLinkService
+    // saves and deletes each link itself, and deleting an artifact must never take its links with it
+    // (BR-deletion-integrity). A delete that slips past RequirementArtifactService's reference check fails on the
+    // artifact_link foreign key instead of losing the link.
+    @OneToMany(mappedBy = "sourceArtifact")
     private Set<ArtifactLink> outgoingArtifactLinks = new HashSet<>();
 
-    // Links where this artifact is the target
-    @OneToMany(mappedBy = "targetArtifact", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "targetArtifact")
     private Set<ArtifactLink> incomingArtifactLinks = new HashSet<>();
 
+    // Comment threads belong to the artifact and are deleted with it (UC-ART-delete-artifact, Deletion strategy).
     @OneToMany(mappedBy = "artifact", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<CommentThread> commentThreads = new HashSet<>();
 

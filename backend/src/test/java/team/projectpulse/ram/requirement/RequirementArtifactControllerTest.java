@@ -1,6 +1,7 @@
 package team.projectpulse.ram.requirement;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceException;
 import org.hamcrest.Matchers;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -18,12 +19,15 @@ import team.projectpulse.ram.document.DocumentRepository;
 import team.projectpulse.ram.document.DocumentSectionRepository;
 import team.projectpulse.ram.document.DocumentStatus;
 import team.projectpulse.ram.document.DocumentType;
+import team.projectpulse.ram.collaboration.CommentRepository;
+import team.projectpulse.ram.collaboration.CommentThreadRepository;
 import team.projectpulse.ram.document.RequirementDocument;
 import team.projectpulse.system.StatusCode;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -42,6 +46,12 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
 
     @Autowired
     RequirementArtifactRepository requirementArtifactRepository;
+
+    @Autowired
+    CommentThreadRepository commentThreadRepository;
+
+    @Autowired
+    CommentRepository commentRepository;
 
     @Autowired
     EntityManager entityManager;
@@ -496,19 +506,193 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
         }
     }
 
+    // ---- UC-ART-delete-artifact (docs/design/art.md, Tests) ----
+    // Team 1's seed: FR-1 and FR-2 each derive from UC-1, BO-1 is the target of UC-1's link, stakeholders 1 and 2 are
+    // UC-1's primary and secondary actors. FR-3 and the external system are referenced by nothing.
+
+    @Test
+    void deleteArtifact_MainFlow_RowGoneAndListClosesUp() throws Exception {
+        long fr3 = idOf(1, "FR-3");
+        JSONObject deleted = deleteArtifact(1, fr3, artifactVersion(fr3), this.studentJohnToken);
+        assertThat(deleted.getBoolean("flag")).as(deleted.toString()).isTrue();
+        assertThat(deleted.getString("message")).isEqualTo("Delete requirement artifact successfully");
+
+        this.entityManager.flush();
+        this.entityManager.clear();
+        assertThat(this.requirementArtifactRepository.findById(fr3)).isEmpty();
+        MvcResult read = this.mockMvc.perform(get(this.baseUrl + "/teams/1/requirement-artifacts/" + fr3)
+                .accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken)).andReturn();
+        assertThat(new JSONObject(read.getResponse().getContentAsString()).getInt("code")).isEqualTo(StatusCode.NOT_FOUND);
+        assertThat(itemKeys(1L, "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS")).containsExactly("FR-1", "FR-2");
+    }
+
+    @Test
+    void deleteArtifact_Extension4a_ReferencedArtifactRefused_ReferrersNamed() throws Exception {
+        long fr1 = idOf(1, "FR-1");
+        JSONObject refused = deleteArtifact(1, fr1, artifactVersion(fr1), this.studentJohnToken);
+        assertThat(refused.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
+        assertThat(refused.getString("message")).isEqualTo("FR-1 cannot be deleted while other artifacts refer to it: the link FR-1 DERIVES_FROM UC-1. Remove or repoint these references first.");
+        JSONObject referrer = refused.getJSONArray("data").getJSONObject(0);
+        assertThat(referrer.getString("artifactKey")).isEqualTo("UC-1");
+        assertThat(referrer.getString("relation")).isEqualTo("LINK_FROM");
+        assertThat(referrer.getString("linkType")).isEqualTo("DERIVES_FROM");
+
+        long stakeholder = idOf(1, "STK-1");
+        JSONObject actorRefused = deleteArtifact(1, stakeholder, artifactVersion(stakeholder), this.studentJohnToken);
+        assertThat(actorRefused.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
+        assertThat(actorRefused.getString("message")).contains("UC-1 names it as its primary actor");
+
+        this.entityManager.flush();
+        this.entityManager.clear();
+        assertThat(this.requirementArtifactRepository.findById(fr1)).isPresent();
+        assertThat(this.requirementArtifactRepository.findById(stakeholder)).isPresent();
+        assertThat(itemKeys(1L, "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS")).containsExactly("FR-1", "FR-2", "FR-3");
+    }
+
+    @Test
+    void deleteArtifact_Extension7a_StaleVersionConflicts_MissingVersionRefused() throws Exception {
+        long fr3 = idOf(1, "FR-3");
+        int seen = artifactVersion(fr3);
+        JSONObject edited = update(fr3, item("FUNCTIONAL_REQUIREMENT", "Notification", "The system shall notify teammates by email.").put("version", seen), this.studentEricToken);
+        assertThat(edited.getBoolean("flag")).as(edited.toString()).isTrue();
+        this.entityManager.flush();
+
+        JSONObject stale = deleteArtifact(1, fr3, seen, this.studentJohnToken);
+        assertThat(stale.getInt("code")).isEqualTo(StatusCode.CONFLICT);
+
+        JSONObject noVersion = deleteArtifact(1, fr3, null, this.studentJohnToken);
+        assertThat(noVersion.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
+        assertThat(noVersion.getString("message")).isEqualTo("The requirement artifact's version is required to delete it.");
+        assertThat(this.requirementArtifactRepository.findById(fr3)).isPresent();
+    }
+
+    @Test
+    void deleteArtifact_Precondition3_HomeDocumentLockedForReview_Refused() throws Exception {
+        RequirementDocument srs = this.documentRepository.findByTeamTeamIdAndType(1, DocumentType.SRS).orElseThrow();
+        srs.setStatus(DocumentStatus.SUBMITTED);
+        this.documentRepository.saveAndFlush(srs);
+
+        long fr3 = idOf(1, "FR-3");
+        JSONObject refused = deleteArtifact(1, fr3, artifactVersion(fr3), this.studentJohnToken);
+        assertThat(refused.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
+        assertThat(refused.getString("message")).isEqualTo("The Software Requirements Specification is locked for review, so it cannot be changed.");
+        assertThat(this.requirementArtifactRepository.findById(fr3)).isPresent();
+    }
+
+    @Test
+    void deleteArtifact_TypeWithNoListHome_Refused() throws Exception {
+        for (RequirementArtifactType type : List.of(RequirementArtifactType.GLOSSARY_TERM, RequirementArtifactType.USE_CASE, RequirementArtifactType.PRECONDITION)) {
+            RequirementArtifact target = this.requirementArtifactRepository.findAll().stream()
+                    .filter(a -> a.getType() == type && a.getTeam().getTeamId() == 1).findFirst()
+                    .orElseThrow(() -> new AssertionError("No team 1 " + type + " in the seed data"));
+            JSONObject refused = deleteArtifact(1, target.getId(), target.getVersion(), this.studentJohnToken);
+            assertThat(refused.getInt("code")).as(type.name()).isEqualTo(StatusCode.INVALID_ARGUMENT);
+            assertThat(refused.getString("message")).as(type.name()).contains("is not deleted here");
+            assertThat(this.requirementArtifactRepository.findById(target.getId())).as(type.name()).isPresent();
+        }
+    }
+
+    @Test
+    void deleteArtifact_CrossTeam_NonMemberForbidden_OtherTeamsIdNotFound() throws Exception {
+        long fr3 = idOf(1, "FR-3");
+        // Woody is on team 2: team 1's URL is refused at the route, and team 1's id through team 2's URL is not found.
+        assertThat(deleteArtifact(1, fr3, 0, this.studentWoodyToken).getInt("code")).isEqualTo(StatusCode.FORBIDDEN);
+        assertThat(deleteArtifact(2, fr3, 0, this.studentWoodyToken).getInt("code")).isEqualTo(StatusCode.NOT_FOUND);
+        assertThat(this.requirementArtifactRepository.findById(fr3)).isPresent();
+    }
+
+    @Test
+    void deleteArtifact_CommentThreadsGoWithIt() throws Exception {
+        JSONObject created = create(1, item("FUNCTIONAL_REQUIREMENT", "Audit log", "The system shall log every change."), this.studentJohnToken);
+        long id = created.getJSONObject("data").getLong("id");
+        MvcResult thread = this.mockMvc.perform(post(this.baseUrl + "/teams/1/requirement-artifacts/" + id + "/comment-threads")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"content\": \"Which changes count?\"}")
+                .accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentEricToken)).andReturn();
+        long threadId = new JSONObject(thread.getResponse().getContentAsString()).getJSONObject("data").getLong("id");
+        // Clear as a request boundary would: CommentService sets the thread's artifact but does not add the thread to
+        // the artifact's in-memory set, so in this one test transaction the cascade would not see it.
+        this.entityManager.flush();
+        this.entityManager.clear();
+
+        JSONObject deleted = deleteArtifact(1, id, artifactVersion(id), this.studentJohnToken);
+        assertThat(deleted.getBoolean("flag")).as(deleted.toString()).isTrue();
+        this.entityManager.flush();
+        this.entityManager.clear();
+        assertThat(this.commentThreadRepository.findById(threadId)).isEmpty();
+        assertThat(this.commentRepository.findAll()).noneMatch(comment -> comment.getCommentThread().getId() == threadId);
+    }
+
+    @Test
+    void deleteArtifact_Instructor_OfTheTeamsCourseSectionAllowed_OfAnotherRefused() throws Exception {
+        long fr3 = idOf(1, "FR-3");
+        assertThat(deleteArtifact(1, fr3, artifactVersion(fr3), this.adminTimToken).getInt("code")).isEqualTo(StatusCode.FORBIDDEN);
+        JSONObject deleted = deleteArtifact(1, fr3, artifactVersion(fr3), this.adminBingyangToken);
+        assertThat(deleted.getBoolean("flag")).as(deleted.toString()).isTrue();
+    }
+
+    @Test
+    void deleteArtifact_KeyNotReused() throws Exception {
+        long fr3 = idOf(1, "FR-3");
+        assertThat(deleteArtifact(1, fr3, artifactVersion(fr3), this.studentJohnToken).getBoolean("flag")).isTrue();
+        JSONObject next = create(1, item("FUNCTIONAL_REQUIREMENT", "Audit log", "The system shall log every change."), this.studentJohnToken);
+        assertThat(next.getJSONObject("data").getString("artifactKey")).isEqualTo("FR-4");
+    }
+
     @Test
     void deleteArtifact_ItemInAList_LeavesNoGap() throws Exception {
-        // Section 16 holds FR-1 to FR-3; a create appends FR-4, then FR-2 (artifact 10) is deleted from the middle.
+        // Section 16 holds FR-1 to FR-3; a create appends FR-4, then FR-3 is deleted from between FR-2 and FR-4.
         JSONObject created = create(1, item("FUNCTIONAL_REQUIREMENT", "Audit log", "The system shall log every change."), this.studentJohnToken);
         assertThat(created.getBoolean("flag")).as(created.toString()).isTrue();
-        MvcResult deleted = this.mockMvc.perform(delete(this.baseUrl + "/teams/1/requirement-artifacts/10")
-                .accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken)).andReturn();
-        assertThat(new JSONObject(deleted.getResponse().getContentAsString()).getBoolean("flag")).isTrue();
+        long fr3 = idOf(1, "FR-3");
+        assertThat(deleteArtifact(1, fr3, artifactVersion(fr3), this.studentJohnToken).getBoolean("flag")).isTrue();
 
         // Reload from the database, past this test's persistence context, so the stored indexes are what is read.
         this.entityManager.flush();
         this.entityManager.clear();
-        assertThat(itemKeys(1L, "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS")).containsExactly("FR-1", "FR-3", "FR-4");
+        assertThat(itemKeys(1L, "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS")).containsExactly("FR-1", "FR-2", "FR-4");
+    }
+
+    @Test
+    void deleteArtifact_LockHolderUndisturbed() throws Exception {
+        // John holds section 16's lock and is editing its prose; Eric deletes an item of the same list meanwhile.
+        this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/16/lock").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"reason\": \"Editing\"}").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andExpect(jsonPath("$.flag").value(true));
+        int version = sectionVersion(16);
+
+        long fr3 = idOf(1, "FR-3");
+        assertThat(deleteArtifact(1, fr3, artifactVersion(fr3), this.studentEricToken).getBoolean("flag")).isTrue();
+        this.entityManager.flush();
+        assertThat(sectionVersion(16)).as("a delete leaves the document section's version alone").isEqualTo(version);
+
+        JSONObject body = new JSONObject().put("type", "LIST").put("content", "John's prose.").put("version", version);
+        MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/16").contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken)).andReturn();
+        assertThat(new JSONObject(result.getResponse().getContentAsString()).getBoolean("flag")).isTrue();
+    }
+
+    @Test
+    void deleteArtifact_NoLinkCascade_ForeignKeyRefusesADeletePastTheCheck() {
+        // Straight to the repository, past the service's reference check: without a cascade, the link's foreign key
+        // refuses the delete instead of the link being deleted with the artifact.
+        RequirementArtifact fr1 = this.requirementArtifactRepository.findById(idOf(1, "FR-1")).orElseThrow();
+        assertThatThrownBy(() -> {
+            this.requirementArtifactRepository.delete(fr1);
+            this.entityManager.flush();
+        }).isInstanceOf(PersistenceException.class);
+    }
+
+    private JSONObject deleteArtifact(int teamId, long artifactId, Integer version, String token) throws Exception {
+        String url = this.baseUrl + "/teams/" + teamId + "/requirement-artifacts/" + artifactId + (version == null ? "" : "?version=" + version);
+        MvcResult result = this.mockMvc.perform(delete(url).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, token)).andReturn();
+        return new JSONObject(result.getResponse().getContentAsString());
+    }
+
+    /** The id of team {@code teamId}'s artifact with key {@code artifactKey}, such as "FR-3". */
+    private long idOf(int teamId, String artifactKey) {
+        return this.requirementArtifactRepository.findAll().stream()
+                .filter(a -> a.getTeam().getTeamId() == teamId && artifactKey.equals(a.getArtifactKey()))
+                .findFirst().orElseThrow(() -> new AssertionError("No " + artifactKey + " for team " + teamId)).getId();
     }
 
     private static JSONObject item(String type, String title, String content) throws Exception {
