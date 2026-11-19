@@ -267,7 +267,7 @@
                 <!-- Remove deletes the artifact for good (BR-section-artifact-removal, UC-ART-delete-artifact), and is
                      offered under the same condition as Add and Edit: holding the document section's lock. -->
                 <el-table-column label="Actions" width="170">
-                  <template #default="{ $index }">
+                  <template #default="{ row, $index }">
                     <div class="actions-cell">
                       <el-button
                         size="small"
@@ -280,9 +280,9 @@
                         size="small"
                         type="danger"
                         plain
-                        :disabled="!canEdit"
-                        :loading="removingIndex === $index"
-                        @click="removeArtifact($index)"
+                        :disabled="!canEdit || (removingId !== null && removingId !== row.id)"
+                        :loading="removingId === row.id"
+                        @click="removeArtifact(row.id)"
                       >
                         Remove
                       </el-button>
@@ -472,8 +472,8 @@ const sectionLoading = ref(false)
 const draftContent = ref('')
 const draftArtifacts = ref<RequirementArtifactSummary[]>([])
 const savingArtifact = ref(false)
-// The row whose Remove is running, so its button shows a spinner (UC-ART-delete-artifact).
-const removingIndex = ref<number | null>(null)
+// The id of the item whose Remove is running: its button shows a spinner, and every Remove waits (UC-ART-delete-artifact).
+const removingId = ref<number | null>(null)
 
 const artifactDialogVisible = ref(false)
 const artifactDraft = ref<RequirementArtifactSummary>(emptyArtifactDraft(''))
@@ -844,16 +844,39 @@ function describeReferrer(key: string, referrer: ArtifactReferrer): string {
   }
 }
 
+// The position of the item with this id in the list shown now. The list can change while Remove waits on the server or
+// on a dialog (a section switch, a reload), so Remove finds its item again by id after every wait, never by an old index.
+function indexOfArtifact(id: number): number {
+  return draftArtifacts.value.findIndex((artifact) => artifact.id === id)
+}
+
+// Drops the item with this id from the list shown now, if it is still there.
+function dropArtifact(id: number) {
+  const index = indexOfArtifact(id)
+  if (index >= 0) draftArtifacts.value.splice(index, 1)
+}
+
 // UC-ART-delete-artifact, steps 1 to 7 (docs/design/art.md, Item rules). The item as the list shows it is step 2's view.
-async function removeArtifact(index: number) {
-  const item = draftArtifacts.value[index]
-  if (!item || item.id == null || !effectiveTeamId.value) return
-  const id = item.id
+// One Remove runs at a time: every row's Remove is disabled while removingId is set.
+async function removeArtifact(id: number | undefined) {
+  if (id == null || !effectiveTeamId.value || removingId.value !== null) return
+  const teamId = effectiveTeamId.value
+  let item = draftArtifacts.value[indexOfArtifact(id)]
+  if (!item) return
   const key = item.artifactKey ?? 'This requirement'
-  removingIndex.value = index
+  removingId.value = id
   try {
+    // The DELETE needs the version this editor read (7a). An item shown without one is read again, so the delete is
+    // never sent at a guessed version.
+    if (item.version == null) {
+      // A 404 here (a teammate deleted it) reaches the catch below, which drops the item.
+      item = (await findRequirementArtifactById(teamId, id, true)).data
+      const index = indexOfArtifact(id)
+      if (index >= 0) draftArtifacts.value[index] = item
+    }
+
     // Step 4: what refers to it. Anything at all is extension 4a: list it, offer only Close, delete nothing.
-    const references = await getArtifactReferences(effectiveTeamId.value, id)
+    const references = await getArtifactReferences(teamId, id)
     if (references.data.length) {
       const referrers = references.data
         .map((referrer) => describeReferrer(key, referrer))
@@ -877,24 +900,41 @@ async function removeArtifact(index: number) {
     if (!confirmed) return
 
     // Step 7: delete at the version this editor read. The server checks the references again.
-    await deleteRequirementArtifact(effectiveTeamId.value, id, item.version ?? 0)
-    draftArtifacts.value.splice(index, 1)
+    await deleteRequirementArtifact(teamId, id, item.version as number)
+    dropArtifact(id)
     ElMessage.success(`${key} has been deleted`)
   } catch (error: any) {
-    // A refusal already reached the student through the shared toast (4a: a teammate linked it after the check).
-    if (error?.response?.status === 409) {
-      // 7a: a teammate changed it. Show its current details by re-reading this one item; reloading the whole document
-      // section would also reset unsaved prose. The student may press Remove again (7a2).
-      const current = await findRequirementArtifactById(effectiveTeamId.value, id)
-      draftArtifacts.value[index] = current.data
-      ElMessage.warning(
-        `A teammate changed ${key}. Its current details are shown; press Remove again to delete it.`
-      )
+    const status = error?.response?.status
+    if (status === 404) {
+      // A teammate deleted it first. The interceptor leaves this 404 to us (handleNotFound), so the page and any
+      // unsaved prose stay; the item just leaves the list.
+      dropArtifact(id)
+      ElMessage.info(`${key} was already deleted by a teammate.`)
       return
     }
-    throw error
+    if (status === 409) {
+      // 7a: a teammate changed it. Show its current details by re-reading this one item; reloading the whole document
+      // section would also reset unsaved prose. The student may press Remove again (7a2).
+      try {
+        const current = await findRequirementArtifactById(teamId, id, true)
+        const index = indexOfArtifact(id)
+        if (index >= 0) draftArtifacts.value[index] = current.data
+        ElMessage.warning(
+          `A teammate changed ${key}. Its current details are shown; press Remove again to delete it.`
+        )
+      } catch (rereadError: any) {
+        // The teammate deleted it after changing it: the same as the 404 above. Any other failure has had its toast.
+        if (rereadError?.response?.status === 404) {
+          dropArtifact(id)
+          ElMessage.info(`${key} was already deleted by a teammate.`)
+        }
+      }
+      return
+    }
+    // Any other refusal (4a after a teammate linked it, a review lock, a server error) has already reached the student
+    // through the shared toast; there is nothing more to do here.
   } finally {
-    removingIndex.value = null
+    removingId.value = null
   }
 }
 
