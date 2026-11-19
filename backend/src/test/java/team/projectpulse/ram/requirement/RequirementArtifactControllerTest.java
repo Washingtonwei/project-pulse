@@ -672,6 +672,57 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void findReferences_None_EmptyList() throws Exception {
+        JSONObject found = references(1, idOf(1, "SYS-1"), this.studentJohnToken);
+        assertThat(found.getBoolean("flag")).as(found.toString()).isTrue();
+        assertThat(found.getJSONArray("data").length()).isZero();
+    }
+
+    @Test
+    void findReferences_LinksInBothDirectionsAndActorSlots() throws Exception {
+        JSONObject fr1 = references(1, idOf(1, "FR-1"), this.studentJohnToken).getJSONArray("data").getJSONObject(0);
+        assertThat(fr1.getString("artifactKey")).isEqualTo("UC-1");
+        assertThat(fr1.getString("relation")).isEqualTo("LINK_FROM");
+        assertThat(fr1.getString("linkType")).isEqualTo("DERIVES_FROM");
+
+        JSONObject bo1 = references(1, idOf(1, "BO-1"), this.studentJohnToken).getJSONArray("data").getJSONObject(0);
+        assertThat(bo1.getString("artifactKey")).isEqualTo("UC-1");
+        assertThat(bo1.getString("relation")).isEqualTo("LINK_TO");
+
+        JSONObject primary = references(1, idOf(1, "STK-1"), this.studentJohnToken).getJSONArray("data").getJSONObject(0);
+        assertThat(primary.getString("artifactKey")).isEqualTo("UC-1");
+        assertThat(primary.getString("relation")).isEqualTo("PRIMARY_ACTOR");
+        assertThat(primary.isNull("linkType")).isTrue();
+
+        JSONObject secondary = references(1, idOf(1, "STK-2"), this.studentJohnToken).getJSONArray("data").getJSONObject(0);
+        assertThat(secondary.getString("relation")).isEqualTo("SECONDARY_ACTOR");
+    }
+
+    @Test
+    void deleteArtifact_Extension4a_LinkAddedAfterTheCheck_Refused() throws Exception {
+        long fr3 = idOf(1, "FR-3");
+        assertThat(references(1, fr3, this.studentJohnToken).getJSONArray("data").length()).isZero();
+
+        // Between John's check and his confirm, Eric links FR-3 to UC-1.
+        String link = new JSONObject().put("sourceArtifactId", fr3).put("targetArtifactId", idOf(1, "UC-1")).put("type", "DERIVES_FROM").toString();
+        this.mockMvc.perform(post(this.baseUrl + "/teams/1/artifact-links").contentType(MediaType.APPLICATION_JSON).content(link)
+                        .accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentEricToken))
+                .andExpect(jsonPath("$.flag").value(true));
+
+        JSONObject refused = deleteArtifact(1, fr3, artifactVersion(fr3), this.studentJohnToken);
+        assertThat(refused.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
+        assertThat(refused.getString("message")).contains("the link FR-3 DERIVES_FROM UC-1");
+        assertThat(this.requirementArtifactRepository.findById(fr3)).isPresent();
+    }
+
+    @Test
+    void findReferences_CrossTeam_NonMemberForbidden_OtherTeamsIdNotFound() throws Exception {
+        long fr1 = idOf(1, "FR-1");
+        assertThat(references(1, fr1, this.studentWoodyToken).getInt("code")).isEqualTo(StatusCode.FORBIDDEN);
+        assertThat(references(2, fr1, this.studentWoodyToken).getInt("code")).isEqualTo(StatusCode.NOT_FOUND);
+    }
+
+    @Test
     void deleteArtifact_NoLinkCascade_ForeignKeyRefusesADeletePastTheCheck() {
         // Straight to the repository, past the service's reference check: without a cascade, the link's foreign key
         // refuses the delete instead of the link being deleted with the artifact.
@@ -680,6 +731,12 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
             this.requirementArtifactRepository.delete(fr1);
             this.entityManager.flush();
         }).isInstanceOf(PersistenceException.class);
+    }
+
+    private JSONObject references(int teamId, long artifactId, String token) throws Exception {
+        MvcResult result = this.mockMvc.perform(get(this.baseUrl + "/teams/" + teamId + "/requirement-artifacts/" + artifactId + "/references")
+                .accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, token)).andReturn();
+        return new JSONObject(result.getResponse().getContentAsString());
     }
 
     private JSONObject deleteArtifact(int teamId, long artifactId, Integer version, String token) throws Exception {
