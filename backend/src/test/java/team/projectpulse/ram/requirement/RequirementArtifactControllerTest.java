@@ -609,11 +609,9 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON).content("{\"content\": \"Which changes count?\"}")
                 .accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentEricToken)).andReturn();
         long threadId = new JSONObject(thread.getResponse().getContentAsString()).getJSONObject("data").getLong("id");
-        // Clear as a request boundary would: CommentService sets the thread's artifact but does not add the thread to
-        // the artifact's in-memory set, so in this one test transaction the cascade would not see it.
-        this.entityManager.flush();
-        this.entityManager.clear();
 
+        // Same transaction, no clear in between: the artifact's in-memory set must already hold the new thread, or the
+        // cascade misses it and the flush fails.
         JSONObject deleted = deleteArtifact(1, id, artifactVersion(id), this.studentJohnToken);
         assertThat(deleted.getBoolean("flag")).as(deleted.toString()).isTrue();
         this.entityManager.flush();
