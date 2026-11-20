@@ -69,7 +69,8 @@ public class CommentService {
 
         CommentThread thread = new CommentThread();
         thread.setTeam(doc.getTeam()); // or load Team by teamId
-        thread.setDocument(doc);
+        // Both sides of the association: the thread's foreign key and the document's in-memory set, which its cascade walks.
+        doc.addCommentThread(thread);
 //        thread.setCreatedBy(user);
 
         Comment comment = commentDtoToCommentConverter.convert(firstCommentDto);
@@ -88,8 +89,10 @@ public class CommentService {
 
         CommentThread thread = new CommentThread();
         thread.setTeam(section.getDocument().getTeam());
-        thread.setDocument(section.getDocument());
-        thread.setDocumentSection(section);
+        // Both sides, for the document and for the section: each sets the thread's foreign key and adds the thread to
+        // its own in-memory set, which its cascade walks.
+        section.getDocument().addCommentThread(thread);
+        section.addCommentThread(thread);
 //        thread.setCreatedBy(user);
 
         Comment comment = commentDtoToCommentConverter.convert(firstCommentDto);
@@ -108,7 +111,9 @@ public class CommentService {
 
         CommentThread thread = new CommentThread();
         thread.setTeam(artifact.getTeam());
-        thread.setArtifact(artifact);
+        // Both sides: the thread's foreign key and the artifact's in-memory set. The set is what the artifact's cascade
+        // walks, so a thread missing from it would not be deleted with the artifact in the same transaction.
+        artifact.addCommentThread(thread);
 //        thread.setCreatedBy(user);
 
         Comment comment = commentDtoToCommentConverter.convert(firstCommentDto);
