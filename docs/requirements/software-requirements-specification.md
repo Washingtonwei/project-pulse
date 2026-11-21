@@ -379,7 +379,7 @@ The RAM environment persists requirements as a team-scoped graph of typed requir
 
 **Use-case structure**
 
-- **UseCase** — the structured behavioral spec (`trigger`, the optional rich-text `frequencyOfUse`, `associatedInformation`, `assumptions`, and `openIssues`, plus its flows below), paired **1:1 with a RequirementArtifact** of type `USE_CASE` so a use case participates in the graph (links, traceability) like any other artifact while keeping its detailed behavioral fields.
+- **UseCase** — the structured behavioral spec (`trigger`, the optional plain-text `frequencyOfUse`, the optional rich-text `associatedInformation`, `assumptions`, and `openIssues`, plus its flows below), paired **1:1 with a RequirementArtifact** of type `USE_CASE` so a use case participates in the graph (links, traceability) like any other artifact while keeping its detailed behavioral fields.
 - **UseCaseLock** — the exclusive edit lock held on a use case while a student edits it (`lockedAt`, `expiresAt` for the lock-expiry timeout, `reason`), realizing BR-edit-lock-required / BR-lock-expiry for use-case authoring destinations (the lock lifecycle is specified by the steps of UC-DOC-edit-use-case).
 - **UseCaseMainStep**, **UseCaseExtension**, **UseCaseExtensionStep** — the ordered decomposition of a use case's normal flow and its alternative/exception extensions and their steps. Preconditions and postconditions are represented as associated `RequirementArtifact` nodes of type `PRECONDITION` and `POSTCONDITION`, so they remain part of the requirements graph.
 
