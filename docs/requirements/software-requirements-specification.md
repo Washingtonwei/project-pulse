@@ -375,11 +375,11 @@ The RAM environment persists requirements as a team-scoped graph of typed requir
 - **RequirementArtifact** — the atomic graph node: its `type` (`RequirementArtifactType`), `artifactKey` (the artifact key, e.g., `FR-1`, `UC-5`), `title`, `content`, `priority`, and `notes`. An artifact is grouped under a source `DocumentSection`; the section determines where the artifact appears in a requirement document.
 - **ArtifactLink** — a typed, directed edge between two artifacts (the artifact's `outgoing` and `incoming` links): its `type` (`ArtifactLinkType`) and optional `notes`. This is the requirement link of the glossary.
 - **ArtifactKeySequence** — a per-team, per-artifact-type sequence counter that assigns the next product-generated `artifactKey` while preserving the artifact-key uniqueness and stability rules (BR-artifact-key-unique).
-- Enumerations: `RequirementArtifactType` (the authoritative artifact taxonomy), `ArtifactLinkType` (`DERIVES_FROM`, `REALIZES`, `REFERENCES`, `IMPACTS`, `MITIGATES`, `MOTIVATES`, `ENABLES`, `PRIMARY_ACTOR`, `SECONDARY_ACTOR`, matching the glossary's artifact link type), and `Priority` (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`).
+- Enumerations: `RequirementArtifactType` (the authoritative artifact taxonomy), `ArtifactLinkType` (`DERIVES_FROM`, `REALIZES`, `REFERENCES`, `IMPACTS`, `CONSTRAINS`, `MITIGATES`, `MOTIVATES`, `ENABLES`, `PRIMARY_ACTOR`, `SECONDARY_ACTOR`, matching the glossary's artifact link type), and `Priority` (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`).
 
 **Use-case structure**
 
-- **UseCase** — the structured behavioral spec (`trigger`, plus its flows below), paired **1:1 with a RequirementArtifact** of type `USE_CASE` so a use case participates in the graph (links, traceability) like any other artifact while keeping its detailed behavioral fields.
+- **UseCase** — the structured behavioral spec (`trigger`, the optional rich-text `frequencyOfUse`, `associatedInformation`, `assumptions`, and `openIssues`, plus its flows below), paired **1:1 with a RequirementArtifact** of type `USE_CASE` so a use case participates in the graph (links, traceability) like any other artifact while keeping its detailed behavioral fields.
 - **UseCaseLock** — the exclusive edit lock held on a use case while a student edits it (`lockedAt`, `expiresAt` for the lock-expiry timeout, `reason`), realizing BR-edit-lock-required / BR-lock-expiry for use-case authoring destinations (the lock lifecycle is specified by the steps of UC-DOC-edit-use-case).
 - **UseCaseMainStep**, **UseCaseExtension**, **UseCaseExtensionStep** — the ordered decomposition of a use case's normal flow and its alternative/exception extensions and their steps. Preconditions and postconditions are represented as associated `RequirementArtifact` nodes of type `PRECONDITION` and `POSTCONDITION`, so they remain part of the requirements graph.
 
@@ -429,6 +429,10 @@ direction TB
     class UseCase {
         -Long id
         -String useCaseTrigger
+        -String frequencyOfUse
+        -String associatedInformation
+        -String assumptions
+        -String openIssues
     }
 
     class UseCaseMainStep {
@@ -545,6 +549,7 @@ direction TB
         REALIZES
         REFERENCES
         IMPACTS
+        CONSTRAINS
         MITIGATES
         MOTIVATES
         ENABLES
@@ -601,7 +606,7 @@ direction TB
     CommentThread "1" <--> "many" Comment
 ```
 
-**Mapping to the conceptual model.** `RequirementArtifact` is the glossary's requirement artifact and `artifactKey` its artifact key (the per-type running sequence `FR-1`, `UC-5`); `ArtifactKeySequence` implements the team-scoped running sequence for each artifact type; `ArtifactLink` / `ArtifactLinkType` are the requirement link / artifact link type; `DocumentSection.sectionKey` is the section key; `DocumentSectionLock` and `UseCaseLock` realize the locking rules (BR-edit-lock-required / BR-lock-expiry) for the two authoring destination types; `DocumentStatus` drives the review lock (BR-review-lock); `RequirementArtifact` associations on `UseCase` represent its preconditions and postconditions, while its primary actor and secondary actors are `PRIMARY_ACTOR` and `SECONDARY_ACTOR` artifact links from the use case's own `RequirementArtifact` (BR-use-case-actor-types); and `CommentThread` / `Comment` back the commenting use cases (UC-COL-add-comment / UC-COL-resolve-comment).
+**Mapping to the conceptual model.** `RequirementArtifact` is the glossary's requirement artifact and `artifactKey` its artifact key (the per-type running sequence `FR-1`, `UC-5`); `ArtifactKeySequence` implements the team-scoped running sequence for each artifact type; `ArtifactLink` / `ArtifactLinkType` are the requirement link / artifact link type; `DocumentSection.sectionKey` is the section key; `DocumentSectionLock` and `UseCaseLock` realize the locking rules (BR-edit-lock-required / BR-lock-expiry) for the two authoring destination types; `DocumentStatus` drives the review lock (BR-review-lock); `RequirementArtifact` associations on `UseCase` represent its preconditions and postconditions, while its primary actor and secondary actors are `PRIMARY_ACTOR` and `SECONDARY_ACTOR` artifact links from the use case's own `RequirementArtifact` (BR-use-case-actor-types); its business rules are `CONSTRAINS` artifact links from each business rule to the use case's `RequirementArtifact` (BR-use-case-business-rules); and `CommentThread` / `Comment` back the commenting use cases (UC-COL-add-comment / UC-COL-resolve-comment).
 
 **Notes.**
 

@@ -3118,7 +3118,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 **Priority:** High
 **Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
-**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control).
+**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-use-case-business-rules (the use case's business rules are its CONSTRAINS links).
 **Associated Information:**
 
 Details:
@@ -3137,6 +3137,8 @@ Details:
 - Associated Information
 - Assumptions
 - Open Issues
+
+Business Rules: the system shows each business rule that has a CONSTRAINS artifact link to this use case, by its artifact key and wording, whether the link was added in the use case editor or through UC-LNK-create-link: Create a requirement artifact link. A field the student left empty is shown as empty.
 
 **Related Use Cases:**
 **Assumptions:**
@@ -3177,6 +3179,9 @@ Details:
 - **3a. An actor the student needs is not among her team's stakeholders and external systems**
   - 3a1. The student creates the actor through UC-ART-create-artifact: Create a requirement artifact, choosing stakeholder or external system as its type.
   - 3a2. The system selects the new artifact as the actor, primary or secondary as the student chose, and the student returns to step 3 of the normal flow.
+- **3b. A business rule the student needs is not among her team's business rules**
+  - 3b1. The student creates the business rule through UC-ART-create-artifact: Create a requirement artifact.
+  - 3b2. The system adds the new business rule to this use case's business rules, and the student returns to step 3 of the normal flow.
 - **4a. Input validation rule violation**
   - 4a1. The system alerts the student that an input validation rule is violated and displays the nature and location of the error.
   - 4a2. The student corrects the mistake and returns to step 4 of the normal flow.
@@ -3186,7 +3191,7 @@ Details:
 
 **Priority:** High
 **Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
-**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-use-case-name-unique (a use case name is unique within the team's Use Cases document); BR-use-case-actor-types (an actor is a stakeholder or an external system; exactly one primary actor); BR-link-constraints (each actor is recorded as an artifact link); BR-use-case-condition-shared (preconditions and postconditions are shared requirement artifacts); BR-shared-condition-wording (a condition is reworded only on the condition itself).
+**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-use-case-name-unique (a use case name is unique within the team's Use Cases document); BR-use-case-actor-types (an actor is a stakeholder or an external system; exactly one primary actor); BR-use-case-business-rules (a business rule of the use case is a business rule of the team); BR-link-constraints (each actor and business rule is recorded as an artifact link); BR-use-case-condition-shared (preconditions and postconditions are shared requirement artifacts); BR-shared-condition-wording (a condition is reworded only on the condition itself).
 **Associated Information:**
 
 Details:
@@ -3205,9 +3210,15 @@ Details:
 - Assumptions
 - Open Issues
 
+Created By and Date Created are not entered: the system shows the authorship metadata it records (FR-HIS-authorship-metadata).
+
+Frequency of Use, Associated Information, Assumptions, and Open Issues: each is optional rich text that belongs to this use case alone. Associated Information holds the detail the steps refer to, such as validation, duplication detection, and notification rules. Assumptions holds only what this use case takes to be true; an assumption the whole project relies on is an assumption or business assumption in its home document section, and this use case cites it by its artifact key.
+
 Actors: the student chooses exactly one primary actor and zero or more secondary actors from her team's stakeholders and external systems (BR-use-case-actor-types). Choosing any other requirement artifact as an actor, leaving out the primary actor, or choosing one actor as both the primary actor and a secondary actor is an input validation rule violation (extension 4a). On save, the system records the primary actor as a PRIMARY_ACTOR artifact link and each secondary actor as a SECONDARY_ACTOR artifact link from the new use case to the actor (BR-link-constraints).
 
 New actors: as the student types an actor's name, the system offers her team's matching stakeholders and external systems before it lets her create a new one, so that an actor such as "Email Service" is not entered twice. A new actor is created through UC-ART-create-artifact (extension 3a): the system stores it in its home list in the Vision and Scope document, with its artifact key, as soon as she confirms it. That creation is independent of this use case, so the actor stays in the team's requirements graph even if she cancels this use case. Saving the use case only links an actor; it never creates one.
+
+Business rules: the student chooses zero or more of her team's business rules that this use case must conform to (BR-use-case-business-rules). As she types a rule's artifact key or wording, the system offers her team's matching business rules before it lets her create a new one, so that a rule is not entered twice. Choosing any other requirement artifact is an input validation rule violation (extension 4a). On save, the system records each chosen business rule as a CONSTRAINS artifact link from the business rule to the new use case (BR-link-constraints). A new business rule is created through UC-ART-create-artifact (extension 3b): the system stores it in its home list in the Business Rules document, with its artifact key, as soon as she confirms it, and it stays even if she cancels this use case. Saving the use case only links a business rule; it never creates one.
 
 Preconditions and postconditions: for each one, the student either chooses an existing precondition or postcondition of her team or enters a new one (BR-use-case-condition-shared). When choosing, the system offers the team's existing conditions of the matching type before the student types a new one, so that a condition such as "The user is authenticated." is not entered twice. On save, the system stores each new one as a requirement artifact of type `PRECONDITION` or `POSTCONDITION`, set by the list it was entered in rather than by the student, and assigns it an artifact key. The use case keeps its preconditions and postconditions in the order the student gives them and displays them numbered by that order (PRE-1, PRE-2, …; POST-1, POST-2, …); the numbering belongs to this use case, while each condition keeps its own artifact key. A precondition's artifact key uses the prefix `PRC` and a postcondition's `PSC`, so that a key is never confused with the use case's own PRE-n and POST-n numbering. A chosen condition is linked with its wording as it is: the student cannot reword it through this use case (BR-shared-condition-wording), and the system ignores any wording a save sends with a chosen condition, so its stored wording stands.
 
@@ -3217,7 +3228,7 @@ Notification: None — routine authoring changes are not notified (FR-NOT-suppre
 
 The student shall be able to cancel the use case at any time prior to submitting it.
 
-**Related Use Cases:** The student may first choose to UC-DOC-view-use-cases-document: View the Use Cases document but cannot find the use case, then decide to create one. UC-ART-create-artifact: Create a requirement artifact (creating an actor that does not exist yet, extension 3a).
+**Related Use Cases:** The student may first choose to UC-DOC-view-use-cases-document: View the Use Cases document but cannot find the use case, then decide to create one. UC-ART-create-artifact: Create a requirement artifact (creating an actor or a business rule that does not exist yet, extensions 3a and 3b).
 **Assumptions:**
 **Open Issues:**
 
@@ -3270,6 +3281,9 @@ The student shall be able to cancel the use case at any time prior to submitting
 - **6c. An actor the student needs is not among her team's stakeholders and external systems**
   - 6c1. The student creates the actor through UC-ART-create-artifact: Create a requirement artifact, choosing stakeholder or external system as its type.
   - 6c2. The system selects the new artifact as the actor, primary or secondary as the student chose, and the student returns to step 6 of the normal flow.
+- **6d. A business rule the student needs is not among her team's business rules**
+  - 6d1. The student creates the business rule through UC-ART-create-artifact: Create a requirement artifact.
+  - 6d2. The system adds the new business rule to this use case's business rules, and the student returns to step 6 of the normal flow.
 - **7a. Input validation rule violation**
   - 7a1. The system alerts the student that an input validation rule is violated and displays the nature and location of the error.
   - 7a2. The student corrects the mistake and returns to step 7 of the normal flow.
@@ -3279,7 +3293,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 **Priority:** High
 **Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
-**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-edit-lock-required (editing a use case requires an exclusive lock); BR-lock-expiry (an edit lock expires after a configurable interval and is released automatically); BR-use-case-actor-types (an actor is a stakeholder or an external system; exactly one primary actor); BR-link-constraints (each actor is recorded as an artifact link); BR-use-case-condition-shared (preconditions and postconditions are shared requirement artifacts); BR-shared-condition-wording (a condition is reworded only on the condition itself).
+**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-edit-lock-required (editing a use case requires an exclusive lock); BR-lock-expiry (an edit lock expires after a configurable interval and is released automatically); BR-use-case-actor-types (an actor is a stakeholder or an external system; exactly one primary actor); BR-use-case-business-rules (a business rule of the use case is a business rule of the team); BR-link-constraints (each actor and business rule is recorded as an artifact link); BR-use-case-condition-shared (preconditions and postconditions are shared requirement artifacts); BR-shared-condition-wording (a condition is reworded only on the condition itself).
 **Associated Information:**
 
 Details:
@@ -3300,6 +3314,10 @@ Details:
 
 Actors: the same rules as UC-DOC-create-use-case apply. The use case keeps exactly one primary actor and zero or more secondary actors, each chosen from her team's stakeholders and external systems (BR-use-case-actor-types); choosing any other requirement artifact, leaving out the primary actor, or giving one actor both roles is an input validation rule violation (extension 7a). On save, the system adds a PRIMARY_ACTOR or SECONDARY_ACTOR artifact link for each actor the student added and deletes the link of each actor she removed. Removing an actor removes only the link; the stakeholder or external system stays in the team's requirements graph. A new actor is created as in UC-DOC-create-use-case (extension 6c): it is stored as soon as the student confirms it, independently of this use case, and stays even if she abandons her changes (6a) or her lock expires (11a).
 
+Business rules: the same rules as UC-DOC-create-use-case apply. Choosing any requirement artifact other than a business rule of her team is an input validation rule violation (extension 7a). On save, the system adds a CONSTRAINS artifact link from each business rule the student added and deletes the link of each one she removed. Removing a business rule removes only the link; the business rule stays in its home in the Business Rules document. A new business rule is created as in UC-DOC-create-use-case (extension 6d): it is stored as soon as the student confirms it, independently of this use case, and stays even if she abandons her changes (6a) or her lock expires (11a).
+
+Frequency of Use, Associated Information, Assumptions, and Open Issues: the same rules as UC-DOC-create-use-case apply, and the student may change or clear any of them.
+
 Preconditions and postconditions: the student may add, remove, and reorder this use case's preconditions and postconditions. Adding one works as in UC-DOC-create-use-case: she chooses an existing condition of her team or enters a new one, and a new one is stored as a requirement artifact whose type the system sets (BR-use-case-condition-shared). Removing a condition from this use case only removes the reference; the condition stays in the team's requirements graph for other use cases to reuse, and is deleted only through UC-ART-delete-artifact: Delete a requirement artifact. The use case displays its conditions numbered by their order in this use case (PRE-1, PRE-2, …; POST-1, POST-2, …).
 
 Rewording a condition: every precondition and postcondition already in this use case is read-only here, whether or not another use case references it (extension 6b; BR-shared-condition-wording). To change a condition's wording for this use case only, the student replaces it with a separate copy (6b3). A new condition the student has entered but not yet saved may be reworded freely until the save. The system ignores any wording a save sends with an existing condition and keeps the stored wording, so the rule holds even when the change does not come through the use case editor.
@@ -3312,7 +3330,7 @@ Leaving and lock expiry: extension 6a covers leaving the use case inside the app
 
 The student shall be able to cancel the use case at any time prior to submitting it.
 
-**Related Use Cases:** UC-ART-edit-artifact: Edit a requirement artifact (rewording a condition for every use case that references it); UC-ART-delete-artifact: Delete a requirement artifact (deleting a condition no use case needs); UC-LNK-create-link: Create a requirement artifact link (chaining a postcondition to a precondition with ENABLES); UC-ART-create-artifact: Create a requirement artifact (creating an actor that does not exist yet, extension 6c).
+**Related Use Cases:** UC-ART-edit-artifact: Edit a requirement artifact (rewording a condition for every use case that references it); UC-ART-delete-artifact: Delete a requirement artifact (deleting a condition no use case needs); UC-LNK-create-link: Create a requirement artifact link (chaining a postcondition to a precondition with ENABLES); UC-ART-create-artifact: Create a requirement artifact (creating an actor or a business rule that does not exist yet, extensions 6c and 6d).
 **Assumptions:**
 **Open Issues:**
 
@@ -3447,8 +3465,8 @@ Sort criteria: default ascending by Artifact Key; the student may re-sort by Typ
 **Date Created:**
 **Primary Actor:** student
 **Secondary Actors:**
-**Trigger:** The student indicates to create a requirement artifact while editing a list-type document section, from the artifact catalog, or, for a use case's actor, while creating or editing that use case.
-**Description:** The student wants to create a new requirement artifact (for example, a business objective, risk, or feature) and add it to the requirements graph. A requirement artifact is a first-class entity of the requirements graph, not a part of a document: she can create it while editing the list-type document section that is its home (UC-DOC-edit-document: Edit a section-based requirement document), which limits its type to the types that document section admits, or from the artifact catalog (UC-ART-find-artifacts: Find requirement artifacts), where she chooses its type. She can also create a use case's actor while creating or editing that use case (UC-DOC-create-use-case extension 3a, UC-DOC-edit-use-case extension 6c), where she chooses between stakeholder and external system. In every case the artifact is placed in its home document section (BR-artifact-home) and stored as soon as she confirms it.
+**Trigger:** The student indicates to create a requirement artifact while editing a list-type document section, from the artifact catalog, or, for a use case's actor or business rule, while creating or editing that use case.
+**Description:** The student wants to create a new requirement artifact (for example, a business objective, risk, or feature) and add it to the requirements graph. A requirement artifact is a first-class entity of the requirements graph, not a part of a document: she can create it while editing the list-type document section that is its home (UC-DOC-edit-document: Edit a section-based requirement document), which limits its type to the types that document section admits, or from the artifact catalog (UC-ART-find-artifacts: Find requirement artifacts), where she chooses its type. She can also create a use case's actor while creating or editing that use case (UC-DOC-create-use-case extension 3a, UC-DOC-edit-use-case extension 6c), where she chooses between stakeholder and external system, and a use case's business rule (UC-DOC-create-use-case extension 3b, UC-DOC-edit-use-case extension 6d), whose type is business rule. In every case the artifact is placed in its home document section (BR-artifact-home) and stored as soon as she confirms it.
 
 **Preconditions:**
 - PRE-1. The student is logged into the system.
@@ -3489,7 +3507,7 @@ Sort criteria: default ascending by Artifact Key; the student may re-sort by Typ
 
 **Priority:** High
 **Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
-**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-artifact-key-unique (unique, stable artifact key); BR-artifact-home (the artifact type determines its home document section; created from a document section, the type is one that document section admits); BR-review-lock (nothing is added to a document locked for review, extension 8a); BR-use-case-actor-types (created as a use case's actor, the type is stakeholder or external system).
+**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-artifact-key-unique (unique, stable artifact key); BR-artifact-home (the artifact type determines its home document section; created from a document section, the type is one that document section admits); BR-review-lock (nothing is added to a document locked for review, extension 8a); BR-use-case-actor-types (created as a use case's actor, the type is stakeholder or external system); BR-use-case-business-rules (created as a use case's business rule, the type is business rule).
 **Associated Information:**
 
 Details:
@@ -3510,6 +3528,7 @@ Type and home:
 - Created from a list-type document section: the student chooses among only the types that document section admits, and no choice is offered when it admits one. That document section is the artifact's home.
 - Created from the artifact catalog (and, in a future release, from the requirements graph view): the student chooses the type among the types that have a document section home. The type determines the home through the artifact type → authoring home table in the SRS's [Business Domain Model](software-requirements-specification.md#business-domain-model); every type has exactly one, so the student never chooses a home.
 - Created as a use case's actor: the student chooses between stakeholder and external system, the only types an actor may have (BR-use-case-actor-types), and the type determines the home as it does from the artifact catalog. As from the artifact catalog, the creation takes no lock on the home document section. It is not part of the use case's save; the use case then links the new artifact as its actor.
+- Created as a use case's business rule: the type is business rule, which the student does not choose (BR-use-case-business-rules), and its home is the Business Rules document. As for an actor, the creation takes no lock on the home document section and is not part of the use case's save; the use case then links the new artifact as one of its business rules.
 - Artifacts with no document section home (glossary terms, use cases, preconditions, postconditions) are created through their own use cases, not this one.
 
 Duplication detection rules: Advisory only — the system warns when an artifact of the same type has similar content (fuzzy match) but does not block creation; the student decides whether to proceed, revise, or open the existing artifact. In the MVP, "similar content" means an artifact of the same type whose title contains the new title, ignoring letter case.
@@ -3518,7 +3537,7 @@ Notification: None — routine authoring changes are not notified (FR-NOT-suppre
 
 The student shall be able to cancel the use case at any time prior to submitting it.
 
-**Related Use Cases:** The student may first choose to UC-ART-find-artifacts: Find requirement artifacts but cannot find any, then decide to create one. UC-DOC-edit-document: Edit a section-based requirement document (creating an item while editing its home document section). UC-DOC-create-use-case: Create a use case and UC-DOC-edit-use-case: Edit a use case (creating a use case's actor).
+**Related Use Cases:** The student may first choose to UC-ART-find-artifacts: Find requirement artifacts but cannot find any, then decide to create one. UC-DOC-edit-document: Edit a section-based requirement document (creating an item while editing its home document section). UC-DOC-create-use-case: Create a use case and UC-DOC-edit-use-case: Edit a use case (creating a use case's actor or business rule).
 **Assumptions:**
 **Open Issues:**
 
@@ -3803,6 +3822,7 @@ Link Types:
 - REALIZES
 - REFERENCES
 - IMPACTS
+- CONSTRAINS
 - MITIGATES
 - MOTIVATES
 - ENABLES
@@ -3873,6 +3893,7 @@ The student may update the target artifact, link note, and link types:
 - REALIZES
 - REFERENCES
 - IMPACTS
+- CONSTRAINS
 - MITIGATES
 - MOTIVATES
 - ENABLES
