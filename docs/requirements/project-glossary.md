@@ -177,7 +177,7 @@ Each requirement link has:
 - exactly one target artifact
 - a link type describing the semantic relationship
 
-The link type is one of the values defined by artifact link type. Together they cover derivation, realization, reference, impact, mitigation, motivation, and enabling relationships, and the roles actors play in use cases.
+The link type is one of the values defined by artifact link type. Together they cover derivation, realization, reference, impact, constraint, mitigation, motivation, and enabling relationships, and the roles actors play in use cases.
 
 ## **Artifact Link Type**
 
@@ -187,6 +187,7 @@ An enumeration defining the allowed semantic relationships between requirement a
 - REALIZES — the source artifact realizes or implements a more abstract target (e.g., implementation → design → functional requirement / use case / feature / objective).
 - REFERENCES — the source artifact makes a general reference to the target, with no more specific relationship.
 - IMPACTS — the source (a cross-cutting or constraining artifact) affects the target requirement or artifact; used for impact analysis.
+- CONSTRAINS: the target use case or functional requirement must conform to the source business rule. IMPACTS records that a change to the source would affect the target; CONSTRAINS records that the target obeys the source.
 - MITIGATES — the source artifact mitigates the target risk.
 - MOTIVATES — the source expresses a need or driver that motivates the target requirement.
 - ENABLES: the source postcondition, once true, makes the target precondition true, so the use case that ends with the source can enable the use case that starts with the target.
