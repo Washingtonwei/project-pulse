@@ -1311,6 +1311,40 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void updateUseCase_ActorsChanged_NoArtifactVersionMoves() throws Exception {
+        // A link is not part of either artifact's content, so naming or dropping an actor must not make a teammate's
+        // open edit of that actor stale (DI-concurrency-control, UC-ART-edit-artifact 10a). UC-1 (use case 3, its
+        // artifact 3) drops STK-2 (artifact 2) and adds the external system SYS-1.
+        long externalSystemId = fetchFirstArtifact(1, "EXTERNAL_SYSTEM", this.studentJohnToken).getLong("id");
+        Integer droppedBefore = artifactVersion(2L);
+        Integer addedBefore = artifactVersion(externalSystemId);
+        Integer useCaseArtifactBefore = artifactVersion(3L);
+
+        lockUseCase(1, 3, this.studentJohnToken);
+        JSONObject payload = fetchUseCase(1, 3, this.studentJohnToken);
+        payload.put("secondaryActorIds", new JSONArray().put(externalSystemId));
+        MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload.toString())
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andReturn();
+        JSONObject response = new JSONObject(result.getResponse().getContentAsString());
+        assertThat(response.getBoolean("flag")).as(response.toString()).isTrue();
+
+        assertThat(artifactVersion(2L)).as("dropped actor STK-2").isEqualTo(droppedBefore);
+        assertThat(artifactVersion(externalSystemId)).as("added actor SYS-1").isEqualTo(addedBefore);
+        assertThat(artifactVersion(3L)).as("the use case's own artifact").isEqualTo(useCaseArtifactBefore);
+    }
+
+    // The stored @Version of an artifact, read after flushing so a pending increment is counted.
+    private Integer artifactVersion(long artifactId) {
+        this.entityManager.flush();
+        this.entityManager.clear();
+        return this.entityManager.find(team.projectpulse.ram.requirement.RequirementArtifact.class, artifactId).getVersion();
+    }
+
+    @Test
     void updateUseCase_ActorsChanged_OnlyTheChangedLinksAreWritten() throws Exception {
         // UC-1 (use case 3) names STK-1 as primary actor and STK-2 as secondary actor. The edit keeps STK-1, drops
         // STK-2 and adds the external system SYS-1 as a secondary actor.
