@@ -443,6 +443,46 @@
 
           <!-- The template's rich text fields (docs/design/doc.md, "The template's text fields"), all optional.
                Assumptions are only this use case's own; a project-wide one is cited by its artifact key. -->
+          <!-- Business Rules (BR-use-case-business-rules): the team's rules this use case must conform to, saved as
+               CONSTRAINS links from each rule. The picker shows matches first, then Create (extensions 3b and 6d). -->
+          <el-divider>Business Rules</el-divider>
+          <el-select
+            ref="businessRuleSelect"
+            v-model="currentUseCase.businessRuleIds"
+            multiple
+            filterable
+            :filter-method="(query: string) => (ruleQuery = query)"
+            placeholder="Select business rules"
+            class="business-rule-select"
+            :disabled="!canEdit"
+            @visible-change="(open: boolean) => !open && (ruleQuery = '')"
+            @change="sortBusinessRuleIds"
+          >
+            <el-option
+              v-for="rule in matchingRules(ruleQuery)"
+              :key="rule.id"
+              :label="formatActorLabel(rule)"
+              :value="rule.id"
+            />
+            <template v-if="canEdit && offersRuleCreate(ruleQuery)" #footer>
+              <el-button link type="primary" @mousedown.prevent @click="openRuleDialog">
+                Create "{{ ruleQuery.trim() }}"...
+              </el-button>
+            </template>
+          </el-select>
+
+          <!-- Extensions 3b and 6d: a missing rule is created through UC-ART-create-artifact, apart from the use case
+               save; its type is always business rule. The rules already chosen are left out of the duplicate list. -->
+          <RequirementArtifactCreateDialog
+            v-model="ruleDialog.visible"
+            :team-id="effectiveTeamId"
+            :types="RULE_TYPES"
+            :initial-title="ruleDialog.title"
+            :exclude-ids="currentUseCase.businessRuleIds"
+            @created="selectRule"
+            @chosen="selectRule"
+          />
+
           <el-divider>Associated Information</el-divider>
           <RichTextField v-model="currentUseCase.associatedInformation" :editable="canEdit" />
 
@@ -686,6 +726,84 @@ async function loadStakeholders() {
   }
 }
 
+// ---- Business rules (BR-use-case-business-rules; extensions 3b and 6d) ----
+
+// The team's business rules, offered by the business rule picker, in artifact key order.
+const businessRuleOptions = ref<RequirementArtifact[]>([])
+
+// The one artifact type a use case's business rule has; the create dialog then hides its type choice.
+const RULE_TYPES = ['BUSINESS_RULE']
+
+// What the student has typed into the business rule picker; cleared when it closes.
+const ruleQuery = ref('')
+
+const ruleDialog = ref<{ visible: boolean; title: string }>({ visible: false, title: '' })
+
+const businessRuleSelect = ref<{ blur: () => void }>()
+
+// The number in an artifact key, so that RULE-2 sorts before RULE-10.
+function keyNumber(artifact: RequirementArtifact | undefined) {
+  const match = artifact?.artifactKey?.match(/(\d+)$/)
+  return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER
+}
+
+// The rules whose key or title contains the query, ignoring case ("a rule's artifact key or wording").
+function matchingRules(query: string) {
+  const needle = query.trim().toLowerCase()
+  if (!needle) return businessRuleOptions.value
+  return businessRuleOptions.value.filter((rule) => formatActorLabel(rule).toLowerCase().includes(needle))
+}
+
+// Create is offered while a query is typed that is not exactly a rule's title or key, as for actors.
+function offersRuleCreate(query: string) {
+  const needle = query.trim().toLowerCase()
+  if (!needle) return false
+  return !businessRuleOptions.value.some(
+    (rule) => rule.title.trim().toLowerCase() === needle || rule.artifactKey?.toLowerCase() === needle
+  )
+}
+
+function openRuleDialog() {
+  ruleDialog.value = { visible: true, title: ruleQuery.value.trim() }
+  businessRuleSelect.value?.blur()
+}
+
+// The chosen rules are shown in artifact key order, however they were picked or sent.
+function sortedByRuleKey(ids: number[]) {
+  const byId = new Map(businessRuleOptions.value.map((rule) => [rule.id, rule]))
+  return [...ids].sort((a, b) => keyNumber(byId.get(a)) - keyNumber(byId.get(b)))
+}
+
+function sortBusinessRuleIds() {
+  currentUseCase.value.businessRuleIds = sortedByRuleKey(currentUseCase.value.businessRuleIds || [])
+}
+
+// Extensions 3b2 and 6d2: the new rule, or the existing one picked from the duplicate warning, joins this use case's
+// business rules. It joins the options first, so the picker shows its key and title.
+function selectRule(rule: RequirementArtifact) {
+  if (rule.id == null) return
+  const id = rule.id
+  if (!businessRuleOptions.value.some((option) => option.id === id)) {
+    businessRuleOptions.value = [...businessRuleOptions.value, rule].sort((a, b) => keyNumber(a) - keyNumber(b))
+  }
+  const ids = currentUseCase.value.businessRuleIds || []
+  if (!ids.includes(id)) {
+    currentUseCase.value.businessRuleIds = [...ids, id]
+    sortBusinessRuleIds()
+  }
+  ruleQuery.value = ''
+}
+
+async function loadBusinessRules() {
+  if (!effectiveTeamId.value) return
+  try {
+    const result = await searchRequirementArtifacts(effectiveTeamId.value, { page: 0, size: 500 }, { type: 'BUSINESS_RULE' })
+    businessRuleOptions.value = [...result.data.content].sort((a, b) => keyNumber(a) - keyNumber(b))
+  } catch {
+    // The picker then offers no rules; the request interceptor has already shown the error.
+  }
+}
+
 // Loads the team's conditions of each kind for the pickers. Searched by type, so that only conditions come back.
 async function loadConditionOptions() {
   if (!effectiveTeamId.value) return
@@ -744,7 +862,8 @@ function normalizeUseCase(useCase: UseCase): UseCase {
   return {
     ...useCase,
     secondaryActorIds: (useCase.secondaryActorIds || []).filter((id) => id !== useCase.primaryActorId),
-    businessRuleIds: useCase.businessRuleIds || [],
+    // The server sends the rule ids as a set, in no order; the form shows them in artifact key order.
+    businessRuleIds: sortedByRuleKey(useCase.businessRuleIds || []),
     // The server returns a field as stored, null included; the form works with ''.
     frequencyOfUse: useCase.frequencyOfUse ?? '',
     associatedInformation: useCase.associatedInformation ?? '',
@@ -976,7 +1095,7 @@ async function ensureUseCasesLoaded() {
   if (!effectiveTeamId.value) return
   loading.value = true
   try {
-    await Promise.all([loadUseCases(), loadStakeholders(), loadConditionOptions()])
+    await Promise.all([loadUseCases(), loadStakeholders(), loadConditionOptions(), loadBusinessRules()])
   } finally {
     loading.value = false
   }
@@ -1091,6 +1210,10 @@ watch(
 
 .lock-alert {
   margin-bottom: 12px;
+}
+
+.business-rule-select {
+  width: 100%;
 }
 
 .authorship {
