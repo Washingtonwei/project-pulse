@@ -92,6 +92,11 @@
         />
 
         <el-form v-else label-width="140px" class="usecase-form">
+          <!-- Created By and Date Created come from the authorship metadata, never from the student
+               (UC-DOC-view-use-case, FR-HIS-authorship-metadata). -->
+          <div v-if="!isNew && currentUseCase.createdAt" class="authorship">
+            Created by {{ currentUseCase.createdBy?.name || 'unknown' }} on {{ formatTimestamp(currentUseCase.createdAt) }}
+          </div>
           <el-alert v-if="lockInfo?.locked && !isNew" type="warning" show-icon class="lock-alert">
             <template #title>
               Use case locked by {{ lockInfo.lockedBy?.name || 'another user' }}
@@ -177,6 +182,15 @@
                 :value="priority"
               />
             </el-select>
+          </el-form-item>
+          <el-form-item label="Frequency of Use">
+            <el-input
+              v-model="currentUseCase.frequencyOfUse"
+              maxlength="255"
+              show-word-limit
+              placeholder="For example, about 50 times a day during the semester"
+              :disabled="!canEdit"
+            />
           </el-form-item>
           <el-form-item label="Notes">
             <el-input
@@ -426,6 +440,17 @@
               </div>
             </div>
           </div>
+
+          <!-- The template's rich text fields (docs/design/doc.md, "The template's text fields"), all optional.
+               Assumptions are only this use case's own; a project-wide one is cited by its artifact key. -->
+          <el-divider>Associated Information</el-divider>
+          <RichTextField v-model="currentUseCase.associatedInformation" :editable="canEdit" />
+
+          <el-divider>Assumptions</el-divider>
+          <RichTextField v-model="currentUseCase.assumptions" :editable="canEdit" />
+
+          <el-divider>Open Issues</el-divider>
+          <RichTextField v-model="currentUseCase.openIssues" :editable="canEdit" />
         </template>
       </el-card>
     </div>
@@ -441,6 +466,7 @@ import type { Student } from '@/apis/student/types'
 import { PRIORITIES, type Condition, type RequirementArtifact, type UseCase } from '@/apis/ram/types'
 import UseCaseConditionList from '@/components/UseCaseConditionList.vue'
 import RequirementArtifactCreateDialog from '@/components/RequirementArtifactCreateDialog.vue'
+import RichTextField from '@/components/RichTextField.vue'
 import {
   searchRequirementArtifacts,
   getUseCaseById,
@@ -533,7 +559,12 @@ function createEmptyUseCase(): UseCase {
     teamId: effectiveTeamId.value || 0,
     primaryActorId: 0,
     secondaryActorIds: [],
+    businessRuleIds: [],
     trigger: '',
+    frequencyOfUse: '',
+    associatedInformation: '',
+    assumptions: '',
+    openIssues: '',
     preconditions: [],
     postconditions: [],
     mainSteps: [],
@@ -713,6 +744,12 @@ function normalizeUseCase(useCase: UseCase): UseCase {
   return {
     ...useCase,
     secondaryActorIds: (useCase.secondaryActorIds || []).filter((id) => id !== useCase.primaryActorId),
+    businessRuleIds: useCase.businessRuleIds || [],
+    // The server returns a field as stored, null included; the form works with ''.
+    frequencyOfUse: useCase.frequencyOfUse ?? '',
+    associatedInformation: useCase.associatedInformation ?? '',
+    assumptions: useCase.assumptions ?? '',
+    openIssues: useCase.openIssues ?? '',
     preconditions: useCase.preconditions || [],
     postconditions: useCase.postconditions || [],
     mainSteps: useCase.mainSteps || [],
@@ -1054,6 +1091,12 @@ watch(
 
 .lock-alert {
   margin-bottom: 12px;
+}
+
+.authorship {
+  margin-bottom: 12px;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
 }
 
 .usecase-form :deep(.el-input__inner),
