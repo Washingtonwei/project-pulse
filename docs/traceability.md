@@ -331,7 +331,7 @@ A business rule (`BR-*`, owned by [business-rules.md](requirements/business-rule
 
 > ⚙️ **Generated, do not hand-edit.** This table is a *projection* of the forward citations — the use cases' **Business Rules** fields, the SRS's rule citations, and the NFR matrix's `QS-<slug>` rows — not a second authored copy of them (that would violate "cited, never restated" and drift). `/spec-build` **regenerates and verifies** it against the live citations; a row that disagrees with them is a flagged defect, and edits belong in the citing artifacts, not here. The two universal access rules (`BR-role-based-access`, `BR-team-scoped-access`) are cited by essentially every authoring/CRUD use case and are summarized by count rather than enumerated (the same noise-reduction convention as the functional matrix's omitted `FR-SEC-*` column). This index is the **spec-level** backward view (which requirements *cite* a rule); its **code-level** companion — which `file:method` *enforces* each rule — lives in `/sync-check`'s `BR → enforcement-point` map. Together they trace a rule → requirements → code.
 >
-> **Last regenerated:** 2026-11-19 (against the citations as of this commit).
+> **Last regenerated:** 2026-11-20 (against the citations as of this commit).
 
 | Business rule | Cited by use cases | SRS | QS |
 |---|---|---|---|
@@ -355,7 +355,7 @@ A business rule (`BR-*`, owned by [business-rules.md](requirements/business-rule
 | `BR-glossary-term-unique` | `UC-GLO-create-term`, `UC-GLO-rename-term` | — | — |
 | `BR-instructor-lifecycle` | `UC-INS-deactivate-instructor`, `UC-INS-reactivate-instructor` | `FR-SEC-active-account` | — |
 | `BR-invitations-admin-only` | `UC-INS-invite-instructors`, `UC-STU-invite-students`, `UC-STU-view-pending-invitations` | — | — |
-| `BR-link-constraints` | `UC-LNK-create-link`, `UC-LNK-edit-link` | — | — |
+| `BR-link-constraints` | `UC-DOC-create-use-case`, `UC-DOC-edit-use-case`, `UC-LNK-create-link`, `UC-LNK-edit-link` | — | — |
 | `BR-lock-expiry` | `UC-DOC-edit-document`, `UC-DOC-edit-use-case` | `DI-concurrency-control`, (prose) | — |
 | `BR-review-authority` | `UC-REV-review-documents` | (prose) | — |
 | `BR-review-lock` | `UC-ART-create-artifact`, `UC-ART-delete-artifact`, `UC-REV-submit-for-review` | (prose) | — |
@@ -373,7 +373,7 @@ A business rule (`BR-*`, owned by [business-rules.md](requirements/business-rule
 | `BR-team-assignment-required` | `UC-EVA-submit-evaluation`, `UC-NOT-remind-non-submitters`, `UC-WAR-manage-activities` | — | — |
 | `BR-team-scoped-access` | _universal_ — 30 UCs (every authoring/CRUD use case) | `DI-team-scoping`, `FR-SEC-authorization`, `SEC-authorization`, `SI-export-formats`, (prose) | `QS-cross-team-denial` |
 | `BR-team-single-instructor` | `UC-INS-assign-instructors`, `UC-INS-remove-instructor` | — | — |
-| `BR-use-case-actor-types` | `UC-DOC-create-use-case`, `UC-DOC-edit-use-case` | — | — |
+| `BR-use-case-actor-types` | `UC-DOC-create-use-case`, `UC-DOC-edit-use-case` | (prose) | — |
 | `BR-use-case-condition-shared` | `UC-DOC-create-use-case`, `UC-DOC-edit-use-case` | — | — |
 | `BR-use-case-name-unique` | `UC-DOC-create-use-case` | — | — |
 

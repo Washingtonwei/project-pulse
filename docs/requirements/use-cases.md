@@ -3183,7 +3183,7 @@ Details:
 
 **Priority:** High
 **Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
-**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-use-case-name-unique (a use case name is unique within the team's Use Cases document); BR-use-case-actor-types (an actor is a stakeholder or an external system); BR-use-case-condition-shared (preconditions and postconditions are shared requirement artifacts); BR-shared-condition-wording (a condition is reworded only on the condition itself).
+**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-use-case-name-unique (a use case name is unique within the team's Use Cases document); BR-use-case-actor-types (an actor is a stakeholder or an external system; exactly one primary actor); BR-link-constraints (each actor is recorded as an artifact link); BR-use-case-condition-shared (preconditions and postconditions are shared requirement artifacts); BR-shared-condition-wording (a condition is reworded only on the condition itself).
 **Associated Information:**
 
 Details:
@@ -3202,7 +3202,7 @@ Details:
 - Assumptions
 - Open Issues
 
-Actors: the student chooses the primary actor and each secondary actor from her team's stakeholders and external systems (BR-use-case-actor-types). Choosing any other requirement artifact as an actor is an input validation rule violation (extension 4a).
+Actors: the student chooses exactly one primary actor and zero or more secondary actors from her team's stakeholders and external systems (BR-use-case-actor-types). Choosing any other requirement artifact as an actor, leaving out the primary actor, or choosing one actor as both the primary actor and a secondary actor is an input validation rule violation (extension 4a). On save, the system records the primary actor as a PRIMARY_ACTOR artifact link and each secondary actor as a SECONDARY_ACTOR artifact link from the new use case to the actor (BR-link-constraints).
 
 Preconditions and postconditions: for each one, the student either chooses an existing precondition or postcondition of her team or enters a new one (BR-use-case-condition-shared). When choosing, the system offers the team's existing conditions of the matching type before the student types a new one, so that a condition such as "The user is authenticated." is not entered twice. On save, the system stores each new one as a requirement artifact of type `PRECONDITION` or `POSTCONDITION`, set by the list it was entered in rather than by the student, and assigns it an artifact key. The use case keeps its preconditions and postconditions in the order the student gives them and displays them numbered by that order (PRE-1, PRE-2, …; POST-1, POST-2, …); the numbering belongs to this use case, while each condition keeps its own artifact key. A precondition's artifact key uses the prefix `PRC` and a postcondition's `PSC`, so that a key is never confused with the use case's own PRE-n and POST-n numbering. A chosen condition is linked with its wording as it is: the student cannot reword it through this use case (BR-shared-condition-wording), and the system ignores any wording a save sends with a chosen condition, so its stored wording stands.
 
@@ -3271,7 +3271,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 **Priority:** High
 **Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
-**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-edit-lock-required (editing a use case requires an exclusive lock); BR-lock-expiry (an edit lock expires after a configurable interval and is released automatically); BR-use-case-actor-types (an actor is a stakeholder or an external system); BR-use-case-condition-shared (preconditions and postconditions are shared requirement artifacts); BR-shared-condition-wording (a condition is reworded only on the condition itself).
+**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-edit-lock-required (editing a use case requires an exclusive lock); BR-lock-expiry (an edit lock expires after a configurable interval and is released automatically); BR-use-case-actor-types (an actor is a stakeholder or an external system; exactly one primary actor); BR-link-constraints (each actor is recorded as an artifact link); BR-use-case-condition-shared (preconditions and postconditions are shared requirement artifacts); BR-shared-condition-wording (a condition is reworded only on the condition itself).
 **Associated Information:**
 
 Details:
@@ -3290,7 +3290,7 @@ Details:
 - Assumptions
 - Open Issues
 
-Actors: the same rule as UC-DOC-create-use-case applies. The student chooses each actor from her team's stakeholders and external systems (BR-use-case-actor-types), and choosing any other requirement artifact is an input validation rule violation (extension 7a).
+Actors: the same rules as UC-DOC-create-use-case apply. The use case keeps exactly one primary actor and zero or more secondary actors, each chosen from her team's stakeholders and external systems (BR-use-case-actor-types); choosing any other requirement artifact, leaving out the primary actor, or giving one actor both roles is an input validation rule violation (extension 7a). On save, the system adds a PRIMARY_ACTOR or SECONDARY_ACTOR artifact link for each actor the student added and deletes the link of each actor she removed. Removing an actor removes only the link; the stakeholder or external system stays in the team's requirements graph.
 
 Preconditions and postconditions: the student may add, remove, and reorder this use case's preconditions and postconditions. Adding one works as in UC-DOC-create-use-case: she chooses an existing condition of her team or enters a new one, and a new one is stored as a requirement artifact whose type the system sets (BR-use-case-condition-shared). Removing a condition from this use case only removes the reference; the condition stays in the team's requirements graph for other use cases to reuse, and is deleted only through UC-ART-delete-artifact: Delete a requirement artifact. The use case displays its conditions numbered by their order in this use case (PRE-1, PRE-2, …; POST-1, POST-2, …).
 
@@ -3639,7 +3639,7 @@ Deletion strategy:
 - Its artifact key is never reissued to another requirement artifact.
 
 Referring objects handling strategy:
-- Deletion is blocked if the requirement artifact is referenced by any requirement artifact.
+- Deletion is blocked if the requirement artifact is referenced by any requirement artifact, for example a stakeholder that a use case names as its actor.
 - The student must remove or update references via other use cases before retrying deletion.
 
 Notification: None — routine authoring changes are not notified (FR-NOT-suppress-routine); saved changes propagate to connected teammates in real time (UC-COL-collaborative-edit).
@@ -3797,6 +3797,8 @@ Link Types:
 - MITIGATES
 - MOTIVATES
 - ENABLES
+- PRIMARY_ACTOR
+- SECONDARY_ACTOR
 
 The system validates the selected (source type, link type, target type) combination against the link-type compatibility matrix defined under BR-link-constraints in [business-rules.md](business-rules.md) (step 6; extension 6a handles a violation).
 
@@ -3865,6 +3867,8 @@ The student may update the target artifact, link note, and link types:
 - MITIGATES
 - MOTIVATES
 - ENABLES
+- PRIMARY_ACTOR
+- SECONDARY_ACTOR
 
 A changed target artifact or link type is validated against the link-type compatibility matrix defined under BR-link-constraints in [business-rules.md](business-rules.md) (step 6; extension 6a handles a violation).
 
