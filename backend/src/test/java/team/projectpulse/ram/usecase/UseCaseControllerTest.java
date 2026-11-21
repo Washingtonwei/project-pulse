@@ -1390,6 +1390,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
         // (document 2) with the next key. The use case is untouched until he saves it naming the new actor.
         lockUseCase(1, 3, this.studentJohnToken);
         JSONObject before = fetchUseCase(1, 3, this.studentJohnToken);
+        long lockHolderBefore = fetchLock(1, 3).getJSONObject("lockedBy").getLong("id");
 
         JSONObject created = createActor("EXTERNAL_SYSTEM", "Email Service", "Sends the team's notification emails.");
         assertThat(created.getBoolean("flag")).as(created.toString()).isTrue();
@@ -1401,13 +1402,13 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
         JSONObject payload = fetchUseCase(1, 3, this.studentJohnToken);
         assertThat(payload.getInt("version")).isEqualTo(before.getInt("version"));
         assertThat(payload.getJSONArray("secondaryActorIds").toString()).isEqualTo(before.getJSONArray("secondaryActorIds").toString());
-        this.mockMvc.perform(get(this.baseUrl + "/teams/1/use-cases/3/lock")
-                        .accept(MediaType.APPLICATION_JSON)
-                        .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
-                .andExpect(jsonPath("$.data.locked").value(true));
+        JSONObject lockAfter = fetchLock(1, 3);
+        assertThat(lockAfter.getBoolean("locked")).isTrue();
+        assertThat(lockAfter.getJSONObject("lockedBy").getLong("id")).isEqualTo(lockHolderBefore);
 
-        // 6c2, then step 11: the save names the new actor as a secondary actor.
-        payload.put("secondaryActorIds", new JSONArray().put(emailServiceId));
+        // 6c2, then step 11: the save adds the new actor to the secondary actors already there.
+        JSONArray secondaryActorIds = new JSONArray(payload.getJSONArray("secondaryActorIds").toString()).put(emailServiceId);
+        payload.put("secondaryActorIds", secondaryActorIds);
         MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload.toString())
@@ -1419,9 +1420,17 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
 
         this.entityManager.flush();
         this.entityManager.clear();
-        assertThat(this.artifactLinkRepository.findBySourceArtifactId(3L, 1))
-                .extracting(link -> link.getType(), link -> link.getTargetArtifact().getId())
-                .contains(tuple(ArtifactLinkType.SECONDARY_ACTOR, emailServiceId));
+        List<Long> expectedSecondaries = new java.util.ArrayList<>();
+        for (int i = 0; i < secondaryActorIds.length(); i++) {
+            expectedSecondaries.add(secondaryActorIds.getLong(i));
+        }
+        List<ArtifactLink> links = this.artifactLinkRepository.findBySourceArtifactId(3L, 1);
+        assertThat(links).filteredOn(link -> link.getType() == ArtifactLinkType.SECONDARY_ACTOR)
+                .extracting(link -> link.getTargetArtifact().getId())
+                .containsExactlyInAnyOrderElementsOf(expectedSecondaries);
+        assertThat(links).filteredOn(link -> link.getType() == ArtifactLinkType.PRIMARY_ACTOR)
+                .extracting(link -> link.getTargetArtifact().getId())
+                .containsExactly(before.getLong("primaryActorId"));
     }
 
     @Test
@@ -1757,6 +1766,15 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andReturn();
         return new JSONObject(result.getResponse().getContentAsString());
+    }
+
+    /** The use case's lock status as John sees it. */
+    private JSONObject fetchLock(int teamId, int useCaseId) throws Exception {
+        MvcResult result = this.mockMvc.perform(get(this.baseUrl + "/teams/" + teamId + "/use-cases/" + useCaseId + "/lock")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andReturn();
+        return new JSONObject(result.getResponse().getContentAsString()).getJSONObject("data");
     }
 
     /** The artifact keys of one of a document's list sections, in list order, read after a flush. */

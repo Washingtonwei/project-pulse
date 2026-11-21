@@ -35,7 +35,7 @@
 
     <template #footer>
       <el-button @click="visible = false">Cancel</el-button>
-      <el-button type="primary" :loading="busy" @click="create">
+      <el-button type="primary" :loading="busy" :disabled="!teamId" @click="create">
         {{ duplicateMatches.length ? 'Create anyway' : 'Create' }}
       </el-button>
     </template>
@@ -49,7 +49,7 @@
 // its key, so the dialog sends only the type, title and content. It takes no lock on that home, as from the artifact
 // catalog. The caller learns the result through `created` (a new artifact) or `chosen` (an existing one picked from the
 // duplicate warning). Design: docs/design/doc.md, "Creating an actor from the picker".
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { createRequirementArtifact, searchRequirementArtifacts } from '@/apis/ram'
 import type { RequirementArtifact } from '@/apis/ram/types'
@@ -114,21 +114,36 @@ function reset() {
   formRef.value?.clearValidate()
 }
 
-// Step 5: the team's artifacts of the chosen type whose title contains the new one, ignoring case. Advisory only: if
-// the search fails, the create goes ahead as if nothing matched.
-async function findDuplicates(teamId: number): Promise<RequirementArtifact[]> {
-  try {
-    const result = await searchRequirementArtifacts(
-      teamId,
-      { page: 0, size: DUPLICATE_MATCH_LIMIT + props.excludeIds.length },
-      { type: draft.type, title: draft.title.trim() }
-    )
-    return result.data.content
-      .filter((match) => match.id == null || !props.excludeIds.includes(match.id))
-      .slice(0, DUPLICATE_MATCH_LIMIT)
-  } catch {
-    return []
+// A warning shown for one type and title no longer applies once either changes: clear it, so the button reads Create
+// again and Use this one never offers a match found for the old input.
+watch(
+  () => [draft.type, draft.title.trim()],
+  () => {
+    duplicateMatches.value = []
+    duplicateCheckedFor.value = null
   }
+)
+
+// Step 5: the team's artifacts whose title contains the new one, ignoring case, searched in every type the caller
+// admits, not only the chosen one. For actors that catches a stakeholder and an external system with the same name,
+// the duplicate that actually happens. Advisory only: if a search fails, it counts as no match.
+async function findDuplicates(teamId: number): Promise<RequirementArtifact[]> {
+  const title = draft.title.trim()
+  const pages = await Promise.all(
+    props.types.map((type) =>
+      searchRequirementArtifacts(
+        teamId,
+        { page: 0, size: DUPLICATE_MATCH_LIMIT + props.excludeIds.length },
+        { type, title }
+      )
+        .then((result) => result.data.content)
+        .catch(() => [] as RequirementArtifact[])
+    )
+  )
+  return pages
+    .flat()
+    .filter((match) => match.id == null || !props.excludeIds.includes(match.id))
+    .slice(0, DUPLICATE_MATCH_LIMIT)
 }
 
 // Steps 4 to 9. The Create button is the confirmation of step 6. A stale duplicate check runs first; when it finds

@@ -137,7 +137,7 @@
                 :value="actor.id"
               />
               <!-- Extension 3a / 6c: below the matches, so the student sees them before she creates one. -->
-              <template v-if="canEdit && actorQuery.primary.trim()" #footer>
+              <template v-if="canEdit && offersCreate(actorQuery.primary)" #footer>
                 <el-button link type="primary" @mousedown.prevent @click="openActorDialog('primary')">
                   Create "{{ actorQuery.primary.trim() }}"...
                 </el-button>
@@ -161,7 +161,7 @@
                 :label="formatActorLabel(actor)"
                 :value="actor.id"
               />
-              <template v-if="canEdit && actorQuery.secondary.trim()" #footer>
+              <template v-if="canEdit && offersCreate(actorQuery.secondary)" #footer>
                 <el-button link type="primary" @mousedown.prevent @click="openActorDialog('secondary')">
                   Create "{{ actorQuery.secondary.trim() }}"...
                 </el-button>
@@ -607,6 +607,16 @@ function matchingActors(actors: RequirementArtifact[], query: string) {
 // The two pickers, so the one that opened the dialog can be closed behind it.
 const primaryActorSelect = ref<{ blur: () => void }>()
 const secondaryActorSelect = ref<{ blur: () => void }>()
+
+// Create is offered for a typed query unless it is exactly an existing actor's title or key, ignoring case: then the
+// student has found the actor, and a new one would be a duplicate (or a stakeholder titled "STK-1").
+function offersCreate(query: string) {
+  const needle = query.trim().toLowerCase()
+  if (!needle) return false
+  return !stakeholderOptions.value.some(
+    (actor) => actor.title.trim().toLowerCase() === needle || actor.artifactKey?.toLowerCase() === needle
+  )
+}
 
 function openActorDialog(role: 'primary' | 'secondary') {
   actorDialog.value = { visible: true, role, title: actorQuery.value[role].trim() }
