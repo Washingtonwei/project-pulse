@@ -1,9 +1,9 @@
 # Requirement Documents (DOC) Design
 
 > Realizes: UC-DOC-create-use-case, UC-DOC-edit-use-case
-> Depends on: BR-use-case-actor-types, BR-use-case-condition-shared, BR-shared-condition-wording, BR-team-scoped-access, BR-edit-lock-required, BR-lock-expiry, OI-46 (request-body ids), OI-51 (optimistic locking)
+> Depends on: BR-use-case-actor-types, BR-link-constraints, BR-deletion-integrity, MNT-feature-locality, BR-use-case-condition-shared, BR-shared-condition-wording, BR-team-scoped-access, BR-edit-lock-required, BR-lock-expiry, OI-46 (request-body ids), OI-51 (optimistic locking), OI-76, OI-77
 > See: [use cases](../requirements/use-cases.md#requirement-documents), [architectural-design.md](architectural-design.md#domain--aggregate-model) (Domain & aggregate model, Transactions & consistency, Authorization)
-> History: the step tree was written up after the code was built (2026-11-13). The rest of create and edit, including the actor rules and the shared conditions, was designed through `/design` on 2026-11-14; where this doc describes code that already existed, it records the design as built. On 2026-11-15 rewording a condition through a use case was removed altogether (BR-shared-condition-wording), so a condition entry is now only linked or created; rewording a condition for every use case waits on OI-72.
+> History: the step tree was written up after the code was built (2026-11-13). The rest of create and edit, including the actor rules and the shared conditions, was designed through `/design` on 2026-11-14; where this doc describes code that already existed, it records the design as built. On 2026-11-15 rewording a condition through a use case was removed altogether (BR-shared-condition-wording), so a condition entry is now only linked or created; rewording a condition for every use case waits on OI-72. On 2026-11-20 the actors moved from `UseCase` fields to `PRIMARY_ACTOR` and `SECONDARY_ACTOR` artifact links (spec PR #149); this doc describes that design, not yet built.
 
 ## Scope
 
@@ -17,7 +17,7 @@ A use case is an aggregate, and `UseCase` is its root. It holds:
 
 - **Its artifact.** A `RequirementArtifact` of type `USE_CASE`, shared by id through `@OneToOne @MapsId`, that carries the title, description, priority, notes and artifact key (`UC-n`). This is how a use case takes part in artifact links like any other requirement artifact.
 - **The trigger**, a plain field.
-- **Actors.** A primary actor (`@ManyToOne`) and secondary actors (`@ManyToMany`), both references to team artifacts of type `STAKEHOLDER` or `EXTERNAL_SYSTEM` (BR-use-case-actor-types). The use case never owns or cascades to an actor.
+- **Actors.** Not fields of `UseCase`: `PRIMARY_ACTOR` and `SECONDARY_ACTOR` artifact links from the use case's own artifact to team artifacts of type `STAKEHOLDER` or `EXTERNAL_SYSTEM` (BR-use-case-actor-types, BR-link-constraints). Exactly one primary actor, and no actor in both roles. `UseCase.primaryActor()` and `secondaryActors()` read them off the artifact's outgoing links; only `UseCaseService` writes them, through `ArtifactLinkService.replaceOutgoingLinks`. See [Actors as links](#actors-as-links).
 - **Preconditions and postconditions.** Ordered references to team artifacts of type `PRECONDITION` and `POSTCONDITION`: a `@ManyToMany` `List` each, with an `@OrderColumn` on the join table and no cascade. A condition is shared: any number of the team's use cases may reference it, each at its own position (BR-use-case-condition-shared). See [Preconditions and postconditions](#preconditions-and-postconditions).
 - **The step tree.** Three levels of ordered children (main steps, their extensions, and the extensions' steps), each an inverse `@OneToMany` list with `@OrderColumn`, `cascade = ALL` and `orphanRemoval = true`.
 - **The lock.** A `UseCaseLock` that says who may save the use case and until when.
@@ -73,10 +73,17 @@ classDiagram
         +findRequirementArtifactById(teamId, id)
         +createRequirementArtifact(teamId, artifact)
     }
+    class ArtifactLinkService {
+        +replaceOutgoingLinks(teamId, source, type, targets)
+    }
+    class ArtifactLink {
+        type : ArtifactLinkType
+    }
     class UseCase {
         +reviseMainSteps(submitted)
         +replaceMainSteps(steps)
-        +replaceSecondaryActors(actors)
+        +primaryActor() RequirementArtifact
+        +secondaryActors() Set
     }
     class RequirementArtifact
     class UseCaseLock {
@@ -108,9 +115,10 @@ classDiagram
     UseCaseService --> RequirementArtifactService : team-scoped lookups, key minting
     UseCaseService --> UseCase
     UseCaseService --> UseCaseRepository : which other use cases share a condition
+    UseCaseService --> ArtifactLinkService : actor links
     UseCase "1" *-- "1" RequirementArtifact : artifact (MapsId)
-    UseCase "*" --> "1" RequirementArtifact : primaryActor
-    UseCase "*" --> "*" RequirementArtifact : secondaryActors
+    RequirementArtifact "1" --> "*" ArtifactLink : outgoing (PRIMARY_ACTOR, SECONDARY_ACTOR, others)
+    ArtifactLink "*" --> "1" RequirementArtifact : target (the actor)
     UseCase "*" --> "*" RequirementArtifact : preconditions, postconditions (ordered List)
     UseCase "1" *-- "0..1" UseCaseLock : lock
     UseCase "1" *-- "*" UseCaseMainStep : mainSteps
@@ -124,15 +132,16 @@ classDiagram
 - [`UseCaseController`](../../backend/src/main/java/team/projectpulse/ram/usecase/UseCaseController.java): builds a `UseCaseReferences` from the DTO and passes it to the service with the converted use case. It puts each use case's other-use-case lists (`otherUseCasesReferencing`) into the response. It holds no logic.
 - `UseCaseReferences` and `SubmittedCondition` (`ram/usecase/`): carry every reference the request names (the actor ids, and each condition as an optional id plus its wording, in order) from the request to the service, so the converter never produces a reference at all. `UseCaseReferences` replaces the `UseCaseActorIds` of the actors slice.
 - [`UseCaseDtoToUseCaseConverter`](../../backend/src/main/java/team/projectpulse/ram/usecase/converter/UseCaseDtoToUseCaseConverter.java): field mapping only. It injects no repository, never reads the body's `teamId`, and maps no condition. `ConditionDtoToRequirementArtifactConverter` is deleted.
-- [`UseCaseService`](../../backend/src/main/java/team/projectpulse/ram/usecase/UseCaseService.java): resolves the actors (`resolveActors` and `requireActor`, where the team-scoped load is itself the check) and the conditions (`resolveConditions`); runs the version and lock checks; calls the domain methods. It holds no step logic. Both resolve methods only read and return what they found (a private `ResolvedActors` record, and the ordered condition list), so every check comes before every write on create and on edit alike; the results are set on the use case, and the new conditions saved by `saveNewConditions`, only after the checks pass.
-- [`UseCaseRepository`](../../backend/src/main/java/team/projectpulse/ram/usecase/UseCaseRepository.java): two JPQL queries that return, for a set of condition ids, every other use case that references each one (condition id, use case id, artifact key, title), excluding the use case being saved.
+- [`UseCaseService`](../../backend/src/main/java/team/projectpulse/ram/usecase/UseCaseService.java): resolves the actors (`resolveActors` and `requireActor`, where the team-scoped load is itself the check) and the conditions (`resolveConditions`); runs the version and lock checks; calls the domain methods. It holds no step logic. Both resolve methods only read and return what they found (a private `ResolvedActors` record, and the ordered condition list), so every check comes before every write on create and on edit alike; the actor links are written by `ArtifactLinkService.replaceOutgoingLinks`, and the new conditions saved by `saveNewConditions`, only after the checks pass.
+- [`UseCaseRepository`](../../backend/src/main/java/team/projectpulse/ram/usecase/UseCaseRepository.java): two JPQL queries that return, for a set of condition ids, every other use case that references each one (condition id, use case id, artifact key, title), excluding the use case being saved. Its hydration query for the many-valued associations fetches the use case artifact's outgoing links and their targets, which is where the actors now come from; the two actor-referrer queries the delete used are gone (OI-76).
+- [`ArtifactLinkService`](../../backend/src/main/java/team/projectpulse/ram/requirement/ArtifactLinkService.java): gains `replaceOutgoingLinks(teamId, source, type, targets)`, the only way `usecase` writes links, so `usecase` keeps to `requirement`'s service layer (MNT-feature-locality). See [Actors as links](#actors-as-links).
 - [`OwnedChildren`](../../backend/src/main/java/team/projectpulse/ram/usecase/OwnedChildren.java): the pairing algorithm. Its comments walk one worked example ([A, B, C] becomes [C, N, A]) through every phase; read them before changing it.
 - `reviseMainSteps`, `reviseExtensions`, `reviseSteps`: each passes its own list and its own level's `reviseFrom`, `copyOf` and back-reference setter to `OwnedChildren`.
 - `reviseFrom`: copies a submitted child's fields onto the paired managed child, then revises that child's own list. Package-private, because only the level above calls it.
 - `copyOf`: a deep copy without any id, at every level. Used for unpaired children and for every child on create.
 - [`UseCaseLock`](../../backend/src/main/java/team/projectpulse/ram/usecase/UseCaseLock.java): its own entity and its own `@Version`, created on first use by `initLockIfMissing`.
 - [`RequirementArtifactType`](../../backend/src/main/java/team/projectpulse/ram/requirement/RequirementArtifactType.java) gains `EXTERNAL_SYSTEM`, and [`ArtifactKeyPrefix`](../../backend/src/main/java/team/projectpulse/ram/requirement/ArtifactKeyPrefix.java) maps it to `SYS`, `PRECONDITION` to `PRC` and `POSTCONDITION` to `PSC` (they were `PRE` and `POST`).
-- Frontend: [`RamUseCases.vue`](../../frontend/src/pages/ram/RamUseCases.vue) offers only stakeholders and external systems in the actor pickers, and [`types.ts`](../../frontend/src/apis/ram/types.ts) lists `EXTERNAL_SYSTEM`, so a student can create one in any LIST document section, as stakeholders are created today. Both condition lists are one component, [`UseCaseConditionList.vue`](../../frontend/src/components/UseCaseConditionList.vue), and the page sends only each condition's `id` and wording. Each condition row has three parts:
+- Frontend: [`RamUseCases.vue`](../../frontend/src/pages/ram/RamUseCases.vue) offers only stakeholders and external systems in the actor pickers, and leaves the chosen primary actor out of the secondary picker (BR-use-case-actor-types; the server's 400 is the backstop), and [`types.ts`](../../frontend/src/apis/ram/types.ts) lists `EXTERNAL_SYSTEM`, so a student can create one in any LIST document section, as stakeholders are created today. Both condition lists are one component, [`UseCaseConditionList.vue`](../../frontend/src/components/UseCaseConditionList.vue), and the page sends only each condition's `id` and wording. Each condition row has three parts:
   - A select-or-type picker over the team's conditions of that type, loaded by `POST /teams/{teamId}/requirement-artifacts/search` with `type`. It hides conditions already in this list. Picking sets the entry's `id`; typing sets its wording with no `id`.
   - Up and down buttons to reorder.
   - Its display number (`PRE-n` or `POST-n`, from its position) with its artifact key beside it.
@@ -149,6 +158,7 @@ sequenceDiagram
     participant C as UseCaseController
     participant S as UseCaseService
     participant R as RequirementArtifactService
+    participant L as ArtifactLinkService
     participant DB as MySQL
     E->>C: POST /teams/{teamId}/use-cases (whole use case)
     C->>C: @Valid: required fields and all four lists present, else 400
@@ -158,8 +168,10 @@ sequenceDiagram
     S->>R: findRequirementArtifactById(teamId, each actor id)
     R-->>E: 404 if an actor is not in this team (step 4, BR-team-scoped-access)
     S->>S: requireActor type check, else 400 (extension 4a)
+    S->>S: primary actor also a secondary actor, else 400 (extension 4a)
     S->>S: resolveConditions: check every entry (see Preconditions and postconditions), else 400 or 404
     S->>R: createRequirementArtifact(teamId, artifact): team from route, key UC-n
+    S->>L: replaceOutgoingLinks(teamId, artifact, PRIMARY_ACTOR, primary), then SECONDARY_ACTOR
     S->>R: createRequirementArtifact for each new condition: type from its list, key PRC-n or PSC-n
     S->>DB: save use case (steps cascade, conditions are links only)
     C-->>E: Result with the use case, its step ids and version
@@ -175,6 +187,7 @@ sequenceDiagram
     participant C as UseCaseController
     participant S as UseCaseService
     participant R as RequirementArtifactService
+    participant L as ArtifactLinkService
     participant U as UseCase (managed)
     participant DB as MySQL
     E->>C: PUT /teams/{teamId}/use-cases/{useCaseId} (whole use case, version)
@@ -184,11 +197,13 @@ sequenceDiagram
     S->>DB: findByIdWithStepGraph (whole step tree, one query)
     S->>R: resolve each actor id in this team, else 404
     S->>S: requireActor type check, else 400 (extension 7a)
+    S->>S: primary actor also a secondary actor, else 400 (extension 7a)
     S->>S: resolveConditions: check every entry, else 400 (7a) or 404
     S->>S: version present (400) and current (409)
     S->>S: lock held by the caller (409 not locked, 423 someone else)
     S->>DB: lock(useCase, PESSIMISTIC_FORCE_INCREMENT)
-    S->>U: artifact fields, trigger, actors
+    S->>U: artifact fields, trigger
+    S->>L: replaceOutgoingLinks for PRIMARY_ACTOR, then SECONDARY_ACTOR (diff: keep, delete, add)
     S->>R: saveNewConditions: createRequirementArtifact for each new one (PRC-n, PSC-n)
     S->>U: replace the ordered condition lists (links only)
     S->>U: reviseMainSteps(submitted steps)
@@ -197,7 +212,7 @@ sequenceDiagram
     C-->>E: Result with the use case and its new version
 ```
 
-The checks run in this order: route rule, body validation, use case in team, actors (each in turn, primary first: in team, then type), conditions, version, lock. Nothing is written until all of them pass. After the save, `otherUseCasesReferencing` runs once more for the response.
+The checks run in this order: route rule, body validation, use case in team, actors (each in turn, primary first: in team, then type; then the primary actor is not also a secondary one), conditions, version, lock. Nothing is written until all of them pass. After the save, `otherUseCasesReferencing` runs once more for the response.
 
 ### Preconditions and postconditions
 
@@ -255,6 +270,16 @@ flowchart TD
 
 Two could be dropped, and both were kept on purpose: passing `ConditionDto` to the service instead of `SubmittedCondition` would make the service depend on an API type, and returning `ConditionUse` in the response instead of `OtherUseCaseDto` would leak a repository type and a redundant `conditionId` into the JSON.
 
+### Actors as links
+
+A use case's actors are artifact links whose source is the use case's own artifact: one `PRIMARY_ACTOR` link and any number of `SECONDARY_ACTOR` links, each to a stakeholder or external system of the team (BR-use-case-actor-types, BR-link-constraints). There is no actor column or join table.
+
+- **Writing.** After every check passes, `UseCaseService` calls `ArtifactLinkService.replaceOutgoingLinks(teamId, source, type, Set<RequirementArtifact> targets)` once per type (a one-element set for the primary actor) with the team-checked artifacts `resolveActors` returned. It does no team or type check of its own: its callers pass artifacts they already resolved in the route's team, and its Javadoc says so. It compares the use case's current links of that type with the wanted targets: a link whose target stays is kept as it is (its id, notes and created-by survive), a link whose target was dropped is deleted, and a new target gets a new link with the route's team. It keeps the in-memory link sets of the source and of every target in step (`addOutgoingLink`, `addIncomingLink`, `removeOutgoingLink`, `removeIncomingLink`, all existing helpers on `RequirementArtifact`), so the response built in the same transaction shows the new actors. Links of other types, such as the use case's DERIVES_FROM links, are never touched. On create the links are written after `createRequirementArtifact`, since they need the artifact's id.
+- **Reading.** `UseCase.primaryActor()` and `secondaryActors()` filter `artifact.getOutgoingArtifactLinks()` by type. The full-graph load fetches those links and their targets in its many-valued query, in place of the old `secondaryActors` fetch, so the DTO converter still triggers no lazy load. The link set is a `Set` and the condition lists are indexed, so the joined rows grow as before (links times preconditions times postconditions) and no bag-fetch error arises. The PUT path loads the links lazily, inside its transaction, when `replaceOutgoingLinks` first reads them.
+- **A broken state.** The link routes can leave a use case with no primary actor, two, or one actor in both roles (OI-77), and V10 can leave one with none. `primaryActor()` then returns the target of the lowest-id `PRIMARY_ACTOR` link, or null, and the response's `primaryActorId` is null with no error. The editor's next save repairs it, since it requires a primary actor and `replaceOutgoingLinks` deletes the extra links. `secondaryActorIds` stays an unordered set in JSON, as today; tests compare it as a set.
+- **The rule.** `resolveActors` refuses a missing primary actor and, after both roles are checked for team and type, a primary actor that is also listed as a secondary one. The link use cases do not run these checks (OI-77, and OI-27 for BR-link-constraints in general).
+- **Deleting an actor.** A stakeholder or external system named by a use case is the target of one of its links, so the artifact delete's two link queries already list it, as `LINK_TO` with link type `PRIMARY_ACTOR` or `SECONDARY_ACTOR`, and refuse the delete (BR-deletion-integrity; see [art.md](art.md)).
+
 ### Pairing, at any one level
 
 ```mermaid
@@ -302,7 +327,7 @@ The editor lists a team's use cases through the requirement artifact search, `PO
 
 - `title`, `description`, `trigger`: required, not empty.
 - `primaryActorId`: required; a stakeholder or external system of this team.
-- `secondaryActorIds`: required, may be empty; each a stakeholder or external system of this team. The ids form a set: a repeated id is stored once, the order is not kept, and the primary actor may also appear here.
+- `secondaryActorIds`: required, may be empty; each a stakeholder or external system of this team, and never the `primaryActorId` (BR-use-case-actor-types). The ids form a set: a repeated id is stored once, and the order is not kept.
 - `preconditions`, `postconditions`: required, may be empty, in order. In a request, each entry is `id` (optional: an existing condition of this team, of the list's type) and `condition` (the wording, required, not empty, and ignored when `id` is given, since the stored wording stands); `type`, `priority` and `notes` are ignored. In a response, each entry also has `artifactKey`, `type`, `priority`, `notes` and `otherUseCases`, the other use cases that reference it, each as `id`, `artifactKey` and `title`.
 - `mainSteps`: required, may be empty, in order; each has `id`, `actor`, `actionText` and `extensions` (in order). A step's `actor` is free text, not an artifact reference, so BR-use-case-actor-types does not apply to it. Each extension has `id`, `conditionText`, `kind`, `exit` and `steps` (in order), and each extension step has `id`, `actor` and `actionText`.
 - `priority`, `notes`: optional.
@@ -310,7 +335,7 @@ The editor lists a team's use cases through the requirement artifact search, `PO
 - `version`: required on PUT, ignored on POST.
 - Response only (ignored in a request): `id`, `artifactKey`, `createdAt`, `updatedAt`, `createdBy`, `updatedBy`, `lock`.
 
-**Actor error messages.** Actors are checked primary first, then each secondary actor, and the first failure is reported. An actor outside the team gives `ObjectNotFoundException("requirement artifact", id)`, the same text the artifact routes give for an id that names nothing. An actor of the wrong type gives a 400 naming the field and the id, for example "Secondary actor 12 must be a stakeholder or an external system.", which is the location extensions 4a1 and 7a1 ask for. The two 409s on PUT differ only in their message: a stale version means reload, and "not locked" means take the lock again.
+**Actor error messages.** Actors are checked primary first, then each secondary actor, and the first failure is reported. An actor outside the team gives `ObjectNotFoundException("requirement artifact", id)`, the same text the artifact routes give for an id that names nothing. An actor of the wrong type gives a 400 naming the field and the id, for example "Secondary actor 12 must be a stakeholder or an external system.", which is the location extensions 4a1 and 7a1 ask for. A primary actor also listed as a secondary actor gives a 400 naming the id, for example "Actor 12 cannot be both the primary actor and a secondary actor." The two 409s on PUT differ only in their message: a stale version means reload, and "not locked" means take the lock again.
 
 **Condition error messages.** A condition outside the team gives the same `ObjectNotFoundException("requirement artifact", id)` as an actor. A repeated id or an id of the other list's type gives a 400 naming the list and the position (see "Details of the rule"), the location extensions 4a1 and 7a1 ask for. A changed wording sent with an `id` is not an error: it is ignored.
 
@@ -325,6 +350,12 @@ The editor lists a team's use cases through the requirement artifact search, `PO
 | What checks that an actor is in the team | The team-scoped load is the check, in one pass | Loading in the converter and re-checking in the service: two lookups, two error messages, and the converter's message showed which ids exist in other teams |
 | Order of the actor refusals | Team scope first (404), then type (400) | Type first: a 400 against a 404 would reveal the type of another team's artifact |
 | Which artifacts can be actors | `STAKEHOLDER` and `EXTERNAL_SYSTEM` only (BR-use-case-actor-types) | Also `EXTERNAL_INTERFACE_REQUIREMENT`, which the editor used to offer for systems such as an email service: an interface requirement describes an interface, not a participant |
+| Where actors are stored | `PRIMARY_ACTOR` and `SECONDARY_ACTOR` artifact links from the use case's artifact (BR-link-constraints) | The `primaryActor` column and `use_case_secondary_actor` table: every "what refers to this artifact?" question then needs actor queries beside the link queries, and the delete had to read `usecase`'s repository (OI-76) |
+| Who writes the actor links | `ArtifactLinkService.replaceOutgoingLinks`, called by `UseCaseService` | `UseCaseService` saving through `ArtifactLinkRepository`: reaches a sibling's data-access layer (MNT-feature-locality). A cascade from the artifact's link sets: removed on purpose so a delete never takes links with it (BR-deletion-integrity) |
+| How a save changes the actor links | Keep the unchanged ones, delete the dropped ones, add the new ones | Delete them all and recreate: every save would churn link ids and reset who first named each actor |
+| How the response reads the actors | `UseCase.primaryActor()` / `secondaryActors()` over the fetched outgoing links | A separate actor query passed to the converter, as `otherUses` is: a second load path, and the converter's signature grows |
+| The API's actor fields | Unchanged: `primaryActorId` and `secondaryActorIds` | Exposing the links themselves: the editor only needs ids, and the storage change stays invisible to it |
+| A primary actor also listed as secondary | 400 (4a, 7a) | Dropping the secondary silently: hides the student's mistake, which the use cases call an input validation violation |
 | A list missing from the body | 400 by `@NotNull`, at every level of the step tree | Treating it as empty: on a PUT that would silently remove every secondary actor, condition or step |
 | The body's `teamId` | Kept in the DTO and ignored by the server | Removing it: reaches into the frontend for no behavior change; it can go when the DTO is next reshaped |
 | How a condition is named in a request | `{ id?, condition }` per entry, resolved by the service in the route's team | Conditions as entities built by the converter (as before): every save inserted new rows, and a converter can't scope ids |
@@ -355,12 +386,12 @@ The editor lists a team's use cases through the requirement artifact search, `PO
 
 Two consequences worth knowing:
 
-- The version can go up by 2 in one save, once for the forced increment and once more if a `UseCase` collection (secondary actors, condition lists) is also dirty. Only "it changed" matters to the stale-save check.
+- The version can go up by 2 in one save, once for the forced increment and once more if a `UseCase` collection (a condition list) is also dirty. Actor link changes do not dirty `UseCase`; the forced increment covers them. Only "it changed" matters to the stale-save check.
 - `replaceMainSteps` still exists: the DTO converters use it to build the detached submitted tree. Step ids still travel through the converters on purpose, as pairing keys.
 
 ## Data model
 
-Three migrations, and no table added:
+Four migrations; V10 drops a table and adds none:
 
 - `V7__add_external_system_artifact_type.sql` adds `EXTERNAL_SYSTEM` to the `type` enum column of `requirement_artifact` and `artifact_key_sequence`, keeping the value list alphabetical to match Hibernate's generated definition (the V4 pattern).
 - `V8__rename_secondary_actor_column.sql` renames `use_case_secondary_actor.stakeholder_artifact_id` to `actor_artifact_id`, since a secondary actor may now be an external system. MySQL 8 keeps the foreign key and the composite primary key across `RENAME COLUMN`. Added during implementation, with the developer's agreement; it was not in the approved design.
@@ -371,6 +402,11 @@ Three migrations, and no table added:
   4. Adds an index on the artifact column, so its foreign key keeps one.
   5. Replaces the primary key with `(precondition_index, use_case_id)` (or the postcondition pair), the key Hibernate generates for the mapping, read from the dev schema in `/implement` (see Key decisions).
 
+- `V10__use_case_actors_as_links.sql`:
+  1. Sets the `type` enum column of `artifact_link` to the full `ArtifactLinkType` list, alphabetical (the V7 pattern). This also adds `ENABLES`, which no migration had added, so an ENABLES link could not be stored outside dev (dev builds its schema with `ddl-auto: create`).
+  2. Copies each non-null `use_case.primary_actor_id` into a `PRIMARY_ACTOR` link and each `use_case_secondary_actor` row into a `SECONDARY_ACTOR` link, source the use case's artifact (same id), team the artifact's team, `created_at` and `updated_at` now, `created_by_id`, `updated_by_id` and `notes` null. A secondary row naming its use case's primary actor is skipped, since the rule now forbids it. An actor of the wrong type (an old `EXTERNAL_INTERFACE_REQUIREMENT`) is copied as it is rather than lost; the next save refuses it with 400 and the student picks another. Before the swap, a read-only count on the target database shows how many rows each case covers (the V9 practice).
+  3. Drops the `primary_actor_id` foreign key and column, and the `use_case_secondary_actor` table.
+
   V9 was checked by applying V1 to V9 to a scratch MySQL 8 database with sample rows: each use case's rows were numbered from 0 by artifact id, and both tables then matched Hibernate's generated schema in columns, primary key, key names and foreign keys.
 
 ```mermaid
@@ -379,11 +415,13 @@ erDiagram
     requirement_artifact ||--o{ use_case_precondition : "precondition_artifact_id"
     use_case ||--o{ use_case_postcondition : "ordered by postcondition_index"
     requirement_artifact ||--o{ use_case_postcondition : "postcondition_artifact_id"
+    requirement_artifact ||--o{ artifact_link : "source: the use case's artifact"
+    requirement_artifact ||--o{ artifact_link : "target: the actor"
 ```
 
 The ER delta only; the tables themselves are the SRS's Business Domain Model.
 
-The step tables and their `*_index` order columns are unchanged. The dev seed adds one team-1 external system, "Email service", as the last artifact it saves, so no seeded id shifts. For the same reason it is not attached to the seeded use case, whose save comes much earlier; tests that need it as an actor attach it themselves. The seeded use case's conditions are passed as `SubmittedCondition`s and saved after its artifact, so they get keys and no seeded id shifts.
+The step tables and their `*_index` order columns are unchanged. The dev seed adds one team-1 external system, "Email service", as the last artifact it saves, so no seeded id shifts. For the same reason it is not attached to the seeded use case, whose save comes much earlier; tests that need it as an actor attach it themselves. The seeded use case's conditions are passed as `SubmittedCondition`s and saved after its artifact, so they get keys and no seeded id shifts. The seed needs no change: it saves its use case through `saveUseCase`, before it saves its three links, so the use case's two actors become the first two artifact links, so the seed's own three links move from ids 1 to 3 to ids 3 to 5; tests that name a seeded link look its id up instead.
 
 ## Reuse & cross-cutting
 
@@ -402,7 +440,12 @@ The step tables and their `*_index` order columns are unchanged. The dev seed ad
 | UC-DOC-create-use-case, extension 4a (primary) | integration, `UseCaseControllerTest` | A primary actor of another type in the caller's own team (for example a feature) is refused with 400; no use case is stored |
 | UC-DOC-create-use-case, extension 4a (secondary) | integration, `UseCaseControllerTest` | One secondary actor of the wrong type is refused with 400, and the message names `Secondary actor` and its id |
 | UC-DOC-edit-use-case, extension 7a | integration, `UseCaseControllerTest` | The same two refusals on PUT; the stored actors and version are unchanged |
-| Actor from another team (create and edit) | integration, `UseCaseControllerTest` | Refused with 404, with the same message as an id that names nothing |
+| Actor from another team (create and edit) | integration, `UseCaseControllerTest` | Refused with 404, with the same message as an id that names nothing; no link is written |
+| Actors stored as links (create) | integration, `UseCaseControllerTest` | One `PRIMARY_ACTOR` and one `SECONDARY_ACTOR` link from the use case's artifact to the chosen actors, with the route's team; the response shows both ids |
+| Primary actor also secondary (4a, 7a) | integration, `UseCaseControllerTest` | 400 naming the id on POST and PUT; on POST no use case or link is stored, on PUT the links and the version are unchanged |
+| Actors changed (edit) | integration, `UseCaseControllerTest` | A dropped actor's link is deleted and the actor stays; a kept actor's link keeps its id and created-by; an added actor gets a new link; the use case's other links (DERIVES_FROM) are untouched |
+| `replaceOutgoingLinks` | integration, `ArtifactLinkService` | Changes only links of the given type from the given source; the source's and targets' in-memory link sets match the database in the same transaction |
+| Migration V10 | manual, scratch MySQL 8 (as V9) | Apply V1 to V10 with sample actors, one secondary equal to its primary: links copied, that one skipped, the column and table gone, and `artifact_link` matches Hibernate's generated schema |
 | Missing fields (create and edit) | integration, `UseCaseControllerTest` | Each of `primaryActorId`, `secondaryActorIds`, `preconditions`, `postconditions` and `mainSteps` omitted gives 400, not 500; so does a null nested list in the step tree (a main step's `extensions`, an extension's `steps`), with the error keyed by its field path |
 | Body `teamId` is ignored (OI-46) | integration, `RequestBodyIdIntegrationTest` | With another team's id in the body, every stored condition belongs to the route's team and the other team gains no rows. Written first and run against the unchanged code; still holds with new conditions saved through `createRequirementArtifact`. A body with no `teamId` saves too (`UseCaseControllerTest.addUseCase_WithoutTeamId`) |
 | A condition id from another team (OI-46) | integration, `RequestBodyIdIntegrationTest` | The update probe naming team 2's artifact as a precondition now gets 404, and team 2's artifact is unchanged |
@@ -434,12 +477,13 @@ All integration tests flush, clear, and read the database with native SQL, becau
 ## Open questions / risks
 
 - **"Edit for all" (extension 6b2) is not built.** It waits for the stale-save guard of UC-ART-edit-artifact extension 10a, which needs OI-51's decision on `RequirementArtifact`. Tracked as OI-72.
-- **`UseCaseService.findUseCaseByIdBasic` has no callers.** It predates this slice and its Javadoc is wrong (it loads the primary actor and the lock, not only the artifact). Proposed for deletion as a follow-up.
+- **`UseCaseService.findUseCaseByIdBasic` has no callers.** It predates this slice and its Javadoc is wrong (it loads the lock too, not only the artifact). Proposed for deletion as a follow-up.
 - **Deleting a condition that is still referenced** through UC-ART-delete-artifact hits a foreign key and gives a 500, since BR-deletion-integrity is not built (OI-26). This slice doesn't change that.
 - **A typo fix leaves the old condition behind.** Since a use case can't reword a condition, fixing one means a separate copy, and the original stays unlinked in the team's requirements graph, where the picker still offers it. Accepted on 2026-11-15 until "Edit for all" (OI-72) lands.
 - **A condition reworded through the artifact route while a use case is open in the editor.** The editor's next save sends back the old wording, which is ignored, so the save succeeds and the response shows the new wording. Nothing to guard against until "Edit for all" (OI-72) lands.
 - **Condition rows from before this slice** stay as they are: keyless, and unlinked where a save replaced them. No one had used the editor in production, so there should be few or none. Check with a read-only count before deploying V9.
-- **`ENABLES` links** (postcondition to precondition) are in the spec but not in the backend link-type enum or its validator. That's a separate small slice under the UC-LNK use cases.
+- **`ENABLES` links** (postcondition to precondition): this slice adds `ENABLES` to `ArtifactLinkType` and to the `artifact_link.type` column, with `PRIMARY_ACTOR` and `SECONDARY_ACTOR`. Checking which types may join which artifacts (BR-link-constraints) is still not built (OI-27).
+- **Deleting a use case** has no use case yet. A use case always has an outgoing PRIMARY_ACTOR link, which BR-deletion-integrity would count as a reference. When UC-DOC-delete-use-case is specified, its actor links should be removed with it rather than block it.
 - `SecurityConfiguration` has route rules for `POST /teams/{teamId}/use-cases/search` and `DELETE /teams/{teamId}/use-cases/{useCaseId}`, but `UseCaseController` handles neither, so both answer 404. UC-DOC-delete-use-case will need the delete handler.
 - **Gaps between the spec and the code as built, outside this slice.** The questions test on 2026-11-14 surfaced these; none is built today, and each is tracked as OI-66 to OI-71 in the order listed:
   - BR-use-case-name-unique (create 5a): nothing checks that a use case name is unique in the team, on create or on rename.
