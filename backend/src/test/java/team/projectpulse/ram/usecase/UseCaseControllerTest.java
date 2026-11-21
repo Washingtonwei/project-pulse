@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import jakarta.persistence.EntityManager;
 import team.projectpulse.AbstractIntegrationTest;
+import team.projectpulse.ram.document.DocumentSectionRepository;
 import team.projectpulse.ram.requirement.ArtifactLink;
 import team.projectpulse.ram.requirement.ArtifactLinkRepository;
 import team.projectpulse.ram.requirement.ArtifactLinkType;
@@ -44,6 +45,9 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
 
     @Autowired
     EntityManager entityManager;
+
+    @Autowired
+    DocumentSectionRepository documentSectionRepository;
 
     String adminBingyangToken; // Bingyang is the instructor of section 2
 
@@ -1380,6 +1384,92 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void editUseCase_Extension6c_ActorCreatedWhileHoldingTheLock_ThenNamed() throws Exception {
+        // UC-DOC-edit-use-case 6c: while John holds UC-1's lock (use case 3), he creates a missing external system
+        // through UC-ART-create-artifact. It lands at the end of team 1's Vision and Scope External Systems list
+        // (document 2) with the next key. The use case is untouched until he saves it naming the new actor.
+        lockUseCase(1, 3, this.studentJohnToken);
+        JSONObject before = fetchUseCase(1, 3, this.studentJohnToken);
+
+        JSONObject created = createActor("EXTERNAL_SYSTEM", "Email Service", "Sends the team's notification emails.");
+        assertThat(created.getBoolean("flag")).as(created.toString()).isTrue();
+        assertThat(created.getJSONObject("data").getString("artifactKey")).isEqualTo("SYS-2"); // SYS-1 is seeded
+        long emailServiceId = created.getJSONObject("data").getLong("id");
+        assertThat(sectionItemKeys(2L, "EXTERNAL_SYSTEMS")).last().isEqualTo("SYS-2");
+
+        // The create is not part of the use case's save: its version and John's lock are as they were.
+        JSONObject payload = fetchUseCase(1, 3, this.studentJohnToken);
+        assertThat(payload.getInt("version")).isEqualTo(before.getInt("version"));
+        assertThat(payload.getJSONArray("secondaryActorIds").toString()).isEqualTo(before.getJSONArray("secondaryActorIds").toString());
+        this.mockMvc.perform(get(this.baseUrl + "/teams/1/use-cases/3/lock")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andExpect(jsonPath("$.data.locked").value(true));
+
+        // 6c2, then step 11: the save names the new actor as a secondary actor.
+        payload.put("secondaryActorIds", new JSONArray().put(emailServiceId));
+        MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload.toString())
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andReturn();
+        JSONObject response = new JSONObject(result.getResponse().getContentAsString());
+        assertThat(response.getBoolean("flag")).as(response.toString()).isTrue();
+
+        this.entityManager.flush();
+        this.entityManager.clear();
+        assertThat(this.artifactLinkRepository.findBySourceArtifactId(3L, 1))
+                .extracting(link -> link.getType(), link -> link.getTargetArtifact().getId())
+                .contains(tuple(ArtifactLinkType.SECONDARY_ACTOR, emailServiceId));
+    }
+
+    @Test
+    void addUseCase_Extension3a_ActorCreatedFirst_ThenNamedAsPrimary() throws Exception {
+        // UC-DOC-create-use-case 3a: a stakeholder created from the picker is accepted as the new use case's
+        // primary actor.
+        JSONObject created = createActor("STAKEHOLDER", "Teaching Assistant", "Grades weekly reports for the instructor.");
+        assertThat(created.getBoolean("flag")).as(created.toString()).isTrue();
+        long teachingAssistantId = created.getJSONObject("data").getLong("id");
+        assertThat(sectionItemKeys(2L, "STAKEHOLDER_PROFILES")).last().isEqualTo(created.getJSONObject("data").getString("artifactKey"));
+
+        JSONObject response = postUseCase(minimalUseCase(teachingAssistantId, new JSONArray()), this.studentJohnToken);
+
+        assertThat(response.getBoolean("flag")).as(response.toString()).isTrue();
+        assertThat(response.getJSONObject("data").getLong("primaryActorId")).isEqualTo(teachingAssistantId);
+        long useCaseId = response.getJSONObject("data").getLong("id");
+        this.entityManager.flush();
+        this.entityManager.clear();
+        assertThat(this.artifactLinkRepository.findBySourceArtifactId(useCaseId, 1))
+                .extracting(link -> link.getType(), link -> link.getTargetArtifact().getId())
+                .containsExactly(tuple(ArtifactLinkType.PRIMARY_ACTOR, teachingAssistantId));
+    }
+
+    @Test
+    void editUseCase_Extension6c_ActorKeptWhenTheUseCaseIsAbandoned() throws Exception {
+        // 6c then 6a2 (abandon): an actor created during an edit that is never saved stays in the team's
+        // requirements graph, named by no use case (OI-78), and the use case is unchanged.
+        lockUseCase(1, 3, this.studentJohnToken);
+        JSONObject before = fetchUseCase(1, 3, this.studentJohnToken);
+        JSONObject created = createActor("EXTERNAL_SYSTEM", "Payment Gateway", "Takes card payments.");
+        long gatewayId = created.getJSONObject("data").getLong("id");
+
+        this.mockMvc.perform(delete(this.baseUrl + "/teams/1/use-cases/3/lock")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andExpect(jsonPath("$.flag").value(true));
+
+        this.entityManager.flush();
+        this.entityManager.clear();
+        assertThat(this.entityManager.find(team.projectpulse.ram.requirement.RequirementArtifact.class, gatewayId)).isNotNull();
+        assertThat(this.artifactLinkRepository.findByTargetArtifactId(gatewayId, 1)).isEmpty();
+        JSONObject after = fetchUseCase(1, 3, this.studentJohnToken);
+        assertThat(after.getInt("version")).isEqualTo(before.getInt("version"));
+        assertThat(after.getLong("primaryActorId")).isEqualTo(before.getLong("primaryActorId"));
+        assertThat(after.getJSONArray("secondaryActorIds").toString()).isEqualTo(before.getJSONArray("secondaryActorIds").toString());
+    }
+
+    @Test
     void addUseCase_PrimaryActorOfAnotherType() throws Exception {
         // Extension 4a: a functional requirement of the caller's own team is not an actor.
         long functionalRequirementId = fetchFirstArtifact(1, "FUNCTIONAL_REQUIREMENT", this.studentJohnToken).getLong("id");
@@ -1653,6 +1743,28 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                 .andReturn();
         JSONObject json = new JSONObject(result.getResponse().getContentAsString());
         return json.getJSONObject("data").getJSONArray("content").getJSONObject(0).getLong("id");
+    }
+
+    /**
+     * Creates a team 1 artifact as John through the artifact create route, as the use case editor's actor dialog
+     * does (UC-DOC-create-use-case 3a, UC-DOC-edit-use-case 6c).
+     */
+    private JSONObject createActor(String type, String title, String content) throws Exception {
+        MvcResult result = this.mockMvc.perform(post(this.baseUrl + "/teams/1/requirement-artifacts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new JSONObject().put("type", type).put("title", title).put("content", content).toString())
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andReturn();
+        return new JSONObject(result.getResponse().getContentAsString());
+    }
+
+    /** The artifact keys of one of a document's list sections, in list order, read after a flush. */
+    private List<String> sectionItemKeys(long documentId, String sectionKey) {
+        this.entityManager.flush();
+        this.entityManager.clear();
+        return this.documentSectionRepository.findByDocumentIdAndSectionKey(documentId, sectionKey).orElseThrow()
+                .getRequirementArtifacts().stream().map(team.projectpulse.ram.requirement.RequirementArtifact::getArtifactKey).toList();
     }
 
     private void lockUseCase(int teamId, int useCaseId, String token) throws Exception {
