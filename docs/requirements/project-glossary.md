@@ -177,7 +177,7 @@ Each requirement link has:
 - exactly one target artifact
 - a link type describing the semantic relationship
 
-The link type is one of the values defined by artifact link type — covering derivation, realization, reference, impact, mitigation, and motivation relationships.
+The link type is one of the values defined by artifact link type. Together they cover derivation, realization, reference, impact, mitigation, motivation, and enabling relationships, and the roles actors play in use cases.
 
 ## **Artifact Link Type**
 
@@ -190,6 +190,8 @@ An enumeration defining the allowed semantic relationships between requirement a
 - MITIGATES — the source artifact mitigates the target risk.
 - MOTIVATES — the source expresses a need or driver that motivates the target requirement.
 - ENABLES: the source postcondition, once true, makes the target precondition true, so the use case that ends with the source can enable the use case that starts with the target.
+- PRIMARY_ACTOR: the target stakeholder or external system is the primary actor of the source use case.
+- SECONDARY_ACTOR: the target stakeholder or external system is a secondary actor of the source use case.
 
 ## **Graph-First Model**
 
@@ -302,7 +304,7 @@ A behavioral description of how an external actor interacts with the system to a
 
 ## **Actor**
 
-The role a stakeholder or an external system plays when it interacts with the system in a use case. The primary actor initiates the use case to reach its goal; secondary actors take part in it. In RAM, an actor is always a stakeholder or an external system artifact of the team, never another kind of requirement artifact.
+The role a stakeholder or an external system plays when it interacts with the system in a use case. The primary actor initiates the use case to reach its goal; secondary actors take part in it. In RAM, an actor is always a stakeholder or an external system artifact of the team, never another kind of requirement artifact. A use case names its actors with PRIMARY_ACTOR and SECONDARY_ACTOR artifact links, so one actor is shared by every use case it takes part in.
 
 ## **Precondition**
 

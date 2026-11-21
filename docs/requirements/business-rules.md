@@ -84,6 +84,8 @@ A lower tier number is a higher level of abstraction (Tier 1 is the highest). Th
 | MITIGATES | Functional Requirement, Quality Attribute, Constraint, Business Rule, use case, or Feature → a Risk | Target must be a Risk (any category — business, technical, or security/safety). |
 | MOTIVATES | Stakeholder, Business Problem, or Business Opportunity → any requirement artifact | Source expresses a need or driver that motivates the target. |
 | ENABLES | Postcondition → Precondition | Source must be a postcondition and target a precondition. Use ENABLES when the outcome of one use case is what makes another use case's precondition true. The two conditions keep their own wording. For example, "The student is assigned to a team." ends one use case and is required before another can start. |
+| PRIMARY_ACTOR | Use Case → Stakeholder or External System | The source is the use case and the target is its primary actor (BR-use-case-actor-types). |
+| SECONDARY_ACTOR | Use Case → Stakeholder or External System | The source is the use case and the target is one of its secondary actors (BR-use-case-actor-types). |
 
 The artifact types named here are the canonical `RequirementArtifactType` set (glossary ↔ the SRS's Business Domain Model enum) — the **product's student-facing taxonomy** for typing artifacts in a team's own requirements graph, **not** this spec's own requirement-class/ID inventory (the two share names but are different lists; see the `RequirementArtifactType` note in the SRS's Business Domain Model). Stakeholder and Dependency are tracked artifact types. User stories are a deferred type (see the SRS's Business Domain Model); a User Story, when present, is a Tier 3 behavioral artifact.
 
@@ -94,7 +96,7 @@ The artifact types named here are the canonical `RequirementArtifactType` set (g
 
 # **Use Case Composition**
 
-- **BR-use-case-actor-types:** The primary actor and every secondary actor of a use case is a stakeholder or an external system of the team that owns the use case; no other requirement artifact may serve as an actor.
+- **BR-use-case-actor-types:** The primary actor and every secondary actor of a use case is a stakeholder or an external system of the team that owns the use case; no other requirement artifact may serve as an actor. A use case has exactly one primary actor and zero or more secondary actors, and no actor is both the primary actor and a secondary actor of the same use case.
 - **BR-use-case-condition-shared:** A precondition or postcondition is a requirement artifact of its team that any number of that team's use cases may reference. Its type is `PRECONDITION` or `POSTCONDITION` according to the list it belongs to, each use case orders its own preconditions and postconditions, and removing one from a use case removes only that reference.
 - **BR-shared-condition-wording:** The wording of a precondition or postcondition is never changed through a use case, whether or not another use case references it; it is changed only on the condition itself, and the change applies to every use case that references it.
 
