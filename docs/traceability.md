@@ -373,7 +373,7 @@ A business rule (`BR-*`, owned by [business-rules.md](requirements/business-rule
 | `BR-team-assignment-required` | `UC-EVA-submit-evaluation`, `UC-NOT-remind-non-submitters`, `UC-WAR-manage-activities` | — | — |
 | `BR-team-scoped-access` | _universal_ — 30 UCs (every authoring/CRUD use case) | `DI-team-scoping`, `FR-SEC-authorization`, `SEC-authorization`, `SI-export-formats`, (prose) | `QS-cross-team-denial` |
 | `BR-team-single-instructor` | `UC-INS-assign-instructors`, `UC-INS-remove-instructor` | — | — |
-| `BR-use-case-actor-types` | `UC-DOC-create-use-case`, `UC-DOC-edit-use-case` | (prose) | — |
+| `BR-use-case-actor-types` | `UC-ART-create-artifact`, `UC-DOC-create-use-case`, `UC-DOC-edit-use-case` | (prose) | — |
 | `BR-use-case-condition-shared` | `UC-DOC-create-use-case`, `UC-DOC-edit-use-case` | — | — |
 | `BR-use-case-name-unique` | `UC-DOC-create-use-case` | — | — |
 
