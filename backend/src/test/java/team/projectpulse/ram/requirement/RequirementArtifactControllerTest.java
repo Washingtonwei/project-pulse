@@ -400,6 +400,21 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void createArtifact_Extension8a_ActorFromTheUseCaseEditor_VisionAndScopeLockedForReview_Refused() throws Exception {
+        // The use case editor's actor entry point (UC-DOC-create-use-case 3a, UC-DOC-edit-use-case 6c) is refused
+        // like any other create when the actor's home document is locked for review.
+        RequirementDocument visionScope = this.documentRepository.findByTeamTeamIdAndType(1, DocumentType.VISION_SCOPE).orElseThrow();
+        visionScope.setStatus(DocumentStatus.SUBMITTED);
+        this.documentRepository.saveAndFlush(visionScope);
+        List<String> before = itemKeys(TEAM_1_VISION_SCOPE_ID, "STAKEHOLDER_PROFILES");
+
+        JSONObject refused = create(1, item("STAKEHOLDER", "Teaching Assistant", "Grades weekly reports."), this.studentJohnToken);
+        assertThat(refused.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
+        assertThat(refused.getString("message")).isEqualTo("The " + visionScope.getTitle() + " is locked for review, so it cannot be changed.");
+        assertThat(itemKeys(TEAM_1_VISION_SCOPE_ID, "STAKEHOLDER_PROFILES")).isEqualTo(before);
+    }
+
+    @Test
     void createArtifact_Extension8b_HomeDocumentNotCreated_Refused() throws Exception {
         // Mavis is on team 3, which has no documents.
         JSONObject refused = create(3, item("FUNCTIONAL_REQUIREMENT", "Export", "The system shall export data."), this.studentMavisToken);

@@ -122,33 +122,50 @@
           </el-form-item>
           <el-form-item label="Primary Actor">
             <el-select
+              ref="primaryActorSelect"
               v-model="currentUseCase.primaryActorId"
               filterable
+              :filter-method="(query: string) => (actorQuery.primary = query)"
               placeholder="Select primary actor"
               :disabled="!canEdit"
+              @visible-change="(open: boolean) => !open && (actorQuery.primary = '')"
             >
               <el-option
-                v-for="actor in stakeholderOptions"
+                v-for="actor in matchingActors(stakeholderOptions, actorQuery.primary)"
                 :key="actor.id"
                 :label="formatActorLabel(actor)"
                 :value="actor.id"
               />
+              <!-- Extension 3a / 6c: below the matches, so the student sees them before she creates one. -->
+              <template v-if="canEdit && offersCreate(actorQuery.primary)" #footer>
+                <el-button link type="primary" @mousedown.prevent @click="openActorDialog('primary')">
+                  Create "{{ actorQuery.primary.trim() }}"...
+                </el-button>
+              </template>
             </el-select>
           </el-form-item>
           <el-form-item label="Secondary Actors">
             <el-select
+              ref="secondaryActorSelect"
               v-model="currentUseCase.secondaryActorIds"
               multiple
               filterable
+              :filter-method="(query: string) => (actorQuery.secondary = query)"
               placeholder="Select secondary actors"
               :disabled="!canEdit"
+              @visible-change="(open: boolean) => !open && (actorQuery.secondary = '')"
             >
               <el-option
-                v-for="actor in secondaryActorOptions"
+                v-for="actor in matchingActors(secondaryActorOptions, actorQuery.secondary)"
                 :key="actor.id"
                 :label="formatActorLabel(actor)"
                 :value="actor.id"
               />
+              <template v-if="canEdit && offersCreate(actorQuery.secondary)" #footer>
+                <el-button link type="primary" @mousedown.prevent @click="openActorDialog('secondary')">
+                  Create "{{ actorQuery.secondary.trim() }}"...
+                </el-button>
+              </template>
             </el-select>
           </el-form-item>
           <el-form-item label="Priority">
@@ -170,6 +187,22 @@
             />
           </el-form-item>
         </el-form>
+
+        <!-- Extensions 3a and 6c: a missing actor is created through UC-ART-create-artifact, apart from the use case
+             save. The primary actor is left out of the secondary picker's duplicate list (BR-use-case-actor-types). -->
+        <RequirementArtifactCreateDialog
+          v-model="actorDialog.visible"
+          :team-id="effectiveTeamId"
+          :types="ACTOR_TYPES"
+          :initial-title="actorDialog.title"
+          :exclude-ids="
+            actorDialog.role === 'secondary' && currentUseCase.primaryActorId
+              ? [currentUseCase.primaryActorId]
+              : []
+          "
+          @created="selectActor"
+          @chosen="selectActor"
+        />
 
         <template v-if="isNew || selectedUseCaseId">
           <el-divider>Preconditions</el-divider>
@@ -407,6 +440,7 @@ import { useUserInfoStore } from '@/stores/userInfo'
 import type { Student } from '@/apis/student/types'
 import { PRIORITIES, type Condition, type RequirementArtifact, type UseCase } from '@/apis/ram/types'
 import UseCaseConditionList from '@/components/UseCaseConditionList.vue'
+import RequirementArtifactCreateDialog from '@/components/RequirementArtifactCreateDialog.vue'
 import {
   searchRequirementArtifacts,
   getUseCaseById,
@@ -549,12 +583,73 @@ watch(
   }
 )
 
+// The two artifact types an actor may have (BR-use-case-actor-types), in the order the create dialog offers them.
+const ACTOR_TYPES = ['STAKEHOLDER', 'EXTERNAL_SYSTEM']
+
+// What the student has typed into each actor picker. The pickers filter by it, and their Create footers prefill
+// the new actor's title from it (extensions 3a and 6c). Cleared when a picker closes.
+const actorQuery = ref({ primary: '', secondary: '' })
+
+// The actor create dialog, and which picker opened it, so the new actor lands in that role.
+const actorDialog = ref<{ visible: boolean; role: 'primary' | 'secondary'; title: string }>({
+  visible: false,
+  role: 'primary',
+  title: ''
+})
+
+// The actors whose label contains the query, ignoring case. With no query, every actor is offered.
+function matchingActors(actors: RequirementArtifact[], query: string) {
+  const needle = query.trim().toLowerCase()
+  if (!needle) return actors
+  return actors.filter((actor) => formatActorLabel(actor).toLowerCase().includes(needle))
+}
+
+// The two pickers, so the one that opened the dialog can be closed behind it.
+const primaryActorSelect = ref<{ blur: () => void }>()
+const secondaryActorSelect = ref<{ blur: () => void }>()
+
+// Create is offered for a typed query unless it is exactly an existing actor's title or key, ignoring case: then the
+// student has found the actor, and a new one would be a duplicate (or a stakeholder titled "STK-1").
+function offersCreate(query: string) {
+  const needle = query.trim().toLowerCase()
+  if (!needle) return false
+  return !stakeholderOptions.value.some(
+    (actor) => actor.title.trim().toLowerCase() === needle || actor.artifactKey?.toLowerCase() === needle
+  )
+}
+
+function openActorDialog(role: 'primary' | 'secondary') {
+  actorDialog.value = { visible: true, role, title: actorQuery.value[role].trim() }
+  ;(role === 'primary' ? primaryActorSelect : secondaryActorSelect).value?.blur()
+}
+
+// Extensions 3a2 and 6c2: the new actor, or the existing one picked from the duplicate warning, is selected in the
+// role whose picker opened the dialog. It joins the options first, so the picker shows its key and title. A new
+// primary actor leaves the secondary actors through the watch on primaryActorId, and the secondary picker never adds
+// the primary actor, so the form never names one actor in both roles.
+function selectActor(actor: RequirementArtifact) {
+  if (actor.id == null) return
+  const id = actor.id
+  if (!stakeholderOptions.value.some((option) => option.id === id)) {
+    stakeholderOptions.value = [...stakeholderOptions.value, actor]
+  }
+  if (actorDialog.value.role === 'primary') {
+    currentUseCase.value.primaryActorId = id
+  } else {
+    const secondaryActorIds = currentUseCase.value.secondaryActorIds ?? []
+    if (id !== currentUseCase.value.primaryActorId && !secondaryActorIds.includes(id)) {
+      currentUseCase.value.secondaryActorIds = [...secondaryActorIds, id]
+    }
+  }
+  actorQuery.value[actorDialog.value.role] = ''
+}
+
 async function loadStakeholders() {
   if (!effectiveTeamId.value) return
   try {
     const result = await searchRequirementArtifacts(effectiveTeamId.value, { page: 0, size: 500 }, {})
     stakeholderOptions.value = result.data.content.filter((artifact) =>
-      ['STAKEHOLDER', 'EXTERNAL_SYSTEM'].includes(artifact.type)
+      ACTOR_TYPES.includes(artifact.type)
     )
   } catch {
   }
