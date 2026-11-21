@@ -135,7 +135,9 @@ function openLinkDialog() {
   linkDialogVisible.value = true
 }
 
-// An empty URL removes the link; anything but http, https or mailto is refused at the dialog.
+// An empty URL removes the link; anything but http, https or mailto is refused at the dialog. With text selected, or
+// the cursor inside a link, the URL is set on that text; with nothing selected, the URL itself is inserted as the
+// link's text, since a link mark on an empty selection would show nothing.
 function applyLink() {
   const url = linkUrl.value.trim()
   if (!url) {
@@ -147,7 +149,12 @@ function applyLink() {
     linkError.value = 'A link must start with http://, https:// or mailto:'
     return
   }
-  run((c) => c.extendMarkRange('link').setLink({ href: url }))
+  const instance = editor.value
+  if (instance && instance.state.selection.empty && !instance.isActive('link')) {
+    run((c) => c.insertContent({ type: 'text', text: url, marks: [{ type: 'link', attrs: { href: url } }] }))
+  } else {
+    run((c) => c.extendMarkRange('link').setLink({ href: url }))
+  }
   linkDialogVisible.value = false
 }
 </script>

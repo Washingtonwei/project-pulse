@@ -441,8 +441,6 @@
             </div>
           </div>
 
-          <!-- The template's rich text fields (docs/design/doc.md, "The template's text fields"), all optional.
-               Assumptions are only this use case's own; a project-wide one is cited by its artifact key. -->
           <!-- Business Rules (BR-use-case-business-rules): the team's rules this use case must conform to, saved as
                CONSTRAINS links from each rule. The picker shows matches first, then Create (extensions 3b and 6d). -->
           <el-divider>Business Rules</el-divider>
@@ -483,6 +481,8 @@
             @chosen="selectRule"
           />
 
+          <!-- The template's rich text fields (docs/design/doc.md, "The template's text fields"), all optional.
+               Assumptions are only this use case's own; a project-wide one is cited by its artifact key. -->
           <el-divider>Associated Information</el-divider>
           <RichTextField v-model="currentUseCase.associatedInformation" :editable="canEdit" />
 
@@ -793,6 +793,10 @@ function selectRule(rule: RequirementArtifact) {
   }
   ruleQuery.value = ''
 }
+
+// The team's rules load in parallel with the use case, so a use case can arrive before its rules' keys are known and
+// be sorted on nothing. Sorting again whenever the options change puts the chosen rules in key order once they are.
+watch(businessRuleOptions, sortBusinessRuleIds)
 
 async function loadBusinessRules() {
   if (!effectiveTeamId.value) return

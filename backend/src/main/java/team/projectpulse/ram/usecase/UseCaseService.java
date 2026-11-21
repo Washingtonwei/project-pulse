@@ -92,7 +92,8 @@ public class UseCaseService {
                 .orElseThrow(() -> new ObjectNotFoundException("use case", id));
 
         // Query 2: Load ManyToMany collections
-        // This populates the artifact's outgoing links (the actors), preconditions, postconditions
+        // This populates the artifact's outgoing links (the actors), its incoming links with their sources (the
+        // business rules, CONSTRAINS links), preconditions, postconditions
         this.useCaseRepository.findByIdWithManyToMany(id);
 
         // Query 3: Load the step hierarchy
@@ -127,7 +128,7 @@ public class UseCaseService {
      * returned use case.
      * <p>
      * The actors, the business rules and the conditions come from {@code references} alone, resolved in
-     * {@code teamId}; any actor or condition already set on {@code useCase} is replaced. A new condition is saved as a team artifact with its key
+     * {@code teamId}; any actor, business rule or condition already set on {@code useCase} is replaced. A new condition is saved as a team artifact with its key
      * (PRC-n or PSC-n); an existing one is linked as it is. See {@link #resolveActors}, {@link #resolveBusinessRules} and
      * {@link #resolveConditions}.
      *
