@@ -3,6 +3,7 @@ package team.projectpulse.ram.usecase.dto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import team.projectpulse.ram.requirement.Priority;
 import team.projectpulse.user.dto.PeerEvaluationUserDto;
 
@@ -22,8 +23,17 @@ public record UseCaseDto(
         Long primaryActorId,
         @NotNull(message = "Secondary actor IDs must not be null; send an empty list for none.")
         Set<@NotNull Long> secondaryActorIds,
+        @NotNull(message = "Business rule IDs must not be null; send an empty list for none.")
+        Set<@NotNull Long> businessRuleIds,
         @NotEmpty(message = "Use case trigger must not be empty.")
         String trigger,
+        // Optional, plain text, one line (UC-DOC-create-use-case, Associated Information).
+        @Size(max = 255, message = "Frequency of use must be at most 255 characters.")
+        String frequencyOfUse,
+        // Optional rich text (Tiptap HTML), stored as sent. A field left out arrives as null and clears the stored value.
+        String associatedInformation,
+        String assumptions,
+        String openIssues,
         @NotNull(message = "Preconditions must not be null; send an empty list for none.")
         List<@Valid ConditionDto> preconditions,
         @NotNull(message = "Postconditions must not be null; send an empty list for none.")
@@ -45,6 +55,7 @@ public record UseCaseDto(
      */
     public UseCaseDto {
         secondaryActorIds = secondaryActorIds == null ? null : Set.copyOf(secondaryActorIds);
+        businessRuleIds = businessRuleIds == null ? null : Set.copyOf(businessRuleIds);
         preconditions = preconditions == null ? null : List.copyOf(preconditions);
         postconditions = postconditions == null ? null : List.copyOf(postconditions);
         mainSteps = mainSteps == null ? null : List.copyOf(mainSteps);

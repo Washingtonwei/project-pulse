@@ -95,14 +95,14 @@ public class UseCaseController {
     }
 
     /**
-     * Copies the references out of the request body: the actor ids, and the conditions in order. The converter
+     * Copies the references out of the request body: the actor ids, the business rule ids, and the conditions in order. The converter
      * deliberately does not handle these: turning an id into an artifact needs the team from the route, which a
      * converter never sees, so the ids travel to the service as plain values and the service resolves them (OI-46,
      * BR-team-scoped-access). Nothing is looked up or checked here; a missing list, a missing primary actor or a
      * condition with empty wording was already refused by {@code @Valid} before this runs.
      */
     private static UseCaseReferences referencesOf(UseCaseDto useCaseDto) {
-        return new UseCaseReferences(useCaseDto.primaryActorId(), useCaseDto.secondaryActorIds(),
+        return new UseCaseReferences(useCaseDto.primaryActorId(), useCaseDto.secondaryActorIds(), useCaseDto.businessRuleIds(),
                 submittedConditions(useCaseDto.preconditions()), submittedConditions(useCaseDto.postconditions()));
     }
 

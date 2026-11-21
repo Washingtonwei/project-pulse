@@ -305,6 +305,7 @@ class UseCaseConditionIntegrationTest extends AbstractIntegrationTest {
                 .put("teamId", 1)
                 .put("primaryActorId", 1)
                 .put("secondaryActorIds", new JSONArray())
+                .put("businessRuleIds", new JSONArray())
                 .put("trigger", "The student starts the probe.")
                 .put("preconditions", new JSONArray())
                 .put("postconditions", new JSONArray())

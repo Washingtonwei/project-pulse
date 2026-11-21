@@ -268,7 +268,16 @@ export interface UseCase {
   teamId: number
   primaryActorId: number
   secondaryActorIds?: number[]
+  // The business rules that constrain this use case: CONSTRAINS links from each rule (BR-use-case-business-rules).
+  // Required by the server; send [] for none.
+  businessRuleIds: number[]
   trigger: string
+  // Plain text, one line, at most 255 characters.
+  frequencyOfUse?: string | null
+  // Rich text: the HTML RichTextField produces.
+  associatedInformation?: string | null
+  assumptions?: string | null
+  openIssues?: string | null
   preconditions?: Condition[]
   postconditions?: Condition[]
   mainSteps: UseCaseMainStep[]

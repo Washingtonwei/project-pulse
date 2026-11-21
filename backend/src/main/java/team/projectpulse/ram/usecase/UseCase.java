@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import team.projectpulse.ram.requirement.ArtifactLink;
 import team.projectpulse.ram.requirement.ArtifactLinkType;
 import team.projectpulse.ram.requirement.RequirementArtifact;
+import team.projectpulse.ram.requirement.RequirementArtifactType;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -27,6 +28,26 @@ public class UseCase {
 
     @Lob
     private String useCaseTrigger;
+
+    /**
+     * Frequency of Use: one line of plain text, at most 255 characters, optional (UC-DOC-create-use-case, Associated
+     * Information). The length is checked on {@code UseCaseDto}.
+     */
+    @Column(length = 255)
+    private String frequencyOfUse;
+
+    /**
+     * Associated Information, Assumptions and Open Issues: optional rich text, stored as the HTML the editor's Tiptap
+     * produces, exactly as sent (docs/design/doc.md, "The template's text fields").
+     */
+    @Lob
+    private String associatedInformation;
+
+    @Lob
+    private String assumptions;
+
+    @Lob
+    private String openIssues;
 
     /**
      * The preconditions, in this use case's order: references to shared team artifacts (BR-use-case-condition-shared).
@@ -135,6 +156,22 @@ public class UseCase {
     }
 
     /**
+     * The business rules: the sources of the {@code CONSTRAINS} artifact links that end at this use case's artifact
+     * (BR-use-case-business-rules), in no order. Only sources of type {@code BUSINESS_RULE} count: the link routes do
+     * not check which types a link may join (OI-27), so a {@code CONSTRAINS} link from, say, a feature never shows as
+     * a business rule. {@code UseCaseService} writes these links through {@code ArtifactLinkService.reviseIncomingLinks},
+     * and the next save deletes such a stray link. Reads the artifact's incoming links, which the full-graph load
+     * fetches.
+     */
+    public Set<RequirementArtifact> businessRules() {
+        return this.artifact.getIncomingArtifactLinks().stream()
+                .filter(link -> link.getType() == ArtifactLinkType.CONSTRAINS)
+                .map(ArtifactLink::getSourceArtifact)
+                .filter(source -> source.getType() == RequirementArtifactType.BUSINESS_RULE)
+                .collect(Collectors.toSet());
+    }
+
+    /**
      * Replaces the ordered list of preconditions with {@code conditions}, which {@code UseCaseService} has already
      * resolved and checked. Only the links change; a condition dropped from the list stays in the team's graph.
      */
@@ -176,6 +213,38 @@ public class UseCase {
 
     public void setUseCaseTrigger(String trigger) {
         this.useCaseTrigger = trigger;
+    }
+
+    public String getFrequencyOfUse() {
+        return frequencyOfUse;
+    }
+
+    public void setFrequencyOfUse(String frequencyOfUse) {
+        this.frequencyOfUse = frequencyOfUse;
+    }
+
+    public String getAssociatedInformation() {
+        return associatedInformation;
+    }
+
+    public void setAssociatedInformation(String associatedInformation) {
+        this.associatedInformation = associatedInformation;
+    }
+
+    public String getAssumptions() {
+        return assumptions;
+    }
+
+    public void setAssumptions(String assumptions) {
+        this.assumptions = assumptions;
+    }
+
+    public String getOpenIssues() {
+        return openIssues;
+    }
+
+    public void setOpenIssues(String openIssues) {
+        this.openIssues = openIssues;
     }
 
     public List<RequirementArtifact> getPreconditions() {

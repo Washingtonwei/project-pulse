@@ -1013,7 +1013,7 @@ public class DataInitializer implements CommandLineRunner {
         step5ExtensionA.addStep(new UseCaseExtensionStep("Student", "The Student either chooses to correct the mistake and return to step 4 of the normal flow or chooses to terminate the use case."));
         step5.addExtension(step5ExtensionA);
 
-        this.useCaseService.saveUseCase(1, useCase, new UseCaseReferences(stakeholder1.getId(), Set.of(stakeholder2.getId()), preconditions, postconditions));
+        this.useCaseService.saveUseCase(1, useCase, new UseCaseReferences(stakeholder1.getId(), Set.of(stakeholder2.getId()), Set.of(), preconditions, postconditions));
 
         // Create some requirement artifacts
         RequirementArtifact fr1 = new RequirementArtifact(team1, RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "User authentication", "The system shall allow users to log in using their email and password.", "");
@@ -1180,6 +1180,15 @@ public class DataInitializer implements CommandLineRunner {
         // EXTERNAL_SYSTEMS list.
         RequirementArtifact team1ExternalSystem = new RequirementArtifact(team1, RequirementArtifactType.EXTERNAL_SYSTEM, "Email service", "The SMTP service that delivers the system's notification emails.", "");
         this.requirementArtifactService.createRequirementArtifact(1, team1ExternalSystem);
+
+        // ---- A Business Rules document and one business rule ----
+        // Team 1's Business Rules document, so a business rule can be created from the use case editor in dev
+        // (UC-DOC-create-use-case 3b, UC-DOC-edit-use-case 6d), and one rule, RULE-1, for a use case to name
+        // (BR-use-case-business-rules). Seeded last, like the blocks above, so no existing id shifts; for the same reason
+        // the seeded use case does not name it.
+        this.documentRepository.save(newDocument(team1, DocumentType.BUSINESS_RULES));
+        RequirementArtifact team1BusinessRule = new RequirementArtifact(team1, RequirementArtifactType.BUSINESS_RULE, "A student may edit only her own team's requirement documents.", "Course policy; fixed for the semester.", "");
+        this.requirementArtifactService.createRequirementArtifact(1, team1BusinessRule);
     }
 
     /** A new, unsaved document of {@code type} for {@code team}, with its document sections from the template. */

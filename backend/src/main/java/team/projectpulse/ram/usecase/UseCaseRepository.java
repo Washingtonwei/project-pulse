@@ -24,8 +24,9 @@ public interface UseCaseRepository extends JpaRepository<UseCase, Long> {
     Optional<UseCase> findByIdWithScalars(@Param("id") Long id, @Param("teamId") Integer teamId);
 
     // Fetch "wide" collections separately to avoid Cartesian product: the use case artifact's outgoing links with
-    // their targets (the actors are PRIMARY_ACTOR and SECONDARY_ACTOR links; UseCase.primaryActor() reads them), and
-    // the ordered preconditions and postconditions.
+    // their targets (the actors are PRIMARY_ACTOR and SECONDARY_ACTOR links; UseCase.primaryActor() reads them), its
+    // incoming links with their sources (the business rules are CONSTRAINS links; UseCase.businessRules() reads them),
+    // and the ordered preconditions and postconditions.
     // Hydration only, keyed on id alone by design. Run it only after a team-scoped entry
     // query has already authorized this id in the same transaction, never as the first
     // load of a request.
@@ -34,6 +35,8 @@ public interface UseCaseRepository extends JpaRepository<UseCase, Long> {
                 left join fetch uc.artifact a
                 left join fetch a.outgoingArtifactLinks ol
                 left join fetch ol.targetArtifact
+                left join fetch a.incomingArtifactLinks il
+                left join fetch il.sourceArtifact
                 left join fetch uc.preconditions
                 left join fetch uc.postconditions
                 where uc.id = :id

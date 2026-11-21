@@ -116,6 +116,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                       "description": "The Student wants to edit the content in a structured, section-based requirement document so that project requirements are recorded in the correct sections and remain current.",
                       "teamId": 1,
                       "primaryActorId": 1,
+                      "businessRuleIds": [],
                       "secondaryActorIds": [
                           2
                       ],
@@ -253,6 +254,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                       "description": "The Student wants to edit the content in a structured, section-based requirement document so that project requirements are recorded in the correct sections and remain current.",
                       "teamId": 1,
                       "primaryActorId": 1,
+                      "businessRuleIds": [],
                       "secondaryActorIds": [
                           2
                       ],
@@ -393,6 +395,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                      "description": "The Student wants to create a new use case in the use case document so that a new user requirement is added in the document.",
                      "teamId": 1,
                      "primaryActorId": 1,
+                     "businessRuleIds": [],
                      "secondaryActorIds": [
                          2
                      ],
@@ -567,6 +570,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                     "description": "The Student wants to create a new use case in the use case document so that a new user requirement is added in the document.",
                     "teamId": 1,
                     "primaryActorId": 1,
+                    "businessRuleIds": [],
                     "secondaryActorIds": [
                         2
                     ],
@@ -767,6 +771,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                      "description": "The Student wants to create a new use case in the use case document so that a new user requirement is added in the document.",
                      "teamId": 1,
                      "primaryActorId": 1,
+                     "businessRuleIds": [],
                      "secondaryActorIds": [
                          2
                      ],
@@ -929,6 +934,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                      "description": "The Student wants to create a new use case in the use case document so that a new user requirement is added in the document.",
                      "teamId": 1,
                      "primaryActorId": 1,
+                     "businessRuleIds": [],
                      "secondaryActorIds": [
                          2
                      ],
@@ -1220,6 +1226,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                       "description": "A use case naming another team's stakeholder as its primary actor.",
                       "teamId": 1,
                       "primaryActorId": %d,
+                      "businessRuleIds": [],
                       "secondaryActorIds": [],
                       "trigger": "The student references another team's artifact.",
                       "preconditions": [],
@@ -1248,6 +1255,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                       "description": "The same minimal use case, naming a team 1 stakeholder.",
                       "teamId": 1,
                       "primaryActorId": 1,
+                      "businessRuleIds": [],
                       "secondaryActorIds": [],
                       "trigger": "The student references an artifact on their own team.",
                       "preconditions": [],
@@ -1553,7 +1561,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"primaryActorId", "secondaryActorIds", "preconditions", "postconditions", "mainSteps"})
+    @ValueSource(strings = {"primaryActorId", "secondaryActorIds", "businessRuleIds", "preconditions", "postconditions", "mainSteps"})
     void addUseCase_MissingField(String field) throws Exception {
         JSONObject payload = minimalUseCase(1L, new JSONArray());
         payload.remove(field);
@@ -1565,7 +1573,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"primaryActorId", "secondaryActorIds", "preconditions", "postconditions", "mainSteps"})
+    @ValueSource(strings = {"primaryActorId", "secondaryActorIds", "businessRuleIds", "preconditions", "postconditions", "mainSteps"})
     void updateUseCase_MissingField(String field) throws Exception {
         lockUseCase(1, 3, this.studentJohnToken);
         JSONObject payload = fetchUseCase(1, 3, this.studentJohnToken);
@@ -1696,6 +1704,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                 .put("teamId", 1)
                 .put("primaryActorId", primaryActorId)
                 .put("secondaryActorIds", secondaryActorIds)
+                .put("businessRuleIds", new JSONArray())
                 .put("trigger", "The student starts the probe.")
                 .put("preconditions", new JSONArray())
                 .put("postconditions", new JSONArray())

@@ -137,12 +137,13 @@ public class DocumentControllerTest extends AbstractIntegrationTest {
 
     @Test
     void createBusinessRulesDocument_OneListSectionForRules() throws Exception {
+        // Team 3, since team 1 already has the Business Rules document the seed provisions.
         String json = """
                 {
                     "type": "BUSINESS_RULES"
                 }
                 """;
-        this.mockMvc.perform(post(this.baseUrl + "/teams/1/documents").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+        this.mockMvc.perform(post(this.baseUrl + "/teams/3/documents").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
                 .andExpect(jsonPath("$.flag").value(true))
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.data.title").value("Business Rules"))
