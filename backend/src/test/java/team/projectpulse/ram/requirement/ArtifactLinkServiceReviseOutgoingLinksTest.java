@@ -12,11 +12,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
 /**
- * {@link ArtifactLinkService#replaceOutgoingLinks}, the way a use case writes its actor links (docs/design/doc.md,
+ * {@link ArtifactLinkService#reviseOutgoingLinks}, the way a use case writes its actor links (docs/design/doc.md,
  * "Actors as links"). Team 1's seed: UC-1 (artifact 3) links STK-1 (1) as PRIMARY_ACTOR, STK-2 (2) as SECONDARY_ACTOR,
  * and BO-1 with DERIVES_FROM; FR-1 and FR-2 link to UC-1 with DERIVES_FROM.
  */
-class ArtifactLinkServiceReplaceOutgoingLinksTest extends AbstractIntegrationTest {
+class ArtifactLinkServiceReviseOutgoingLinksTest extends AbstractIntegrationTest {
 
     @Autowired
     ArtifactLinkService artifactLinkService;
@@ -31,7 +31,7 @@ class ArtifactLinkServiceReplaceOutgoingLinksTest extends AbstractIntegrationTes
     EntityManager entityManager;
 
     @Test
-    void replaceOutgoingLinks_ChangesOnlyThatTypeFromThatSource_AndKeepsTheInMemorySetsInStep() {
+    void reviseOutgoingLinks_ChangesOnlyThatTypeFromThatSource_AndKeepsTheInMemorySetsInStep() {
         RequirementArtifact useCase = this.requirementArtifactRepository.findByIdAndTeamTeamId(3L, 1).orElseThrow();
         RequirementArtifact stk1 = this.requirementArtifactRepository.findByIdAndTeamTeamId(1L, 1).orElseThrow();
         RequirementArtifact stk2 = this.requirementArtifactRepository.findByIdAndTeamTeamId(2L, 1).orElseThrow();
@@ -39,7 +39,7 @@ class ArtifactLinkServiceReplaceOutgoingLinksTest extends AbstractIntegrationTes
                 .filter(link -> !link.getSourceArtifact().getId().equals(3L)).count();
 
         // STK-2 is dropped as a secondary actor and STK-1 added.
-        this.artifactLinkService.replaceOutgoingLinks(1, useCase, ArtifactLinkType.SECONDARY_ACTOR, Set.of(stk1));
+        this.artifactLinkService.reviseOutgoingLinks(1, useCase, ArtifactLinkType.SECONDARY_ACTOR, Set.of(stk1));
 
         // In memory, in the same transaction: the source and both targets already show the change.
         assertThat(useCase.getOutgoingArtifactLinks()).extracting(link -> link.getType(), link -> link.getTargetArtifact().getId())
@@ -64,10 +64,10 @@ class ArtifactLinkServiceReplaceOutgoingLinksTest extends AbstractIntegrationTes
     }
 
     @Test
-    void replaceOutgoingLinks_EmptyTargets_RemovesThatTypeOnly() {
+    void reviseOutgoingLinks_EmptyTargets_RemovesThatTypeOnly() {
         RequirementArtifact useCase = this.requirementArtifactRepository.findByIdAndTeamTeamId(3L, 1).orElseThrow();
 
-        this.artifactLinkService.replaceOutgoingLinks(1, useCase, ArtifactLinkType.SECONDARY_ACTOR, Set.of());
+        this.artifactLinkService.reviseOutgoingLinks(1, useCase, ArtifactLinkType.SECONDARY_ACTOR, Set.of());
 
         this.entityManager.flush();
         this.entityManager.clear();

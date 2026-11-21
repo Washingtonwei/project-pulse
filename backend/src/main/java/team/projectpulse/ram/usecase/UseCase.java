@@ -114,7 +114,7 @@ public class UseCase {
     /**
      * The primary actor: the target of this use case's {@code PRIMARY_ACTOR} artifact link, a stakeholder or an
      * external system of its team (BR-use-case-actor-types). Only {@code UseCaseService} writes actor links, through
-     * {@code ArtifactLinkService.replaceOutgoingLinks}, and it always leaves exactly one. The link routes can leave none
+     * {@code ArtifactLinkService.reviseOutgoingLinks}, and it always leaves exactly one. The link routes can leave none
      * or several (OI-77): then this returns the target of the lowest-id link, or null for none, and the editor's next
      * save repairs it. Reads the artifact's outgoing links, which the full-graph load fetches.
      */

@@ -373,14 +373,14 @@ public class UseCaseService {
     /**
      * Records {@code actors} as {@code useCase}'s actor links, one {@code PRIMARY_ACTOR} and one {@code SECONDARY_ACTOR}
      * per secondary actor, from the use case's own artifact (BR-use-case-actor-types, BR-link-constraints). Each call
-     * to {@code replaceOutgoingLinks} keeps the links that still hold, deletes the ones that no longer do, and adds the
+     * to {@code reviseOutgoingLinks} keeps the links that still hold, deletes the ones that no longer do, and adds the
      * missing ones. {@code actors} must come from {@link #resolveActors}, which checked every one against
      * {@code teamId}.
      */
     private void linkActors(Integer teamId, UseCase useCase, ResolvedActors actors) {
         RequirementArtifact source = useCase.getArtifact();
-        this.artifactLinkService.replaceOutgoingLinks(teamId, source, ArtifactLinkType.PRIMARY_ACTOR, Set.of(actors.primary()));
-        this.artifactLinkService.replaceOutgoingLinks(teamId, source, ArtifactLinkType.SECONDARY_ACTOR, actors.secondaries());
+        this.artifactLinkService.reviseOutgoingLinks(teamId, source, ArtifactLinkType.PRIMARY_ACTOR, Set.of(actors.primary()));
+        this.artifactLinkService.reviseOutgoingLinks(teamId, source, ArtifactLinkType.SECONDARY_ACTOR, actors.secondaries());
     }
 
     /**
