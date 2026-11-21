@@ -164,6 +164,7 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
                     "description": "Overwritten description",
                     "trigger": "The Student does something",
                     "primaryActorId": %d,
+                    "businessRuleIds": [],
                     "secondaryActorIds": [],
                     "preconditions": [],
                     "postconditions": [],
@@ -195,6 +196,7 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
                     "description": "A use case whose body names another team.",
                     "trigger": "The Student does something",
                     "primaryActorId": %d,
+                    "businessRuleIds": [],
                     "secondaryActorIds": [],
                     "preconditions": [ { "condition": "Body team probe precondition", "type": "PRECONDITION" } ],
                     "postconditions": [ { "condition": "Body team probe postcondition", "type": "POSTCONDITION" } ],
@@ -326,6 +328,7 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
                     "description": "The Student wants to create a new use case in the use case document.",
                     "teamId": 1,
                     "primaryActorId": %d,
+                    "businessRuleIds": [],
                     "secondaryActorIds": [],
                     "trigger": "The Student indicates to create a new use case.",
                     "preconditions": [
@@ -416,7 +419,7 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
         useCase.setArtifact(new RequirementArtifact(team2Anything.getTeam(), RequirementArtifactType.USE_CASE, "Team 2's use case", "Owned by team 2.", ""));
         useCase.setUseCaseTrigger("Team 2 starts its use case.");
         useCase.addMainStep(new UseCaseMainStep("System", "Team 2's only step"));
-        Long id = this.useCaseService.saveUseCase(2, useCase, new UseCaseReferences(team2Anything.getId(), Set.of(), java.util.List.of(), java.util.List.of())).getId();
+        Long id = this.useCaseService.saveUseCase(2, useCase, new UseCaseReferences(team2Anything.getId(), Set.of(), Set.of(), java.util.List.of(), java.util.List.of())).getId();
         this.entityManager.flush();
         return id;
     }

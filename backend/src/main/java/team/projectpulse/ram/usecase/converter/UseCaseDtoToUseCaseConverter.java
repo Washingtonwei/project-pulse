@@ -26,10 +26,14 @@ public class UseCaseDtoToUseCaseConverter implements Converter<UseCaseDto, UseCa
         //
         // A converter has no path variables, so it is the wrong layer to resolve any reference at, and this one
         // resolves none (OI-46). It reads no team: the body's teamId is ignored, and UseCaseService takes the team
-        // from the route. It sets no actor and no condition: the controller passes those to the service as
+        // from the route. It sets no actor, business rule or condition: the controller passes those to the service as
         // UseCaseReferences, and the service resolves them through team-scoped lookups.
         UseCase useCase = new UseCase();
         useCase.setUseCaseTrigger(source.trigger());
+        useCase.setFrequencyOfUse(source.frequencyOfUse());
+        useCase.setAssociatedInformation(source.associatedInformation());
+        useCase.setAssumptions(source.assumptions());
+        useCase.setOpenIssues(source.openIssues());
 
         RequirementArtifact useCaseArtifact = new RequirementArtifact();
         useCaseArtifact.setType(RequirementArtifactType.USE_CASE);

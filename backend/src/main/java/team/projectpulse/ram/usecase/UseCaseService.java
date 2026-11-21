@@ -126,14 +126,16 @@ public class UseCaseService {
      * the ones passed in, so the caller's own step objects are not the ones persisted: read saved steps from the
      * returned use case.
      * <p>
-     * The actors and the conditions come from {@code references} alone, resolved in {@code teamId}; any actor or
-     * condition already set on {@code useCase} is replaced. A new condition is saved as a team artifact with its key
-     * (PRC-n or PSC-n); an existing one is linked as it is. See {@link #resolveActors} and {@link #resolveConditions}.
+     * The actors, the business rules and the conditions come from {@code references} alone, resolved in
+     * {@code teamId}; any actor or condition already set on {@code useCase} is replaced. A new condition is saved as a team artifact with its key
+     * (PRC-n or PSC-n); an existing one is linked as it is. See {@link #resolveActors}, {@link #resolveBusinessRules} and
+     * {@link #resolveConditions}.
      *
-     * @throws ObjectNotFoundException  if an actor or condition id names no artifact of this team
+     * @throws ObjectNotFoundException  if an actor, business rule or condition id names no artifact of this team
      * @throws IllegalArgumentException if the primary actor is missing, an actor is not a stakeholder or an external
-     *                                  system, the primary actor is also a secondary actor, or a condition entry is refused (a repeated id, or the other list's
-     *                                  type); each is an input validation refusal, extension 4a
+     *                                  system, the primary actor is also a secondary actor, a business rule id is not a business rule, or a condition
+     *                                  entry is refused (a repeated id, or the other list's type); each is an input
+     *                                  validation refusal, extension 4a
      */
     public UseCase saveUseCase(Integer teamId, UseCase useCase, UseCaseReferences references) {
         useCase.initLockIfMissing(); // Ensure lock is initialized for new use cases
@@ -144,6 +146,7 @@ public class UseCaseService {
 
         // Check every reference first, writing nothing, as in updateUseCase; the writes follow.
         ResolvedActors actors = resolveActors(teamId, references);
+        Set<RequirementArtifact> businessRules = resolveBusinessRules(teamId, references);
         List<RequirementArtifact> preconditions = resolveConditions(teamId, references.preconditions(), RequirementArtifactType.PRECONDITION);
         List<RequirementArtifact> postconditions = resolveConditions(teamId, references.postconditions(), RequirementArtifactType.POSTCONDITION);
 
@@ -156,6 +159,7 @@ public class UseCaseService {
         // The actor links start from the artifact, so they follow it. They link the team-checked artifacts
         // resolveActors returned, never what the request sent.
         linkActors(teamId, useCase, actors);
+        linkBusinessRules(teamId, useCase, businessRules);
         useCase.replacePreconditions(saveNewConditions(teamId, preconditions));
         useCase.replacePostconditions(saveNewConditions(teamId, postconditions));
         return this.useCaseRepository.save(useCase);
@@ -247,14 +251,17 @@ public class UseCaseService {
 
     /**
      * Updates use case {@code useCaseId} of {@code teamId} from {@code update} at {@code expectedVersion}; the caller
-     * must hold the use case lock. The actors and the conditions come from {@code references} alone; see
-     * {@link #resolveActors} and {@link #resolveConditions}. The checks run in this order, and nothing is written until
-     * all of them pass: use case in team, actors, conditions, version, lock.
+     * must hold the use case lock. The actors, the business rules and the conditions come from {@code references}
+     * alone; see {@link #resolveActors}, {@link #resolveBusinessRules} and {@link #resolveConditions}. The checks run in
+     * this order, and nothing is written until all of them pass: use case in team, actors, business rules, conditions,
+     * version, lock.
      *
-     * @throws ObjectNotFoundException       if the use case, an actor id or a condition id names nothing in this team
+     * @throws ObjectNotFoundException       if the use case, an actor id, a business rule id or a condition id names
+     *                                       nothing in this team
      * @throws IllegalArgumentException      if no version is given, the primary actor is missing, an actor is not a
      *                                       stakeholder or an external system, the primary actor is also a
-     *                                       secondary actor, or a condition entry is refused (a
+     *                                       secondary actor, a business rule id is not a business rule, or a
+     *                                       condition entry is refused (a
      *                                       repeated id, or the other list's type); each is an input validation
      *                                       refusal, extension 7a
      * @throws OptimisticLockException       (409) if {@code expectedVersion} is stale
@@ -276,6 +283,7 @@ public class UseCaseService {
         // resolve methods only read and return what they found, so a refused request leaves the database untouched;
         // the results are written onto oldUseCase after the version and lock checks, further down.
         ResolvedActors actors = resolveActors(teamId, references);
+        Set<RequirementArtifact> businessRules = resolveBusinessRules(teamId, references);
         List<RequirementArtifact> preconditions = resolveConditions(teamId, references.preconditions(), RequirementArtifactType.PRECONDITION);
         List<RequirementArtifact> postconditions = resolveConditions(teamId, references.postconditions(), RequirementArtifactType.POSTCONDITION);
 
@@ -313,17 +321,25 @@ public class UseCaseService {
         this.entityManager.lock(oldUseCase, LockModeType.PESSIMISTIC_FORCE_INCREMENT);
 
         // The plain fields, copied from the detached update: title, description (the artifact's content), priority and
-        // notes onto the stored artifact, and the trigger onto the use case. JPA auditing stamps the artifact's
+        // notes onto the stored artifact, and the trigger and the template's four text fields onto the use case. A text
+        // field the request left out is null here and clears the stored value, as priority and notes do. JPA auditing stamps the artifact's
         // updatedBy and updatedAt when any of them changed.
         oldUseCase.getArtifact().setTitle(update.getArtifact().getTitle());
         oldUseCase.getArtifact().setContent(update.getArtifact().getContent());
         oldUseCase.getArtifact().setPriority(update.getArtifact().getPriority());
         oldUseCase.getArtifact().setNotes(update.getArtifact().getNotes());
         oldUseCase.setUseCaseTrigger(update.getUseCaseTrigger());
+        oldUseCase.setFrequencyOfUse(update.getFrequencyOfUse());
+        oldUseCase.setAssociatedInformation(update.getAssociatedInformation());
+        oldUseCase.setAssumptions(update.getAssumptions());
+        oldUseCase.setOpenIssues(update.getOpenIssues());
 
         // The actors are the team-checked artifacts resolveActors returned, never what the request sent. Only the links
         // that changed are written: a kept actor's link keeps its id and created-by.
         linkActors(teamId, oldUseCase, actors);
+
+        // The business rules likewise: CONSTRAINS links from each team-checked rule, revised, never recreated.
+        linkBusinessRules(teamId, oldUseCase, businessRules);
 
         // Conditions are links to shared artifacts: save the new ones, then replace this use case's ordered lists.
         // Removing an entry drops only the link.
@@ -381,6 +397,36 @@ public class UseCaseService {
         RequirementArtifact source = useCase.getArtifact();
         this.artifactLinkService.reviseOutgoingLinks(teamId, source, ArtifactLinkType.PRIMARY_ACTOR, Set.of(actors.primary()));
         this.artifactLinkService.reviseOutgoingLinks(teamId, source, ArtifactLinkType.SECONDARY_ACTOR, actors.secondaries());
+    }
+
+    /**
+     * Resolves the business rules {@code references} names, each in {@code teamId}, and returns them without linking
+     * them, so it writes nothing. As for actors, the team-scoped load is itself the check (404 for another team's id and
+     * for an unknown id alike), and only then is the type checked, so a 400 never reveals the type of another team's
+     * artifact (BR-use-case-business-rules; 4a on create, 7a on edit). The ids are checked in ascending order, since the
+     * request's set has none of its own, so the first failure reported is the same from run to run.
+     */
+    private Set<RequirementArtifact> resolveBusinessRules(Integer teamId, UseCaseReferences references) {
+        Set<RequirementArtifact> businessRules = new HashSet<>();
+        for (Long businessRuleId : references.businessRuleIds().stream().sorted().toList()) {
+            RequirementArtifact businessRule = this.requirementArtifactService.findRequirementArtifactById(teamId, businessRuleId);
+            if (businessRule.getType() != RequirementArtifactType.BUSINESS_RULE) {
+                throw new IllegalArgumentException("Business rule " + businessRuleId + " must be a business rule.");
+            }
+            businessRules.add(businessRule);
+        }
+        return businessRules;
+    }
+
+    /**
+     * Records {@code businessRules} as {@code useCase}'s business rules: one {@code CONSTRAINS} link from each rule to
+     * the use case's own artifact (BR-use-case-business-rules, BR-link-constraints). {@code reviseIncomingLinks} keeps
+     * the links that still hold, deletes the ones that no longer do, including a stray {@code CONSTRAINS} link from a
+     * non-rule that the link routes let through (OI-27), and adds the missing ones. {@code businessRules} must come
+     * from {@link #resolveBusinessRules}.
+     */
+    private void linkBusinessRules(Integer teamId, UseCase useCase, Set<RequirementArtifact> businessRules) {
+        this.artifactLinkService.reviseIncomingLinks(teamId, useCase.getArtifact(), ArtifactLinkType.CONSTRAINS, businessRules);
     }
 
     /**
