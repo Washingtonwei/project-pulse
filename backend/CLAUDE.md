@@ -87,6 +87,9 @@ Error handling is centralized in `ExceptionHandlerAdvice` — services throw exc
 ### Logging
 - One `LOGGER` per class, levels by audience, `{}` placeholders, the exception object in every `catch` that does not rethrow, and identifiers never content (no emails, tokens, or request bodies): [Architectural conventions › Logging](../docs/design/architectural-design.md#architectural-conventions).
 
+### Comments
+- Comments follow behavior, and a comment on non-obvious code (an algorithm, a revise, an order of checks) walks one worked example with concrete values and says what the code never touches, as `OwnedChildren` and `ArtifactLinkService.reviseLinks` do: [Architectural conventions](../docs/design/architectural-design.md#architectural-conventions).
+
 ### DTOs and Converters
 - DTO naming: `EntityDto` (e.g., `ActivityDto`, `CourseDto`)
 - Converter naming: `EntityToEntityDtoConverter` / `EntityDtoToEntityConverter`

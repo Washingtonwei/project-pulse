@@ -73,6 +73,9 @@ export const createFoo = (foo: Foo) =>
 - A `401` clears the token/user stores and redirects to login; a `403` or `404` routes to the forbidden or not-found page, except a `404` on a call that passes `handleNotFound: true`, which gets no toast and no routing so the caller can handle it (for example, Remove in `RamDocumentEditor.vue` drops an item a teammate already deleted)
 - Other errors show `ElMessage.error()` toasts (with debouncing)
 
+### Comments
+- A comment on non-obvious code (a race between requests, an order of updates, a watcher's purpose) walks one worked example with concrete values and says what the code never touches: [Architectural conventions](../docs/design/architectural-design.md#architectural-conventions).
+
 ### Styling
 - Global styles in `src/assets/main.scss`
 - Component-scoped styles with `<style scoped>`
