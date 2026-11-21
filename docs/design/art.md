@@ -13,6 +13,7 @@ Not covered here, each to be designed on its own:
 - **Deleting a glossary term** belongs to UC-GLO-delete-term, which follows the same rule (BR-deletion-integrity) but has its own editor.
 - **Reordering items** (UC-DOC-edit-document 6b) and the order version it needs. Until then the order is creation order.
 - **The artifact catalog page** belongs to UC-ART-find-artifacts. The create endpoint already serves it.
+- **Creating a use case's actor** from the use case editor (UC-DOC-create-use-case 3a, UC-DOC-edit-use-case 6c) calls the same create endpoint with no change; its picker and dialog are designed in [doc.md](doc.md#creating-an-actor-from-the-picker-3a-6c).
 
 ## Overview
 
