@@ -1,7 +1,7 @@
 # Requirement Documents (DOC) Design
 
-> Realizes: UC-DOC-create-use-case, UC-DOC-edit-use-case
-> Depends on: BR-use-case-actor-types, BR-link-constraints, BR-deletion-integrity, MNT-feature-locality, BR-use-case-condition-shared, BR-shared-condition-wording, BR-team-scoped-access, BR-edit-lock-required, BR-lock-expiry, OI-46 (request-body ids), OI-51 (optimistic locking), OI-76, OI-77
+> Realizes: UC-DOC-create-use-case, UC-DOC-edit-use-case (and UC-ART-create-artifact's actor entry point, extensions 3a and 6c)
+> Depends on: BR-use-case-actor-types, BR-link-constraints, BR-artifact-home, BR-review-lock, BR-deletion-integrity, MNT-feature-locality, BR-use-case-condition-shared, BR-shared-condition-wording, BR-team-scoped-access, BR-edit-lock-required, BR-lock-expiry, OI-46 (request-body ids), OI-51 (optimistic locking), OI-76, OI-77, OI-78
 > See: [use cases](../requirements/use-cases.md#requirement-documents), [architectural-design.md](architectural-design.md#domain--aggregate-model) (Domain & aggregate model, Transactions & consistency, Authorization)
 > History: the step tree was written up after the code was built (2026-11-13). The rest of create and edit, including the actor rules and the shared conditions, was designed through `/design` on 2026-11-14; where this doc describes code that already existed, it records the design as built. On 2026-11-15 rewording a condition through a use case was removed altogether (BR-shared-condition-wording), so a condition entry is now only linked or created; rewording a condition for every use case waits on OI-72. On 2026-11-20 the actors moved from `UseCase` fields to `PRIMARY_ACTOR` and `SECONDARY_ACTOR` artifact links (spec PR #149); this doc describes that design, not yet built.
 
@@ -17,7 +17,7 @@ A use case is an aggregate, and `UseCase` is its root. It holds:
 
 - **Its artifact.** A `RequirementArtifact` of type `USE_CASE`, shared by id through `@OneToOne @MapsId`, that carries the title, description, priority, notes and artifact key (`UC-n`). This is how a use case takes part in artifact links like any other requirement artifact.
 - **The trigger**, a plain field.
-- **Actors.** Not fields of `UseCase`: `PRIMARY_ACTOR` and `SECONDARY_ACTOR` artifact links from the use case's own artifact to team artifacts of type `STAKEHOLDER` or `EXTERNAL_SYSTEM` (BR-use-case-actor-types, BR-link-constraints). Exactly one primary actor, and no actor in both roles. `UseCase.primaryActor()` and `secondaryActors()` read them off the artifact's outgoing links; only `UseCaseService` writes them, through `ArtifactLinkService.reviseOutgoingLinks`. See [Actors as links](#actors-as-links).
+- **Actors.** Not fields of `UseCase`: `PRIMARY_ACTOR` and `SECONDARY_ACTOR` artifact links from the use case's own artifact to team artifacts of type `STAKEHOLDER` or `EXTERNAL_SYSTEM` (BR-use-case-actor-types, BR-link-constraints). Exactly one primary actor, and no actor in both roles. `UseCase.primaryActor()` and `secondaryActors()` read them off the artifact's outgoing links; only `UseCaseService` writes them, through `ArtifactLinkService.reviseOutgoingLinks`. See [Actors as links](#actors-as-links). A missing actor is created from the picker through the artifact create route, never by the use case save; see [Creating an actor from the picker](#creating-an-actor-from-the-picker-3a-6c).
 - **Preconditions and postconditions.** Ordered references to team artifacts of type `PRECONDITION` and `POSTCONDITION`: a `@ManyToMany` `List` each, with an `@OrderColumn` on the join table and no cascade. A condition is shared: any number of the team's use cases may reference it, each at its own position (BR-use-case-condition-shared). See [Preconditions and postconditions](#preconditions-and-postconditions).
 - **The step tree.** Three levels of ordered children (main steps, their extensions, and the extensions' steps), each an inverse `@OneToMany` list with `@OrderColumn`, `cascade = ALL` and `orphanRemoval = true`.
 - **The lock.** A `UseCaseLock` that says who may save the use case and until when.
@@ -141,6 +141,7 @@ classDiagram
 - `copyOf`: a deep copy without any id, at every level. Used for unpaired children and for every child on create.
 - [`UseCaseLock`](../../backend/src/main/java/team/projectpulse/ram/usecase/UseCaseLock.java): its own entity and its own `@Version`, created on first use by `initLockIfMissing`.
 - [`RequirementArtifactType`](../../backend/src/main/java/team/projectpulse/ram/requirement/RequirementArtifactType.java) gains `EXTERNAL_SYSTEM`, and [`ArtifactKeyPrefix`](../../backend/src/main/java/team/projectpulse/ram/requirement/ArtifactKeyPrefix.java) maps it to `SYS`, `PRECONDITION` to `PRC` and `POSTCONDITION` to `PSC` (they were `PRE` and `POST`).
+- [`RequirementArtifactCreateDialog.vue`](../../frontend/src/components/RequirementArtifactCreateDialog.vue) (new): a create-only dialog for UC-ART-create-artifact (props `teamId`, `types`, `initialTitle`; emits `created` and `chosen`), holding the type choice (hidden for one type), title, content, the duplicate check and its warning. The actor pickers use it now, and a use case's business rules will reuse it. `RamDocumentEditor.vue` keeps its own create and edit dialog for now.
 - Frontend: [`RamUseCases.vue`](../../frontend/src/pages/ram/RamUseCases.vue) offers only stakeholders and external systems in the actor pickers, and leaves the chosen primary actor out of the secondary picker (BR-use-case-actor-types; the server's 400 is the backstop), and [`types.ts`](../../frontend/src/apis/ram/types.ts) lists `EXTERNAL_SYSTEM`, so a student can create one in any LIST document section, as stakeholders are created today. Both condition lists are one component, [`UseCaseConditionList.vue`](../../frontend/src/components/UseCaseConditionList.vue), and the page sends only each condition's `id` and wording. Each condition row has three parts:
   - A select-or-type picker over the team's conditions of that type, loaded by `POST /teams/{teamId}/requirement-artifacts/search` with `type`. It hides conditions already in this list. Picking sets the entry's `id`; typing sets its wording with no `id`.
   - Up and down buttons to reorder.
@@ -280,6 +281,43 @@ A use case's actors are artifact links whose source is the use case's own artifa
 - **The rule.** `resolveActors` refuses a missing primary actor and, after both roles are checked for team and type, a primary actor that is also listed as a secondary one. The link use cases do not run these checks (OI-77, and OI-27 for BR-link-constraints in general).
 - **Deleting an actor.** A stakeholder or external system named by a use case is the target of one of its links, so the artifact delete's two link queries already list it, as `LINK_TO` with link type `PRIMARY_ACTOR` or `SECONDARY_ACTOR`, and refuse the delete (BR-deletion-integrity; see [art.md](art.md)).
 
+### Creating an actor from the picker (3a, 6c)
+
+When an actor the student needs is missing (UC-DOC-create-use-case 3a, UC-DOC-edit-use-case 6c), she creates it from the actor picker through UC-ART-create-artifact. The editor calls the artifact create route the document editor and catalog use, before and apart from the use case save. Nothing in `usecase` changes, and no backend code is new.
+
+```mermaid
+sequenceDiagram
+    participant S as student
+    participant P as RamUseCases.vue (actor picker)
+    participant D as RequirementArtifactCreateDialog.vue
+    participant A as RequirementArtifactController
+    participant U as UseCaseController
+    S->>P: types "Email Service" (step 6)
+    P-->>S: matching stakeholders and external systems, then "Create 'Email Service'..."
+    S->>P: chooses Create (6c)
+    P->>D: open(types STAKEHOLDER and EXTERNAL_SYSTEM, title "Email Service")
+    S->>D: type, title, content, confirm (UC-ART-create-artifact steps 3-4)
+    D->>A: POST .../requirement-artifacts/search with type and title (step 5)
+    A-->>D: possible duplicates; if any, warn (5a): Use this one, or Create anyway
+    D->>A: POST .../requirement-artifacts with type, title, content
+    A-->>D: SYS-n, appended to Vision and Scope's External Systems (400 for 8a, 8b)
+    D-->>P: created(artifact)
+    P->>P: add to the options; set as primary, or append to the secondaries (6c2)
+    Note over P,U: the use case's form, lock and version are untouched
+    S->>P: later saves the use case (step 11)
+    P->>U: PUT .../use-cases/{id} with the new id among secondaryActorIds
+```
+
+- **No lock on the home.** The create takes no document section edit lock, as from the artifact catalog: the server only takes the home section's row lock to append ([art.md](art.md)), and a teammate editing External Systems is not blocked.
+- **Where Create appears.** Each actor `el-select` keeps the typed query (`filter-method`) and shows "Create '<query>'..." in its `#footer` slot, below the matches, only while a query is typed and the student can edit. She sees the matches first (the "New actors" rule in UC-DOC-create-use-case's Associated Information).
+- **Duplicates (5a).** The dialog searches the chosen type for titles containing the new title, as the document editor does. In the picker, 5a2's "open the existing artifact instead" becomes **Use this one**, which selects that artifact as the actor.
+- **Errors.** A 400 (blank content, 8a, 8b) is shown by the request interceptor's toast and the dialog stays open. The use case save is unaffected, and it still refuses a non-actor id with a 400 (BR-use-case-actor-types), so the route serving other types is no gap.
+- **Cancel.** Cancelling the dialog changes nothing. An actor created and then left unused, because the use case is cancelled or abandoned, stays in Vision and Scope, as the spec intends (OI-78).
+- **One role per actor (6c2, BR-use-case-actor-types).** Selecting an artifact as the primary actor, whether created or chosen with Use this one, removes it from the secondaries, as the existing watch on `primaryActorId` already does. The secondary picker's Use this one never offers the primary actor, since the duplicate list leaves it out. So the form never holds one actor in both roles.
+- **The dialog's own checks (4a).** Type, title and content are required `el-form` rules shown at their fields, so the error has a location (4a1). The server's 400 is the backstop. No type is preselected, since the type can never change afterwards.
+- **Confirm and report (steps 6 and 9).** The dialog shows the details before the create, and its Create button is the confirmation of step 6. On success it closes and a toast names the new key ("SYS-2 created", as the document editor does), and the picker then shows the actor with its key (step 9, POST-1).
+- **Who sees Create.** The picker's footer shows only when the editor's existing `canEdit` is true (a new use case, or the student holds the use case lock).
+
 ### Pairing, at any one level
 
 ```mermaid
@@ -382,6 +420,10 @@ The editor lists a team's use cases through the requirement artifact search, `PO
 | Version check and lock check together | Both, version first | The lock alone: a lock that expired, was taken by a teammate who saved, and was then retaken would let the first student's stale form overwrite the teammate's save |
 | Where the lock lives | A separate `UseCaseLock` entity with its own version | Lock columns on `use_case`: taking or extending a lock would increment the use case's version and make the holder's own form stale |
 | How a lock ends | A TTL with lazy expiry, plus release by the holder or an instructor | No TTL: a closed browser tab would hold the use case forever. A scheduled sweeper: an extra moving part for something every read can check |
+| Where a missing actor is created | The artifact create route, called by the editor before the use case save (3a, 6c) | Inside the use case save, as new conditions are: `usecase` would write into Vision and Scope's lists (MNT-feature-locality), and the spec says the save never creates an actor |
+| Lock on the actor's home | None, as from the artifact catalog | The External Systems or Stakeholder Profiles section lock: the server never checks it on a create, which only appends, and it would block a teammate for no conflict |
+| Where Create appears | The picker's footer, while a query is typed, below the matches | Only when nothing matches: "Admin" matching "Admin Office" would hide it. Always shown: invites creating without searching first |
+| The create dialog | A new shared create-only component | Copying the document editor's duplicate check into `RamUseCases.vue`: a second copy, and business rules would add a third. Extracting it from `RamDocumentEditor.vue`, whose dialog also edits: a refactor this use case does not need |
 | Where the step logic lives | Domain methods on the aggregate plus one generic helper | Three copies of the algorithm, one per level, or the logic in the service: it needs no repository, so it belongs in the domain. |
 
 Two consequences worth knowing:
@@ -471,6 +513,11 @@ The step tables and their `*_index` order columns are unchanged. The dev seed ad
 | Seed | integration, `UseCaseConditionIntegrationTest` | The seeded use case keeps id 3. Its three preconditions and two postconditions have `PRC-n` and `PSC-n` keys, in the order `DataInitializer` lists them. |
 | Migration V9 | manual, scratch MySQL (done) | V1 to V9 apply in order; existing join rows are numbered 0..n-1 per use case; the primary key is `(*_index, use_case_id)`, as Hibernate generates it |
 | Request-body step ids (OI-46) | integration, `RequestBodyIdIntegrationTest` | A step id from another team's use case is stored as a new step; the other team's step is unchanged |
+| UC-DOC-edit-use-case, extension 6c | integration, `UseCaseControllerTest` | While the student holds UC-1's lock, creating an `EXTERNAL_SYSTEM` returns its `SYS-n` key, at the end of Vision and Scope's External Systems list; UC-1's version and lock are unchanged; a save naming it as a secondary actor stores the `SECONDARY_ACTOR` link |
+| UC-DOC-create-use-case, extension 3a | integration, `UseCaseControllerTest` | A `STAKEHOLDER` created first is accepted as the primary actor of a new use case, with its `PRIMARY_ACTOR` link |
+| Actor kept when the use case is abandoned | integration, `UseCaseControllerTest` | An actor created, then UC-1's lock released without a save: the artifact remains, no link targets it, UC-1 is unchanged |
+| Actor create, extension 8a | integration, `RequirementArtifactControllerTest` | With Vision and Scope `SUBMITTED`, a `STAKEHOLDER` is refused with 400 and the Vision and Scope message; nothing is stored |
+| Actor picker and dialog | manual, running app (no frontend unit harness) | The matches, then Create, show as the student types; Create prefills the title; the duplicate warning offers Use this one and Create anyway; Cancel changes nothing; it works on a new use case and while editing; an actor created or chosen as primary is removed from the secondaries; a blank title or content is marked at its field |
 | Regression | existing | `UseCaseControllerTest` (including `addUseCase_NotSameTeam`) stays green |
 
 All integration tests flush, clear, and read the database with native SQL, because the test transaction never commits.
