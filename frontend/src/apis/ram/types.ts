@@ -192,13 +192,13 @@ export interface SearchRequirementArtifactsResponse extends ApiResult<Page<Requi
 export interface RequirementArtifactResponse extends ApiResult<RequirementArtifact> {}
 
 // One reference that blocks a requirement artifact's delete (UC-ART-delete-artifact step 4, 4a). id, artifactKey and
-// title are the other artifact's: the link's other end, or the use case naming it as an actor.
+// title are those of the link's other end; a use case naming it as an actor is a link from the use case's own artifact.
 export interface ArtifactReferrer {
   id: number
   artifactKey: string
   title: string
   // LINK_FROM: the artifact being deleted is the link's source; LINK_TO: its target.
-  relation: 'LINK_FROM' | 'LINK_TO' | 'PRIMARY_ACTOR' | 'SECONDARY_ACTOR'
+  relation: 'LINK_FROM' | 'LINK_TO'
   linkType: string | null
 }
 

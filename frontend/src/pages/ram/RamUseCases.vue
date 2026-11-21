@@ -144,7 +144,7 @@
               :disabled="!canEdit"
             >
               <el-option
-                v-for="actor in stakeholderOptions"
+                v-for="actor in secondaryActorOptions"
                 :key="actor.id"
                 :label="formatActorLabel(actor)"
                 :value="actor.id"
@@ -532,6 +532,23 @@ async function loadUseCases() {
 // A use case's actors are the team's stakeholders and external systems (BR-use-case-actor-types). A stakeholder is a
 // person or role, such as "Customer"; an external system is a non-human participant, such as an email or LLM service.
 // The server refuses any other artifact type, so this filter only keeps the picker from offering one.
+// An actor is never both the primary actor and a secondary actor of one use case (BR-use-case-actor-types), so the
+// secondary picker leaves out the chosen primary actor; the server refuses the pair with a 400 as the backstop.
+const secondaryActorOptions = computed(() =>
+  stakeholderOptions.value.filter((actor) => actor.id !== currentUseCase.value.primaryActorId)
+)
+
+// Choosing as primary actor one already picked as secondary takes it out of the secondary actors.
+watch(
+  () => currentUseCase.value.primaryActorId,
+  (primaryActorId) => {
+    const secondaryActorIds = currentUseCase.value.secondaryActorIds
+    if (secondaryActorIds?.includes(primaryActorId)) {
+      currentUseCase.value.secondaryActorIds = secondaryActorIds.filter((id) => id !== primaryActorId)
+    }
+  }
+)
+
 async function loadStakeholders() {
   if (!effectiveTeamId.value) return
   try {
