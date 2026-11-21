@@ -1,12 +1,15 @@
 package team.projectpulse.ram.usecase;
 
 import jakarta.persistence.*;
+import team.projectpulse.ram.requirement.ArtifactLink;
+import team.projectpulse.ram.requirement.ArtifactLinkType;
 import team.projectpulse.ram.requirement.RequirementArtifact;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 public class UseCase {
@@ -21,26 +24,6 @@ public class UseCase {
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @MapsId
     private RequirementArtifact artifact;
-
-    /**
-     * The primary actor: a stakeholder or an external system of the use case's team (BR-use-case-actor-types).
-     * Checked by {@code UseCaseService.resolveActors}; {@code saveUseCase} and {@code updateUseCase} set only what it
-     * returns, so no actor is ever set straight from a request.
-     */
-    @ManyToOne(fetch = FetchType.LAZY)
-    private RequirementArtifact primaryActor;
-
-    /**
-     * Secondary actors (0..N), each a stakeholder or an external system of the use case's team, under the same rule
-     * and the same enforcement as the primary actor.
-     */
-    @ManyToMany
-    @JoinTable(
-            name = "use_case_secondary_actor",
-            joinColumns = @JoinColumn(name = "use_case_id"),
-            inverseJoinColumns = @JoinColumn(name = "actor_artifact_id")
-    )
-    private Set<RequirementArtifact> secondaryActors = new HashSet<>();
 
     @Lob
     private String useCaseTrigger;
@@ -128,19 +111,27 @@ public class UseCase {
         }
     }
 
-    public void addSecondaryActor(RequirementArtifact stakeholder) {
-        secondaryActors.add(stakeholder);
+    /**
+     * The primary actor: the target of this use case's {@code PRIMARY_ACTOR} artifact link, a stakeholder or an
+     * external system of its team (BR-use-case-actor-types). Only {@code UseCaseService} writes actor links, through
+     * {@code ArtifactLinkService.replaceOutgoingLinks}, and it always leaves exactly one. The link routes can leave none
+     * or several (OI-77): then this returns the target of the lowest-id link, or null for none, and the editor's next
+     * save repairs it. Reads the artifact's outgoing links, which the full-graph load fetches.
+     */
+    public RequirementArtifact primaryActor() {
+        return this.artifact.getOutgoingArtifactLinks().stream()
+                .filter(link -> link.getType() == ArtifactLinkType.PRIMARY_ACTOR)
+                .min(Comparator.comparing(ArtifactLink::getId, Comparator.nullsLast(Comparator.naturalOrder())))
+                .map(ArtifactLink::getTargetArtifact)
+                .orElse(null);
     }
 
-    public void removeSecondaryActor(RequirementArtifact stakeholder) {
-        secondaryActors.remove(stakeholder);
-    }
-
-    public void replaceSecondaryActors(Set<RequirementArtifact> actors) {
-        this.secondaryActors.clear();
-        if (actors != null) {
-            this.secondaryActors.addAll(actors);
-        }
+    /** The secondary actors: the targets of this use case's {@code SECONDARY_ACTOR} artifact links, in no order. */
+    public Set<RequirementArtifact> secondaryActors() {
+        return this.artifact.getOutgoingArtifactLinks().stream()
+                .filter(link -> link.getType() == ArtifactLinkType.SECONDARY_ACTOR)
+                .map(ArtifactLink::getTargetArtifact)
+                .collect(Collectors.toSet());
     }
 
     /**
@@ -177,22 +168,6 @@ public class UseCase {
 
     public void setArtifact(RequirementArtifact artifact) {
         this.artifact = artifact;
-    }
-
-    public RequirementArtifact getPrimaryActor() {
-        return primaryActor;
-    }
-
-    public void setPrimaryActor(RequirementArtifact primaryActor) {
-        this.primaryActor = primaryActor;
-    }
-
-    public Set<RequirementArtifact> getSecondaryActors() {
-        return secondaryActors;
-    }
-
-    public void setSecondaryActors(Set<RequirementArtifact> secondaryActors) {
-        this.secondaryActors = secondaryActors;
     }
 
     public String getUseCaseTrigger() {

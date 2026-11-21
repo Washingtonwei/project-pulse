@@ -49,8 +49,8 @@ public class UseCaseToUseCaseDtoConverter implements Converter<UseCase, UseCaseD
                 source.getArtifact().getTitle(),
                 source.getArtifact().getContent(),
                 source.getArtifact().getTeam().getTeamId(),
-                source.getPrimaryActor().getId(),
-                source.getSecondaryActors().stream().map(RequirementArtifact::getId).collect(Collectors.toSet()),
+                primaryActorId(source),
+                source.secondaryActors().stream().map(RequirementArtifact::getId).collect(Collectors.toSet()),
                 source.getUseCaseTrigger(),
                 source.getPreconditions().stream().map(condition -> conditionDto(condition, otherUses)).toList(),
                 source.getPostconditions().stream().map(condition -> conditionDto(condition, otherUses)).toList(),
@@ -72,4 +72,11 @@ public class UseCaseToUseCaseDtoConverter implements Converter<UseCase, UseCaseD
                 .toList();
         return this.requirementArtifactToConditionDtoConverter.convert(condition, others);
     }
+    // Null when the use case has no PRIMARY_ACTOR link, which only the link routes can cause (OI-77); the editor's next
+    // save requires one again.
+    private static Long primaryActorId(UseCase source) {
+        RequirementArtifact primaryActor = source.primaryActor();
+        return primaryActor == null ? null : primaryActor.getId();
+    }
+
 }

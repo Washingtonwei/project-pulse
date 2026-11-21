@@ -19,7 +19,6 @@ import team.projectpulse.ram.document.template.DocumentTemplateRegistry;
 import team.projectpulse.ram.document.template.DocumentTemplateRegistry.Home;
 import team.projectpulse.ram.requirement.dto.ArtifactReferrerDto;
 import team.projectpulse.ram.requirement.dto.ArtifactReferrerDto.Relation;
-import team.projectpulse.ram.usecase.UseCaseRepository;
 import team.projectpulse.system.exception.ObjectNotFoundException;
 import team.projectpulse.system.exception.RequirementArtifactRejectedException;
 import team.projectpulse.team.Team;
@@ -44,11 +43,10 @@ public class RequirementArtifactService {
     private final DocumentTemplateRegistry documentTemplateRegistry;
     private final ArtifactLinkRepository artifactLinkRepository;
     // A sibling's data-access layer, which MNT-feature-locality forbids; kept by decision and recorded as OI-76.
-    private final UseCaseRepository useCaseRepository;
 
     public RequirementArtifactService(RequirementArtifactRepository requirementArtifactRepository, TeamRepository teamRepository, ArtifactKeySequenceRepository artifactKeySequenceRepository,
                                       DocumentRepository documentRepository, DocumentSectionRepository documentSectionRepository, DocumentTemplateRegistry documentTemplateRegistry,
-                                      ArtifactLinkRepository artifactLinkRepository, UseCaseRepository useCaseRepository) {
+                                      ArtifactLinkRepository artifactLinkRepository) {
         this.requirementArtifactRepository = requirementArtifactRepository;
         this.teamRepository = teamRepository;
         this.artifactKeySequenceRepository = artifactKeySequenceRepository;
@@ -56,7 +54,6 @@ public class RequirementArtifactService {
         this.documentSectionRepository = documentSectionRepository;
         this.documentTemplateRegistry = documentTemplateRegistry;
         this.artifactLinkRepository = artifactLinkRepository;
-        this.useCaseRepository = useCaseRepository;
     }
 
     public Page<RequirementArtifact> findByCriteria(Integer teamId, Map<String, String> searchCriteria, Pageable pageable) {
@@ -237,20 +234,17 @@ public class RequirementArtifactService {
      * {@link #deleteRequirementArtifact} (the check again inside the delete, 4a). The caller has already loaded the
      * artifact through a team-scoped finder, so this does not check the team again.
      * <p>
-     * Four queries, in two groups, each group sorted by artifact key:
-     * <ol>
-     *   <li>Links: those with the artifact as source ({@code LINK_FROM}, the other artifact is the target), then those
-     *   with it as target ({@code LINK_TO}, the other artifact is the source). A link from the artifact to itself comes
-     *   back from both queries; the second loop skips it, so it is listed once, as {@code LINK_FROM}.</li>
-     *   <li>Actor references: the use cases naming it as their primary actor, then as a secondary actor. For these the
-     *   referrer is the use case's own artifact, which carries the key and title the student recognizes.</li>
-     * </ol>
+     * Two queries, sorted together by artifact key: the links with the artifact as source ({@code LINK_FROM}, the other
+     * artifact is the target), then those with it as target ({@code LINK_TO}, the other artifact is the source). A link
+     * from the artifact to itself comes back from both queries; the second loop skips it, so it is listed once, as
+     * {@code LINK_FROM}. A use case's actors are links too ({@code PRIMARY_ACTOR}, {@code SECONDARY_ACTOR}, from the use
+     * case's own artifact, which carries the key and title the student recognizes), so they need no query of their own.
      * Examples from team 1's seed:
      * <pre>
      * FR-1   [(UC-1, LINK_FROM, DERIVES_FROM)]        FR-1 derives from UC-1
      * BO-1   [(UC-1, LINK_TO, DERIVES_FROM)]          UC-1 derives from BO-1
-     * STK-1  [(UC-1, PRIMARY_ACTOR, null)]
-     * STK-2  [(UC-1, SECONDARY_ACTOR, null)]
+     * STK-1  [(UC-1, LINK_TO, PRIMARY_ACTOR)]        UC-1 names STK-1 as its primary actor
+     * STK-2  [(UC-1, LINK_TO, SECONDARY_ACTOR)]      and STK-2 as a secondary actor
      * FR-3   []                                        nothing refers to it, so it can be deleted
      * </pre>
      * The order is the one {@code docs/design/art.md} fixes (Refusals), and the 4a message lists the referrers in it too.
@@ -268,17 +262,6 @@ public class RequirementArtifactService {
             }
         }
         links.sort(BY_ARTIFACT_KEY);
-
-        List<ArtifactReferrerDto> actors = new ArrayList<>();
-        for (RequirementArtifact useCase : this.useCaseRepository.findUseCaseArtifactsNamingPrimaryActor(id, teamId)) {
-            actors.add(referrer(useCase, Relation.PRIMARY_ACTOR, null));
-        }
-        for (RequirementArtifact useCase : this.useCaseRepository.findUseCaseArtifactsNamingSecondaryActor(id, teamId)) {
-            actors.add(referrer(useCase, Relation.SECONDARY_ACTOR, null));
-        }
-        actors.sort(BY_ARTIFACT_KEY);
-
-        links.addAll(actors);
         return List.copyOf(links);
     }
 
@@ -376,7 +359,7 @@ public class RequirementArtifactService {
         // 6. Nothing may refer to it (4a, BR-deletion-integrity). The editor asked findReferences before the confirm, but a
         //    teammate may have linked the artifact since, so the check runs again here, at READ COMMITTED, where it sees
         //    every committed link. Deleting FR-1 is refused with "FR-1 cannot be deleted while other artifacts refer to it:
-        //    the link FR-1 DERIVES_FROM UC-1. ...", and deleting STK-1 with "... UC-1 names it as its primary actor. ...".
+        //    the link FR-1 DERIVES_FROM UC-1. ...", and deleting STK-1 with "... the link UC-1 PRIMARY_ACTOR STK-1. ...".
         //    The referrers also go back as the response's data, so the editor can list them.
         List<ArtifactReferrerDto> referrers = referrersOf(teamId, existing);
         if (!referrers.isEmpty()) {
@@ -404,13 +387,11 @@ public class RequirementArtifactService {
         this.requirementArtifactRepository.delete(existing);
     }
 
-    // "the link FR-1 DERIVES_FROM UC-1; UC-1 names it as its primary actor": a link always reads source, type, target.
+    // "the link FR-1 DERIVES_FROM UC-1; the link UC-1 PRIMARY_ACTOR STK-1": a link always reads source, type, target.
     private static String describe(RequirementArtifact deleted, List<ArtifactReferrerDto> referrers) {
         return referrers.stream().map(referrer -> switch (referrer.relation()) {
             case LINK_FROM -> "the link " + deleted.getArtifactKey() + " " + referrer.linkType() + " " + referrer.artifactKey();
             case LINK_TO -> "the link " + referrer.artifactKey() + " " + referrer.linkType() + " " + deleted.getArtifactKey();
-            case PRIMARY_ACTOR -> referrer.artifactKey() + " names it as its primary actor";
-            case SECONDARY_ACTOR -> referrer.artifactKey() + " names it as a secondary actor";
         }).collect(Collectors.joining("; "));
     }
 

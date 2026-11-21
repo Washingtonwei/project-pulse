@@ -3,7 +3,6 @@ package team.projectpulse.ram.usecase;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import team.projectpulse.ram.requirement.RequirementArtifact;
 
 import java.util.Collection;
 import java.util.List;
@@ -17,7 +16,6 @@ public interface UseCaseRepository extends JpaRepository<UseCase, Long> {
     @Query("""
                 select uc from UseCase uc
                 left join fetch uc.artifact a
-                left join fetch uc.primaryActor
                 left join fetch uc.lock l
                 left join fetch l.lockedBy
                 where uc.id = :id
@@ -25,13 +23,17 @@ public interface UseCaseRepository extends JpaRepository<UseCase, Long> {
             """)
     Optional<UseCase> findByIdWithScalars(@Param("id") Long id, @Param("teamId") Integer teamId);
 
-    // Fetch "wide" collections separately to avoid Cartesian product
+    // Fetch "wide" collections separately to avoid Cartesian product: the use case artifact's outgoing links with
+    // their targets (the actors are PRIMARY_ACTOR and SECONDARY_ACTOR links; UseCase.primaryActor() reads them), and
+    // the ordered preconditions and postconditions.
     // Hydration only, keyed on id alone by design. Run it only after a team-scoped entry
     // query has already authorized this id in the same transaction, never as the first
     // load of a request.
     @Query("""
                 select uc from UseCase uc
-                left join fetch uc.secondaryActors
+                left join fetch uc.artifact a
+                left join fetch a.outgoingArtifactLinks ol
+                left join fetch ol.targetArtifact
                 left join fetch uc.preconditions
                 left join fetch uc.postconditions
                 where uc.id = :id
@@ -109,33 +111,5 @@ public interface UseCaseRepository extends JpaRepository<UseCase, Long> {
                 order by uc.id
             """)
     List<ConditionUse> findOtherUseCasesReferencingPostconditions(@Param("conditionIds") Collection<Long> conditionIds, @Param("useCaseId") Long useCaseId);
-
-    /**
-     * The own artifacts of team {@code teamId}'s use cases that name artifact {@code actorId} as their primary actor,
-     * for the reference check of a delete (UC-ART-delete-artifact, BR-deletion-integrity). For example, for the seeded
-     * stakeholder "Student" it returns UC-1's artifact. Called by {@code RequirementArtifactService}, a read of this
-     * sibling's repository that MNT-feature-locality forbids, recorded as OI-76.
-     */
-    @Query("""
-                select a
-                from UseCase uc
-                join uc.artifact a
-                where uc.primaryActor.id = :actorId
-                and a.team.teamId = :teamId
-                order by a.artifactKey
-            """)
-    List<RequirementArtifact> findUseCaseArtifactsNamingPrimaryActor(@Param("actorId") Long actorId, @Param("teamId") Integer teamId);
-
-    /** As {@link #findUseCaseArtifactsNamingPrimaryActor}, for the secondary actors (the {@code use_case_secondary_actor} join table). */
-    @Query("""
-                select a
-                from UseCase uc
-                join uc.artifact a
-                join uc.secondaryActors s
-                where s.id = :actorId
-                and a.team.teamId = :teamId
-                order by a.artifactKey
-            """)
-    List<RequirementArtifact> findUseCaseArtifactsNamingSecondaryActor(@Param("actorId") Long actorId, @Param("teamId") Integer teamId);
 
 }

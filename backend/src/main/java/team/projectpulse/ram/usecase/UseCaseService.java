@@ -7,6 +7,8 @@ import jakarta.persistence.OptimisticLockException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import team.projectpulse.ram.requirement.ArtifactLinkService;
+import team.projectpulse.ram.requirement.ArtifactLinkType;
 import team.projectpulse.ram.requirement.RequirementArtifact;
 import team.projectpulse.ram.requirement.RequirementArtifactService;
 import team.projectpulse.ram.requirement.RequirementArtifactType;
@@ -48,17 +50,19 @@ public class UseCaseService {
     private final Duration defaultLockTtl;
     private final UseCaseRepository useCaseRepository;
     private final RequirementArtifactService requirementArtifactService;
+    private final ArtifactLinkService artifactLinkService;
     private final UserUtils userUtils;
     private final UserRepository userRepository;
     private final EntityManager entityManager;
 
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "The EntityManager is Spring's shared, transaction-scoped proxy; holding a reference to it is how it is meant to be used.")
-    public UseCaseService(UseCaseRepository useCaseRepository, RequirementArtifactService requirementArtifactService, UserUtils userUtils, UserRepository userRepository,
+    public UseCaseService(UseCaseRepository useCaseRepository, RequirementArtifactService requirementArtifactService, ArtifactLinkService artifactLinkService, UserUtils userUtils, UserRepository userRepository,
                           EntityManager entityManager, @Value("${ram.lock.default-lock-ttl:PT15M}") Duration defaultLockTtl) {
         this.useCaseRepository = useCaseRepository;
         this.entityManager = entityManager;
         this.requirementArtifactService = requirementArtifactService;
+        this.artifactLinkService = artifactLinkService;
         this.userUtils = userUtils;
         this.userRepository = userRepository;
         this.defaultLockTtl = defaultLockTtl;
@@ -67,8 +71,9 @@ public class UseCaseService {
     /**
      * Finds a use case by ID with all related entities fully loaded.
      * Uses the 3-query approach to avoid big Cartesian products:
-     * 1. Load use case with scalar relationships (artifact, primaryActor, lock and its holder)
-     * 2. Load ManyToMany collections (secondaryActors, and the ordered preconditions and postconditions)
+     * 1. Load use case with scalar relationships (artifact, lock and its holder)
+     * 2. Load the many-valued associations (the artifact's outgoing links with their targets, which carry the actors,
+     *    and the ordered preconditions and postconditions)
      * 3. Load the main steps graph (mainSteps -> extensions -> extension steps)
      * <p>
      * All queries execute within the same transaction/persistence context,
@@ -87,7 +92,7 @@ public class UseCaseService {
                 .orElseThrow(() -> new ObjectNotFoundException("use case", id));
 
         // Query 2: Load ManyToMany collections
-        // This populates secondaryActors, preconditions, postconditions
+        // This populates the artifact's outgoing links (the actors), preconditions, postconditions
         this.useCaseRepository.findByIdWithManyToMany(id);
 
         // Query 3: Load the step hierarchy
@@ -127,7 +132,7 @@ public class UseCaseService {
      *
      * @throws ObjectNotFoundException  if an actor or condition id names no artifact of this team
      * @throws IllegalArgumentException if the primary actor is missing, an actor is not a stakeholder or an external
-     *                                  system, or a condition entry is refused (a repeated id, or the other list's
+     *                                  system, the primary actor is also a secondary actor, or a condition entry is refused (a repeated id, or the other list's
      *                                  type); each is an input validation refusal, extension 4a
      */
     public UseCase saveUseCase(Integer teamId, UseCase useCase, UseCaseReferences references) {
@@ -142,15 +147,15 @@ public class UseCaseService {
         List<RequirementArtifact> preconditions = resolveConditions(teamId, references.preconditions(), RequirementArtifactType.PRECONDITION);
         List<RequirementArtifact> postconditions = resolveConditions(teamId, references.postconditions(), RequirementArtifactType.POSTCONDITION);
 
-        // Every check has passed; the writes start here. The actors are the team-checked artifacts resolveActors
-        // returned, never what the request sent.
-        useCase.setPrimaryActor(actors.primary());
-        useCase.replaceSecondaryActors(actors.secondaries());
+        // Every check has passed; the writes start here.
         // The use case's own artifact (title, description, priority, notes, type USE_CASE from the converter):
         // createRequirementArtifact sets its team from the route and mints its key (UC-n). The use case shares its id
         // (@MapsId). Saved before the new conditions, so the use case takes the lower id, as it did when the
         // conditions were cascaded.
         this.requirementArtifactService.createRequirementArtifact(teamId, useCase.getArtifact());
+        // The actor links start from the artifact, so they follow it. They link the team-checked artifacts
+        // resolveActors returned, never what the request sent.
+        linkActors(teamId, useCase, actors);
         useCase.replacePreconditions(saveNewConditions(teamId, preconditions));
         useCase.replacePostconditions(saveNewConditions(teamId, postconditions));
         return this.useCaseRepository.save(useCase);
@@ -248,7 +253,8 @@ public class UseCaseService {
      *
      * @throws ObjectNotFoundException       if the use case, an actor id or a condition id names nothing in this team
      * @throws IllegalArgumentException      if no version is given, the primary actor is missing, an actor is not a
-     *                                       stakeholder or an external system, or a condition entry is refused (a
+     *                                       stakeholder or an external system, the primary actor is also a
+     *                                       secondary actor, or a condition entry is refused (a
      *                                       repeated id, or the other list's type); each is an input validation
      *                                       refusal, extension 7a
      * @throws OptimisticLockException       (409) if {@code expectedVersion} is stale
@@ -315,9 +321,9 @@ public class UseCaseService {
         oldUseCase.getArtifact().setNotes(update.getArtifact().getNotes());
         oldUseCase.setUseCaseTrigger(update.getUseCaseTrigger());
 
-        // The actors are the team-checked artifacts resolveActors returned, never what the request sent.
-        oldUseCase.setPrimaryActor(actors.primary());
-        oldUseCase.replaceSecondaryActors(actors.secondaries());
+        // The actors are the team-checked artifacts resolveActors returned, never what the request sent. Only the links
+        // that changed are written: a kept actor's link keeps its id and created-by.
+        linkActors(teamId, oldUseCase, actors);
 
         // Conditions are links to shared artifacts: save the new ones, then replace this use case's ordered lists.
         // Removing an entry drops only the link.
@@ -344,7 +350,8 @@ public class UseCaseService {
      * <p>
      * The primary actor is checked first, then each secondary actor, and the first failure is reported. Every use
      * case has a primary actor: the DTO requires one, and this refuses a missing one from a caller inside the server
-     * too, so no path can store a use case without one.
+     * too, so no path can store a use case without one. Last, once every id is known to be this team's actor, the
+     * primary actor may not also be a secondary actor (BR-use-case-actor-types; 4a on create, 7a on edit).
      */
     private ResolvedActors resolveActors(Integer teamId, UseCaseReferences references) {
         if (references.primaryActorId() == null) {
@@ -356,8 +363,24 @@ public class UseCaseService {
         for (Long secondaryActorId : references.secondaryActorIds()) {
             secondaryActors.add(requireActor(teamId, secondaryActorId, "Secondary actor"));
         }
+        if (references.secondaryActorIds().contains(references.primaryActorId())) {
+            throw new IllegalArgumentException("Actor " + references.primaryActorId() + " cannot be both the primary actor and a secondary actor.");
+        }
 
         return new ResolvedActors(primaryActor, secondaryActors);
+    }
+
+    /**
+     * Records {@code actors} as {@code useCase}'s actor links, one {@code PRIMARY_ACTOR} and one {@code SECONDARY_ACTOR}
+     * per secondary actor, from the use case's own artifact (BR-use-case-actor-types, BR-link-constraints). Each call
+     * to {@code replaceOutgoingLinks} keeps the links that still hold, deletes the ones that no longer do, and adds the
+     * missing ones. {@code actors} must come from {@link #resolveActors}, which checked every one against
+     * {@code teamId}.
+     */
+    private void linkActors(Integer teamId, UseCase useCase, ResolvedActors actors) {
+        RequirementArtifact source = useCase.getArtifact();
+        this.artifactLinkService.replaceOutgoingLinks(teamId, source, ArtifactLinkType.PRIMARY_ACTOR, Set.of(actors.primary()));
+        this.artifactLinkService.replaceOutgoingLinks(teamId, source, ArtifactLinkType.SECONDARY_ACTOR, actors.secondaries());
     }
 
     /**
@@ -376,7 +399,7 @@ public class UseCaseService {
      * @param actorId the id the request named for this actor
      * @param role    "Primary actor" or "Secondary actor", used only in the 400 message, so that the message says
      *                which field and which id are wrong (the location extensions 4a1 and 7a1 ask for)
-     * @return the managed artifact, safe to set as an actor of a use case of {@code teamId}
+     * @return the managed artifact, safe to link as an actor of a use case of {@code teamId}
      */
     private RequirementArtifact requireActor(Integer teamId, Long actorId, String role) {
         // Step 1: scoped to the route's team; throws 404 for another team's id and for an unknown id alike.
