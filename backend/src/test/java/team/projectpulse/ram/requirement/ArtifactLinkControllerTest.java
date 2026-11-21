@@ -37,6 +37,10 @@ public class ArtifactLinkControllerTest extends AbstractIntegrationTest {
     @Value("${api.endpoint.base-url}")
     String baseUrl;
 
+    // The seed saves its use case (UC-1, artifact 3) first, with its PRIMARY_ACTOR and SECONDARY_ACTOR links as links 1
+    // and 2, so its own first link, FR-1 DERIVES_FROM UC-1, is link 3.
+    static final int FR1_DERIVES_FROM_UC1 = 3;
+
     @BeforeEach
     void setUp() throws Exception {
         ResultActions resultActions = this.mockMvc.perform(post(this.baseUrl + "/users/login").with(httpBasic("b.wei@abc.edu", "123456"))); // httpBasic() is from spring-security-test.
@@ -86,11 +90,11 @@ public class ArtifactLinkControllerTest extends AbstractIntegrationTest {
 
     @Test
     void findArtifactLinkById() throws Exception {
-        this.mockMvc.perform(get(this.baseUrl + "/teams/1/artifact-links/1").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+        this.mockMvc.perform(get(this.baseUrl + "/teams/1/artifact-links/" + FR1_DERIVES_FROM_UC1).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(true))
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.message").value("Get artifact link successfully"))
-                .andExpect(jsonPath("$.data.id").value(1))
+                .andExpect(jsonPath("$.data.id").value(FR1_DERIVES_FROM_UC1))
                 .andExpect(jsonPath("$.data.type").value("DERIVES_FROM"))
                 .andExpect(jsonPath("$.data.sourceArtifact.id").value(9))
                 .andExpect(jsonPath("$.data.targetArtifact.id").value(3));
@@ -98,7 +102,7 @@ public class ArtifactLinkControllerTest extends AbstractIntegrationTest {
 
     @Test
     void findArtifactLinkById_NotSameTeam() throws Exception {
-        this.mockMvc.perform(get(this.baseUrl + "/teams/1/artifact-links/1").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentWoodyToken))
+        this.mockMvc.perform(get(this.baseUrl + "/teams/1/artifact-links/" + FR1_DERIVES_FROM_UC1).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentWoodyToken))
                 .andExpect(jsonPath("$.flag").value(false))
                 .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
                 .andExpect(jsonPath("$.message").value("No permission."));
@@ -142,22 +146,22 @@ public class ArtifactLinkControllerTest extends AbstractIntegrationTest {
     void updateArtifactLink() throws Exception {
         String json = """
                 {
-                    "linkId": 1,
+                    "linkId": 3,
                     "type": "DERIVES_FROM",
                     "notes": "Updated link"
                 }
                 """;
-        this.mockMvc.perform(put(this.baseUrl + "/teams/1/artifact-links/1").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+        this.mockMvc.perform(put(this.baseUrl + "/teams/1/artifact-links/" + FR1_DERIVES_FROM_UC1).contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(true))
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.message").value("Update artifact link successfully"))
-                .andExpect(jsonPath("$.data.id").value(1))
+                .andExpect(jsonPath("$.data.id").value(FR1_DERIVES_FROM_UC1))
                 .andExpect(jsonPath("$.data.notes").value("Updated link"));
     }
 
     @Test
     void deleteArtifactLink() throws Exception {
-        this.mockMvc.perform(delete(this.baseUrl + "/teams/1/artifact-links/1").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentEricToken))
+        this.mockMvc.perform(delete(this.baseUrl + "/teams/1/artifact-links/" + FR1_DERIVES_FROM_UC1).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentEricToken))
                 .andExpect(jsonPath("$.flag").value(true))
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.message").value("Delete artifact link successfully"));
@@ -171,7 +175,7 @@ public class ArtifactLinkControllerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.message").value("Get artifact links successfully"))
                 .andExpect(jsonPath("$.data.artifactId").value(3))
                 .andExpect(jsonPath("$.data.incoming", hasSize(2)))
-                .andExpect(jsonPath("$.data.outgoing", hasSize(1)));
+                .andExpect(jsonPath("$.data.outgoing", hasSize(3))); // UC-1 DERIVES_FROM BO-1, and its two actor links
     }
 
     @Test
@@ -184,9 +188,9 @@ public class ArtifactLinkControllerTest extends AbstractIntegrationTest {
 
     @Test
     void getArtifactLinkById_OtherTeamsLinkThroughOwnTeamUrl() throws Exception {
-        // Woody is a student on team 2; artifact link 1 belongs to team 1. The URL names
+        // Woody is a student on team 2; artifact link 3 belongs to team 1. The URL names
         // team 2, so the membership guard passes and only service-layer scoping stops this.
-        this.mockMvc.perform(get(this.baseUrl + "/teams/2/artifact-links/1").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentWoodyToken))
+        this.mockMvc.perform(get(this.baseUrl + "/teams/2/artifact-links/" + FR1_DERIVES_FROM_UC1).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentWoodyToken))
                 .andExpect(jsonPath("$.flag").value(false))
                 .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND));
     }

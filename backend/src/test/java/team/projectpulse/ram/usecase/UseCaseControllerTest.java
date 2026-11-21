@@ -14,10 +14,17 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
+import jakarta.persistence.EntityManager;
 import team.projectpulse.AbstractIntegrationTest;
+import team.projectpulse.ram.requirement.ArtifactLink;
+import team.projectpulse.ram.requirement.ArtifactLinkRepository;
+import team.projectpulse.ram.requirement.ArtifactLinkType;
 import team.projectpulse.system.StatusCode;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -31,6 +38,12 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
 
     @Autowired
     UseCaseRepository useCaseRepository;
+
+    @Autowired
+    ArtifactLinkRepository artifactLinkRepository;
+
+    @Autowired
+    EntityManager entityManager;
 
     String adminBingyangToken; // Bingyang is the instructor of section 2
 
@@ -1265,6 +1278,105 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
         JSONArray secondaryActorIds = response.getJSONObject("data").getJSONArray("secondaryActorIds");
         assertThat(secondaryActorIds.length()).isEqualTo(1);
         assertThat(secondaryActorIds.getLong(0)).isEqualTo(externalSystemId);
+
+        // The actors are stored as links from the use case's own artifact, with the route's team.
+        long useCaseId = response.getJSONObject("data").getLong("id");
+        this.entityManager.flush();
+        this.entityManager.clear();
+        List<ArtifactLink> links = this.artifactLinkRepository.findBySourceArtifactId(useCaseId, 1);
+        assertThat(links).extracting(link -> link.getType(), link -> link.getTargetArtifact().getId(), link -> link.getTeam().getTeamId())
+                .containsExactlyInAnyOrder(tuple(ArtifactLinkType.PRIMARY_ACTOR, 1L, 1), tuple(ArtifactLinkType.SECONDARY_ACTOR, externalSystemId, 1));
+    }
+
+    @Test
+    void addUseCase_PrimaryActorAlsoSecondary() throws Exception {
+        // Extension 4a: BR-use-case-actor-types forbids one actor in both roles. Nothing is stored.
+        long useCasesBefore = this.useCaseRepository.count();
+        long linksBefore = this.artifactLinkRepository.count();
+
+        JSONObject response = postUseCase(minimalUseCase(1L, new JSONArray().put(2L).put(1L)), this.studentJohnToken);
+
+        assertThat(response.getBoolean("flag")).isFalse();
+        assertThat(response.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
+        assertThat(response.getString("message")).isEqualTo("Actor 1 cannot be both the primary actor and a secondary actor.");
+        assertThat(this.useCaseRepository.count()).isEqualTo(useCasesBefore);
+        assertThat(this.artifactLinkRepository.count()).isEqualTo(linksBefore);
+    }
+
+    @Test
+    void updateUseCase_PrimaryActorAlsoSecondary() throws Exception {
+        // Extension 7a: the same refusal on edit; the stored actors and the version are unchanged.
+        assertActorEditRefused(payload -> payload.put("secondaryActorIds", new JSONArray().put(2L).put(payload.getLong("primaryActorId"))),
+                StatusCode.INVALID_ARGUMENT, "Actor 1 cannot be both the primary actor and a secondary actor.");
+    }
+
+    @Test
+    void updateUseCase_ActorsChanged_NoArtifactVersionMoves() throws Exception {
+        // A link is not part of either artifact's content, so naming or dropping an actor must not make a teammate's
+        // open edit of that actor stale (DI-concurrency-control, UC-ART-edit-artifact 10a). UC-1 (use case 3, its
+        // artifact 3) drops STK-2 (artifact 2) and adds the external system SYS-1.
+        long externalSystemId = fetchFirstArtifact(1, "EXTERNAL_SYSTEM", this.studentJohnToken).getLong("id");
+        Integer droppedBefore = artifactVersion(2L);
+        Integer addedBefore = artifactVersion(externalSystemId);
+        Integer useCaseArtifactBefore = artifactVersion(3L);
+
+        lockUseCase(1, 3, this.studentJohnToken);
+        JSONObject payload = fetchUseCase(1, 3, this.studentJohnToken);
+        payload.put("secondaryActorIds", new JSONArray().put(externalSystemId));
+        MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload.toString())
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andReturn();
+        JSONObject response = new JSONObject(result.getResponse().getContentAsString());
+        assertThat(response.getBoolean("flag")).as(response.toString()).isTrue();
+
+        assertThat(artifactVersion(2L)).as("dropped actor STK-2").isEqualTo(droppedBefore);
+        assertThat(artifactVersion(externalSystemId)).as("added actor SYS-1").isEqualTo(addedBefore);
+        assertThat(artifactVersion(3L)).as("the use case's own artifact").isEqualTo(useCaseArtifactBefore);
+    }
+
+    // The stored @Version of an artifact, read after flushing so a pending increment is counted.
+    private Integer artifactVersion(long artifactId) {
+        this.entityManager.flush();
+        this.entityManager.clear();
+        return this.entityManager.find(team.projectpulse.ram.requirement.RequirementArtifact.class, artifactId).getVersion();
+    }
+
+    @Test
+    void updateUseCase_ActorsChanged_OnlyTheChangedLinksAreWritten() throws Exception {
+        // UC-1 (use case 3) names STK-1 as primary actor and STK-2 as secondary actor. The edit keeps STK-1, drops
+        // STK-2 and adds the external system SYS-1 as a secondary actor.
+        long externalSystemId = fetchFirstArtifact(1, "EXTERNAL_SYSTEM", this.studentJohnToken).getLong("id");
+        List<ArtifactLink> before = this.artifactLinkRepository.findBySourceArtifactId(3L, 1);
+        ArtifactLink primaryBefore = before.stream().filter(link -> link.getType() == ArtifactLinkType.PRIMARY_ACTOR).findFirst().orElseThrow();
+        ArtifactLink derivesBefore = before.stream().filter(link -> link.getType() == ArtifactLinkType.DERIVES_FROM).findFirst().orElseThrow();
+        this.entityManager.clear();
+
+        lockUseCase(1, 3, this.studentJohnToken);
+        JSONObject payload = fetchUseCase(1, 3, this.studentJohnToken);
+        payload.put("secondaryActorIds", new JSONArray().put(externalSystemId));
+        MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload.toString())
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+                .andReturn();
+        JSONObject response = new JSONObject(result.getResponse().getContentAsString());
+        assertThat(response.getBoolean("flag")).as(response.toString()).isTrue();
+        assertThat(response.getJSONObject("data").getLong("primaryActorId")).isEqualTo(1L);
+        assertThat(response.getJSONObject("data").getJSONArray("secondaryActorIds").getLong(0)).isEqualTo(externalSystemId);
+
+        this.entityManager.flush();
+        this.entityManager.clear();
+        List<ArtifactLink> after = this.artifactLinkRepository.findBySourceArtifactId(3L, 1);
+        assertThat(after).extracting(link -> link.getType(), link -> link.getTargetArtifact().getId()).containsExactlyInAnyOrder(
+                tuple(ArtifactLinkType.PRIMARY_ACTOR, 1L), tuple(ArtifactLinkType.SECONDARY_ACTOR, externalSystemId), tuple(ArtifactLinkType.DERIVES_FROM, derivesBefore.getTargetArtifact().getId()));
+        // The kept links are the same rows: the primary actor's link and UC-1's trace link were not rewritten.
+        assertThat(after).extracting(ArtifactLink::getId).contains(primaryBefore.getId(), derivesBefore.getId());
+        // Removing an actor removes only the link; the stakeholder stays.
+        assertThat(this.entityManager.find(team.projectpulse.ram.requirement.RequirementArtifact.class, 2L)).isNotNull();
     }
 
     @Test

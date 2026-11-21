@@ -9,7 +9,6 @@ import team.projectpulse.ram.document.DocumentRepository;
 import team.projectpulse.ram.document.DocumentSectionRepository;
 import team.projectpulse.ram.document.template.DocumentTemplateRegistry;
 import team.projectpulse.ram.requirement.dto.ArtifactReferrerDto;
-import team.projectpulse.ram.usecase.UseCaseRepository;
 import team.projectpulse.team.TeamRepository;
 
 import java.util.List;
@@ -19,8 +18,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 
 /**
- * The order of an artifact's referrers (UC-ART-delete-artifact step 4, 4a): links before actor references, each group
- * in artifact-key order as a student reads it, so UC-2 comes before UC-10.
+ * The order of an artifact's referrers (UC-ART-delete-artifact step 4, 4a): every reference is a link, a use case's
+ * actors included, listed in artifact-key order as a student reads it, so UC-2 comes before UC-10.
  */
 @ExtendWith(MockitoExtension.class)
 class RequirementArtifactReferencesTest {
@@ -46,40 +45,36 @@ class RequirementArtifactReferencesTest {
     @Mock
     ArtifactLinkRepository artifactLinkRepository;
 
-    @Mock
-    UseCaseRepository useCaseRepository;
-
     @InjectMocks
     RequirementArtifactService requirementArtifactService;
 
     @Test
-    void findReferences_LinksThenActors_EachInKeyOrderByNumber() {
-        RequirementArtifact fr1 = artifact(9L, "FR-1");
+    void findReferences_LinksAndActorLinks_InKeyOrderByNumber() {
+        RequirementArtifact stk1 = artifact(9L, "STK-1");
         RequirementArtifact uc10 = artifact(30L, "UC-10");
         RequirementArtifact uc2 = artifact(22L, "UC-2");
-        given(this.requirementArtifactRepository.findByIdAndTeamTeamId(9L, 1)).willReturn(Optional.of(fr1));
-        given(this.artifactLinkRepository.findBySourceArtifactId(9L, 1)).willReturn(List.of(link(fr1, uc10), link(fr1, uc2)));
-        given(this.artifactLinkRepository.findByTargetArtifactId(9L, 1)).willReturn(List.of());
-        given(this.useCaseRepository.findUseCaseArtifactsNamingPrimaryActor(9L, 1)).willReturn(List.of(uc10));
-        given(this.useCaseRepository.findUseCaseArtifactsNamingSecondaryActor(9L, 1)).willReturn(List.of(uc2));
+        given(this.requirementArtifactRepository.findByIdAndTeamTeamId(9L, 1)).willReturn(Optional.of(stk1));
+        given(this.artifactLinkRepository.findBySourceArtifactId(9L, 1)).willReturn(List.of(link(stk1, uc10, ArtifactLinkType.MOTIVATES)));
+        given(this.artifactLinkRepository.findByTargetArtifactId(9L, 1)).willReturn(List.of(
+                link(uc10, stk1, ArtifactLinkType.PRIMARY_ACTOR), link(uc2, stk1, ArtifactLinkType.SECONDARY_ACTOR)));
 
         List<ArtifactReferrerDto> referrers = this.requirementArtifactService.findReferences(1, 9L);
 
-        assertThat(referrers).extracting(ArtifactReferrerDto::artifactKey).containsExactly("UC-2", "UC-10", "UC-2", "UC-10");
+        // Sorted by key, and a stable sort keeps the source link ahead of the target link for the same key.
+        assertThat(referrers).extracting(ArtifactReferrerDto::artifactKey).containsExactly("UC-2", "UC-10", "UC-10");
         assertThat(referrers).extracting(ArtifactReferrerDto::relation).containsExactly(
-                ArtifactReferrerDto.Relation.LINK_FROM, ArtifactReferrerDto.Relation.LINK_FROM,
-                ArtifactReferrerDto.Relation.SECONDARY_ACTOR, ArtifactReferrerDto.Relation.PRIMARY_ACTOR);
+                ArtifactReferrerDto.Relation.LINK_TO, ArtifactReferrerDto.Relation.LINK_FROM, ArtifactReferrerDto.Relation.LINK_TO);
+        assertThat(referrers).extracting(ArtifactReferrerDto::linkType).containsExactly(
+                ArtifactLinkType.SECONDARY_ACTOR, ArtifactLinkType.MOTIVATES, ArtifactLinkType.PRIMARY_ACTOR);
     }
 
     @Test
     void findReferences_SelfLink_ListedOnceAsLinkFrom() {
         RequirementArtifact fr1 = artifact(9L, "FR-1");
-        ArtifactLink self = link(fr1, fr1);
+        ArtifactLink self = link(fr1, fr1, ArtifactLinkType.DERIVES_FROM);
         given(this.requirementArtifactRepository.findByIdAndTeamTeamId(9L, 1)).willReturn(Optional.of(fr1));
         given(this.artifactLinkRepository.findBySourceArtifactId(9L, 1)).willReturn(List.of(self));
         given(this.artifactLinkRepository.findByTargetArtifactId(9L, 1)).willReturn(List.of(self));
-        given(this.useCaseRepository.findUseCaseArtifactsNamingPrimaryActor(9L, 1)).willReturn(List.of());
-        given(this.useCaseRepository.findUseCaseArtifactsNamingSecondaryActor(9L, 1)).willReturn(List.of());
 
         List<ArtifactReferrerDto> referrers = this.requirementArtifactService.findReferences(1, 9L);
 
@@ -97,11 +92,11 @@ class RequirementArtifactReferencesTest {
         return artifact;
     }
 
-    private static ArtifactLink link(RequirementArtifact source, RequirementArtifact target) {
+    private static ArtifactLink link(RequirementArtifact source, RequirementArtifact target, ArtifactLinkType type) {
         ArtifactLink link = new ArtifactLink();
         link.setSourceArtifact(source);
         link.setTargetArtifact(target);
-        link.setType(ArtifactLinkType.DERIVES_FROM);
+        link.setType(type);
         return link;
     }
 

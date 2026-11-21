@@ -829,18 +829,14 @@ async function saveArtifact() {
   artifactDialogVisible.value = false
 }
 
-// "the link FR-1 DERIVES_FROM UC-1", "UC-1 names it as its primary actor": a link always reads source, type, target,
-// as in the server's 4a message.
+// "the link FR-1 DERIVES_FROM UC-1", "the link UC-1 PRIMARY_ACTOR STK-1": every reference is a link, a use case's actors
+// included, and a link always reads source, type, target, as in the server's 4a message.
 function describeReferrer(key: string, referrer: ArtifactReferrer): string {
   switch (referrer.relation) {
     case 'LINK_FROM':
       return `the link ${key} ${referrer.linkType} ${referrer.artifactKey}`
-    case 'LINK_TO':
-      return `the link ${referrer.artifactKey} ${referrer.linkType} ${key}`
-    case 'PRIMARY_ACTOR':
-      return `${referrer.artifactKey} names it as its primary actor`
     default:
-      return `${referrer.artifactKey} names it as a secondary actor`
+      return `the link ${referrer.artifactKey} ${referrer.linkType} ${key}`
   }
 }
 

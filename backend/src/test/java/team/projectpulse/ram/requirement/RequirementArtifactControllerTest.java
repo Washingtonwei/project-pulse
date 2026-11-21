@@ -540,7 +540,7 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
         long stakeholder = idOf(1, "STK-1");
         JSONObject actorRefused = deleteArtifact(1, stakeholder, artifactVersion(stakeholder), this.studentJohnToken);
         assertThat(actorRefused.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
-        assertThat(actorRefused.getString("message")).contains("UC-1 names it as its primary actor");
+        assertThat(actorRefused.getString("message")).contains("the link UC-1 PRIMARY_ACTOR STK-1");
 
         this.entityManager.flush();
         this.entityManager.clear();
@@ -677,7 +677,7 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void findReferences_LinksInBothDirectionsAndActorSlots() throws Exception {
+    void findReferences_LinksInBothDirectionsAndActorLinks() throws Exception {
         JSONObject fr1 = references(1, idOf(1, "FR-1"), this.studentJohnToken).getJSONArray("data").getJSONObject(0);
         assertThat(fr1.getString("artifactKey")).isEqualTo("UC-1");
         assertThat(fr1.getString("relation")).isEqualTo("LINK_FROM");
@@ -689,11 +689,13 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
 
         JSONObject primary = references(1, idOf(1, "STK-1"), this.studentJohnToken).getJSONArray("data").getJSONObject(0);
         assertThat(primary.getString("artifactKey")).isEqualTo("UC-1");
-        assertThat(primary.getString("relation")).isEqualTo("PRIMARY_ACTOR");
-        assertThat(primary.isNull("linkType")).isTrue();
+        assertThat(primary.getString("relation")).isEqualTo("LINK_TO");
+        assertThat(primary.getString("linkType")).isEqualTo("PRIMARY_ACTOR");
 
         JSONObject secondary = references(1, idOf(1, "STK-2"), this.studentJohnToken).getJSONArray("data").getJSONObject(0);
-        assertThat(secondary.getString("relation")).isEqualTo("SECONDARY_ACTOR");
+        assertThat(secondary.getString("artifactKey")).isEqualTo("UC-1");
+        assertThat(secondary.getString("relation")).isEqualTo("LINK_TO");
+        assertThat(secondary.getString("linkType")).isEqualTo("SECONDARY_ACTOR");
     }
 
     @Test
