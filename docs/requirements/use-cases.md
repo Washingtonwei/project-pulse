@@ -3174,6 +3174,9 @@ Details:
 9. Use case ends.
 
 **Extensions:**
+- **3a. An actor the student needs is not among her team's stakeholders and external systems**
+  - 3a1. The student creates the actor through UC-ART-create-artifact: Create a requirement artifact, choosing stakeholder or external system as its type.
+  - 3a2. The system selects the new artifact as the actor, primary or secondary as the student chose, and the student returns to step 3 of the normal flow.
 - **4a. Input validation rule violation**
   - 4a1. The system alerts the student that an input validation rule is violated and displays the nature and location of the error.
   - 4a2. The student corrects the mistake and returns to step 4 of the normal flow.
@@ -3204,6 +3207,8 @@ Details:
 
 Actors: the student chooses exactly one primary actor and zero or more secondary actors from her team's stakeholders and external systems (BR-use-case-actor-types). Choosing any other requirement artifact as an actor, leaving out the primary actor, or choosing one actor as both the primary actor and a secondary actor is an input validation rule violation (extension 4a). On save, the system records the primary actor as a PRIMARY_ACTOR artifact link and each secondary actor as a SECONDARY_ACTOR artifact link from the new use case to the actor (BR-link-constraints).
 
+New actors: as the student types an actor's name, the system offers her team's matching stakeholders and external systems before it lets her create a new one, so that an actor such as "Email Service" is not entered twice. A new actor is created through UC-ART-create-artifact (extension 3a): the system stores it in its home list in the Vision and Scope document, with its artifact key, as soon as she confirms it. That creation is independent of this use case, so the actor stays in the team's requirements graph even if she cancels this use case. Saving the use case only links an actor; it never creates one.
+
 Preconditions and postconditions: for each one, the student either chooses an existing precondition or postcondition of her team or enters a new one (BR-use-case-condition-shared). When choosing, the system offers the team's existing conditions of the matching type before the student types a new one, so that a condition such as "The user is authenticated." is not entered twice. On save, the system stores each new one as a requirement artifact of type `PRECONDITION` or `POSTCONDITION`, set by the list it was entered in rather than by the student, and assigns it an artifact key. The use case keeps its preconditions and postconditions in the order the student gives them and displays them numbered by that order (PRE-1, PRE-2, …; POST-1, POST-2, …); the numbering belongs to this use case, while each condition keeps its own artifact key. A precondition's artifact key uses the prefix `PRC` and a postcondition's `PSC`, so that a key is never confused with the use case's own PRE-n and POST-n numbering. A chosen condition is linked with its wording as it is: the student cannot reword it through this use case (BR-shared-condition-wording), and the system ignores any wording a save sends with a chosen condition, so its stored wording stands.
 
 Duplication detection rules: use case name must be unique
@@ -3212,7 +3217,7 @@ Notification: None — routine authoring changes are not notified (FR-NOT-suppre
 
 The student shall be able to cancel the use case at any time prior to submitting it.
 
-**Related Use Cases:** The student may first choose to UC-DOC-view-use-cases-document: View the Use Cases document but cannot find the use case, then decide to create one.
+**Related Use Cases:** The student may first choose to UC-DOC-view-use-cases-document: View the Use Cases document but cannot find the use case, then decide to create one. UC-ART-create-artifact: Create a requirement artifact (creating an actor that does not exist yet, extension 3a).
 **Assumptions:**
 **Open Issues:**
 
@@ -3262,6 +3267,9 @@ The student shall be able to cancel the use case at any time prior to submitting
   - 6b2. The student either rewords the condition for every use case that references it through UC-ART-edit-artifact: Edit a requirement artifact, or asks the system to replace it in this use case with a separate copy.
   - 6b3. If the student asked for a copy, the system replaces the condition in this use case, at the same position, with a new condition carrying the same wording, which the student may then reword and which only this use case references; the original condition is unchanged and stays in the team's requirements graph.
   - 6b4. The student returns to step 6 of the normal flow.
+- **6c. An actor the student needs is not among her team's stakeholders and external systems**
+  - 6c1. The student creates the actor through UC-ART-create-artifact: Create a requirement artifact, choosing stakeholder or external system as its type.
+  - 6c2. The system selects the new artifact as the actor, primary or secondary as the student chose, and the student returns to step 6 of the normal flow.
 - **7a. Input validation rule violation**
   - 7a1. The system alerts the student that an input validation rule is violated and displays the nature and location of the error.
   - 7a2. The student corrects the mistake and returns to step 7 of the normal flow.
@@ -3290,7 +3298,7 @@ Details:
 - Assumptions
 - Open Issues
 
-Actors: the same rules as UC-DOC-create-use-case apply. The use case keeps exactly one primary actor and zero or more secondary actors, each chosen from her team's stakeholders and external systems (BR-use-case-actor-types); choosing any other requirement artifact, leaving out the primary actor, or giving one actor both roles is an input validation rule violation (extension 7a). On save, the system adds a PRIMARY_ACTOR or SECONDARY_ACTOR artifact link for each actor the student added and deletes the link of each actor she removed. Removing an actor removes only the link; the stakeholder or external system stays in the team's requirements graph.
+Actors: the same rules as UC-DOC-create-use-case apply. The use case keeps exactly one primary actor and zero or more secondary actors, each chosen from her team's stakeholders and external systems (BR-use-case-actor-types); choosing any other requirement artifact, leaving out the primary actor, or giving one actor both roles is an input validation rule violation (extension 7a). On save, the system adds a PRIMARY_ACTOR or SECONDARY_ACTOR artifact link for each actor the student added and deletes the link of each actor she removed. Removing an actor removes only the link; the stakeholder or external system stays in the team's requirements graph. A new actor is created as in UC-DOC-create-use-case (extension 6c): it is stored as soon as the student confirms it, independently of this use case, and stays even if she abandons her changes (6a) or her lock expires (11a).
 
 Preconditions and postconditions: the student may add, remove, and reorder this use case's preconditions and postconditions. Adding one works as in UC-DOC-create-use-case: she chooses an existing condition of her team or enters a new one, and a new one is stored as a requirement artifact whose type the system sets (BR-use-case-condition-shared). Removing a condition from this use case only removes the reference; the condition stays in the team's requirements graph for other use cases to reuse, and is deleted only through UC-ART-delete-artifact: Delete a requirement artifact. The use case displays its conditions numbered by their order in this use case (PRE-1, PRE-2, …; POST-1, POST-2, …).
 
@@ -3304,7 +3312,7 @@ Leaving and lock expiry: extension 6a covers leaving the use case inside the app
 
 The student shall be able to cancel the use case at any time prior to submitting it.
 
-**Related Use Cases:** UC-ART-edit-artifact: Edit a requirement artifact (rewording a condition for every use case that references it); UC-ART-delete-artifact: Delete a requirement artifact (deleting a condition no use case needs); UC-LNK-create-link: Create a requirement artifact link (chaining a postcondition to a precondition with ENABLES).
+**Related Use Cases:** UC-ART-edit-artifact: Edit a requirement artifact (rewording a condition for every use case that references it); UC-ART-delete-artifact: Delete a requirement artifact (deleting a condition no use case needs); UC-LNK-create-link: Create a requirement artifact link (chaining a postcondition to a precondition with ENABLES); UC-ART-create-artifact: Create a requirement artifact (creating an actor that does not exist yet, extension 6c).
 **Assumptions:**
 **Open Issues:**
 
@@ -3439,8 +3447,8 @@ Sort criteria: default ascending by Artifact Key; the student may re-sort by Typ
 **Date Created:**
 **Primary Actor:** student
 **Secondary Actors:**
-**Trigger:** The student indicates to create a requirement artifact, either while editing a list-type document section or from the artifact catalog.
-**Description:** The student wants to create a new requirement artifact (for example, a business objective, risk, or feature) and add it to the requirements graph. A requirement artifact is a first-class entity of the requirements graph, not a part of a document: she can create it while editing the list-type document section that is its home (UC-DOC-edit-document: Edit a section-based requirement document), which limits its type to the types that document section admits, or from the artifact catalog (UC-ART-find-artifacts: Find requirement artifacts), where she chooses its type. Either way the artifact is placed in its home document section (BR-artifact-home) and stored as soon as she confirms it.
+**Trigger:** The student indicates to create a requirement artifact while editing a list-type document section, from the artifact catalog, or, for a use case's actor, while creating or editing that use case.
+**Description:** The student wants to create a new requirement artifact (for example, a business objective, risk, or feature) and add it to the requirements graph. A requirement artifact is a first-class entity of the requirements graph, not a part of a document: she can create it while editing the list-type document section that is its home (UC-DOC-edit-document: Edit a section-based requirement document), which limits its type to the types that document section admits, or from the artifact catalog (UC-ART-find-artifacts: Find requirement artifacts), where she chooses its type. She can also create a use case's actor while creating or editing that use case (UC-DOC-create-use-case extension 3a, UC-DOC-edit-use-case extension 6c), where she chooses between stakeholder and external system. In every case the artifact is placed in its home document section (BR-artifact-home) and stored as soon as she confirms it.
 
 **Preconditions:**
 - PRE-1. The student is logged into the system.
@@ -3481,7 +3489,7 @@ Sort criteria: default ascending by Artifact Key; the student may re-sort by Typ
 
 **Priority:** High
 **Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
-**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-artifact-key-unique (unique, stable artifact key); BR-artifact-home (the artifact type determines its home document section; created from a document section, the type is one that document section admits); BR-review-lock (nothing is added to a document locked for review, extension 8a).
+**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-artifact-key-unique (unique, stable artifact key); BR-artifact-home (the artifact type determines its home document section; created from a document section, the type is one that document section admits); BR-review-lock (nothing is added to a document locked for review, extension 8a); BR-use-case-actor-types (created as a use case's actor, the type is stakeholder or external system).
 **Associated Information:**
 
 Details:
@@ -3501,6 +3509,7 @@ Details:
 Type and home:
 - Created from a list-type document section: the student chooses among only the types that document section admits, and no choice is offered when it admits one. That document section is the artifact's home.
 - Created from the artifact catalog (and, in a future release, from the requirements graph view): the student chooses the type among the types that have a document section home. The type determines the home through the artifact type → authoring home table in the SRS's [Business Domain Model](software-requirements-specification.md#business-domain-model); every type has exactly one, so the student never chooses a home.
+- Created as a use case's actor: the student chooses between stakeholder and external system, the only types an actor may have (BR-use-case-actor-types), and the type determines the home as it does from the artifact catalog. As from the artifact catalog, the creation takes no lock on the home document section. It is not part of the use case's save; the use case then links the new artifact as its actor.
 - Artifacts with no document section home (glossary terms, use cases, preconditions, postconditions) are created through their own use cases, not this one.
 
 Duplication detection rules: Advisory only — the system warns when an artifact of the same type has similar content (fuzzy match) but does not block creation; the student decides whether to proceed, revise, or open the existing artifact. In the MVP, "similar content" means an artifact of the same type whose title contains the new title, ignoring letter case.
@@ -3509,7 +3518,7 @@ Notification: None — routine authoring changes are not notified (FR-NOT-suppre
 
 The student shall be able to cancel the use case at any time prior to submitting it.
 
-**Related Use Cases:** The student may first choose to UC-ART-find-artifacts: Find requirement artifacts but cannot find any, then decide to create one. UC-DOC-edit-document: Edit a section-based requirement document (creating an item while editing its home document section).
+**Related Use Cases:** The student may first choose to UC-ART-find-artifacts: Find requirement artifacts but cannot find any, then decide to create one. UC-DOC-edit-document: Edit a section-based requirement document (creating an item while editing its home document section). UC-DOC-create-use-case: Create a use case and UC-DOC-edit-use-case: Edit a use case (creating a use case's actor).
 **Assumptions:**
 **Open Issues:**
 
