@@ -612,10 +612,12 @@ function createNew() {
 }
 
 // This function ensures that all optional fields in the use case have default values. This prevents issues with undefined values when rendering the form and allows us to work with a consistent data structure.
+// The primary actor is also taken out of the secondary actors: the link routes can leave a use case naming one actor in
+// both roles (OI-77), and the secondary picker, which leaves out the primary actor, would then show a bare id.
 function normalizeUseCase(useCase: UseCase): UseCase {
   return {
     ...useCase,
-    secondaryActorIds: useCase.secondaryActorIds || [],
+    secondaryActorIds: (useCase.secondaryActorIds || []).filter((id) => id !== useCase.primaryActorId),
     preconditions: useCase.preconditions || [],
     postconditions: useCase.postconditions || [],
     mainSteps: useCase.mainSteps || [],

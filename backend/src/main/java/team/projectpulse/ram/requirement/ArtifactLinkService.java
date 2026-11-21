@@ -112,7 +112,7 @@ public class ArtifactLinkService {
      *
      * @param teamId  the team named in the route, the team of every new link
      * @param source  the managed artifact the links start from, already in {@code teamId}
-     * @param type    the one link type to replace
+     * @param type    the one link type to revise
      * @param targets the managed artifacts the links must end at, already in {@code teamId}; empty removes them all
      */
     public void reviseOutgoingLinks(Integer teamId, RequirementArtifact source, ArtifactLinkType type, Set<RequirementArtifact> targets) {

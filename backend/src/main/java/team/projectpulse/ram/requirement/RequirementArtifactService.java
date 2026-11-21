@@ -42,7 +42,6 @@ public class RequirementArtifactService {
     private final DocumentSectionRepository documentSectionRepository;
     private final DocumentTemplateRegistry documentTemplateRegistry;
     private final ArtifactLinkRepository artifactLinkRepository;
-    // A sibling's data-access layer, which MNT-feature-locality forbids; kept by decision and recorded as OI-76.
 
     public RequirementArtifactService(RequirementArtifactRepository requirementArtifactRepository, TeamRepository teamRepository, ArtifactKeySequenceRepository artifactKeySequenceRepository,
                                       DocumentRepository documentRepository, DocumentSectionRepository documentSectionRepository, DocumentTemplateRegistry documentTemplateRegistry,
