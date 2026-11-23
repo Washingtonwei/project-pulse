@@ -2926,7 +2926,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 Deletion strategy:
 - Physical delete: the glossary term is permanently removed from the database and cannot be recovered.
-- Its artifact key is never reissued to another glossary term.
+- Its artifact key becomes free for a new glossary term to use (BR-deletion-integrity).
 
 Referring objects handling strategy:
 - Deletion is blocked if the glossary term is referenced by any requirement artifact.
@@ -3381,7 +3381,7 @@ Search criteria (aka search fields, search attributes/properties, search details
 | Search property name | Data type | Options | Validation rule | Security/access concerns | Reference to glossary |
 | ---- | ---- | ---- | ---- | ---- | ---- |
 | Keyword | String (free text) | — | Optional; trimmed; matched case-insensitively as a fuzzy match across the artifact's content and Artifact Key | Team-scoped (BR-team-scoped-access, BR-role-based-access) | Requirement Artifact |
-| Artifact key | String | — | Optional; matched case-insensitively (e.g., FR-1, UC-3) | Team-scoped (BR-team-scoped-access, BR-role-based-access) | Artifact Key |
+| Artifact key | String | — | Optional; matched case-insensitively (e.g., FR-send-reminder-email, UC-submit-report) | Team-scoped (BR-team-scoped-access, BR-role-based-access) | Artifact Key |
 | Artifact content | String (free text) | — | Optional; fuzzy match against the artifact's body content | Team-scoped (BR-team-scoped-access, BR-role-based-access) | Requirement Artifact |
 | Type | Enumeration | The artifact types defined by the Artifact Type glossary term | Optional; must be one of the defined artifact types | Team-scoped (BR-team-scoped-access, BR-role-based-access) | Artifact Type |
 
@@ -3481,13 +3481,13 @@ Sort criteria: default ascending by Artifact Key; the student may re-sort by Typ
 
 **Main Success Scenario:**
 1. The student indicates to create a requirement artifact.
-2. The system asks the student to enter the details of the new artifact according to the "Details" defined in the Associated Information of this use case, offering the artifact types according to the "Type and home" defined in the Associated Information of this use case.
-3. The student enters the details of this new requirement artifact and confirms that she has finished.
+2. The system asks the student to enter the details of the new artifact according to the "Details" defined in the Associated Information of this use case, offering the artifact types according to the "Type and home" defined in the Associated Information of this use case, and suggesting an artifact key according to the "Artifact key rules" defined in the Associated Information of this use case.
+3. The student enters the details of this new requirement artifact, keeps or changes the suggested artifact key, and confirms that she has finished.
 4. The system validates the student's inputs according to the "Details" defined in the Associated Information of this use case.
 5. The system checks whether an artifact of the same type with similar content already exists, according to the "Duplication detection rules" defined in the Associated Information of this use case.
 6. The system displays the details of the new requirement artifact and asks the student to confirm the creation.
 7. The student either confirms the creation (continues the normal flow) or chooses to modify the details (returns to step 3).
-8. The system stores the new requirement artifact, assigns its artifact key, adds it to the requirements graph, and appends it to the end of its home document section's list.
+8. The system stores the new requirement artifact with its artifact key, adds it to the requirements graph, and appends it to the end of its home document section's list.
 9. The system displays the new requirement artifact with its artifact key and informs the student that it has been created.
 10. Use case ends.
 
@@ -3495,6 +3495,9 @@ Sort criteria: default ascending by Artifact Key; the student may re-sort by Typ
 - **4a. Input validation rule violation**
   - 4a1. The system alerts the student that an input validation rule is violated and displays the nature and location of the error.
   - 4a2. The student corrects the mistake and returns to step 4 of the normal flow.
+- **4b. Another requirement artifact of the team already holds the artifact key**
+  - 4b1. The system informs the student that the artifact key is in use and shows the artifact that holds it, by its artifact key and title, as a possible duplicate.
+  - 4b2. The student either opens the existing artifact instead of creating a new one, or chooses a different artifact key and returns to step 4 of the normal flow.
 - **5a. The system finds a possible duplicate (an existing artifact of the same type with similar content)**
   - 5a1. The system warns the student and shows the possible duplicate(s).
   - 5a2. The student may open the existing artifact instead of creating a new one, revise her input and return to step 4, or proceed with the creation if the new artifact is genuinely distinct (continue at step 6). The warning is advisory and does not block creation.
@@ -3504,10 +3507,13 @@ Sort criteria: default ascending by Artifact Key; the student may re-sort by Typ
 - **8b. The artifact's home document has not been created for the team yet**
   - 8b1. The system refuses to create the artifact, names the home document (for example, the Software Requirements Specification), and informs the student that the course admin creates the team's documents (UC-TPL-provision-documents).
   - 8b2. The use case terminates.
+- **8c. A teammate created an artifact with the same artifact key after the student's key was validated**
+  - 8c1. The system refuses to create the artifact, informs the student that the artifact key is now in use, and shows the artifact that holds it, by its artifact key and title.
+  - 8c2. The student either opens the existing artifact instead of creating a new one, or chooses a different artifact key and returns to step 4 of the normal flow.
 
 **Priority:** High
 **Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
-**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-artifact-key-unique (unique, stable artifact key); BR-artifact-home (the artifact type determines its home document section; created from a document section, the type is one that document section admits); BR-review-lock (nothing is added to a document locked for review, extension 8a); BR-use-case-actor-types (created as a use case's actor, the type is stakeholder or external system); BR-use-case-business-rules (created as a use case's business rule, the type is business rule).
+**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-artifact-key-unique (unique, name-based artifact key; extensions 4b and 8c); BR-artifact-home (the artifact type determines its home document section; created from a document section, the type is one that document section admits); BR-review-lock (nothing is added to a document locked for review, extension 8a); BR-use-case-actor-types (created as a use case's actor, the type is stakeholder or external system); BR-use-case-business-rules (created as a use case's business rule, the type is business rule).
 **Associated Information:**
 
 Details:
@@ -3516,6 +3522,7 @@ Details:
 | ---- | ---- | ---- | ---- | ---- | ---- |
 | Requirement artifact type | `RequirementArtifactType` | Set once, at creation | A type with a document section home; created from a document section, one of the types that document section admits (BR-artifact-home) | None; the type cannot be changed later |  |
 | Title |  | Yes |  |  |  |
+| Artifact key | String: `<PREFIX>-<slug>` | The slug is set at creation and later changed only by a deliberate rename (UC-ART-edit-artifact); the prefix never changes | Required. The prefix is the one the type sets. The slug is lowercase letters, digits, and single hyphens, starts with a letter, and is at most 40 characters (extension 4a). No other requirement artifact of the team holds the key (BR-artifact-key-unique; extensions 4b and 8c) | None | Artifact Key |
 | Home | document section | Set at creation from the type; never changes | The type's one home document section (BR-artifact-home) | The artifact is appended to the end of that document section's list |  |
 | Content |  |  |  |  |  |
 | Links |  |  |  |  |  |
@@ -3530,6 +3537,12 @@ Type and home:
 - Created as a use case's actor: the student chooses between stakeholder and external system, the only types an actor may have (BR-use-case-actor-types), and the type determines the home as it does from the artifact catalog. As from the artifact catalog, the creation takes no lock on the home document section. It is not part of the use case's save; the use case then links the new artifact as its actor.
 - Created as a use case's business rule: the type is business rule, which the student does not choose (BR-use-case-business-rules), and its home is the Business Rules document. As for an actor, the creation takes no lock on the home document section and is not part of the use case's save; the use case then links the new artifact as one of its business rules.
 - Artifacts with no document section home (glossary terms, use cases, preconditions, postconditions) are created through their own use cases, not this one.
+
+Artifact key rules:
+- Suggestion: once the student has entered a title or content, the system asks the LLM service for a slug that names the artifact's concept, based on both (for example, a functional requirement whose content says the system lets the client export project data as a CSV file might be suggested `FR-export-csv`). The suggestion is a starting point; the student may keep it or write her own. An artifact key is an identifier, not requirement content, so suggesting one is not the authoring that RAM's Socratic assistants leave to the student. The suggestion is always on: it is not an assistant, so FR-AI-enablement does not apply and an instructor cannot turn it off for a course section. While the LLM service is unavailable (FR-AI-degradation), the system suggests nothing and the student names the artifact herself; a key is required either way (extension 4a).
+- Following the details: while the student has not changed the suggested slug, the system refreshes the suggestion when she changes the title or content. Once she changes the slug herself, the system stops replacing it.
+- Availability: as the suggestion appears and whenever the student changes the slug, the system tells her whether another requirement artifact of her team already holds the key, naming that artifact by its artifact key and title. This early answer is a convenience; the decisive checks are the validation in step 4 (extension 4b) and the storing in step 8 (extension 8c), since a teammate can take the key in between.
+- No silent renaming: the system never makes a key unique by changing it on the student's behalf (for example by appending a number). When a key is taken, the student chooses another name, because the collision may mean the artifact already exists.
 
 Duplication detection rules: Advisory only — the system warns when an artifact of the same type has similar content (fuzzy match) but does not block creation; the student decides whether to proceed, revise, or open the existing artifact. In the MVP, "similar content" means an artifact of the same type whose title contains the new title, ignoring letter case.
 
@@ -3592,13 +3605,19 @@ This use case may be revisited in future versions if free-text authoring or refa
 - **6a. Input validation rule violation**
   - 6a1. The system alerts the student that an input validation rule is violated and displays the nature and location of the error.
   - 6a2. The student corrects the mistake and returns to step 6 of the normal flow.
+- **6b. The student renamed the artifact key to one another requirement artifact of the team already holds**
+  - 6b1. The system informs the student that the artifact key is in use and shows the artifact that holds it, by its artifact key and title.
+  - 6b2. The student chooses a different artifact key or keeps the current one, and returns to step 6 of the normal flow.
 - **10a. Another team member saved a change to this requirement artifact after the student began changing it**
   - 10a1. The system refuses to save the student's changes, informs the student that the requirement artifact was changed by someone else, and displays its current details.
   - 10a2. The student reapplies any changes still needed and returns to step 5 of the normal flow, or abandons the edit.
+- **10b. A teammate gave another requirement artifact the new artifact key after the student's key was validated**
+  - 10b1. The system refuses to save the student's changes, informs the student that the artifact key is now in use, and shows the artifact that holds it, by its artifact key and title.
+  - 10b2. The student chooses a different artifact key or keeps the current one, and returns to step 6 of the normal flow.
 
 **Priority:** High
 **Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
-**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-artifact-home (the artifact's type never changes, and each type has one home, so an artifact never moves); BR-edit-lock-required (a requirement artifact is protected by versioning, not by a lock; extension 10a).
+**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-artifact-home (the artifact's type never changes, and each type has one home, so an artifact never moves); BR-artifact-key-unique (a renamed artifact key stays unique within the team; extensions 6b and 10b); BR-edit-lock-required (a requirement artifact is protected by versioning, not by a lock; extension 10a).
 **Associated Information:**
 
 Details:
@@ -3606,6 +3625,7 @@ Details:
 | Property name | Data type | Editability | Validation rule | Effect of change | Warning | Reference to glossary |
 | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
 | Requirement artifact type |  | No; set once, at creation (BR-artifact-home) |  |  |  |  |
+| Artifact key | String: `<PREFIX>-<slug>` | The slug only, as a deliberate rename; the prefix never changes | As in UC-ART-create-artifact: the slug format (extension 6a) and uniqueness within the team (BR-artifact-key-unique; extensions 6b and 10b) | Artifact links are unaffected, because they connect artifacts, not keys. A mention of the old key written into free text (a document section, a use case's Associated Information) is not updated | A rename is meant for when the artifact's concept itself is renamed; the system reminds the student that mentions of the old key in free text keep the old key | Artifact Key |
 | Content |  | Yes |  |  |  |  |
 | Notes |  | Yes |  |  |  |  |
 | Metadata: priority |  | Yes |  |  |  |  |
@@ -3664,7 +3684,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 Deletion strategy:
 - Physical delete: the requirement artifact is permanently removed from the database and cannot be recovered. Its comment threads are removed with it.
-- Its artifact key is never reissued to another requirement artifact.
+- Its artifact key becomes free for a new requirement artifact to use (BR-deletion-integrity).
 
 Referring objects handling strategy:
 - Deletion is blocked if the requirement artifact is referenced by any requirement artifact, for example a stakeholder that a use case names as its actor.

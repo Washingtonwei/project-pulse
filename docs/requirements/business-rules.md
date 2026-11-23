@@ -58,7 +58,7 @@ These business rules apply across Project Pulse. The course-administration rules
 
 # **Identity and Uniqueness**
 
-- **BR-artifact-key-unique:** Every artifact key is unique within a team and remains stable across edits to the artifact's content.
+- **BR-artifact-key-unique:** Every artifact key is unique within a team. An artifact key is name-based (a type prefix and a slug the student may choose); it does not change when the artifact's content is edited, and changes only when a student deliberately renames it.
 - **BR-glossary-term-unique:** A glossary term name is unique within a team's glossary, so each term carries a single authoritative definition.
 - **BR-use-case-name-unique:** A use case name is unique within a team's Use Cases document.
 - **BR-link-constraints:** A requirement link is unique on the combination of (source artifact, target artifact, link type); an artifact may not link to itself; and a link type is permitted only between artifact types for which it is defined (see the link-type compatibility matrix below).
@@ -110,7 +110,7 @@ The artifact types named here are the canonical `RequirementArtifactType` set (g
 
 # **Deletion Integrity**
 
-- **BR-deletion-integrity:** A glossary term or requirement artifact that is still referenced by another artifact may not be deleted; the references must be removed or repointed first. Deletion is physical: a deleted item is permanently removed, cannot be recovered, and its key is never reissued.
+- **BR-deletion-integrity:** A glossary term or requirement artifact that is still referenced by another artifact may not be deleted; the references must be removed or repointed first. Deletion is physical: a deleted item is permanently removed, cannot be recovered, and its key becomes free for a new item to use.
 
 # **Review and Submission**
 
