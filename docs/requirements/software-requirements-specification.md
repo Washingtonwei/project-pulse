@@ -372,9 +372,8 @@ The RAM environment persists requirements as a team-scoped graph of typed requir
 
 **The requirements graph**
 
-- **RequirementArtifact** — the atomic graph node: its `type` (`RequirementArtifactType`), `artifactKey` (the artifact key, e.g., `FR-1`, `UC-5`), `title`, `content`, `priority`, and `notes`. An artifact is grouped under a source `DocumentSection`; the section determines where the artifact appears in a requirement document.
+- **RequirementArtifact** — the atomic graph node: its `type` (`RequirementArtifactType`), `artifactKey` (the name-based artifact key, e.g., `FR-send-late-report-reminder`, `UC-submit-report`), `title`, `content`, `priority`, and `notes`. An artifact is grouped under a source `DocumentSection`; the section determines where the artifact appears in a requirement document.
 - **ArtifactLink** — a typed, directed edge between two artifacts (the artifact's `outgoing` and `incoming` links): its `type` (`ArtifactLinkType`) and optional `notes`. This is the requirement link of the glossary.
-- **ArtifactKeySequence** — a per-team, per-artifact-type sequence counter that assigns the next product-generated `artifactKey` while preserving the artifact-key uniqueness and stability rules (BR-artifact-key-unique).
 - Enumerations: `RequirementArtifactType` (the authoritative artifact taxonomy), `ArtifactLinkType` (`DERIVES_FROM`, `REALIZES`, `REFERENCES`, `IMPACTS`, `CONSTRAINS`, `MITIGATES`, `MOTIVATES`, `ENABLES`, `PRIMARY_ACTOR`, `SECONDARY_ACTOR`, matching the glossary's artifact link type), and `Priority` (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`).
 
 **Use-case structure**
@@ -470,12 +469,6 @@ direction TB
         -Long id
         -ArtifactLinkType type
         -String notes
-    }
-
-    class ArtifactKeySequence {
-        -Long id
-        -RequirementArtifactType type
-        -long nextNumber
     }
 
     class CommentThread {
@@ -590,7 +583,6 @@ direction TB
     DocumentSection "1" <--> "many" RequirementArtifact
     Team "1" --> "many" RequirementArtifact
     ArtifactLink "many" --> "1" Team
-    ArtifactKeySequence "many" --> "1" Team
     RequirementArtifact "1" <--> "many" ArtifactLink : outgoing
     RequirementArtifact "1" <--> "many" ArtifactLink : incoming
     UseCase "1" --> "1" RequirementArtifact : artifact
@@ -606,12 +598,12 @@ direction TB
     CommentThread "1" <--> "many" Comment
 ```
 
-**Mapping to the conceptual model.** `RequirementArtifact` is the glossary's requirement artifact and `artifactKey` its artifact key (the per-type running sequence `FR-1`, `UC-5`); `ArtifactKeySequence` implements the team-scoped running sequence for each artifact type; `ArtifactLink` / `ArtifactLinkType` are the requirement link / artifact link type; `DocumentSection.sectionKey` is the section key; `DocumentSectionLock` and `UseCaseLock` realize the locking rules (BR-edit-lock-required / BR-lock-expiry) for the two authoring destination types; `DocumentStatus` drives the review lock (BR-review-lock); `RequirementArtifact` associations on `UseCase` represent its preconditions and postconditions, while its primary actor and secondary actors are `PRIMARY_ACTOR` and `SECONDARY_ACTOR` artifact links from the use case's own `RequirementArtifact` (BR-use-case-actor-types); its business rules are `CONSTRAINS` artifact links from each business rule to the use case's `RequirementArtifact` (BR-use-case-business-rules); and `CommentThread` / `Comment` back the commenting use cases (UC-COL-add-comment / UC-COL-resolve-comment).
+**Mapping to the conceptual model.** `RequirementArtifact` is the glossary's requirement artifact and `artifactKey` its artifact key (a type prefix and a name-based slug, unique within the team); `ArtifactLink` / `ArtifactLinkType` are the requirement link / artifact link type; `DocumentSection.sectionKey` is the section key; `DocumentSectionLock` and `UseCaseLock` realize the locking rules (BR-edit-lock-required / BR-lock-expiry) for the two authoring destination types; `DocumentStatus` drives the review lock (BR-review-lock); `RequirementArtifact` associations on `UseCase` represent its preconditions and postconditions, while its primary actor and secondary actors are `PRIMARY_ACTOR` and `SECONDARY_ACTOR` artifact links from the use case's own `RequirementArtifact` (BR-use-case-actor-types); its business rules are `CONSTRAINS` artifact links from each business rule to the use case's `RequirementArtifact` (BR-use-case-business-rules); and `CommentThread` / `Comment` back the commenting use cases (UC-COL-add-comment / UC-COL-resolve-comment).
 
 **Notes.**
 
 - The built-in templates that provision a team's documents and sections (UC-TPL-provision-documents) are the _provisioning_ layer and are not shown in this domain diagram; the MVP ships fixed, built-in templates.
-- `RequirementArtifactType` is the authoritative artifact taxonomy and is reconciled one-to-one with the glossary's requirement artifact list. **It plays one role only: the product's student-facing taxonomy** — the controlled vocabulary the running product offers students to type the artifacts in their *own* project's requirements graph (with product-generated keys like `FR-1`, `SM-1`, `UC-5`). It is **deliberately distinct from the requirement classes by which *this* SRS organizes *Project Pulse's own* requirements** (`FR-<AREA>-<slug>`, `SM-<slug>`, `DI-*`, the quality codes, …). The two **share names** because both speak the same requirements-engineering vocabulary, but they are **different lists with different ID schemes and must not be conflated** — e.g., `SUCCESS_METRIC` / `DATA_REQUIREMENT` are types a student assigns to her own artifacts, whereas Project Pulse's own success metrics are `SM-<slug>` and its data requirements `DI-*`. A single `RISK` type is the umbrella over business/adoption, technical/feasibility, and security/safety risks (the earlier `BUSINESS_RISK`/`RISK` pair was collapsed into `RISK`); `DEPENDENCY` is a tracked artifact.
+- `RequirementArtifactType` is the authoritative artifact taxonomy and is reconciled one-to-one with the glossary's requirement artifact list. **It plays one role only: the product's student-facing taxonomy** — the controlled vocabulary the running product offers students to type the artifacts in their *own* project's requirements graph (with name-based keys like `FR-send-late-report-reminder`, `UC-submit-report`). It is **deliberately distinct from the requirement classes by which *this* SRS organizes *Project Pulse's own* requirements** (`FR-<AREA>-<slug>`, `SM-<slug>`, `DI-*`, the quality codes, …). The two **share names** because both speak the same requirements-engineering vocabulary, but they are **different lists with different ID schemes and must not be conflated** — e.g., `SUCCESS_METRIC` / `DATA_REQUIREMENT` are types a student assigns to her own artifacts, whereas Project Pulse's own success metrics are `SM-<slug>` and its data requirements `DI-*`. A single `RISK` type is the umbrella over business/adoption, technical/feasibility, and security/safety risks (the earlier `BUSINESS_RISK`/`RISK` pair was collapsed into `RISK`); `DEPENDENCY` is a tracked artifact.
 - User stories are a **deferred** concept: the `USER_STORY` artifact type and the `USER_STORIES` `DocumentType` are retained so a future, optional User Stories document can be enabled without a schema change, but no User Stories document, template, or use case ships in the MVP.
 - Cross-cutting fields required by the `DI-*` / `FR-HIS` requirements — authorship metadata (creator/editor identity and timestamps, FR-HIS-authorship-metadata / DI-authorship-metadata) and an optimistic-lock version field (DI-concurrency-control) — apply to the applicable entities and are added when the system is built; they are deliberately not drawn on each class here, because they are cross-cutting persistence mechanisms rather than domain attributes.
 
@@ -648,7 +640,7 @@ A list-type document section admits exactly the artifact types this table homes 
 
 The Business Domain Model above names the system's entities, their fields, and their enumerations. Field-level facts therefore split in two:
 
-- **Field constraints that are requirements** — business-meaningful, testable, and unsafe to guess — are specified at their source and cited here rather than restated: the `artifactKey`, `sectionKey`, and `documentKey` schemes and the artifact-key uniqueness and no-reuse-after-deletion rules in the Project Glossary and Business Rules (BR-artifact-key-unique, BR-deletion-integrity); the `DRAFT` → `SUBMITTED` → `RETURNED`/`ACCEPTED` status values and their transitions in the Business Domain Model above; the project-source-material upload allowlist and per-file size limit in SI-import-allowlist; and per-field validation rules (required/optional, format, allowed values) in each use case's Associated Information.
+- **Field constraints that are requirements** — business-meaningful, testable, and unsafe to guess — are specified at their source and cited here rather than restated: the `artifactKey`, `sectionKey`, and `documentKey` schemes, the artifact-key slug format, and the artifact-key uniqueness and free-after-deletion rules in the Project Glossary and Business Rules (BR-artifact-key-unique, BR-deletion-integrity); the `DRAFT` → `SUBMITTED` → `RETURNED`/`ACCEPTED` status values and their transitions in the Business Domain Model above; the project-source-material upload allowlist and per-file size limit in SI-import-allowlist; and per-field validation rules (required/optional, format, allowed values) in each use case's Associated Information.
 - **Incidental implementation details** — a column's storage type and length, database-level nullability, indexing — are **not** fixed here. They are derived from this specification when the system is built, so that each field has a single source of truth and the spec neither duplicates the implementation nor drifts from it.
 
 ## **Reports**
@@ -665,7 +657,7 @@ DI-source-material-storage: RAM shall store an uploaded project source material 
 
 DI-team-scoping: RAM shall partition persisted RAM content by team wherever the entity represents team-owned requirements content, so that team-scoped access control over the requirements graph, documents, project source material, comments, and locks is enforced over a clean ownership boundary (FR-SEC-authorization, per BR-team-scoped-access).
 
-DI-artifact-key-assignment: RAM shall assign product-generated artifact keys from the team's `ArtifactKeySequence` for the artifact type, shall keep assigned artifact keys stable across edits, and shall not reuse keys after deletion (BR-artifact-key-unique, BR-deletion-integrity).
+DI-artifact-key-assignment: RAM shall store each artifact key as the prefix of the artifact's type followed by a slug in the format the Project Glossary defines, shall refuse to store a key that another artifact of the same team holds, shall keep a key unchanged across edits to the artifact's content until a student renames it, and shall let a deleted artifact's key be used again (BR-artifact-key-unique, BR-deletion-integrity).
 
 DI-referential-integrity: RAM shall preserve graph integrity by preventing deletion of glossary terms or requirement artifacts while active artifact links or references still depend on them, unless those references are removed or repointed first (BR-deletion-integrity).
 
