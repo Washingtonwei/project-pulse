@@ -42,3 +42,14 @@ management:
     export:
       zipkin:
         enabled: false
+
+# The AI proxy's provider (team.projectpulse.ram.llm, docs/design/ai.md). The key is the Key Vault secret
+# `openai-api-key`; the trailing colon gives it an empty default, so a vault without that secret still
+# starts, and every AI call answers NOT_CONFIGURED. AI turns on only when both the key and the model are
+# set. Before putting the key in Key Vault, set a monthly budget on the OpenAI account (docs/design/ai.md).
+ai:
+  llm:
+    provider: openai
+    openai:
+      api-key: ${openai-api-key:}
+      model: # Left blank on purpose until chosen at deploy; blank means NOT_CONFIGURED.
