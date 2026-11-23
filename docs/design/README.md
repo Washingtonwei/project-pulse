@@ -61,6 +61,8 @@ Each Level-2 doc covers exactly one UC area and is named after that area's lower
 | `cfg.md` | CFG | AI configuration |
 | `ai.md`  | AI  | AI assistants |
 
+An area doc realizes its use cases **and its same-area non-use-case requirements**: `FR-<AREA>-*` lives in the doc for `<AREA>`, together with any `SI-*` designed with it, and gets a sequence heading of its own named after the FR (`not.md` carries `FR-NOT-weekly-reminder` beside `UC-NOT-remind-non-submitters`). Its *Realizes* header lists the `FR-`/`SI-` IDs along with the `UC-` IDs. The exceptions are `FR-SEC-*`, `FR-HIS-*`, and `FR-SAVE-*`, which have no use-case area: they are platform machinery and are designed in the architecture-of-record's Crosscutting Concepts.
+
 The table lists `NOT`, the first performance-tracking area designed through `/design`, and the RAM areas, where the method is applied prospectively; any other foundation or performance-tracking area (`EVA`, `WAR`, `TEA`, …) gets a row and a doc the first time one of its use cases is designed. Add a doc only when its area is first designed; this directory grows as `/design` runs. If a new UC area is introduced in `requirements/use-cases.md`, add the matching row above and a same-named design doc when it's implemented.
 
 ## **The cardinal rule: cite, don't restate**
@@ -86,7 +88,7 @@ Use this skeleton as a *menu*, not a checklist. Drop any section that would only
 ```markdown
 # <Area> Design
 
-> Realizes: UC-<AREA>-1, UC-<AREA>-2, …
+> Realizes: UC-<AREA>-1, UC-<AREA>-2, …, FR-<AREA>-<slug>, SI-… (same-area non-use-case requirements)
 > Depends on FRs: FR-<AREA>-n, FR-SAVE-*, … (the cross-cutting subsystems it builds on)
 > See: ../requirements/use-cases.md, ../requirements/software-requirements-specification.md, architectural-design.md (Container & Component diagrams + cross-cutting subsystems)
 
@@ -160,4 +162,4 @@ A design is approved by **merging a pull request**, not by a conversation. The p
 
 # **After writing a design doc**
 
-Record the work in [`../traceability.md`](../traceability.md): `/design` sets the use case's row to `📐 Designed` (the design-of-record now exists at `design/<area>.md`), and `/implement` later fills the frontend/backend/test artifacts and flips the status (its Phase 5). That row, not this README, is the live index of which areas are designed and built.
+Record the work in [`../traceability.md`](../traceability.md): `/design` sets the use case's row (or, for a non-use-case requirement, its row in the non-use-case FR matrix) to `📐 Designed` (the design-of-record now exists at `design/<area>.md`), and `/implement` later fills the frontend/backend/test artifacts and flips the status (its Phase 5). That row, not this README, is the live index of which areas are designed and built.
