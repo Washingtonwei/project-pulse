@@ -4,13 +4,9 @@ import jakarta.persistence.OptimisticLockException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.json.JsonMapper;
 import team.projectpulse.system.Result;
 import team.projectpulse.system.StatusCode;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -25,10 +21,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-import org.springframework.web.client.HttpServerErrorException;
-import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -106,33 +99,6 @@ public class ExceptionHandlerAdvice {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     Result handleNoResourceFoundException(NoResourceFoundException ex) {
         return new Result(false, StatusCode.NOT_FOUND, "This resource is not found.", ex.getMessage());
-    }
-
-    @ExceptionHandler({HttpClientErrorException.class, HttpServerErrorException.class})
-    ResponseEntity<Result> handleRestClientException(HttpStatusCodeException ex) throws JacksonException {
-        String exceptionMessage = ex.getMessage();
-
-        // Replace <EOL> with actual newlines.
-        exceptionMessage = exceptionMessage.replace("<EOL>", "\n");
-
-        // Extract the JSON part from the string.
-        String jsonPart = exceptionMessage.substring(exceptionMessage.indexOf("{"), exceptionMessage.lastIndexOf("}") + 1);
-
-        // Create an ObjectMapper instance.
-        JsonMapper mapper = JsonMapper.builder().build();
-
-        // Parse the JSON string to a JsonNode.
-        JsonNode rootNode = mapper.readTree(jsonPart);
-
-        // Extract the message.
-        String formattedExceptionMessage = rootNode.path("error").path("message").asText();
-
-        return new ResponseEntity<>(
-                new Result(false,
-                        ex.getStatusCode().value(),
-                        "A rest client error occurs, see data for details.",
-                        formattedExceptionMessage),
-                ex.getStatusCode());
     }
 
     @ExceptionHandler(PasswordChangeIllegalArgumentException.class)
