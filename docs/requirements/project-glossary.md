@@ -452,7 +452,7 @@ The classification of requirements artifacts popularized by Karl Wiegers and Joy
 
 ## **LLM**
 
-Large Language Model. A class of machine-learning models trained on broad text corpora to generate, complete, or analyze natural-language content. RAM integrates with an external LLM service (e.g., OpenAI) to power its Socratic assistants, which provide AI-assisted requirement guidance. All calls are routed through the server-side AI proxy.
+Large Language Model. A class of machine-learning models trained on broad text corpora to generate, complete, or analyze natural-language content. RAM integrates with an external LLM service (e.g., OpenAI) to power its Socratic assistants, which provide AI-assisted requirement guidance, and to suggest artifact keys. All calls are routed through the server-side AI proxy.
 
 ## **WCAG**
 

@@ -209,7 +209,7 @@ Two conventions keep this from duplicating the other matrices: a cross-cutting F
 | FR-AI-teaching-context | — | — (AI not built) | — | ❌ Not started | — | v1.8.0 |
 | FR-AI-enablement | — | — (AI not built) | — | ❌ Not started | — | v1.8.0 |
 | FR-AI-rationale | — | — (AI not built) | — | ❌ Not started | — | v1.8.0 |
-| FR-AI-degradation | — | — (AI not built) | — | ❌ Not started | — | v1.8.0 |
+| FR-AI-degradation | [design/ai.md](design/ai.md#ai-proxy) (the AI proxy, with SI-llm-proxy-only, SI-llm-context, SI-llm-json, SI-llm-credentials, SI-llm-degradation) | — (AI proxy not built) | — | 📐 Designed | — | v1.8.0 |
 | FR-AI-source-material-context | — | — (AI not built) | — | ❌ Not started | — | v2.0.0 |
 | FR-AI-assistant-instructions | — | — (AI not built) | — | ❌ Not started | — | v1.8.0 |
 | FR-TPL-enforce-structure | — | `DocumentService.createRequirementDocument` + `DocumentTemplateRegistry` / `DocumentTemplate` (template YAMLs) | `DocumentControllerTest.createVisionScopeDocument` | ✅ Built | ✅ Verified | ≤ v1.5.0 |
@@ -266,6 +266,7 @@ These have no `QS-<slug>` yet; the matrix records *why* and the verification rou
 | `SEC-ferpa` | Compliance umbrella, realized by composition of `SEC-authorization` (QS-cross-team-denial) + `SEC-https` | Verified-by-composition of QS-cross-team-denial + TLS config; no dedicated test |
 | `SEC-https` | TLS is deploy/infrastructure config | Verified by deployment configuration (outside the test suite) |
 | `SEC-llm-proxy` | A structural confidentiality property (LLM credentials never reach the browser), not an operational scenario — and the AI proxy it constrains is unbuilt (`UC-AI-*` ❌) | Enforced by the server-side AI proxy; verify by code review / config that no LLM credential is exposed client-side (no automated test until the AI features land) |
+| `SEC-llm-data-minimization` | A structural property of what the AI proxy sends, not an operational scenario; the proxy is unbuilt (designed in [design/ai.md](design/ai.md#ai-proxy)) | Unit test that the proxy's request and its log lines carry no student name, email, or id (design/ai.md test list) |
 | `USE-first-session-success` | 95%-success is an empirical target, not automatable | 🧪 Verified by usability testing |
 | `USE-actionable-findings` | Depends on ReqLint / AI finding presentation | Folds into QS-locked-edit / QS-llm-outage once those features land |
 | `PER-report-load` | Performance-tracking dashboards/reports are built, but there is no load-test harness — the same gap as `PER-graph-load`/`SCA-cohort-load` (QS-graph-at-scale), and not RAM-graph-shaped, so it folds into no existing scenario | Add a p95 load test under the `SCA-cohort-load` envelope when a perf harness lands |
