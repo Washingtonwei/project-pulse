@@ -17,7 +17,7 @@ Each bounded context is a self-contained vertical-slice package under `team.proj
 - `user/` — shared `PeerEvaluationUser` base class, password reset, user invitation flows
 - `seed/`: `DataInitializer` (dev-profile seed data), kept outside `system` because it depends on every feature; the one package exempt from the feature-locality rule
 
-**RAM module** (`ram/`) — Requirements Authoring & Management, merged in to reuse the course/section/team/student infrastructure. Sub-packages: `document/` (requirement documents with section-level pessimistic locking), `requirement/` (artifacts, traceability links), `usecase/`, `glossary/`, `collaboration/` (comment threads), `llm/` (the AI proxy, `LlmProxy`: the only code that calls the external LLM service; see `docs/design/ai.md`). Extend these packages — don't fork the architecture for RAM.
+**RAM module** (`ram/`): Requirements Authoring & Management, merged in to reuse the course/section/team/student infrastructure. Sub-packages: `document/` (requirement documents with section-level pessimistic locking), `requirement/` (artifacts, traceability links), `usecase/`, `glossary/`, `collaboration/` (comment threads), `llm/` (the AI proxy, `LlmProxy`: the only code that calls the external LLM service; see `docs/design/ai.md`). Extend these packages. Don't fork the architecture for RAM.
 
 The binding conventions every package follows are normative in the [architecture-of-record's Architectural Conventions](../docs/design/architectural-design.md#architectural-conventions); the sections below are the working detail.
 
