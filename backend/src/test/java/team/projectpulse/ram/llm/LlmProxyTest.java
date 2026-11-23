@@ -1,5 +1,6 @@
 package team.projectpulse.ram.llm;
 
+import io.micrometer.context.ContextRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,7 @@ import java.time.Duration;
 import java.time.InstantSource;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -58,6 +60,16 @@ class LlmProxyTest {
             calls.incrementAndGet();
             return behavior.apply(request);
         }
+    }
+
+    /** A reply that arrives after 5 s, unless the proxy cancels the call first. */
+    static LlmReply slowReply(LlmRequest request) {
+        try {
+            Thread.sleep(5_000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // the proxy cancelled us; this reply is never read
+        }
+        return new LlmReply("{\"slug\":\"late\"}", false, 1, 1);
     }
 
     final FakeClient client = new FakeClient();
@@ -105,16 +117,10 @@ class LlmProxyTest {
     // --- SI-llm-degradation, timeout ---------------------------------------------------------
 
     @Test
-    @DisplayName("A reply slower than the request's timeout is TIMEOUT, within the deadline, and the late reply changes nothing")
+    @DisplayName("A reply slower than a short timeout is TIMEOUT within the deadline, counts no breaker failure, and the late reply changes nothing")
     void timeout() throws InterruptedException {
-        client.behavior = r -> {
-            try {
-                Thread.sleep(5_000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt(); // the proxy cancelled us; this reply is never read
-            }
-            return new LlmReply("{\"slug\":\"late\"}", false, 1, 1);
-        };
+        breaker.recordFailure(); // one earlier failure, so a late success would show as a reset to 0
+        client.behavior = LlmProxyTest::slowReply;
         LlmRequest fast = new LlmRequest("test-feature", "x", "", LlmRequestTest.SCHEMA, 50, Duration.ofMillis(200));
 
         long start = System.nanoTime();
@@ -123,10 +129,26 @@ class LlmProxyTest {
 
         assertThat(result).isEqualTo(new LlmResult.Unavailable(UnavailableReason.TIMEOUT));
         assertThat(elapsedMs).isLessThan(1_000);
-        assertThat(breaker.consecutiveFailures()).isEqualTo(1);
+        assertThat(breaker.consecutiveFailures()).isEqualTo(1); // the earlier one only: 200 ms < the 15 s default
 
         Thread.sleep(300); // give the cancelled task time to finish; it must not record a success
         assertThat(breaker.consecutiveFailures()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("A short-timeout probe that times out hands the probe to the next caller instead of blocking it")
+    void shortTimeoutProbeReleases() {
+        LlmCircuitBreakerTest.ManualClock clock = new LlmCircuitBreakerTest.ManualClock();
+        LlmCircuitBreaker tripped = new LlmCircuitBreaker(clock, 1, Duration.ofSeconds(30));
+        tripped.recordFailure(); // open
+        clock.advance(Duration.ofSeconds(30));
+        client.behavior = LlmProxyTest::slowReply;
+        LlmRequest fast = new LlmRequest("test-feature", "x", "", LlmRequestTest.SCHEMA, 50, Duration.ofMillis(100));
+        try (LlmProxy p = new LlmProxy(Optional.of(client), tripped, Duration.ofSeconds(15), JsonMapper.builder().build())) {
+            assertThat(p.complete(fast)).isEqualTo(new LlmResult.Unavailable(UnavailableReason.TIMEOUT));
+        }
+
+        assertThat(tripped.allowsCall()).isTrue(); // released: the next caller is the probe
     }
 
     // --- SI-llm-degradation, FR-AI-degradation, down; provider failure stays inside -----------
@@ -192,20 +214,47 @@ class LlmProxyTest {
     }
 
     @Test
-    @DisplayName("A null timeout uses the proxy's default")
+    @DisplayName("A null timeout uses the proxy's default, and a timeout at the full default counts as a breaker failure")
     void defaultTimeout() {
-        client.behavior = r -> {
-            try {
-                Thread.sleep(5_000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            return new LlmReply("{}", false, 0, 0);
-        };
+        client.behavior = LlmProxyTest::slowReply;
         LlmRequest noTimeout = new LlmRequest("test-feature", "x", "", LlmRequestTest.SCHEMA, 50, null);
         try (LlmProxy p = new LlmProxy(Optional.of(client), breaker, Duration.ofMillis(200), JsonMapper.builder().build())) {
             assertThat(p.complete(noTimeout)).isEqualTo(new LlmResult.Unavailable(UnavailableReason.TIMEOUT));
         }
+        assertThat(breaker.consecutiveFailures()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("An adapter that returns no reply object gives BAD_OUTPUT, not a NullPointerException")
+    void nullReply() {
+        client.behavior = r -> null;
+
+        assertThat(proxy.complete(REQUEST)).isEqualTo(new LlmResult.Unavailable(UnavailableReason.BAD_OUTPUT));
+    }
+
+    // --- Tracing ---------------------------------------------------------------------------
+
+    static final ThreadLocal<String> REQUEST_CONTEXT = new ThreadLocal<>();
+
+    @Test
+    @DisplayName("The call's thread sees the request thread's context, which is how the trace reaches the outbound call")
+    void contextPropagates() {
+        ContextRegistry registry = ContextRegistry.getInstance();
+        registry.registerThreadLocalAccessor("llm-proxy-test", REQUEST_CONTEXT::get, REQUEST_CONTEXT::set, REQUEST_CONTEXT::remove);
+        AtomicReference<String> seen = new AtomicReference<>();
+        client.behavior = r -> {
+            seen.set(REQUEST_CONTEXT.get());
+            return new LlmReply("{}", false, 0, 0);
+        };
+        try {
+            REQUEST_CONTEXT.set("trace-42");
+            proxy.complete(REQUEST);
+        } finally {
+            REQUEST_CONTEXT.remove();
+            registry.removeThreadLocalAccessor("llm-proxy-test");
+        }
+
+        assertThat(seen).hasValue("trace-42");
     }
 
     // --- SEC-llm-data-minimization, CO-ferpa, logs -------------------------------------------

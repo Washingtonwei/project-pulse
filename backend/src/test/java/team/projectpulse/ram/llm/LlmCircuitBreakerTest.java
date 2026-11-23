@@ -113,4 +113,57 @@ class LlmCircuitBreakerTest {
         assertThat(breaker.allowsCall()).isTrue(); // the next probe
     }
 
+    @Test
+    @DisplayName("A late failure while open does not push the reopen time later")
+    void lateFailureWhileOpen() {
+        fail(3); // open until 10:00:30
+        clock.advance(Duration.ofSeconds(20));
+        breaker.recordFailure(); // a call that started before it opened
+
+        clock.advance(Duration.ofSeconds(10)); // 10:00:30, the original reopen time
+        assertThat(breaker.allowsCall()).isTrue();
+    }
+
+    @Test
+    @DisplayName("During a probe, only the probe's own failure reopens it; a late failure from another thread is ignored")
+    void staleFailureDuringProbe() throws Exception {
+        fail(3);
+        clock.advance(Duration.ofSeconds(30));
+        assertThat(breaker.allowsCall()).isTrue(); // this thread holds the probe
+
+        Thread other = Thread.ofPlatform().start(breaker::recordFailure);
+        other.join();
+        breaker.recordSuccess(); // the probe succeeds
+
+        assertThat(breaker.allowsCall()).isTrue(); // closed, not reopened by the other thread
+    }
+
+    @Test
+    @DisplayName("A probe that ends with no verdict releases the slot, so the next caller becomes the probe")
+    void releaseByProbe() {
+        fail(3);
+        clock.advance(Duration.ofSeconds(30));
+        assertThat(breaker.allowsCall()).isTrue(); // the probe
+        breaker.release();
+
+        assertThat(breaker.consecutiveFailures()).isEqualTo(3); // nothing counted
+        assertThat(breaker.allowsCall()).isTrue(); // the next probe, without another 30 s wait
+    }
+
+    @Test
+    @DisplayName("Release from a thread that is not the probe changes nothing, and release while closed changes nothing")
+    void releaseByOther() throws Exception {
+        breaker.release(); // closed: no effect
+        assertThat(breaker.consecutiveFailures()).isZero();
+
+        fail(3);
+        clock.advance(Duration.ofSeconds(30));
+        assertThat(breaker.allowsCall()).isTrue(); // this thread holds the probe
+
+        Thread other = Thread.ofPlatform().start(breaker::release);
+        other.join();
+
+        assertThat(breaker.allowsCall()).isFalse(); // still probing: the slot was not released
+    }
+
 }

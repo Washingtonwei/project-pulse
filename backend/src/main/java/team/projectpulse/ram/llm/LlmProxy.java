@@ -1,5 +1,7 @@
 package team.projectpulse.ram.llm;
 
+import io.micrometer.context.ContextExecutorService;
+import io.micrometer.context.ContextSnapshotFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
@@ -29,15 +31,19 @@ import java.util.concurrent.TimeoutException;
  * no adapter, or adapter not configured  -&gt; NOT_CONFIGURED   breaker untouched, no network call
  * breaker refuses                        -&gt; DOWN             no network call
  * send() on a virtual thread, then wait up to the request's timeout:
- *   deadline passes                      -&gt; TIMEOUT          recordFailure, task cancelled
- *   send() throws (connection, 4xx, 5xx) -&gt; DOWN             recordFailure
- *   reply arrives                                            recordSuccess (the service answered), then
- *     refused, or text not a JSON object -&gt; BAD_OUTPUT
- *     text is a JSON object              -&gt; Answered(json)
+ *   deadline passes, caller waited the full default -&gt; TIMEOUT   recordFailure, task cancelled
+ *   deadline passes, caller chose a shorter one     -&gt; TIMEOUT   release (counts nothing), task cancelled
+ *   send() throws (connection, 4xx, 5xx)            -&gt; DOWN      recordFailure
+ *   reply arrives                                              recordSuccess (the service answered), then
+ *     no reply object, refused, or not a JSON object -&gt; BAD_OUTPUT
+ *     text is a JSON object                          -&gt; Answered(json)
  * </pre>
- * Example: a key suggestion with a 3 s timeout while OpenAI is slow. At 3 s the proxy stops waiting,
- * cancels the task, counts one breaker failure, and returns {@code Unavailable(TIMEOUT)}. If OpenAI's
- * reply turns up at 4 s, nothing reads it and nothing is recorded: the result was already returned.
+ * Example: a key suggestion with a 3 s timeout while OpenAI takes 4 s. At 3 s the proxy stops waiting,
+ * cancels the task, and returns {@code Unavailable(TIMEOUT)}. It counts no breaker failure, because the
+ * caller ran out of patience before the service did: otherwise three suggestions on a slow but healthy
+ * provider would open the breaker, and an assistant call with a 15 s budget would then get {@code DOWN}
+ * for 30 s. If OpenAI's reply turns up at 4 s, nothing reads it and nothing is recorded. A timeout at the
+ * full default (15 s) does count: the service could not answer within the longest wait any caller gets.
  *
  * <p><b>Why a virtual thread and not the HTTP client's read timeout:</b> a read timeout is set once
  * per HTTP client, but each caller asks for its own deadline (a suggestion wants 3 s, an assistant
@@ -56,6 +62,15 @@ import java.util.concurrent.TimeoutException;
  * output, and a transient {@code DOWN} (connection error, 429, 5xx); {@code error} for a 400, 401,
  * 403 or 404, which fail every call alike and need someone to act (a rejected schema, a bad key, a
  * wrong model name); {@code debug} for not configured and for a breaker that refused.
+ *
+ * <p><b>Tracing:</b> the call runs on another thread, so the executor carries the request's context
+ * (the current Micrometer observation, which holds the trace and the log line's {@code [traceId-spanId]})
+ * over to it. The outbound OpenAI call then appears as a child of the student's request in Zipkin and
+ * Application Insights, not as a separate trace.
+ *
+ * <p><b>Known limit:</b> if the request thread itself is interrupted while it waits (only at shutdown),
+ * that counts as a breaker failure though the provider did nothing wrong. It is left that way on purpose:
+ * it needs a shutdown in the middle of a call, and the breaker recovers on its own 30 s later.
  */
 public class LlmProxy implements AutoCloseable {
 
@@ -68,9 +83,11 @@ public class LlmProxy implements AutoCloseable {
 
     /**
      * One virtual thread per call: the thread blocks on the HTTP call so the request thread can stop
-     * waiting at the deadline. Closed (with any running calls interrupted) when the context shuts down.
+     * waiting at the deadline. Wrapped so each task runs with the submitting thread's context (see
+     * Tracing in the class comment). Closed (with any running calls interrupted) on context shutdown.
      */
-    private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+    private final ExecutorService executor = ContextExecutorService.wrap(
+            Executors.newVirtualThreadPerTaskExecutor(), ContextSnapshotFactory.builder().build());
 
     /**
      * Built by {@link LlmConfiguration}, and directly by tests.
@@ -121,13 +138,20 @@ public class LlmProxy implements AutoCloseable {
         }
         LlmReply reply;
         try {
-            reply = call.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+            reply = call.get(timeout.toNanos(), TimeUnit.NANOSECONDS);
         } catch (TimeoutException e) { // logged without the exception object, see the class comment
             call.cancel(true); // interrupts the HTTP call; a reply arriving later is never read
-            breaker.recordFailure();
+            // Only a wait as long as the default says the service is too slow; see the class comment.
+            boolean countsAsFailure = timeout.compareTo(defaultTimeout) >= 0;
+            if (countsAsFailure) {
+                breaker.recordFailure();
+            } else {
+                breaker.release();
+            }
             long latency = elapsedMillis(start);
             long timeoutMs = timeout.toMillis();
-            LOGGER.warn("LLM call feature={} outcome=TIMEOUT latencyMs={} timeoutMs={}", feature, latency, timeoutMs);
+            LOGGER.warn("LLM call feature={} outcome=TIMEOUT latencyMs={} timeoutMs={} breakerFailure={}",
+                    feature, latency, timeoutMs, countsAsFailure);
             return unavailable(UnavailableReason.TIMEOUT);
         } catch (ExecutionException e) { // logged as class and status only, see the class comment
             breaker.recordFailure();
@@ -135,7 +159,8 @@ public class LlmProxy implements AutoCloseable {
             return unavailable(UnavailableReason.DOWN);
         } catch (InterruptedException e) { // logged as class only, see the class comment
             // The request thread itself was interrupted (the server is shutting down). Stop the call,
-            // keep the interrupt flag for whoever interrupted us, and still report to the breaker.
+            // keep the interrupt flag for whoever interrupted us, and still report to the breaker
+            // (counted as a failure: the known limit in the class comment).
             call.cancel(true);
             Thread.currentThread().interrupt();
             breaker.recordFailure();
@@ -146,6 +171,10 @@ public class LlmProxy implements AutoCloseable {
         // The service answered, even if the answer turns out unusable below.
         breaker.recordSuccess();
         long latency = elapsedMillis(start);
+        if (reply == null) { // an adapter bug, not an outage; it must not escape as a NullPointerException
+            LOGGER.warn("LLM call feature={} outcome=BAD_OUTPUT latencyMs={} cause=no-reply", feature, latency);
+            return unavailable(UnavailableReason.BAD_OUTPUT);
+        }
         int inputTokens = reply.inputTokens();
         int outputTokens = reply.outputTokens();
         boolean refused = reply.refused();

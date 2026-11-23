@@ -44,13 +44,16 @@ class LlmRequestTest {
     }
 
     @Test
-    @DisplayName("A timeout of zero, below zero, or over 15 s is rejected; exactly 15 s is accepted")
+    @DisplayName("A timeout of zero, below zero, under 1 ms, or over 15 s is rejected; exactly 1 ms and 15 s are accepted")
     void badTimeout() {
         assertThatThrownBy(() -> request("f", "x", Duration.ZERO)).isInstanceOf(IllegalArgumentException.class);
+        // 0.5 ms would truncate to a 0 ms wait, time out at once, and blame the provider
+        assertThatThrownBy(() -> request("f", "x", Duration.ofNanos(500_000))).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> request("f", "x", Duration.ofSeconds(-1))).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> request("f", "x", Duration.ofMillis(15_001))).isInstanceOf(IllegalArgumentException.class);
 
         assertThat(request("f", "x", Duration.ofSeconds(15)).timeout()).isEqualTo(Duration.ofSeconds(15));
+        assertThat(request("f", "x", Duration.ofMillis(1)).timeout()).isEqualTo(Duration.ofMillis(1));
     }
 
     @Test

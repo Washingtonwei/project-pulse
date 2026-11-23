@@ -37,8 +37,9 @@ import java.util.regex.Pattern;
  *                        every provider's strict structured-output mode demands that shape
  * @param maxOutputTokens the caller's cap on the reply's length; a reply cut short at this cap is
  *                        {@link UnavailableReason#BAD_OUTPUT}
- * @param timeout         how long the caller will wait, above zero and at most 15 s; null means the
- *                        configured default ({@code ai.llm.default-timeout}, 15 s)
+ * @param timeout         how long the caller will wait, at least 1 ms and at most 15 s; null means the
+ *                        configured default ({@code ai.llm.default-timeout}, 15 s). A timeout shorter
+ *                        than the default that passes is not counted against the circuit breaker
  */
 public record LlmRequest(
         String feature,
@@ -50,6 +51,9 @@ public record LlmRequest(
 
     /** The longest any caller may wait (PER-ai-response-time). */
     public static final Duration MAX_TIMEOUT = Duration.ofSeconds(15);
+
+    /** The shortest wait accepted; anything less would time out before the call could start. */
+    public static final Duration MIN_TIMEOUT = Duration.ofMillis(1);
 
     private static final Pattern FEATURE = Pattern.compile("[a-z0-9-]{1,64}");
 
@@ -72,8 +76,8 @@ public record LlmRequest(
         if (maxOutputTokens <= 0) {
             throw new IllegalArgumentException("maxOutputTokens must be positive");
         }
-        if (timeout != null && (timeout.isZero() || timeout.isNegative() || timeout.compareTo(MAX_TIMEOUT) > 0)) {
-            throw new IllegalArgumentException("timeout must be above 0 and at most " + MAX_TIMEOUT);
+        if (timeout != null && (timeout.compareTo(MIN_TIMEOUT) < 0 || timeout.compareTo(MAX_TIMEOUT) > 0)) {
+            throw new IllegalArgumentException("timeout must be at least " + MIN_TIMEOUT + " and at most " + MAX_TIMEOUT);
         }
     }
 
