@@ -1,6 +1,6 @@
 ---
 description: Implement a use case from its approved design — plan, code, and test from the area's docs/design doc. Run /design first.
-argument-hint: <UC-ID> | <FR-ID> [SI-ID ...]  (e.g. /implement UC-DOC-create-use-case, or /implement FR-AI-degradation SI-llm-context SI-llm-degradation)
+argument-hint: <UC-ID> | <subsystem> | <FR-ID>  (e.g. /implement UC-DOC-create-use-case, /implement AI proxy)
 ---
 
 # /implement — Implement a use case from its design
@@ -13,14 +13,14 @@ Take the use case named in `$ARGUMENTS` (e.g. `UC-DOC-create-use-case`) and driv
 
 **The spec and the design are authoritative but not infallible — challenge them.** As you drive the design into code, you will hit ambiguous or underspecified steps, assumptions that don't survive contact with the existing code, requirements or design choices that contradict each other or reality, and — because the docs are written by humans and age — **unnecessary or incorrect constraints, out-of-date information, wrong assumptions, or an approach that simply isn't best practice or the most efficient one.** When that happens, **ask the developer a clarifying question or push back — do not silently comply, do not silently invent the missing detail, and do not inherit a constraint just because it's written down.** Name the gap or the better way, say what you'd do and why; when it's a genuine spec defect propose the doc edit (per `docs/CLAUDE.md`, then `/spec-build`), and when it's a *design* defect update `design/<area>.md` (per `docs/design/README.md`). A step with no backing FR, or a cited FR that doesn't exist, is a question to raise — not something to paper over. **When in doubt, or when you see a better way, shout** — this holds in every phase. Shouting means saying it, not doing it: a better way the use case does not need is proposed, never built unasked (Phase 3).
 
-## Implementing non-use-case requirements
+## Implementing a subsystem or a non-use-case FR
 
-The target in `$ARGUMENTS` can also be the set of non-use-case requirements (`FR-<AREA>-<slug>` plus its `SI-*`) that `/design` designed together; use the same IDs its design doc's *Realizes* header lists. The phases below apply unchanged, with these substitutions:
+The target in `$ARGUMENTS` can also be the same handle `/design` was given: a subsystem by name (`/implement AI proxy`) or a single non-use-case FR by ID. Find its design by the heading named after it in `docs/design/<area>.md`; that doc's *Realizes* header lists the requirement set the design covers. The phases below apply unchanged, with these substitutions:
 
-- **The precondition** is satisfied by the target FR rows in the *Non-use-case FR traceability* matrix reading `📐 Designed`, or by the design doc's *Realizes* header listing them.
-- **The acceptance criteria** are each "shall" clause and each stated condition across the target set, as the design's test list enumerates them, in place of the main success scenario and the extensions. An untested clause is an untested requirement, just as an untested extension is.
+- **The precondition** is satisfied by the rows of the realized FRs in the *Non-use-case FR traceability* matrix reading `📐 Designed`. If no design names this subsystem or FR, stop and send the developer to `/design`, as for a use case.
+- **The acceptance criteria** are each "shall" clause and each stated condition across the realized set, as the design's test list enumerates them, in place of the main success scenario and the extensions. An untested clause is an untested requirement, just as an untested extension is.
 - **Callers.** Machinery is built to serve the callers the design names. Build no caller-facing behavior the design does not list; a caller use case is implemented by its own `/implement` run.
-- **The record.** Phase 5 updates each target FR's row in the non-use-case FR matrix (Design, Code, Tests, Build, Verify) instead of a use case row; an `SI-*` has no row and is covered through the FR it was built with.
+- **The record.** Phase 5 updates the row of each realized FR in the non-use-case FR matrix (Design, Code, Tests, Build, Verify) instead of a use case row; an `SI-*` has no row and is covered through the FR it was built with.
 
 If no UC-ID is given, ask which use case to implement (or list candidate use cases whose **Build** state is `📐 Designed` in `docs/traceability.md`, designed and ready to build, in **Release** order, earliest release first, including the `📐 Designed` rows of the non-use-case FR matrix).
 
