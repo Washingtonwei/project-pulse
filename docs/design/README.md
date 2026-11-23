@@ -59,7 +59,7 @@ Each Level-2 doc covers exactly one UC area and is named after that area's lower
 | `rev.md` | REV | review & submission |
 | `exp.md` | EXP | export |
 | `cfg.md` | CFG | AI configuration |
-| `ai.md`  | AI  | AI assistants |
+| `ai.md`  | AI  | the AI proxy (`ram/llm`, every LLM call) and the AI assistants |
 
 An area doc realizes its use cases **and its same-area non-use-case requirements**: `FR-<AREA>-*` lives in the doc for `<AREA>`, together with any `SI-*` designed with it, and a subsystem or FR gets a sequence heading of its own named after it (`not.md` carries `FR-NOT-weekly-reminder` beside `UC-NOT-remind-non-submitters`). Its *Realizes* header lists the `FR-`/`SI-` IDs along with the `UC-` IDs. The exceptions are `FR-SEC-*`, `FR-HIS-*`, and `FR-SAVE-*`, which have no use-case area: they are platform machinery and are designed in the architecture-of-record's Crosscutting Concepts.
 

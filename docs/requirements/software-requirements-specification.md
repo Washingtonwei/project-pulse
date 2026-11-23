@@ -693,7 +693,7 @@ No hardware interfaces have been identified.
 
 SI-llm-proxy-only: Project Pulse shall call the external LLM service only through the REST API's server-side AI proxy; the Vue single-page application shall never call the LLM service directly (per CO-server-side-llm-proxy, SEC-llm-proxy).
 
-SI-llm-context: For each assistant request, the AI proxy shall send the assembled assistant context — the assistant's system prompt, the course section's teaching context and per-assistant assistant instructions, the document and requirements-graph content relevant to the session's scope (for a session targeting a document section or use case, that target and the applicable template context; for a project-wide session, the project's current requirements coverage across its documents), and, where enabled, the team's project source material — and shall return the assistant's response to the requesting feature (per FR-AI-teaching-context, FR-AI-source-material-context, FR-AI-assistant-instructions).
+SI-llm-context: For each assistant request, the requesting assistant shall assemble, and the AI proxy shall send, the assistant context — the assistant's system prompt, the course section's teaching context and per-assistant assistant instructions, the document and requirements-graph content relevant to the session's scope (for a session targeting a document section or use case, that target and the applicable template context; for a project-wide session, the project's current requirements coverage across its documents), and, where enabled, the team's project source material — and the AI proxy shall return the assistant's response to the requesting feature (per FR-AI-teaching-context, FR-AI-source-material-context, FR-AI-assistant-instructions). An AI feature that is not an assistant (the artifact key suggestion in UC-ART-create-artifact) shall send only the content that feature names, without teaching context, assistant instructions, or project source material.
 
 SI-llm-json: Requests to and responses from the LLM service shall use JSON; an assistant that returns candidate artifacts shall use a structured (tool/JSON) schema so the response is machine-parseable.
 
@@ -764,6 +764,8 @@ SEC-authorization: Project Pulse shall enforce role-based access control across 
 SEC-ferpa: Project Pulse shall store and transmit student educational records in compliance with FERPA, per CO-ferpa.
 
 SEC-llm-proxy: RAM shall route all calls to the external LLM service through the server-side AI proxy and shall never expose LLM service credentials to the browser, per CO-server-side-llm-proxy.
+
+SEC-llm-data-minimization: The AI proxy shall send the external LLM service no student name, email address, or user id, and shall send only the requirement content a request needs, per CO-ferpa.
 
 SEC-https: Project Pulse shall encrypt all traffic between the browser and the server over HTTPS, per OE-https-access.
 
