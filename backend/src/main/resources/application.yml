@@ -41,7 +41,8 @@ ram:
     default-lock-ttl: PT15M # 15 minutes, adjust as needed based on expected operation duration and load.
 # The AI proxy (team.projectpulse.ram.llm, docs/design/ai.md). Its defaults (15 s timeout, OpenAI's
 # public URL) and their limits live in LlmProperties. No provider is selected here, so dev and the
-# test suite never call an LLM: every AI call answers NOT_CONFIGURED.
+# test suite never call an LLM: every AI call answers NOT_CONFIGURED. Whoever sets ai.llm.openai.model
+# also sets ai.llm.openai.reasoning-effort: none for a reasoning model, blank for one without reasoning.
 # Baseline for every profile: expose only what a deployed environment has a consumer for.
 # The platform health probe needs `health`; `info` carries the build and version. Everything else
 # (env, configprops, heapdump, loggers, httpexchanges, beans, mappings, metrics, prometheus) is

@@ -14,7 +14,7 @@ package team.projectpulse.ram.llm;
  * client.isConfigured()  // true: ai.llm.openai.api-key and ai.llm.openai.model are both set
  * client.send(new LlmRequest("artifact-key-suggestion", "Suggest a key.", "Title: Reset password",
  *                            schema, 50, Duration.ofSeconds(3)))
- *     // returns ProviderReply("{\"slug\":\"reset-password\"}", false, 42, 9)
+ *     // returns ProviderReply("{\"slug\":\"reset-password\"}", false, 42, 9, null)
  *     // or, if the key was rotated, throws HttpClientErrorException.Unauthorized
  * </pre>
  * A second provider is one more implementation (an {@code AnthropicLlmClient} with its own

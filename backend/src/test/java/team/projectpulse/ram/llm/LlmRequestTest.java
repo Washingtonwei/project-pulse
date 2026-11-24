@@ -57,13 +57,24 @@ class LlmRequestTest {
     }
 
     @Test
-    @DisplayName("A null input, a missing or non-object schema, and a non-positive token cap are rejected")
+    @DisplayName("A null, empty, or blank input is rejected: OpenAI would answer it with a 400, logged as DOWN at error")
+    void blankInput() {
+        for (String input : new String[] {null, "", "  \n"}) {
+            assertThatThrownBy(() -> new LlmRequest("f", "x", input, SCHEMA, 50, null))
+                    .isInstanceOf(IllegalArgumentException.class).hasMessage("input must not be blank");
+        }
+    }
+
+    @Test
+    @DisplayName("A missing or non-object schema and a non-positive token cap are rejected")
     void otherFields() {
-        assertThatThrownBy(() -> new LlmRequest("f", "x", null, SCHEMA, 50, null)).isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> new LlmRequest("f", "x", "", null, 50, null)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new LlmRequest("f", "x", "in", null, 50, null))
+                .isInstanceOf(IllegalArgumentException.class).hasMessage("responseSchema must be a JSON object");
         JsonNode notAnObject = JsonMapper.builder().build().readTree("[1]");
-        assertThatThrownBy(() -> new LlmRequest("f", "x", "", notAnObject, 50, null)).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> new LlmRequest("f", "x", "", SCHEMA, 0, null)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new LlmRequest("f", "x", "in", notAnObject, 50, null))
+                .isInstanceOf(IllegalArgumentException.class).hasMessage("responseSchema must be a JSON object");
+        assertThatThrownBy(() -> new LlmRequest("f", "x", "in", SCHEMA, 0, null))
+                .isInstanceOf(IllegalArgumentException.class).hasMessage("maxOutputTokens must be positive");
     }
 
 }

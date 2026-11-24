@@ -155,8 +155,10 @@ public class LlmProxy implements AutoCloseable {
         boolean refused = reply.refused();
         JsonNode json = refused ? null : parseObject(reply.text());
         if (json == null) {
-            LOGGER.warn("LLM call caller={} outcome=BAD_OUTPUT latencyMs={} inputTokens={} outputTokens={} refused={}",
-                    caller, latency, inputTokens, outputTokens, refused);
+            // incompleteReason tells a reply cut short (max_output_tokens) from a refusal or non-JSON text (-)
+            String incompleteReason = reply.incompleteReason() == null ? "-" : reply.incompleteReason();
+            LOGGER.warn("LLM call caller={} outcome=BAD_OUTPUT latencyMs={} inputTokens={} outputTokens={} refused={} incompleteReason={}",
+                    caller, latency, inputTokens, outputTokens, refused, incompleteReason);
             return unavailable(UnavailableReason.BAD_OUTPUT);
         }
         LOGGER.info("LLM call caller={} outcome=ANSWERED latencyMs={} inputTokens={} outputTokens={}",
@@ -192,8 +194,9 @@ public class LlmProxy implements AutoCloseable {
      * 401, 403, 404: a rejected schema, a bad key, a wrong model, which fail every call alike) and
      * {@code warn} when it may pass on its own (a connection error, 429, 5xx). A 400 can also come from
      * one input (an input too long for the model's context), so a lone 400 among answered calls points
-     * at that input, not at the deploy. Logs the cause's class
-     * name and HTTP status only, never its message (see the class comment).
+     * at that input, not at the deploy. Seen live on 2026-11-24: a bad key is 401, a misspelled model 404.
+     * Logs the cause's class name and HTTP status only, never its message (see the class comment), which
+     * for the 401 quotes part of the key.
      * Example line: {@code LLM call caller=critique outcome=DOWN latencyMs=230
      * exception=org.springframework.web.client.HttpClientErrorException$Unauthorized status=401}.
      */

@@ -44,7 +44,7 @@ class OpenAiLlmClientTest {
 
     static final JsonMapper JSON = JsonMapper.builder().build();
     static final LlmProperties.OpenAi SETTINGS =
-            new LlmProperties.OpenAi("sk-test-key", "https://llm.example.test/v1", "test-model");
+            new LlmProperties.OpenAi("sk-test-key", "https://llm.example.test/v1", "test-model", null);
 
     static final String ANSWERED = """
             {"id":"resp_1","status":"completed",
@@ -89,7 +89,7 @@ class OpenAiLlmClientTest {
         ProviderReply reply = client(SETTINGS).send(request(50));
 
         openAi.verify();
-        assertThat(reply).isEqualTo(new ProviderReply("{\"slug\":\"reset-password\"}", false, 42, 9));
+        assertThat(reply).isEqualTo(new ProviderReply("{\"slug\":\"reset-password\"}", false, 42, 9, null));
     }
 
     @Test
@@ -110,6 +110,30 @@ class OpenAiLlmClientTest {
         assertThat(keys).containsExactlyInAnyOrder(
                 "model", "instructions", "input", "max_output_tokens", "store", "text");
         assertThat(keys).doesNotContain("user", "safety_identifier", "metadata", "prompt_cache_key");
+    }
+
+    @Test
+    @DisplayName("A configured reasoning effort is sent as reasoning.effort")
+    void reasoningEffortSent() {
+        openAi.expect(jsonPath("$.reasoning.effort").value("none"))
+                .andRespond(withSuccess(ANSWERED, MediaType.APPLICATION_JSON));
+
+        client(new LlmProperties.OpenAi("sk-test-key", "https://llm.example.test/v1", "test-model", "none"))
+                .send(request(50));
+
+        openAi.verify();
+    }
+
+    @Test
+    @DisplayName("A blank reasoning effort leaves the reasoning field out, since a model without reasoning answers it with a 400")
+    void reasoningEffortBlank() {
+        openAi.expect(jsonPath("$.reasoning").doesNotExist())
+                .andRespond(withSuccess(ANSWERED, MediaType.APPLICATION_JSON));
+
+        client(new LlmProperties.OpenAi("sk-test-key", "https://llm.example.test/v1", "test-model", ""))
+                .send(request(50));
+
+        openAi.verify();
     }
 
     @Test
@@ -136,7 +160,7 @@ class OpenAiLlmClientTest {
     }
 
     @Test
-    @DisplayName("A response cut short at the cap, or a refusal, is marked refused")
+    @DisplayName("A response cut short at the cap, or a refusal, is marked refused; only the cut carries OpenAI's reason")
     void refusedReplies() {
         JsonNode incomplete = JSON.readTree("""
                 {"status":"incomplete","incomplete_details":{"reason":"max_output_tokens"},
@@ -148,8 +172,27 @@ class OpenAiLlmClientTest {
                  "output":[{"type":"message","content":[{"type":"refusal","refusal":"I can't help with that."}]}]}
                 """);
 
-        assertThat(OpenAiLlmClient.toReply(incomplete)).isEqualTo(new ProviderReply("{\"slug\":\"res", true, 42, 16));
-        assertThat(OpenAiLlmClient.toReply(refusal)).isEqualTo(new ProviderReply("", true, 0, 0));
+        assertThat(OpenAiLlmClient.toReply(incomplete))
+                .isEqualTo(new ProviderReply("{\"slug\":\"res", true, 42, 16, "max_output_tokens"));
+        assertThat(OpenAiLlmClient.toReply(refusal)).isEqualTo(new ProviderReply("", true, 0, 0, null));
+    }
+
+    @Test
+    @DisplayName("With no incomplete reason the status stands in (failed); a value that is not a short code becomes other, so no provider text reaches the log")
+    void oddIncompleteReason() {
+        JsonNode failed = JSON.readTree("""
+                {"status":"failed","error":{"message":"The server had an error"},"output":[]}
+                """);
+        JsonNode noStatus = JSON.readTree("""
+                {"output":[]}
+                """);
+        JsonNode prose = JSON.readTree("""
+                {"status":"incomplete","incomplete_details":{"reason":"Student wrote: Reset password"},"output":[]}
+                """);
+
+        assertThat(OpenAiLlmClient.toReply(failed).incompleteReason()).isEqualTo("failed");
+        assertThat(OpenAiLlmClient.toReply(noStatus).incompleteReason()).isEqualTo("other");
+        assertThat(OpenAiLlmClient.toReply(prose).incompleteReason()).isEqualTo("other");
     }
 
     @Test
@@ -160,9 +203,9 @@ class OpenAiLlmClientTest {
         };
 
         assertThat(new OpenAiLlmClient(unused, SETTINGS).isConfigured()).isTrue();
-        assertThat(new OpenAiLlmClient(unused, new LlmProperties.OpenAi("", "https://x", "m")).isConfigured()).isFalse();
-        assertThat(new OpenAiLlmClient(unused, new LlmProperties.OpenAi("k", "https://x", null)).isConfigured()).isFalse();
-        assertThat(new OpenAiLlmClient(unused, new LlmProperties.OpenAi(null, "https://x", " ")).isConfigured()).isFalse();
+        assertThat(new OpenAiLlmClient(unused, new LlmProperties.OpenAi("", "https://x", "m", null)).isConfigured()).isFalse();
+        assertThat(new OpenAiLlmClient(unused, new LlmProperties.OpenAi("k", "https://x", null, null)).isConfigured()).isFalse();
+        assertThat(new OpenAiLlmClient(unused, new LlmProperties.OpenAi(null, "https://x", " ", null)).isConfigured()).isFalse();
     }
 
     @Test
@@ -172,7 +215,7 @@ class OpenAiLlmClientTest {
             throw new AssertionError("never called");
         };
 
-        new OpenAiLlmClient(unused, new LlmProperties.OpenAi("sk-test-key", "https://x", null));
+        new OpenAiLlmClient(unused, new LlmProperties.OpenAi("sk-test-key", "https://x", null, null));
 
         assertThat(output.getOut())
                 .contains("WARN", "AI provider openai is selected but not configured", "apiKey=(set)", "model=null")

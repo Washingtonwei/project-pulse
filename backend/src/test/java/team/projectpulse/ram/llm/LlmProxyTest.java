@@ -47,7 +47,7 @@ class LlmProxyTest {
     /** A fake LLM client whose behavior each test sets; counts how often it was called. */
     static final class FakeClient implements LlmClient {
         boolean configured = true;
-        Function<LlmRequest, ProviderReply> behavior = r -> new ProviderReply("{\"slug\":\"" + SECRET_REPLY + "\"}", false, 12, 5);
+        Function<LlmRequest, ProviderReply> behavior = r -> new ProviderReply("{\"slug\":\"" + SECRET_REPLY + "\"}", false, 12, 5, null);
         final AtomicInteger calls = new AtomicInteger();
 
         @Override
@@ -69,7 +69,7 @@ class LlmProxyTest {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt(); // the proxy cancelled us; this reply is never read
         }
-        return new ProviderReply("{\"slug\":\"late\"}", false, 1, 1);
+        return new ProviderReply("{\"slug\":\"late\"}", false, 1, 1, null);
     }
 
     final FakeClient client = new FakeClient();
@@ -95,7 +95,7 @@ class LlmProxyTest {
     @DisplayName("Text that is not a JSON object is BAD_OUTPUT")
     void notAnObject() {
         for (String text : new String[] {"Sure! Here is a key: reset-password", "[1,2]", "\"slug\"", ""}) {
-            client.behavior = r -> new ProviderReply(text, false, 1, 1);
+            client.behavior = r -> new ProviderReply(text, false, 1, 1, null);
 
             assertThat(proxy.complete(REQUEST)).isEqualTo(new LlmResult.Unavailable(UnavailableReason.BAD_OUTPUT));
         }
@@ -103,10 +103,20 @@ class LlmProxyTest {
 
     @Test
     @DisplayName("A reply marked refused (declined, or cut short at the token cap) is BAD_OUTPUT, even if its text parses")
-    void refused() {
-        client.behavior = r -> new ProviderReply("{\"slug\":\"x\"}", true, 1, 50);
+    void refused(CapturedOutput output) {
+        client.behavior = r -> new ProviderReply("{\"slug\":\"x\"}", true, 1, 50, "max_output_tokens");
 
         assertThat(proxy.complete(REQUEST)).isEqualTo(new LlmResult.Unavailable(UnavailableReason.BAD_OUTPUT));
+        assertThat(output.getOut()).contains("outcome=BAD_OUTPUT", "refused=true incompleteReason=max_output_tokens");
+    }
+
+    @Test
+    @DisplayName("A refusal that was not cut short logs incompleteReason=-, so the two read differently")
+    void refusedNotCut(CapturedOutput output) {
+        client.behavior = r -> new ProviderReply("", true, 1, 7, null);
+
+        assertThat(proxy.complete(REQUEST)).isEqualTo(new LlmResult.Unavailable(UnavailableReason.BAD_OUTPUT));
+        assertThat(output.getOut()).contains("refused=true incompleteReason=-");
     }
 
     @Test
@@ -128,7 +138,7 @@ class LlmProxyTest {
             interrupted.complete(Thread.currentThread().isInterrupted());
             return late;
         };
-        LlmRequest fast = new LlmRequest("test-caller", "x", "", LlmRequestTest.SCHEMA, 50, Duration.ofMillis(200));
+        LlmRequest fast = new LlmRequest("test-caller", "x", "input", LlmRequestTest.SCHEMA, 50, Duration.ofMillis(200));
 
         long start = System.nanoTime();
         LlmResult result = proxy.complete(fast);
@@ -198,7 +208,7 @@ class LlmProxyTest {
     @DisplayName("A null timeout uses the proxy's default")
     void defaultTimeout() {
         client.behavior = LlmProxyTest::slowReply;
-        LlmRequest noTimeout = new LlmRequest("test-caller", "x", "", LlmRequestTest.SCHEMA, 50, null);
+        LlmRequest noTimeout = new LlmRequest("test-caller", "x", "input", LlmRequestTest.SCHEMA, 50, null);
         try (LlmProxy p = new LlmProxy(Optional.of(client), Duration.ofMillis(200), JsonMapper.builder().build())) {
             assertThat(p.complete(noTimeout)).isEqualTo(new LlmResult.Unavailable(UnavailableReason.TIMEOUT));
         }
@@ -216,7 +226,7 @@ class LlmProxyTest {
         AtomicReference<String> seen = new AtomicReference<>();
         client.behavior = r -> {
             seen.set(REQUEST_CONTEXT.get());
-            return new ProviderReply("{}", false, 0, 0);
+            return new ProviderReply("{}", false, 0, 0, null);
         };
         try {
             REQUEST_CONTEXT.set("trace-42");

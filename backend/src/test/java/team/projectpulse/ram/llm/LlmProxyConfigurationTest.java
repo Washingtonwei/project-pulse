@@ -106,6 +106,23 @@ class LlmProxyConfigurationTest {
     }
 
     @Test
+    @DisplayName("ai.llm.openai.reasoning-effort binds, and is unset by default")
+    void reasoningEffortBinds() {
+        runner.run(context -> assertThat(context.getBean(LlmProperties.class).openai().reasoningEffort()).isNull());
+        runner.withPropertyValues("ai.llm.openai.reasoning-effort=none").run(context ->
+                assertThat(context.getBean(LlmProperties.class).openai().reasoningEffort()).isEqualTo("none"));
+    }
+
+    @Test
+    @DisplayName("A reasoning effort that is not lowercase letters (a typo such as None) fails startup")
+    void reasoningEffortTypo() {
+        runner.withPropertyValues("ai.llm.openai.reasoning-effort=None").run(context -> {
+            assertThat(context).hasFailed();
+            assertThat(context.getStartupFailure()).hasStackTraceContaining("must be lowercase letters");
+        });
+    }
+
+    @Test
     @DisplayName("A default timeout over 15 s fails startup")
     void defaultTimeoutTooLong() {
         runner.withPropertyValues("ai.llm.default-timeout=20s").run(context -> {
