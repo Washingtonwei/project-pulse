@@ -40,9 +40,18 @@ package team.projectpulse.ram.llm;
  *                     so the text is not a complete answer
  * @param inputTokens  tokens the provider billed for the request, 0 when it did not say (logged only)
  * @param outputTokens tokens the provider billed for the reply, 0 when it did not say (logged only)
- * @param incompleteReason the provider's short code for why the reply stopped before it was complete,
- *                     such as {@code max_output_tokens}; null when it completed. Logged, so the LLM client
- *                     must pass a code, never the provider's text
+ * @param incompleteReason the provider's short code for why the reply stopped before it was complete;
+ *                     null when it completed. Logged, so the LLM client must pass a code, never the
+ *                     provider's text. The values OpenAI can give (Responses API reference, 2026-11-24):
+ *                     <pre>
+ * max_output_tokens   the cap ran out (seen live: a reasoning model spent it on its reasoning)
+ * content_filter      OpenAI's safety filter stopped the reply partway
+ * max_messages        a message limit was hit (multi-turn and tool use, which we do not send)
+ * steered             the reply was steered off course (not explained further by the reference)
+ * failed, cancelled   the status, used when there is no cut reason (queued and in_progress
+ *                     happen only in background mode, which we do not use)
+ * other               neither field was there, or the value was not a short code
+ *                     </pre>
  */
 record ProviderReply(String text, boolean refused, int inputTokens, int outputTokens, String incompleteReason) {
 

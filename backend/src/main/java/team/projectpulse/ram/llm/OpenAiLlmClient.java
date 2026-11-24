@@ -129,7 +129,9 @@ final class OpenAiLlmClient implements LlmClient {
      *  "usage":{"input_tokens":82,"output_tokens":50}}
      * </pre>
      * gives {@code ProviderReply("{\"slug\":\"invite-st", refused=true, 82, 50, incompleteReason="max_output_tokens")}.
-     * With no {@code incomplete_details}, the status stands in ({@code failed}, {@code cancelled}). The
+     * OpenAI's cut reasons are {@code max_output_tokens}, {@code content_filter}, {@code max_messages}, and
+     * {@code steered} (each explained in {@link ProviderReply}). With no {@code incomplete_details}, the
+     * status stands in ({@code failed}, {@code cancelled}). The
      * reason is kept only when it looks like OpenAI's own code ({@code [a-z_]{1,40}}); anything else
      * becomes {@code other}, so no provider text can reach the log line (CO-ferpa).
      */

@@ -30,13 +30,18 @@ record OpenAiRequest(
         @JsonProperty("max_output_tokens") int maxOutputTokens,
         boolean store,
         Text text,
+        // When reasoning is null, Jackson leaves the field out of the JSON entirely, rather than writing "reasoning": null.
         @JsonInclude(JsonInclude.Include.NON_NULL) Reasoning reasoning) {
 
-    /** {@code "reasoning": {"effort": "none"}} */
+    /**
+     * {@code "reasoning": {"effort": "none"}}
+     */
     record Reasoning(String effort) {
     }
 
-    /** {@code "text": {"format": {...}}} */
+    /**
+     * {@code "text": {"format": {...}}}
+     */
     record Text(Format format) {
     }
 
