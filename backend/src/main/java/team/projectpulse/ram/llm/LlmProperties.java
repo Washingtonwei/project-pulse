@@ -26,6 +26,7 @@ import java.time.Duration;
  *       api-key: ${openai-api-key:}         # the Key Vault secret in staging and prod; blank = NOT_CONFIGURED
  *       base-url: https://api.openai.com/v1 # must start with https:// (CI-llm-https)
  *       model:                              # chosen at deploy; blank = NOT_CONFIGURED
+ *       reasoning-effort:                   # chosen with the model: none for a reasoning model, blank (not sent) for one without
  * </pre>
  *
  * <p>The HTTP timeouts are not here: they belong to the Boot 4 HTTP service group the LLM client runs
@@ -55,17 +56,29 @@ record LlmProperties(
      * @param apiKey  the secret API key; blank means the LLM client is not configured. Never logged
      * @param baseUrl the API root, which must be HTTPS so a plain-HTTP URL fails startup (CI-llm-https)
      * @param model   the model id, chosen at deploy time; blank means the LLM client is not configured
+     * @param reasoningEffort how much hidden reasoning a reasoning model does before it answers, sent as
+     *                {@code "reasoning":{"effort":...}}; blank means the field is not sent. Chosen with the
+     *                model, because the two must agree:
+     *                <pre>
+     * model: gpt-6-luna,   reasoning-effort: none   a reasoning model, told not to reason: answers in ~20 tokens
+     * model: gpt-6-luna,   reasoning-effort: (blank) it reasons at its default, medium, which can use up a
+     *                                                small cap like the key suggestion's 50: BAD_OUTPUT
+     * model: gpt-4.1-mini, reasoning-effort: (blank) no reasoning to turn off; sending the field here is a 400
+     *                </pre>
+     *                Lowercase letters only, so a typo such as {@code None} fails startup; OpenAI checks
+     *                the value itself (none, low, medium, high, ...)
      */
     record OpenAi(
             String apiKey,
             @DefaultValue("https://api.openai.com/v1") @Pattern(regexp = "https://\\S+", message = "must start with https://") String baseUrl,
-            String model) {
+            String model,
+            @Pattern(regexp = "[a-z]*", message = "must be lowercase letters, such as none") String reasoningEffort) {
 
         /** Keeps the key out of {@code toString()}, so it cannot reach a log or an actuator dump by accident. */
         @Override
         public String toString() {
             return "OpenAi[apiKey=" + (apiKey == null || apiKey.isBlank() ? "(none)" : "(set)")
-                    + ", baseUrl=" + baseUrl + ", model=" + model + "]";
+                    + ", baseUrl=" + baseUrl + ", model=" + model + ", reasoningEffort=" + reasoningEffort + "]";
         }
     }
 

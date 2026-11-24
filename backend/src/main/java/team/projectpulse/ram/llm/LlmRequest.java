@@ -3,7 +3,6 @@ package team.projectpulse.ram.llm;
 import tools.jackson.databind.JsonNode;
 
 import java.time.Duration;
-import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
@@ -57,7 +56,11 @@ import java.util.regex.Pattern;
  *                        {@code [a-z0-9-]+} and be at most 64 characters. Not called "feature", because
  *                        the glossary's Feature is a coarser thing: a {@code FEAT-*} capability theme
  * @param instructions    what the model is told to do (the provider's system-prompt slot); not blank
- * @param input           what the model reads; may be empty, never null
+ * @param input           what the model reads; not blank. OpenAI answers an empty input with a 400,
+ *                        which would log as a {@code DOWN} at error, as if the deploy were broken, when
+ *                        the fault is the caller's. Since a blank input throws rather than answering
+ *                        {@code Unavailable}, a caller whose content can be empty (an empty document
+ *                        section) checks first and skips the call, showing no AI result
  * @param responseSchema  a strict JSON schema the reply must follow: an object with
  *                        {@code additionalProperties: false} and every property required, because
  *                        every provider's strict structured-output mode demands that shape
@@ -94,7 +97,9 @@ public record LlmRequest(
         if (instructions == null || instructions.isBlank()) {
             throw new IllegalArgumentException("instructions must not be blank");
         }
-        Objects.requireNonNull(input, "input must not be null");
+        if (input == null || input.isBlank()) {
+            throw new IllegalArgumentException("input must not be blank");
+        }
         if (responseSchema == null || !responseSchema.isObject()) {
             throw new IllegalArgumentException("responseSchema must be a JSON object");
         }

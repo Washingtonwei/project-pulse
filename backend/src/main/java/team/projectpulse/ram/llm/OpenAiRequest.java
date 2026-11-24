@@ -1,5 +1,6 @@
 package team.projectpulse.ram.llm;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import tools.jackson.databind.JsonNode;
 
@@ -18,6 +19,9 @@ import tools.jackson.databind.JsonNode;
  * @param maxOutputTokens the output cap (OpenAI counts a reasoning model's hidden reasoning tokens in it)
  * @param store           always false: OpenAI does not keep the exchange for later retrieval
  * @param text            the structured-output setting: reply with JSON that follows the schema
+ * @param reasoning       {@code "reasoning":{"effort":"none"}} from {@code ai.llm.openai.reasoning-effort}, or
+ *                        null, and then left out of the body altogether: a model without reasoning answers
+ *                        400 {@code unsupported_parameter} to the field even when its effort is {@code none}
  */
 record OpenAiRequest(
         String model,
@@ -25,9 +29,19 @@ record OpenAiRequest(
         String input,
         @JsonProperty("max_output_tokens") int maxOutputTokens,
         boolean store,
-        Text text) {
+        Text text,
+        // When reasoning is null, Jackson leaves the field out of the JSON entirely, rather than writing "reasoning": null.
+        @JsonInclude(JsonInclude.Include.NON_NULL) Reasoning reasoning) {
 
-    /** {@code "text": {"format": {...}}} */
+    /**
+     * {@code "reasoning": {"effort": "none"}}
+     */
+    record Reasoning(String effort) {
+    }
+
+    /**
+     * {@code "text": {"format": {...}}}
+     */
     record Text(Format format) {
     }
 

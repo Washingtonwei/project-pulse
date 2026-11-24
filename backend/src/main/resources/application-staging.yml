@@ -46,10 +46,13 @@ management:
 # The AI proxy's provider (team.projectpulse.ram.llm, docs/design/ai.md). The key is the Key Vault secret
 # `openai-api-key`; the trailing colon gives it an empty default, so a vault without that secret still
 # starts, and every AI call answers NOT_CONFIGURED. AI turns on only when both the key and the model are
-# set. Before putting the key in Key Vault, set a monthly budget on the OpenAI account (docs/design/ai.md).
+# set; set reasoning-effort with the model (none for a reasoning model such as gpt-6-luna, or its hidden
+# reasoning uses up a small cap and every reply is BAD_OUTPUT; blank for a model without reasoning, which
+# answers the field with a 400). Before putting the key in Key Vault, set a monthly budget on the OpenAI account (docs/design/ai.md).
 ai:
   llm:
     provider: openai
     openai:
       api-key: ${openai-api-key:}
       model: # Left blank on purpose until chosen at deploy; blank means NOT_CONFIGURED.
+      reasoning-effort: # Chosen with the model; blank means the field is not sent.
