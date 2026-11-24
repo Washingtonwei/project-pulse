@@ -66,7 +66,8 @@ public class LlmProxy implements AutoCloseable {
 
     /**
      * One virtual thread per call, so the request thread can stop waiting at its own deadline (the HTTP
-     * client has one read timeout for every caller, 15 s, kept only as a backstop). The wrapper copies
+     * client has one read timeout for every caller, 20 s, kept only as a backstop: it sits above the 15 s
+     * longest deadline, so a hang is always TIMEOUT here, never a DOWN from the HTTP client). The wrapper copies
      * the request's trace context onto that thread, so the OpenAI call shows up inside the student's
      * request trace. Closed, interrupting any running calls, on context shutdown.
      */

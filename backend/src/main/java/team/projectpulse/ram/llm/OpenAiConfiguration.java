@@ -22,7 +22,7 @@ import org.springframework.web.service.registry.ImportHttpServices;
  * <pre>
  * spring.http.clients.imperative.factory: jdk          the HTTP library: Java's own HttpClient
  * spring.http.serviceclient.openai.connect-timeout: 5s
- * spring.http.serviceclient.openai.read-timeout: 15s   a backstop; LlmProxy enforces each call's deadline
+ * spring.http.serviceclient.openai.read-timeout: 20s   a backstop above the 15 s longest deadline; LlmProxy enforces each call's
  * </pre>
  * {@code jdk} is pinned because Boot would otherwise pick Reactor Netty, which is on the classpath only
  * through the Azure Key Vault starter. The setting is app-wide, for every {@link RestClient} Boot builds.
@@ -65,14 +65,14 @@ class OpenAiConfiguration {
      *
      * <p>By the time this configurer runs, Boot's own configurer has already shaped the group's
      * builder from {@code application.yml}: the JDK {@code HttpClient}
-     * ({@code spring.http.clients.imperative.factory: jdk}), the 5 s connect timeout, and the 15 s read
+     * ({@code spring.http.clients.imperative.factory: jdk}), the 5 s connect timeout, and the 20 s read
      * timeout ({@code spring.http.serviceclient.openai.*}). Boot's runs first because it is ordered
      * early, and ours has the default order, last. What is left is the part Boot cannot know: our own
      * settings from {@code ai.llm.openai}, already validated in {@link LlmProperties}. So the builder
      * goes from
      * <pre>
-     * after Boot:  JDK HttpClient, connect 5 s, read 15 s
-     * after ours:  JDK HttpClient, connect 5 s, read 15 s,
+     * after Boot:  JDK HttpClient, connect 5 s, read 20 s
+     * after ours:  JDK HttpClient, connect 5 s, read 20 s,
      *              base URL https://api.openai.com/v1, Authorization: Bearer sk-... (only when the key is set)
      * </pre>
      * and only then does Spring build the {@code RestClient} and generate {@link OpenAiService} on it.

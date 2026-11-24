@@ -19,11 +19,11 @@ spring:
         factory: jdk
     serviceclient:
       # The HTTP service group named "openai" (OpenAiConfiguration). The base URL and API key come from
-      # ai.llm.openai (LlmProperties), not from here. The read timeout is a backstop: LlmProxy enforces each call's
+      # ai.llm.openai (LlmProperties), not from here. The read timeout is a backstop, set above the longest deadline so it never races it: LlmProxy enforces each call's
       # own deadline, at most 15 s.
       openai:
         connect-timeout: 5s
-        read-timeout: 15s
+        read-timeout: 20s
   flyway:
     enabled: true
     baseline-on-migrate: true # On an existing schema, baseline at V1 so Flyway won’t rerun V1; on a fresh DB, V1 will execute.
