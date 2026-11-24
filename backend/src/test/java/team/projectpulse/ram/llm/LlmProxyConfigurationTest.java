@@ -18,12 +18,12 @@ import java.time.Duration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * The AI proxy's Spring wiring, in a small context: {@link LlmConfiguration}, {@link OpenAiConfiguration},
+ * The AI proxy's Spring wiring, in a small context: {@link LlmProxyConfiguration}, {@link OpenAiConfiguration},
  * a {@link JsonMapper}, and Spring Boot's own HTTP-client auto-configurations, the same ones the
  * application loads. Design test rows "Provider selection" and "CI-llm-https, plain HTTP refused"
  * (docs/design/ai.md).
  */
-class LlmConfigurationTest {
+class LlmProxyConfigurationTest {
 
     final ApplicationContextRunner runner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(
@@ -32,16 +32,16 @@ class LlmConfigurationTest {
                     HttpServiceClientPropertiesAutoConfiguration.class,
                     RestClientAutoConfiguration.class,
                     HttpServiceClientAutoConfiguration.class))
-            .withUserConfiguration(LlmConfiguration.class, OpenAiConfiguration.class)
+            .withUserConfiguration(LlmProxyConfiguration.class, OpenAiConfiguration.class)
             .withBean(JsonMapper.class, () -> JsonMapper.builder().build());
 
     @Test
-    @DisplayName("With no provider, the context holds the proxy but no adapter, and every call is NOT_CONFIGURED")
+    @DisplayName("With no provider, the context holds the proxy but no LLM client, and every call is NOT_CONFIGURED")
     void noProvider() {
         runner.run(context -> {
             assertThat(context).hasSingleBean(LlmProxy.class)
                     .doesNotHaveBean(LlmClient.class)
-                    .doesNotHaveBean(OpenAiApi.class);
+                    .doesNotHaveBean(OpenAiService.class);
 
             LlmResult result = context.getBean(LlmProxy.class).complete(LlmProxyTest.REQUEST);
 
@@ -50,10 +50,10 @@ class LlmConfigurationTest {
     }
 
     @Test
-    @DisplayName("With provider openai, the context holds exactly one adapter, an OpenAiLlmClient, over the generated OpenAiApi")
+    @DisplayName("With provider openai, the context holds exactly one LLM client, an OpenAiLlmClient, over the generated OpenAiService")
     void openAiProvider() {
         runner.withPropertyValues("ai.llm.provider=openai").run(context -> {
-            assertThat(context).hasSingleBean(LlmClient.class).hasSingleBean(OpenAiApi.class);
+            assertThat(context).hasSingleBean(LlmClient.class).hasSingleBean(OpenAiService.class);
             assertThat(context.getBean(LlmClient.class)).isInstanceOf(OpenAiLlmClient.class);
         });
     }
@@ -95,14 +95,12 @@ class LlmConfigurationTest {
     }
 
     @Test
-    @DisplayName("The ai.llm defaults bind: 15 s default timeout, breaker at 3 failures for 30 s, OpenAI's public URL")
+    @DisplayName("The ai.llm defaults bind: 15 s default timeout, OpenAI's public URL")
     void defaults() {
         runner.run(context -> {
             LlmProperties properties = context.getBean(LlmProperties.class);
 
             assertThat(properties.defaultTimeout()).isEqualTo(Duration.ofSeconds(15));
-            assertThat(properties.breaker().failures()).isEqualTo(3);
-            assertThat(properties.breaker().openFor()).isEqualTo(Duration.ofSeconds(30));
             assertThat(properties.openai().baseUrl()).isEqualTo("https://api.openai.com/v1");
         });
     }

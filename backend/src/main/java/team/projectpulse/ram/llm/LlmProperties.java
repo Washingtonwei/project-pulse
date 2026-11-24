@@ -1,7 +1,6 @@
 package team.projectpulse.ram.llm;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import org.hibernate.validator.constraints.time.DurationMax;
 import org.hibernate.validator.constraints.time.DurationMin;
@@ -13,24 +12,23 @@ import java.time.Duration;
 
 /**
  * Every {@code ai.llm.*} setting, bound and validated at startup, so a bad value stops the app from
- * starting instead of surfacing on the first AI call. Defaults are the {@code @DefaultValue}s here;
- * {@code application.yml} repeats them so they are visible in one place.
+ * starting instead of surfacing on the first AI call. Defaults are the {@code @DefaultValue}s here, and
+ * only here: {@code application.yml} does not repeat them, so a changed default cannot be silently
+ * overridden by a stale copy. A profile or an environment variable ({@code AI_LLM_DEFAULTTIMEOUT=10s})
+ * still overrides them as usual.
  *
  * <pre>
  * ai:
  *   llm:
- *     provider: openai       # which adapter to build; unset (dev, tests) means none: NOT_CONFIGURED
+ *     provider: openai       # which LLM client to build; unset (dev, tests) means none: NOT_CONFIGURED
  *     default-timeout: 15s   # used when a request's timeout is null; at most 15 s
- *     breaker:
- *       failures: 3          # consecutive failures that open the circuit breaker
- *       open-for: 30s        # how long it stays open before one probe call
  *     openai:
  *       api-key: ${openai-api-key:}         # the Key Vault secret in staging and prod; blank = NOT_CONFIGURED
  *       base-url: https://api.openai.com/v1 # must start with https:// (CI-llm-https)
  *       model:                              # chosen at deploy; blank = NOT_CONFIGURED
  * </pre>
  *
- * <p>The HTTP timeouts are not here: they belong to the Boot 4 HTTP service group the adapter runs
+ * <p>The HTTP timeouts are not here: they belong to the Boot 4 HTTP service group the LLM client runs
  * in ({@code spring.http.serviceclient.openai.*}, see {@link OpenAiConfiguration}).
  *
  * <p>Package-private, so no class outside {@code ram/llm} can read the LLM settings, the API key
@@ -39,35 +37,24 @@ import java.time.Duration;
  * @param provider       the selected provider, or null for none. Binding is case-insensitive
  *                       ({@code openai} binds to {@link Provider#OPENAI}); an unknown value fails startup
  * @param defaultTimeout the deadline for a request whose timeout is null (PER-ai-response-time)
- * @param breaker        the circuit breaker's settings
- * @param openai         the OpenAI adapter's settings, read only when {@code provider} is {@code openai}
+ * @param openai         the OpenAI LLM client's settings, read only when {@code provider} is {@code openai}
  */
 @ConfigurationProperties("ai.llm")
 @Validated
 record LlmProperties(
         Provider provider,
         @DefaultValue("15s") @DurationMin(millis = 1) @DurationMax(seconds = 15) Duration defaultTimeout,
-        @DefaultValue @Valid Breaker breaker,
         @DefaultValue @Valid OpenAi openai) {
 
-    /** The providers an adapter exists for. Adding Claude or Gemini adds a constant and an adapter. */
+    /** The providers an LLM client exists for. Adding Claude or Gemini adds a constant and an LLM client. */
     enum Provider {
         OPENAI
     }
 
     /**
-     * @param failures consecutive failures that open the breaker; at least 1
-     * @param openFor  how long the breaker stays open before letting one probe through; at least 1 s
-     */
-    record Breaker(
-            @DefaultValue("3") @Min(1) int failures,
-            @DefaultValue("30s") @DurationMin(seconds = 1) Duration openFor) {
-    }
-
-    /**
-     * @param apiKey  the secret API key; blank means the adapter is not configured. Never logged
+     * @param apiKey  the secret API key; blank means the LLM client is not configured. Never logged
      * @param baseUrl the API root, which must be HTTPS so a plain-HTTP URL fails startup (CI-llm-https)
-     * @param model   the model id, chosen at deploy time; blank means the adapter is not configured
+     * @param model   the model id, chosen at deploy time; blank means the LLM client is not configured
      */
     record OpenAi(
             String apiKey,

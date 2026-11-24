@@ -37,7 +37,7 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <!-- RestClient and HTTP service groups (@ImportHttpServices); the AI proxy's OpenAI adapter uses them. -->
+            <!-- RestClient and HTTP service groups (@ImportHttpServices); the AI proxy's OpenAI LLM client uses them. -->
             <artifactId>spring-boot-starter-restclient</artifactId>
         </dependency>
         <dependency>

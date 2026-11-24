@@ -16,20 +16,46 @@ import java.util.regex.Pattern;
  * through this type (SEC-llm-data-minimization). What a caller puts in {@code input} is limited to
  * requirement content; each caller's design says exactly what.
  *
- * <p>Example, the artifact key suggestion (UC-ART-create-artifact):
+ * <p>Example 1, the artifact key suggestion (UC-ART-create-artifact), the first caller. Short and
+ * cheap: a small reply, a short wait, and no teaching context (SI-llm-context):
  * <pre>
- * new LlmRequest("artifact-key-suggestion",
+ * new LlmRequest("artifact-key-suggestion",                      // caller
  *         "Suggest a short kebab-case key for this requirement.",   // instructions
  *         "Title: Reset password\nContent: The system shall ...",    // input
  *         schema,          // {"type":"object","properties":{"slug":{"type":"string"}},
  *                          //  "required":["slug"],"additionalProperties":false}
  *         50,              // reply at most 50 tokens
- *         Duration.ofSeconds(3));
+ *         Duration.ofSeconds(3));   // a convenience: give up after 3 s
  * </pre>
  *
- * @param feature         a short constant naming the caller, such as {@code artifact-key-suggestion}.
- *                        It goes into every log line and names the response schema at the provider,
- *                        so it must match {@code [a-z0-9-]+} and be at most 64 characters
+ * <p>Example 2, an assistant (UC-AI-critique; illustrative, since its own design will set the real
+ * values). Longer: the assistant assembles its context into {@code instructions} and {@code input},
+ * asks for a bigger reply, and takes the default wait:
+ * <pre>
+ * new LlmRequest("critique",
+ *         systemPrompt + teachingContext + assistantInstructions,   // assembled by the assistant
+ *         documentSectionContent,                                   // the authoring destination
+ *         schema,          // {"type":"object","properties":{"findings":{"type":"array", ...}},
+ *                          //  "required":["findings"],"additionalProperties":false}
+ *         2000,
+ *         null);           // the default, 15 s
+ * </pre>
+ *
+ * <p>What the two produce in the log (one line per call, see {@link LlmProxy}):
+ * <pre>
+ * LLM call caller=artifact-key-suggestion outcome=ANSWERED latencyMs=812 inputTokens=42 outputTokens=9
+ * LLM call caller=critique outcome=TIMEOUT latencyMs=15003 timeoutMs=15000
+ * </pre>
+ *
+ * @param caller          a short constant naming who is calling the proxy, one per AI caller. The planned
+ *                        values follow the use-case slugs: {@code artifact-key-suggestion}
+ *                        (UC-ART-create-artifact), {@code critique}, {@code whole-project-review},
+ *                        {@code tutor}, {@code elicit-requirements}, {@code practice-interview},
+ *                        {@code structure-notes}, {@code draft-skeleton}, and
+ *                        {@code consult-project-assistant} (the {@code UC-AI-*} use cases). It goes into
+ *                        every log line and names the response schema at the provider, so it must match
+ *                        {@code [a-z0-9-]+} and be at most 64 characters. Not called "feature", because
+ *                        the glossary's Feature is a coarser thing: a {@code FEAT-*} capability theme
  * @param instructions    what the model is told to do (the provider's system-prompt slot); not blank
  * @param input           what the model reads; may be empty, never null
  * @param responseSchema  a strict JSON schema the reply must follow: an object with
@@ -38,11 +64,10 @@ import java.util.regex.Pattern;
  * @param maxOutputTokens the caller's cap on the reply's length; a reply cut short at this cap is
  *                        {@link UnavailableReason#BAD_OUTPUT}
  * @param timeout         how long the caller will wait, at least 1 ms and at most 15 s; null means the
- *                        configured default ({@code ai.llm.default-timeout}, 15 s). A timeout shorter
- *                        than the default that passes is not counted against the circuit breaker
+ *                        configured default ({@code ai.llm.default-timeout}, 15 s)
  */
 public record LlmRequest(
-        String feature,
+        String caller,
         String instructions,
         String input,
         JsonNode responseSchema,
@@ -55,7 +80,7 @@ public record LlmRequest(
     /** The shortest wait accepted; anything less would time out before the call could start. */
     public static final Duration MIN_TIMEOUT = Duration.ofMillis(1);
 
-    private static final Pattern FEATURE = Pattern.compile("[a-z0-9-]{1,64}");
+    private static final Pattern CALLER = Pattern.compile("[a-z0-9-]{1,64}");
 
     /**
      * Rejects a request no caller should be able to build. These are programming errors, not
@@ -63,8 +88,8 @@ public record LlmRequest(
      * {@link LlmResult.Unavailable}: a test of the caller catches them, a student never does.
      */
     public LlmRequest {
-        if (feature == null || !FEATURE.matcher(feature).matches()) {
-            throw new IllegalArgumentException("feature must match [a-z0-9-]{1,64}");
+        if (caller == null || !CALLER.matcher(caller).matches()) {
+            throw new IllegalArgumentException("caller must match [a-z0-9-]{1,64}");
         }
         if (instructions == null || instructions.isBlank()) {
             throw new IllegalArgumentException("instructions must not be blank");

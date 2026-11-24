@@ -2,6 +2,9 @@ package team.projectpulse.ram.llm;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -28,14 +31,15 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 /**
- * The OpenAI adapter against a fake OpenAI ({@link MockRestServiceServer}), with no network. Covers the
+ * The OpenAI LLM client against a fake OpenAI ({@link MockRestServiceServer}), with no network. Covers the
  * design's test rows "CI-llm-https, OpenAI request shape" and "SEC-llm-data-minimization, request"
  * (docs/design/ai.md), plus the reply mapping.
  *
- * <p>The {@link OpenAiApi} here is built by hand the way the HTTP service group builds it in the app:
+ * <p>The {@link OpenAiService} here is built by hand the way the HTTP service group builds it in the app:
  * a {@link RestClient} given exactly what {@link OpenAiConfiguration#configure} gives the group's
- * client, turned into an {@link OpenAiApi} by {@link HttpServiceProxyFactory}.
+ * client, turned into an {@link OpenAiService} by {@link HttpServiceProxyFactory}.
  */
+@ExtendWith(OutputCaptureExtension.class)
 class OpenAiLlmClientTest {
 
     static final JsonMapper JSON = JsonMapper.builder().build();
@@ -55,8 +59,8 @@ class OpenAiLlmClientTest {
 
     OpenAiLlmClient client(LlmProperties.OpenAi settings) {
         OpenAiConfiguration.configure(builder, settings);
-        OpenAiApi api = HttpServiceProxyFactory.builderFor(RestClientAdapter.create(builder.build()))
-                .build().createClient(OpenAiApi.class);
+        OpenAiService api = HttpServiceProxyFactory.builderFor(RestClientAdapter.create(builder.build()))
+                .build().createClient(OpenAiService.class);
         return new OpenAiLlmClient(api, settings);
     }
 
@@ -82,10 +86,10 @@ class OpenAiLlmClientTest {
                 .andExpect(jsonPath("$.text.format.schema.required[0]").value("slug"))
                 .andRespond(withSuccess(ANSWERED, MediaType.APPLICATION_JSON));
 
-        LlmReply reply = client(SETTINGS).send(request(50));
+        ProviderReply reply = client(SETTINGS).send(request(50));
 
         openAi.verify();
-        assertThat(reply).isEqualTo(new LlmReply("{\"slug\":\"reset-password\"}", false, 42, 9));
+        assertThat(reply).isEqualTo(new ProviderReply("{\"slug\":\"reset-password\"}", false, 42, 9));
     }
 
     @Test
@@ -144,14 +148,14 @@ class OpenAiLlmClientTest {
                  "output":[{"type":"message","content":[{"type":"refusal","refusal":"I can't help with that."}]}]}
                 """);
 
-        assertThat(OpenAiLlmClient.toReply(incomplete)).isEqualTo(new LlmReply("{\"slug\":\"res", true, 42, 16));
-        assertThat(OpenAiLlmClient.toReply(refusal)).isEqualTo(new LlmReply("", true, 0, 0));
+        assertThat(OpenAiLlmClient.toReply(incomplete)).isEqualTo(new ProviderReply("{\"slug\":\"res", true, 42, 16));
+        assertThat(OpenAiLlmClient.toReply(refusal)).isEqualTo(new ProviderReply("", true, 0, 0));
     }
 
     @Test
-    @DisplayName("The adapter is configured only when both the key and the model are set")
+    @DisplayName("The LLM client is configured only when both the key and the model are set")
     void isConfigured() {
-        OpenAiApi unused = req -> {
+        OpenAiService unused = req -> {
             throw new AssertionError("never called");
         };
 
@@ -159,6 +163,32 @@ class OpenAiLlmClientTest {
         assertThat(new OpenAiLlmClient(unused, new LlmProperties.OpenAi("", "https://x", "m")).isConfigured()).isFalse();
         assertThat(new OpenAiLlmClient(unused, new LlmProperties.OpenAi("k", "https://x", null)).isConfigured()).isFalse();
         assertThat(new OpenAiLlmClient(unused, new LlmProperties.OpenAi(null, "https://x", " ")).isConfigured()).isFalse();
+    }
+
+    @Test
+    @DisplayName("An LLM client built without a model warns once at startup, and the warning never shows the key")
+    void warnsWhenNotConfigured(CapturedOutput output) {
+        OpenAiService unused = req -> {
+            throw new AssertionError("never called");
+        };
+
+        new OpenAiLlmClient(unused, new LlmProperties.OpenAi("sk-test-key", "https://x", null));
+
+        assertThat(output.getOut())
+                .contains("WARN", "AI provider openai is selected but not configured", "apiKey=(set)", "model=null")
+                .doesNotContain("sk-test-key");
+    }
+
+    @Test
+    @DisplayName("A configured LLM client logs nothing at startup")
+    void noWarningWhenConfigured(CapturedOutput output) {
+        OpenAiService unused = req -> {
+            throw new AssertionError("never called");
+        };
+
+        new OpenAiLlmClient(unused, SETTINGS);
+
+        assertThat(output.getOut()).doesNotContain("not configured");
     }
 
     @Test

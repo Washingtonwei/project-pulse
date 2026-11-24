@@ -9,15 +9,13 @@ public enum UnavailableReason {
 
     /**
      * No provider is selected ({@code ai.llm.provider} unset), or the selected one has no API key or
-     * model. This is the normal state in dev and in the test suite. The proxy makes no call and
-     * leaves the circuit breaker alone.
+     * model. This is the normal state in dev and in the test suite. The proxy makes no call.
      */
     NOT_CONFIGURED,
 
     /**
-     * The service could not be reached or refused the request: the circuit breaker is open, the
-     * connection failed, or the provider answered any 4xx or 5xx (including 401 for a bad key and
-     * 429 for a rate limit).
+     * The service could not be reached or refused the request: the connection failed, or the
+     * provider answered any 4xx or 5xx (including 401 for a bad key and 429 for a rate limit).
      */
     DOWN,
 

@@ -17,8 +17,8 @@ class LlmRequestTest {
             {"type":"object","properties":{"slug":{"type":"string"}},"required":["slug"],"additionalProperties":false}
             """);
 
-    static LlmRequest request(String feature, String instructions, Duration timeout) {
-        return new LlmRequest(feature, instructions, "input", SCHEMA, 50, timeout);
+    static LlmRequest request(String caller, String instructions, Duration timeout) {
+        return new LlmRequest(caller, instructions, "input", SCHEMA, 50, timeout);
     }
 
     @Test
@@ -36,8 +36,8 @@ class LlmRequestTest {
     }
 
     @Test
-    @DisplayName("A feature outside [a-z0-9-]+ is rejected, because it is logged and names the schema")
-    void badFeature() {
+    @DisplayName("A caller outside [a-z0-9-]+ is rejected, because it is logged and names the schema")
+    void badCaller() {
         assertThatThrownBy(() -> request("Key Suggestion", "x", null)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> request("", "x", null)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> request("a".repeat(65), "x", null)).isInstanceOf(IllegalArgumentException.class);
