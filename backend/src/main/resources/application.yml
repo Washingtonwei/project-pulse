@@ -9,6 +9,21 @@ spring:
   devtools:
     livereload:
       enabled: true
+  # Outbound HTTP clients (Spring Boot 4). Today only the AI proxy's OpenAI LLM client uses one.
+  http:
+    clients:
+      imperative:
+        # Use Java's own java.net.http.HttpClient for every RestClient Boot builds. Without this Boot
+        # would pick Reactor Netty, which the Azure Key Vault starter puts on the classpath; Boot's
+        # detection order is Apache HttpClient, Jetty, Reactor Netty, JDK. This setting is app-wide.
+        factory: jdk
+    serviceclient:
+      # The HTTP service group named "openai" (OpenAiConfiguration). The base URL and API key come from
+      # ai.llm.openai (LlmProperties), not from here. The read timeout is a backstop, set above the longest deadline so it never races it: LlmProxy enforces each call's
+      # own deadline, at most 15 s.
+      openai:
+        connect-timeout: 5s
+        read-timeout: 20s
   flyway:
     enabled: true
     baseline-on-migrate: true # On an existing schema, baseline at V1 so Flyway won’t rerun V1; on a fresh DB, V1 will execute.
@@ -24,6 +39,9 @@ api:
 ram:
   lock:
     default-lock-ttl: PT15M # 15 minutes, adjust as needed based on expected operation duration and load.
+# The AI proxy (team.projectpulse.ram.llm, docs/design/ai.md). Its defaults (15 s timeout, OpenAI's
+# public URL) and their limits live in LlmProperties. No provider is selected here, so dev and the
+# test suite never call an LLM: every AI call answers NOT_CONFIGURED.
 # Baseline for every profile: expose only what a deployed environment has a consumer for.
 # The platform health probe needs `health`; `info` carries the build and version. Everything else
 # (env, configprops, heapdump, loggers, httpexchanges, beans, mappings, metrics, prometheus) is

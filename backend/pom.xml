@@ -37,6 +37,16 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
+            <!-- RestClient and HTTP service groups (@ImportHttpServices); the AI proxy's OpenAI LLM client uses them. -->
+            <artifactId>spring-boot-starter-restclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <!-- Carries the request's trace into the AI proxy's virtual-thread call (LlmProxy); version from Boot. -->
+            <artifactId>context-propagation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
             <scope>runtime</scope>
             <optional>true</optional>
