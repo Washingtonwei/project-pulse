@@ -65,7 +65,6 @@
 // duplicate warning). Design: docs/design/doc.md, "Creating an actor from the picker".
 import { computed, reactive, ref, watch } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-import axios from 'axios'
 import {
   createRequirementArtifact,
   findRequirementArtifactById,
@@ -209,10 +208,9 @@ async function create() {
     visible.value = false
   } catch (error) {
     // The request interceptor has already shown the server's message (8a, 8b, or a 4a the form missed). Nothing was
-    // created, so the dialog stays open with the student's input. A key a teammate took meanwhile (8c) comes back with
-    // its holder, which the key field shows.
-    const holder = axios.isAxiosError(error) ? error.response?.data?.data : null
-    if (holder?.artifactKey) keyField.value?.showHolder(holder as ArtifactKeyHolder)
+    // created, so the dialog stays open with the student's input. If a teammate took the key meanwhile (8c), asking
+    // the key field to check again shows who holds it.
+    void keyField.value?.recheck()
   } finally {
     busy.value = false
   }

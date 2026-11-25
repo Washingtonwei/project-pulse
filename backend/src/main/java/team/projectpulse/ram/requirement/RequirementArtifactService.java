@@ -43,18 +43,16 @@ public class RequirementArtifactService {
 
     private final RequirementArtifactRepository requirementArtifactRepository;
     private final TeamRepository teamRepository;
-    private final ArtifactKeyHolderLookup artifactKeyHolderLookup;
     private final DocumentRepository documentRepository;
     private final DocumentSectionRepository documentSectionRepository;
     private final DocumentTemplateRegistry documentTemplateRegistry;
     private final ArtifactLinkRepository artifactLinkRepository;
 
-    public RequirementArtifactService(RequirementArtifactRepository requirementArtifactRepository, TeamRepository teamRepository, ArtifactKeyHolderLookup artifactKeyHolderLookup,
+    public RequirementArtifactService(RequirementArtifactRepository requirementArtifactRepository, TeamRepository teamRepository,
                                       DocumentRepository documentRepository, DocumentSectionRepository documentSectionRepository, DocumentTemplateRegistry documentTemplateRegistry,
                                       ArtifactLinkRepository artifactLinkRepository) {
         this.requirementArtifactRepository = requirementArtifactRepository;
         this.teamRepository = teamRepository;
-        this.artifactKeyHolderLookup = artifactKeyHolderLookup;
         this.documentRepository = documentRepository;
         this.documentSectionRepository = documentSectionRepository;
         this.documentTemplateRegistry = documentTemplateRegistry;
@@ -104,7 +102,8 @@ public class RequirementArtifactService {
      * The key is checked twice (design: {@code docs/design/art.md}, "Artifact keys"). First its format and prefix
      * ({@link ArtifactKeys#requireValid}, 4a), then whether another artifact of the team holds it (4b), naming the
      * holder. A teammate can still commit the same key between that check and this insert; the unique key index then
-     * refuses the insert, and {@link #saveChecked} turns that into the same refusal (8c). For example, a functional
+     * refuses the insert, and {@link #saveChecked} turns that into a refusal naming the key (8c), after which the editor
+     * asks the key-holder lookup for the holder. For example, a functional
      * requirement sent with {@code FR-user-authentication} in team 1, where the seed already holds that key, is refused
      * with "FR-user-authentication is already used by FR-user-authentication: User authentication.", the holder as data.
      * <p>
@@ -153,7 +152,7 @@ public class RequirementArtifactService {
             // Cleared, so a draft that arrives carrying a document section still lands in no list (BR-artifact-home).
             draft.setSourceDocumentSection(null);
             assignTeamAndCheckKey(teamId, draft);
-            return saveChecked(teamId, draft);
+            return saveChecked(draft);
         }
 
         // For example: a RISK resolves to (VISION_SCOPE, "RISKS"), an ASSUMPTION to (SRS, "ASSUMPTIONS_DEPENDENCIES").
@@ -181,7 +180,7 @@ public class RequirementArtifactService {
         // lock.
         assignTeamAndCheckKey(teamId, draft);
         section.addRequirementArtifact(draft);
-        return saveChecked(teamId, draft);
+        return saveChecked(draft);
     }
 
     /**
@@ -218,7 +217,7 @@ public class RequirementArtifactService {
         ArtifactKeys.requireValid(artifact.getType(), newKey);
         requireKeyFree(teamId, newKey, artifact.getId());
         artifact.setArtifactKey(newKey);
-        return saveChecked(teamId, artifact);
+        return saveChecked(artifact);
     }
 
     /**
@@ -246,26 +245,29 @@ public class RequirementArtifactService {
     /**
      * Saves and flushes {@code artifact}, so a write that breaks the unique key index fails here, with the key known,
      * not later at commit. That violation means a teammate committed the same key after this request's check
-     * ({@link #requireKeyFree}): the race of extensions 8c and 10b. It becomes the same refusal the check gives,
-     * naming the holder through {@link ArtifactKeyHolderLookup}, which reads in a transaction of its own because this
-     * one can only roll back now. Any other integrity error is not about the key and propagates unchanged.
+     * ({@link #requireKeyFree}): the race of extensions 8c and 10b. It becomes a refusal naming the key, without the
+     * holder: this transaction can only roll back now, and its session cannot be trusted after the failed flush, so it
+     * reads nothing more. The editor then asks the key-holder lookup again, in a request of its own, and shows the
+     * holder. For example: John and Eric both submit FR-export-csv, both checks find it free, Eric's insert commits
+     * first, and John's fails on the index, so John reads "FR-export-csv is already used by another requirement artifact
+     * of the team." and his key field then shows Eric's artifact. Any other integrity error is not about the key and
+     * propagates unchanged.
      */
-    private RequirementArtifact saveChecked(Integer teamId, RequirementArtifact artifact) {
+    private RequirementArtifact saveChecked(RequirementArtifact artifact) {
         try {
             return this.requirementArtifactRepository.saveAndFlush(artifact);
         } catch (DataIntegrityViolationException exception) {
             if (!ArtifactKeys.isKeyIndexViolation(exception)) {
                 throw exception;
             }
-            String key = artifact.getArtifactKey();
-            throw keyInUse(key, this.artifactKeyHolderLookup.holderOf(teamId, key).orElse(null), exception);
+            throw keyInUse(artifact.getArtifactKey(), null, exception);
         }
     }
 
     // "FR-user-authentication is already used by FR-user-authentication: User authentication.", with the holder as
-    // the response's data so the editor can offer to open it. A holder already deleted again by the time of the
-    // lookup (null) still gives the refusal, without naming it. cause is the index violation the refusal replaces, or
-    // null when the check itself found the holder.
+    // the response's data so the editor can offer to open it, when the check found the holder (4b). The race (8c,
+    // 10b) has no holder to name: "FR-export-csv is already used by another requirement artifact of the team.", with
+    // cause the index violation the refusal replaces.
     private static RequirementArtifactRejectedException keyInUse(String artifactKey, ArtifactKeyHolderDto holder, Throwable cause) {
         if (holder == null) {
             return new RequirementArtifactRejectedException(artifactKey + " is already used by another requirement artifact of the team.", null, cause);

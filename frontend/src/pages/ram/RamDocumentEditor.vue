@@ -773,10 +773,9 @@ async function openHolder(holder: ArtifactKeyHolder) {
   }
 }
 
-// A key a teammate took after the field checked it (8c, 10b) comes back with its holder, which the key field shows.
-function showKeyHolderFrom(error: unknown) {
-  const holder = axios.isAxiosError(error) ? error.response?.data?.data : null
-  if (holder?.artifactKey) keyField.value?.showHolder(holder as ArtifactKeyHolder)
+// After a refused save: if a teammate took the key after the field checked it (8c, 10b), checking again shows who.
+function recheckKey() {
+  void keyField.value?.recheck()
 }
 
 function openDuplicate(match: RequirementArtifact) {
@@ -851,7 +850,7 @@ async function saveArtifact() {
       ElMessage.success(`${result.data.artifactKey} created`)
     } catch (error) {
       // The interceptor has shown the message; the dialog stays open with the student's input.
-      showKeyHolderFrom(error)
+      recheckKey()
       return
     } finally {
       savingArtifact.value = false
@@ -883,8 +882,9 @@ async function saveArtifact() {
         ElMessage.warning('The current details are now in the dialog. Reapply your change there.')
         return
       }
-      if (axios.isAxiosError(error) && error.response?.data?.data?.artifactKey) {
-        showKeyHolderFrom(error)
+      // A refusal (400), such as a key in use (6b, 10b): the toast has the message, and the field shows the holder.
+      if (axios.isAxiosError(error) && error.response?.status === 400) {
+        recheckKey()
         return
       }
       throw error

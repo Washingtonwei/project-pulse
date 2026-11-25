@@ -204,20 +204,16 @@ async function suggest() {
   }
 }
 
-// For the parent's confirm (step 4, extension 4b): ask the server now, show the answer, and return the holder of the
-// current key if it is another artifact.
+// For the parent's confirm (step 4, extension 4b), and after a save the server refused because a teammate took the key
+// meanwhile (8c, 10b): ask the server now, show the answer, and return the holder of the current key if it is another
+// artifact.
 async function recheck(): Promise<ArtifactKeyHolder | null> {
   if (timer) clearTimeout(timer)
   const found = await check()
   return found && found.id !== props.selfId ? found : null
 }
 
-// For a refusal the save got (8c, 10b): show the holder the server named.
-function showHolder(found: ArtifactKeyHolder) {
-  holder.value = found
-}
-
-defineExpose({ recheck, showHolder })
+defineExpose({ recheck })
 </script>
 
 <style scoped>

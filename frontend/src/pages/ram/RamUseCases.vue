@@ -530,7 +530,7 @@ import {
 } from '@/apis/ram/types'
 import UseCaseConditionList from '@/components/UseCaseConditionList.vue'
 import ArtifactKeyField from '@/components/ArtifactKeyField.vue'
-import { compareArtifactKeys, prefixOf, slugOf, slugProblem } from '@/utils/artifactKeys'
+import { compareArtifactKeys, slugOf, slugProblem } from '@/utils/artifactKeys'
 import RequirementArtifactCreateDialog from '@/components/RequirementArtifactCreateDialog.vue'
 import RichTextField from '@/components/RichTextField.vue'
 import {
@@ -1173,11 +1173,9 @@ async function saveUseCase() {
     if (error?.response?.status === 409 || error?.response?.status === 423) {
       await refreshUseCaseLock()
     }
-    // A held key (4b, 7b, 8a, 11b): the toast names the holder; the use case's own key field shows it too.
-    const holder = error?.response?.data?.data as ArtifactKeyHolder | undefined
-    if (holder?.artifactKey && holder.artifactKey.startsWith(prefixOf('USE_CASE') + '-')) {
-      useCaseKeyField.value?.showHolder(holder)
-    }
+    // A held key (4b, 7b, 8a, 11b): the toast has the message, and checking the use case's own key again shows who
+    // holds it when it is that key.
+    void useCaseKeyField.value?.recheck()
   } finally {
     saving.value = false
   }

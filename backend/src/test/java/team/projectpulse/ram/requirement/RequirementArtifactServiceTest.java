@@ -49,9 +49,6 @@ class RequirementArtifactServiceTest {
     TeamRepository teamRepository;
 
     @Mock
-    ArtifactKeyHolderLookup artifactKeyHolderLookup;
-
-    @Mock
     DocumentRepository documentRepository;
 
     @Mock
@@ -132,17 +129,18 @@ class RequirementArtifactServiceTest {
     }
 
     @Test
-    void createRequirementArtifact_Extension8c_IndexViolationBecomesTheSameRefusal() {
+    void createRequirementArtifact_Extension8c_IndexViolationBecomesARefusalNamingTheKey() {
         // The check found the key free, but a teammate committed it before this insert: the unique index refuses it.
-        given(this.requirementArtifactRepository.saveAndFlush(any())).willThrow(keyIndexViolation());
-        ArtifactKeyHolderDto teammates = new ArtifactKeyHolderDto(77L, "GLO-sprint", "Sprint", RequirementArtifactType.GLOSSARY_TERM);
-        given(this.artifactKeyHolderLookup.holderOf(1, "GLO-sprint")).willReturn(Optional.of(teammates));
+        // The refusal names the key only, with the violation as its cause; the editor asks for the holder afterwards.
+        DataIntegrityViolationException violation = keyIndexViolation();
+        given(this.requirementArtifactRepository.saveAndFlush(any())).willThrow(violation);
 
         assertThatThrownBy(() -> this.requirementArtifactService.createRequirementArtifact(1, glossaryTerm("GLO-sprint")))
-                .isInstanceOf(RequirementArtifactRejectedException.class)
-                .hasMessage("GLO-sprint is already used by GLO-sprint: Sprint.")
-                .extracting(exception -> ((RequirementArtifactRejectedException) exception).getData())
-                .isEqualTo(teammates);
+                .isInstanceOfSatisfying(RequirementArtifactRejectedException.class, refusal -> {
+                    assertThat(refusal).hasMessage("GLO-sprint is already used by another requirement artifact of the team.");
+                    assertThat(refusal.getData()).isNull();
+                    assertThat(refusal.getCause()).isSameAs(violation);
+                });
     }
 
     @Test
@@ -153,7 +151,6 @@ class RequirementArtifactServiceTest {
 
         assertThatThrownBy(() -> this.requirementArtifactService.createRequirementArtifact(1, glossaryTerm("GLO-sprint")))
                 .isSameAs(foreignKey);
-        verifyNoInteractions(this.artifactKeyHolderLookup);
     }
 
     @Test

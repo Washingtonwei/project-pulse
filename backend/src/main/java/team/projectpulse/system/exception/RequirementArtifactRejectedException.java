@@ -28,7 +28,7 @@ public class RequirementArtifactRejectedException extends RuntimeException {
     /**
      * A refusal that replaces a lower-level failure, kept as the cause: a key taken by a teammate between the check and
      * the write is refused by the unique key index, and that violation becomes this refusal (UC-ART-create-artifact
-     * 8c), with the holder as {@code data}.
+     * 8c), with no data.
      */
     public RequirementArtifactRejectedException(String message, Object data, Throwable cause) {
         super(message, cause);

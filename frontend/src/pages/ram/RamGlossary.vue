@@ -171,7 +171,6 @@ import { ElMessage } from 'element-plus'
 import { useUserInfoStore } from '@/stores/userInfo'
 import type { Student } from '@/apis/student/types'
 import type { ArtifactKeyHolder, RequirementArtifact } from '@/apis/ram/types'
-import axios from 'axios'
 import ArtifactKeyField from '@/components/ArtifactKeyField.vue'
 import { slugOf, slugProblem } from '@/utils/artifactKeys'
 import {
@@ -295,8 +294,8 @@ async function createTerm() {
     createDialogVisible.value = false
     ElMessage.success(`${result.data.artifactKey} created`)
   } catch (error) {
-    // The interceptor has shown the message; a key a teammate took meanwhile (8a) shows its holder in the field.
-    showHolderFrom(error, createKeyField.value)
+    // The interceptor has shown the message; if a teammate took the key meanwhile (8a), checking again shows who.
+    void createKeyField.value?.recheck()
   } finally {
     saving.value = false
   }
@@ -329,7 +328,7 @@ async function renameTerm() {
     renameDialogVisible.value = false
     ElMessage.success('Glossary term renamed')
   } catch (error) {
-    showHolderFrom(error, renameKeyField.value)
+    void renameKeyField.value?.recheck()
   } finally {
     saving.value = false
   }
@@ -340,12 +339,6 @@ function keyIsWellFormed(key: string) {
   const problem = slugProblem(slugOf(key, 'GLOSSARY_TERM'))
   if (problem) ElMessage.warning(`Artifact key: ${problem}`)
   return !problem
-}
-
-// A refusal for a key in use names its holder; the key field shows it.
-function showHolderFrom(error: unknown, field: InstanceType<typeof ArtifactKeyField> | undefined) {
-  const holder = axios.isAxiosError(error) ? error.response?.data?.data : null
-  if (holder?.artifactKey) field?.showHolder(holder as ArtifactKeyHolder)
 }
 
 // 4b2, 4c: a held key's term is opened in the glossary itself; a holder of another type is named, since the glossary
