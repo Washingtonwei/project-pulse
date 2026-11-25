@@ -17,9 +17,9 @@ import java.util.regex.Pattern;
  * letter, at most 40 characters. For a functional requirement:
  * <pre>
  * FR-export-csv        valid
- * FR-step-2            valid (digits are fine after the first letter)
+ * FR-export-v2         valid (digits are fine after the first letter)
  * FR-Export            refused: uppercase in the slug
- * FR-1abc              refused: the slug starts with a digit, so a key is never a bare number
+ * FR-2fa-login         refused: the slug starts with a digit, so a key is never a bare number (write FR-two-factor-login)
  * FR--x, FR-x-         refused: an empty part between hyphens, or a trailing hyphen
  * RSK-data-loss        refused for a functional requirement: another type's prefix
  * </pre>
@@ -38,7 +38,7 @@ public final class ArtifactKeys {
 
     private static final Pattern SLUG = Pattern.compile("[a-z][a-z0-9]*(-[a-z0-9]+)*");
 
-    // A key split into its prefix and the rest: "FR-step-10" -> ("FR", "step-10"). The prefix is letters only, so the
+    // A key split into its prefix and the rest: "FR-export-csv" -> ("FR", "export-csv"). The prefix is letters only, so the
     // first hyphen ends it.
     private static final Pattern KEY = Pattern.compile("([A-Z]+)-(.*)");
 
@@ -83,7 +83,7 @@ public final class ArtifactKeys {
         // 3. The right prefix but a slug out of format, or no prefix the pattern recognizes. Each gets the format
         //    message:
         //   "FR-Export"     uppercase in the slug
-        //   "FR-1abc"       the slug starts with a digit
+        //   "FR-2fa-login"  the slug starts with a digit
         //   "FR--x"         an empty part between hyphens (the slug is "-x")
         //   "FR-x-"         a trailing hyphen
         //   "FR-" + 41 letters  longer than 40 characters
@@ -126,68 +126,14 @@ public final class ArtifactKeys {
     }
 
     /**
-     * Artifact keys in the order a student reads them: by prefix, then by the rest with runs of digits compared as
-     * numbers, so {@code FR-step-2} comes before {@code FR-step-10} (a plain string sort puts "10" first), and other
-     * slugs sort alphabetically. A null key sorts last. For example:
+     * Artifact keys in alphabetical order, a null key last. Keys are names, so alphabetical is how a student reads
+     * them: the prefix groups them by type, and the slug orders them within it. For example:
      * <pre>
-     * [UC-submit-report, FR-step-10, null, FR-step-2, BO-quality]
-     *   -> [BO-quality, FR-step-2, FR-step-10, UC-submit-report, null]
+     * [UC-create-use-case, FR-input-validation, null, FR-export-csv, BO-requirements-quality]
+     *   -> [BO-requirements-quality, FR-export-csv, FR-input-validation, UC-create-use-case, null]
      * </pre>
      */
-    public static final Comparator<String> NATURAL_ORDER = Comparator.nullsLast(ArtifactKeys::compareNatural);
-
-    private static int compareNatural(String left, String right) {
-        // left and right are whole keys, such as "FR-step-2" and "FR-step-10"; i and j walk them side by side.
-        int i = 0;
-        int j = 0;
-        while (i < left.length() && j < right.length()) {
-            char a = left.charAt(i);
-            char b = right.charAt(j);
-            if (Character.isDigit(a) && Character.isDigit(b)) {
-                // Compare the two digit runs as numbers: first by length once leading zeros are skipped, then digit by
-                // digit, so no run can overflow a long. "FR-step-2" against "FR-step-10" reaches the runs "2" and "10":
-                // the shorter one is the smaller number, so FR-step-2 comes first. "12" against "19" is the same length,
-                // so the digits decide.
-                int runStartA = i;
-                int runStartB = j;
-                while (i < left.length() && Character.isDigit(left.charAt(i))) {
-                    i++;
-                }
-                while (j < right.length() && Character.isDigit(right.charAt(j))) {
-                    j++;
-                }
-                String runA = stripLeadingZeros(left.substring(runStartA, i));
-                String runB = stripLeadingZeros(right.substring(runStartB, j));
-                int byLength = Integer.compare(runA.length(), runB.length());
-                if (byLength != 0) {
-                    return byLength;
-                }
-                int byDigits = runA.compareTo(runB);
-                if (byDigits != 0) {
-                    return byDigits;
-                }
-            } else {
-                // Any other character is compared as itself: "BO-quality" against "FR-step-2" stops at once, B before F,
-                // which is how keys group by prefix.
-                if (a != b) {
-                    return Character.compare(a, b);
-                }
-                i++;
-                j++;
-            }
-        }
-        // One key ran out with everything so far equal: the shorter rest comes first, so "FR-step-2" sorts before
-        // "FR-step-02b" (the runs "2" and "02" are equal, and only "b" is left). Two equal keys give 0.
-        return Integer.compare(left.length() - i, right.length() - j);
-    }
-
-    private static String stripLeadingZeros(String digits) {
-        int k = 0;
-        while (k < digits.length() - 1 && digits.charAt(k) == '0') {
-            k++;
-        }
-        return digits.substring(k);
-    }
+    public static final Comparator<String> KEY_ORDER = Comparator.nullsLast(Comparator.naturalOrder());
 
     private static String formatMessage(String prefix) {
         return "The artifact key must be " + prefix + "- followed by a name of lowercase letters, digits and single hyphens, "

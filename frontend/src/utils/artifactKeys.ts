@@ -59,13 +59,13 @@ export function slugProblem(slug: string): string | null {
   return null
 }
 
-// Keys in the order a student reads them: by prefix, then with numbers compared as numbers, so FR-step-2 comes before
-// FR-step-10; a missing key last. The backend's ArtifactKeys.NATURAL_ORDER sorts the same way.
+// Keys in alphabetical order, a missing key last: the prefix groups them by type, the slug orders them within it.
+// A plain comparison, not localeCompare, so the order is the server's (ArtifactKeys.KEY_ORDER) character for character.
 export function compareArtifactKeys(
   a: string | null | undefined,
   b: string | null | undefined
 ): number {
   if (!a) return b ? 1 : 0
   if (!b) return -1
-  return a.localeCompare(b, 'en', { numeric: true })
+  return a < b ? -1 : a > b ? 1 : 0
 }

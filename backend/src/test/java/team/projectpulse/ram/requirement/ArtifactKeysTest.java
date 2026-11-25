@@ -18,7 +18,7 @@ class ArtifactKeysTest {
     @DisplayName("A key is the type's prefix and a slug of lowercase letters, digits and single hyphens, starting with a letter")
     void validKeys() {
         assertThat(ArtifactKeys.problemWith(RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "FR-export-csv")).isEmpty();
-        assertThat(ArtifactKeys.problemWith(RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "FR-step-2")).isEmpty();
+        assertThat(ArtifactKeys.problemWith(RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "FR-export-v2")).isEmpty();
         assertThat(ArtifactKeys.problemWith(RequirementArtifactType.PRECONDITION, "PRE-student-logged-in")).isEmpty();
         assertThat(ArtifactKeys.problemWith(RequirementArtifactType.RISK, "RSK-" + "a".repeat(40))).isEmpty();
     }
@@ -26,11 +26,11 @@ class ArtifactKeysTest {
     @Test
     @DisplayName("A missing or malformed key gives the format message (4a)")
     void malformedKeys() {
-        for (String key : new String[]{null, "", " ", "FR-", "FR-Export", "FR-1abc", "FR-1", "FR--x", "FR-x-", "FR-x--y", "FR-x_y", "fr-x", "FRexport", "RSK-" + "a".repeat(41)}) {
+        for (String key : new String[]{null, "", " ", "FR-", "FR-Export", "FR-2fa-login", "FR-1", "FR--x", "FR-x-", "FR-x--y", "FR-x_y", "fr-x", "FRexport", "RSK-" + "a".repeat(41)}) {
             assertThat(ArtifactKeys.problemWith(RequirementArtifactType.FUNCTIONAL_REQUIREMENT, key)).as(String.valueOf(key))
                     .hasValueSatisfying(message -> assertThat(message).isNotBlank());
         }
-        assertThat(ArtifactKeys.problemWith(RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "FR-1abc"))
+        assertThat(ArtifactKeys.problemWith(RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "FR-2fa-login"))
                 .hasValue("The artifact key must be FR- followed by a name of lowercase letters, digits and single hyphens, starting with a letter, at most 40 characters.");
     }
 
@@ -45,11 +45,11 @@ class ArtifactKeysTest {
     }
 
     @Test
-    @DisplayName("Keys sort by prefix, then with numbers compared as numbers; a missing key sorts last")
-    void naturalOrder() {
-        List<String> keys = new ArrayList<>(Arrays.asList("UC-submit-report", "FR-step-10", null, "FR-step-2", "BO-quality", "FR-step-02b"));
-        keys.sort(ArtifactKeys.NATURAL_ORDER);
-        assertThat(keys).containsExactly("BO-quality", "FR-step-2", "FR-step-02b", "FR-step-10", "UC-submit-report", null);
+    @DisplayName("Keys sort alphabetically, grouped by prefix; a missing key sorts last")
+    void keyOrder() {
+        List<String> keys = new ArrayList<>(Arrays.asList("UC-create-use-case", "FR-input-validation", null, "FR-export-csv", "BO-requirements-quality"));
+        keys.sort(ArtifactKeys.KEY_ORDER);
+        assertThat(keys).containsExactly("BO-requirements-quality", "FR-export-csv", "FR-input-validation", "UC-create-use-case", null);
     }
 
 }

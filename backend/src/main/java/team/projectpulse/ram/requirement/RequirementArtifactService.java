@@ -367,9 +367,8 @@ public class RequirementArtifactService {
         return List.copyOf(links);
     }
 
-    // Artifact-key order as a student reads it (ArtifactKeys.NATURAL_ORDER): by prefix, then by slug with numbers
-    // compared as numbers, so FR-step-2 comes before FR-step-10. A missing key sorts last.
-    private static final Comparator<ArtifactReferrerDto> BY_ARTIFACT_KEY = Comparator.comparing(ArtifactReferrerDto::artifactKey, ArtifactKeys.NATURAL_ORDER);
+    // Artifact keys in alphabetical order, a missing key last (ArtifactKeys.KEY_ORDER).
+    private static final Comparator<ArtifactReferrerDto> BY_ARTIFACT_KEY = Comparator.comparing(ArtifactReferrerDto::artifactKey, ArtifactKeys.KEY_ORDER);
 
     private static ArtifactReferrerDto referrer(RequirementArtifact other, Relation relation, ArtifactLinkType linkType) {
         return new ArtifactReferrerDto(other.getId(), other.getArtifactKey(), other.getTitle(), relation, linkType);

@@ -776,8 +776,7 @@ const ruleDialog = ref<{ visible: boolean; title: string }>({ visible: false, ti
 
 const businessRuleSelect = ref<{ blur: () => void }>()
 
-// Artifact keys in the order a student reads them (compareArtifactKeys): RULE-step-2 before RULE-step-10, slugs
-// alphabetically, a rule with no key last.
+// Rules in artifact key order (compareArtifactKeys): alphabetical, a rule with no key last.
 function byKey(a: RequirementArtifact | undefined, b: RequirementArtifact | undefined) {
   return compareArtifactKeys(a?.artifactKey, b?.artifactKey)
 }
