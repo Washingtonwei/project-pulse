@@ -759,6 +759,23 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
     // ---- Artifact keys (docs/design/art.md, "Artifact keys" and Tests) ----
 
     @Test
+    void findKeyHolder_TeamsKeyFound_FreeAndOtherTeamsKeysNot_NonMemberForbidden() throws Exception {
+        JSONObject found = keyHolder(1, "FR-user-authentication", this.studentJohnToken);
+        assertThat(found.getBoolean("flag")).as(found.toString()).isTrue();
+        JSONObject holder = found.getJSONObject("data");
+        assertThat(holder.getLong("id")).isEqualTo(idOf(1, "FR-user-authentication"));
+        assertThat(holder.getString("artifactKey")).isEqualTo("FR-user-authentication");
+        assertThat(holder.getString("title")).isEqualTo("User authentication");
+        assertThat(holder.getString("type")).isEqualTo("FUNCTIONAL_REQUIREMENT");
+
+        // A free key, and team 2's FR-export-csv asked through team 1's URL, both have no holder.
+        assertThat(keyHolder(1, "FR-not-taken", this.studentJohnToken).isNull("data")).isTrue();
+        assertThat(keyHolder(1, "FR-export-csv", this.studentJohnToken).isNull("data")).isTrue();
+        // Woody is on team 2, so team 1's route refuses him before the service runs.
+        assertThat(keyHolder(1, "FR-user-authentication", this.studentWoodyToken).getInt("code")).isEqualTo(StatusCode.FORBIDDEN);
+    }
+
+    @Test
     void keyIndex_DuplicateKeyPastTheService_RefusedByTheIndexAndRecognized() {
         // The backstop of BR-artifact-key-unique (migration V14, declared on RequirementArtifact): a second artifact of
         // team 1 with FR-user-authentication, saved straight through the repository so no check runs, fails on the
@@ -829,6 +846,12 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
         JSONObject stale = update(fr2, new JSONObject(body.toString()).put("artifactKey", "FR-validate-everything").put("version", 0), this.studentJohnToken);
         assertThat(stale.getInt("code")).isEqualTo(StatusCode.CONFLICT);
         assertThat(this.requirementArtifactRepository.findById(fr2).orElseThrow().getArtifactKey()).isEqualTo("FR-validate-inputs");
+    }
+
+    private JSONObject keyHolder(int teamId, String artifactKey, String token) throws Exception {
+        MvcResult result = this.mockMvc.perform(get(this.baseUrl + "/teams/" + teamId + "/requirement-artifacts/key-holder").param("artifactKey", artifactKey)
+                .accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, token)).andReturn();
+        return new JSONObject(result.getResponse().getContentAsString());
     }
 
     private JSONObject references(int teamId, long artifactId, String token) throws Exception {

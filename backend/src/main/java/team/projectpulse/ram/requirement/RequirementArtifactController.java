@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 import team.projectpulse.ram.requirement.converter.RequirementArtifactDtoToRequirementArtifactConverter;
 import team.projectpulse.ram.requirement.converter.RequirementArtifactToRequirementArtifactDtoConverter;
+import team.projectpulse.ram.requirement.dto.ArtifactKeyHolderDto;
 import team.projectpulse.ram.requirement.dto.ArtifactReferrerDto;
 import team.projectpulse.ram.requirement.dto.RequirementArtifactDto;
 import team.projectpulse.system.Result;
@@ -34,6 +35,19 @@ public class RequirementArtifactController {
         Page<RequirementArtifact> requirementArtifactPage = this.requirementArtifactService.findByCriteria(teamId, searchCriteria, pageable);
         Page<RequirementArtifactDto> requirementArtifactDtoPage = requirementArtifactPage.map(this.requirementArtifactToRequirementArtifactDtoConverter::convert);
         return new Result(true, StatusCode.SUCCESS, "Find requirement artifacts successfully.", requirementArtifactDtoPage);
+    }
+
+    /**
+     * Which artifact of the team holds an artifact key: the editor's Availability check as the student picks a key
+     * (UC-ART-create-artifact, "Artifact key rules"). For example,
+     * {@code GET /teams/1/requirement-artifacts/key-holder?artifactKey=FR-user-authentication} answers with that seeded
+     * functional requirement's id, key, title and type, and {@code ?artifactKey=FR-export-csv} with no data: team 1
+     * holds no such key, and team 2's is never found. The answer is a convenience; the create or rename checks again.
+     */
+    @GetMapping("/teams/{teamId}/requirement-artifacts/key-holder")
+    public Result findKeyHolder(@PathVariable Integer teamId, @RequestParam(required = false) String artifactKey) {
+        ArtifactKeyHolderDto holder = this.requirementArtifactService.findKeyHolder(teamId, artifactKey).orElse(null);
+        return new Result(true, StatusCode.SUCCESS, "Find artifact key holder successfully.", holder);
     }
 
     @GetMapping("/teams/{teamId}/requirement-artifacts/{requirementArtifactId}")
