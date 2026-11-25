@@ -332,14 +332,14 @@ A business rule (`BR-*`, owned by [business-rules.md](requirements/business-rule
 
 > ⚙️ **Generated, do not hand-edit.** This table is a *projection* of the forward citations — the use cases' **Business Rules** fields, the SRS's rule citations, and the NFR matrix's `QS-<slug>` rows — not a second authored copy of them (that would violate "cited, never restated" and drift). `/spec-build` **regenerates and verifies** it against the live citations; a row that disagrees with them is a flagged defect, and edits belong in the citing artifacts, not here. The two universal access rules (`BR-role-based-access`, `BR-team-scoped-access`) are cited by essentially every authoring/CRUD use case and are summarized by count rather than enumerated (the same noise-reduction convention as the functional matrix's omitted `FR-SEC-*` column). This index is the **spec-level** backward view (which requirements *cite* a rule); its **code-level** companion — which `file:method` *enforces* each rule — lives in `/sync-check`'s `BR → enforcement-point` map. Together they trace a rule → requirements → code.
 >
-> **Last regenerated:** 2026-11-22 (against the citations as of this commit).
+> **Last regenerated:** 2026-11-24 (against the citations as of this commit).
 
 | Business rule | Cited by use cases | SRS | QS |
 |---|---|---|---|
 | `BR-account-self-setup` | `UC-ACC-setup-instructor-account`, `UC-ACC-setup-student-account` | — | — |
 | `BR-active-weeks` | `UC-EVA-submit-evaluation`, `UC-NOT-remind-non-submitters`, `UC-SEC-setup-active-weeks` | `FR-NOT-weekly-reminder` | — |
 | `BR-artifact-home` | `UC-ART-create-artifact`, `UC-ART-edit-artifact`, `UC-DOC-edit-document` | (prose) | — |
-| `BR-artifact-key-unique` | `UC-ART-create-artifact`, `UC-ART-edit-artifact` | `DI-artifact-key-assignment`, (prose) | — |
+| `BR-artifact-key-unique` | `UC-ART-create-artifact`, `UC-ART-edit-artifact`, `UC-DOC-create-use-case`, `UC-DOC-edit-use-case`, `UC-GLO-create-term`, `UC-GLO-rename-term` | `DI-artifact-key-assignment`, (prose) | — |
 | `BR-assistant-enablement` | `UC-AI-consult-project-assistant`, `UC-AI-draft-skeleton`, `UC-AI-elicit-requirements`, `UC-AI-practice-interview`, `UC-CFG-toggle-assistants` | — | — |
 | `BR-assistant-socratic` | `UC-AI-consult-project-assistant`, `UC-AI-critique`, `UC-AI-draft-skeleton`, `UC-AI-elicit-requirements`, `UC-AI-practice-interview`, `UC-AI-review-proposal`, `UC-AI-structure-notes`, `UC-AI-tutor`, `UC-AI-whole-project-review` | — | — |
 | `BR-authored-prevails` | `UC-AI-elicit-requirements` | — | — |

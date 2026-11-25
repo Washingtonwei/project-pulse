@@ -155,7 +155,7 @@ Notes / Clarifications:
 
 - The prefix is set by the artifact's type (for example `FR` for a functional requirement, `UC` for a use case) and cannot be changed.
 - The slug is a short kebab-case name for the artifact's concept: lowercase letters, digits, and single hyphens, starting with a letter, at most 40 characters. Because it must start with a letter, a slug is a name, never a bare number.
-- The system suggests a slug from the artifact's title and content, and the student may change it before the artifact is created. Choosing a good name is part of the authoring work: a key like `FR-stuff` is valid but tells the reader nothing.
+- When the student asks, the system suggests a slug from what she has written about the artifact (such as its title and content), and she may keep or change it before the artifact is created. Every artifact key is chosen this way, whatever the artifact's type. Choosing a good name is part of the authoring work: a key like `FR-stuff` is valid but tells the reader nothing.
 - Each artifact key is unique within a team (BR-artifact-key-unique).
 - Artifact keys are shown in traceability links, search, exports, and grading.
 - Artifact keys do not change when the wording of a requirement changes. A key changes only when a student deliberately renames it (UC-ART-edit-artifact: Edit a requirement artifact), which is meant for when the artifact's concept itself is renamed. Artifact links connect artifacts, not keys, so a rename breaks no link; a mention of the old key written into free text is not updated.
