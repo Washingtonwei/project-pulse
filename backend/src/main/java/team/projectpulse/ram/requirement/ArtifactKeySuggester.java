@@ -89,10 +89,17 @@ public final class ArtifactKeySuggester {
         };
     }
 
-    // What the LLM reads, and all it reads. A blank title or content is left out rather than sent empty:
-    //   Type: functional requirement
-    //   Title: Data export
-    //   Content: The system shall let the client export project data as a CSV file.
+    // What the LLM reads, and all it reads: the type's label, then the title and the content, each trimmed and cut at
+    // 2,000 characters. A blank title or content is left out rather than sent empty. Two examples:
+    //
+    //   input(FUNCTIONAL_REQUIREMENT, "Data export", "The system shall let the client export project data as a CSV file.")
+    //     Type: functional requirement
+    //     Title: Data export
+    //     Content: The system shall let the client export project data as a CSV file.
+    //
+    //   input(PRECONDITION, "", "  The student is logged into the system.  ")   a condition has no title
+    //     Type: precondition
+    //     Content: The student is logged into the system.
     static String input(RequirementArtifactType type, String title, String content) {
         StringBuilder input = new StringBuilder("Type: ").append(ArtifactKeys.label(type));
         if (!isBlank(title)) {
