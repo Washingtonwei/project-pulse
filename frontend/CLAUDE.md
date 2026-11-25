@@ -74,7 +74,7 @@ export const createFoo = (foo: Foo) =>
 - Other errors show `ElMessage.error()` toasts (with debouncing)
 
 ### Comments
-- A comment on non-obvious code (a race between requests, an order of updates, a watcher's purpose) walks one worked example with concrete values and says what the code never touches: [Architectural conventions](../docs/design/architectural-design.md#architectural-conventions).
+- A comment on non-obvious code (a race between requests, an order of updates, a watcher's purpose) walks one worked example with concrete values, inside the function at the step it explains, and says what the code never touches: [Architectural conventions](../docs/design/architectural-design.md#architectural-conventions).
 
 ### Styling
 - Global styles in `src/assets/main.scss`
