@@ -83,6 +83,7 @@ public final class ArtifactKeySuggester {
             case LlmResult.Answered answered -> {
                 JsonNode slug = answered.json().path("slug");
                 String normalized = slug.isString() ? normalize(type, slug.asString()) : null;
+                // yield gives this case's value to the switch expression (return would leave the whole method).
                 yield new ArtifactKeySuggestionDto(normalized == null ? null : ArtifactKeyPrefix.of(type) + "-" + normalized, true);
             }
         };
