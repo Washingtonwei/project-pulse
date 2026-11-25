@@ -1,9 +1,9 @@
 # Requirement Documents (DOC) Design
 
-> Realizes: UC-DOC-create-use-case, UC-DOC-edit-use-case, UC-DOC-view-use-case (the template's text fields and business rules), and UC-ART-create-artifact's actor and business rule entry points (extensions 3a, 3b, 6c and 6d)
-> Depends on: BR-use-case-actor-types, BR-use-case-business-rules, BR-link-constraints, BR-artifact-home, BR-review-lock, BR-deletion-integrity, MNT-feature-locality, BR-use-case-condition-shared, BR-shared-condition-wording, BR-team-scoped-access, BR-edit-lock-required, BR-lock-expiry, FR-HIS-authorship-metadata, OI-27, OI-46 (request-body ids), OI-51 (optimistic locking), OI-76, OI-77, OI-78
+> Realizes: UC-DOC-create-use-case, UC-DOC-edit-use-case, UC-DOC-view-use-case (the template's text fields and business rules), and UC-ART-create-artifact's actor and business rule entry points (extensions 3a, 3b, 6c and 6d), and the artifact keys of a use case and its new conditions
+> Depends on: BR-artifact-key-unique, BR-use-case-actor-types, BR-use-case-business-rules, BR-link-constraints, BR-artifact-home, BR-review-lock, BR-deletion-integrity, MNT-feature-locality, BR-use-case-condition-shared, BR-shared-condition-wording, BR-team-scoped-access, BR-edit-lock-required, BR-lock-expiry, FR-HIS-authorship-metadata, OI-27, OI-46 (request-body ids), OI-51 (optimistic locking), OI-76, OI-77, OI-78
 > See: [use cases](../requirements/use-cases.md#requirement-documents), [architectural-design.md](architectural-design.md#domain--aggregate-model) (Domain & aggregate model, Transactions & consistency, Authorization)
-> History: the step tree was written up after the code was built (2026-11-13). The rest of create and edit, including the actor rules and the shared conditions, was designed through `/design` on 2026-11-14; where this doc describes code that already existed, it records the design as built. On 2026-11-15 rewording a condition through a use case was removed altogether (BR-shared-condition-wording), so a condition entry is now only linked or created; rewording a condition for every use case waits on OI-72. On 2026-11-20 the actors moved from `UseCase` fields to `PRIMARY_ACTOR` and `SECONDARY_ACTOR` artifact links (spec PR #149, built in #151). On 2026-11-21 the use case gained Frequency of Use, Associated Information, Assumptions and Open Issues, and its business rules as `CONSTRAINS` links (spec PR #155, design PR #156); built on 2026-11-21.
+> History: the step tree was written up after the code was built (2026-11-13). The rest of create and edit, including the actor rules and the shared conditions, was designed through `/design` on 2026-11-14; where this doc describes code that already existed, it records the design as built. On 2026-11-15 rewording a condition through a use case was removed altogether (BR-shared-condition-wording), so a condition entry is now only linked or created; rewording a condition for every use case waits on OI-72. On 2026-11-20 the actors moved from `UseCase` fields to `PRIMARY_ACTOR` and `SECONDARY_ACTOR` artifact links (spec PR #149, built in #151). On 2026-11-21 the use case gained Frequency of Use, Associated Information, Assumptions and Open Issues, and its business rules as `CONSTRAINS` links (spec PR #155, design PR #156); built on 2026-11-21. On 2026-11-24 the use case and each new condition took a key the student chooses (spec PR #164), and the condition prefixes returned to `PRE` and `POST`.
 
 ## Scope
 
@@ -183,10 +183,10 @@ sequenceDiagram
     S->>R: findRequirementArtifactById(teamId, each business rule id), else 404
     S->>S: type BUSINESS_RULE, else 400 (extension 4a)
     S->>S: resolveConditions: check every entry (see Preconditions and postconditions), else 400 or 404
-    S->>R: createRequirementArtifact(teamId, artifact): team from route, key UC-n
+    S->>R: createRequirementArtifact(teamId, artifact): team from route, the key sent, checked (see Artifact keys)
     S->>L: reviseOutgoingLinks(teamId, artifact, PRIMARY_ACTOR, primary), then SECONDARY_ACTOR
     S->>L: reviseIncomingLinks(teamId, artifact, CONSTRAINS, business rules)
-    S->>R: createRequirementArtifact for each new condition: type from its list, key PRC-n or PSC-n
+    S->>R: createRequirementArtifact for each new condition: type from its list, the key sent, checked
     S->>DB: save use case (steps cascade, conditions are links only)
     C-->>E: Result with the use case, its step ids and version
 ```
@@ -212,7 +212,7 @@ sequenceDiagram
     S->>R: resolve each actor id in this team, else 404
     S->>S: requireActor type check, else 400 (extension 7a)
     S->>S: primary actor also a secondary actor, else 400 (extension 7a)
-    S->>R: resolve each business rule id in this team, else 404; type BUSINESS_RULE, else 400 (7a)
+    S->>R: resolve each business rule id in this team, else 404, type BUSINESS_RULE, else 400 (7a)
     S->>S: resolveConditions: check every entry, else 400 (7a) or 404
     S->>S: version present (400) and current (409)
     S->>S: lock held by the caller (409 not locked, 423 someone else)
@@ -220,7 +220,7 @@ sequenceDiagram
     S->>U: artifact fields, trigger, the four text fields
     S->>L: reviseOutgoingLinks for PRIMARY_ACTOR, then SECONDARY_ACTOR (diff: keep, delete, add)
     S->>L: reviseIncomingLinks for CONSTRAINS (the same diff)
-    S->>R: saveNewConditions: createRequirementArtifact for each new one (PRC-n, PSC-n)
+    S->>R: saveNewConditions: createRequirementArtifact for each new one, with the key sent
     S->>U: replace the ordered condition lists (links only)
     S->>U: reviseMainSteps(submitted steps)
     U->>U: OwnedChildren.revise, recursively per level
@@ -237,7 +237,7 @@ Each condition entry in a request is `{ id?, condition }`, in list order, and `r
 ```mermaid
 flowchart TD
     A[Submitted entry, in its list] --> B{Has an id?}
-    B -- no --> N[New condition, built now and saved after the version and lock checks:<br/>createRequirementArtifact, type from the list,<br/>team from the route, key PRC-n or PSC-n]
+    B -- no --> N[New condition, built now and saved after the version and lock checks:<br/>createRequirementArtifact, type from the list,<br/>team from the route, the key sent, checked]
     B -- yes --> D{Repeated in this list?}
     D -- yes --> X400d[400]
     D -- no --> L[findRequirementArtifactById in the route's team]
@@ -262,7 +262,7 @@ flowchart TD
 - **`otherUseCases`** is filled on GET, POST and PUT alike, sorted by use case id. It shows each use case's artifact key as stored.
 - **The artifact route is unchanged.** `PUT /requirement-artifacts/{id}` (UC-ART-edit-artifact) copies only title, content, priority and notes, so it cannot change a condition's type. It can already reword a condition, for every use case at once, but with no stale-save guard, so the use case editor offers no way to reach it. That guarded path is "Edit for all" (extension 6b2), which is not built until OI-72.
 
-**Keys and display numbers are different things.** A condition's artifact key is `PRC-n` for a precondition and `PSC-n` for a postcondition, minted once per team from that type's counter. It never changes, and it's what links, comments and search show. The display number, `PRE-1`, `PRE-2`, … or `POST-1`, …, is the condition's position in one use case only. A shared condition `PRC-7` can be PRE-1 in UC-3 and PRE-4 in UC-9.
+**Keys and display numbers are different things.** A condition's artifact key is `PRE-<slug>` for a precondition and `POST-<slug>` for a postcondition, chosen when the condition is entered (see [Artifact keys of a use case and its conditions](#artifact-keys-of-a-use-case-and-its-conditions)). It changes only by a deliberate rename, and it's what links, comments and search show. The display number, `PRE-1`, `PRE-2`, … or `POST-1`, …, is the condition's position in one use case only. A shared condition `PRE-student-logged-in` can be PRE-1 in `UC-submit-report` and PRE-4 in `UC-view-report`; a slug starts with a letter, so a key never reads as a display number.
 
 **The condition types, and where each lives.** Four small types carry a condition through a request and back, each at one boundary:
 
@@ -285,6 +285,36 @@ flowchart TD
 | `OtherUseCaseDto` | API | The JSON shape of one entry of `otherUseCases`, without the internal condition id |
 
 Two could be dropped, and both were kept on purpose: passing `ConditionDto` to the service instead of `SubmittedCondition` would make the service depend on an API type, and returning `ConditionUse` in the response instead of `OtherUseCaseDto` would leak a repository type and a redundant `conditionId` into the JSON.
+
+### Artifact keys of a use case and its conditions
+
+The use case and each new precondition or postcondition carry an artifact key the student chose (UC-DOC-create-use-case and UC-DOC-edit-use-case, "Artifact keys"). The format, the guard, the suggestion and the key field are shared, and designed in [art.md](art.md#artifact-keys); this section is how the use case editor and its save plug in.
+
+```mermaid
+sequenceDiagram
+  actor S as Student
+  participant E as RamUseCases.vue and UseCaseConditionList.vue
+  participant U as UseCaseService
+  participant R as RequirementArtifactService
+  S->>E: the use case's key, and a key on each new condition row, each through ArtifactKeyField (Suggest on request)
+  Note over E: a condition picked from the team's list shows its key read-only, a held key that belongs to a condition of the same type offers "use that condition" (4b1, 7b1)
+  E->>U: POST or PUT use-cases with artifactKey, and artifactKey on each new condition entry
+  U->>U: resolveConditions: a new entry with no key, a malformed key, or a key repeated among the new entries: 400 naming the row (4a, 7a)
+  alt a new use case
+    U->>R: createRequirementArtifact for the use case's artifact: format, holder, flush
+  else edit, under the use case lock, with a changed key
+    U->>R: renameKey(teamId, artifact, key)
+  end
+  U->>R: createRequirementArtifact for each new condition, in list order
+  R-->>U: 400 naming the holder if any key is held, before or at the flush, the whole save rolls back (4b, 7b, 8a, 11b)
+  U-->>E: the saved use case with every key
+```
+
+- **Request fields.** The use case's `artifactKey` is required on both routes; on the PUT it is the current key, or a new one to rename it. Each new condition entry (no `id`) carries `artifactKey`, which reaches the service through `SubmittedCondition`; an entry with an `id` keeps its stored key, and any key sent with it is ignored, as its wording is.
+- **Order of checks.** The existing checks first (actors, then each list's entries), with the new-entry key checks inside `resolveConditions`, still writing nothing; then the version and lock checks (edit); then the writes, where the holder checks and the index run. So a refusal for a held key comes after every input check, and leaves nothing written.
+- **Messages** name the row as the other condition refusals do: "Precondition 2 needs an artifact key.", "Postcondition 1 has the same artifact key as postcondition 3." A malformed or held key uses the shared messages in [art.md](art.md#refusals).
+- **The editor.** A new row has a compact key field; a picked or saved row shows its key read-only. "Make a separate copy" (6b3) creates a row with an empty key box, since a copy is a new condition; the "use that condition" offer is hidden when the holder is the condition being replaced, which would undo the copy. A held key offered as "use that condition" replaces the new row with the existing condition, as the picker does.
+- **A saved condition's key** is renamed on the condition itself (UC-ART-edit-artifact), which, like rewording, waits for "Edit for all" (6b2, OI-72). The server rule (`renameKey`) is the same one.
 
 ### Actors as links
 
@@ -313,11 +343,11 @@ sequenceDiagram
     P->>D: open(types STAKEHOLDER and EXTERNAL_SYSTEM, title "Email Service")
     S->>D: type, title, content, confirm (UC-ART-create-artifact steps 3-4)
     D->>A: POST .../requirement-artifacts/search with type and title (step 5)
-    A-->>D: possible duplicates; if any, warn (5a): Use this one, or Create anyway
+    A-->>D: possible duplicates, if any, warn (5a): Use this one, or Create anyway
     D->>A: POST .../requirement-artifacts with type, title, content
     A-->>D: SYS-n, appended to Vision and Scope's External Systems (400 for 8a, 8b)
     D-->>P: created(artifact)
-    P->>P: add to the options; set as primary, or append to the secondaries (6c2)
+    P->>P: add to the options, set as primary, or append to the secondaries (6c2)
     Note over P,U: the use case's form, lock and version are untouched
     S->>P: later saves the use case (step 11)
     P->>U: PUT .../use-cases/{id} with the new id among secondaryActorIds
@@ -468,7 +498,7 @@ The editor lists a team's use cases through the requirement artifact search, `PO
 | How the order of conditions is stored | A `List` with `@OrderColumn` on each join table. Allowed because `UseCase` owns both associations (it declares the `@JoinTable`, and nothing maps them back with `mappedBy`). The Hibernate 7.4 User Guide, §3.9.2 Mapping Lists, requires `@OrderColumn` to keep a list's order and forbids it only on a `@ManyToMany(mappedBy = …)` side; §3.9.12 Ordered Lists puts the order column "in the collection link table". | A `Set` (as before): no order at all, and the request's `Set<ConditionDto>` merged two new entries with the same wording. A position field on the condition: the position belongs to the link, since one condition sits at different positions in different use cases. |
 | Join table primary key | `(*_index, use_case_id)`, exactly what Hibernate generates for these `@ManyToMany` lists; a repeated condition is refused by the service. The guide shows such a key only for a `@OneToMany` link table (§3.9.12, "PRIMARY KEY ( Person_id, order_id )"), so `/implement` read the key Hibernate generates in dev before writing V9. It has the two expected columns, with the index column first, and the artifact column gets an index of its own. V9 creates exactly that, so production matches what the tests run against. | Keeping `(artifact_id, use_case_id)`: if Hibernate reorders by updating the artifact at each index, a swap would briefly put one artifact on two rows, a primary key collision. The guide doesn't show the SQL Hibernate runs to reorder an indexed list, so this is inferred, and the reorder test below checks it. |
 | Where "shared" is computed | Two JPQL queries in `UseCaseRepository`, run for every response (the "Also used by" display, 6b1) | A reference count stored on the artifact: one more value to keep in sync, for no gain at use case size |
-| Condition key prefixes | `PRC` and `PSC`, one counter per type as for every artifact | `PRE` and `POST` (as before): read exactly like the display numbers PRE-1 and POST-1. `CND` for both: would need the two types to share one counter, the only exception in key generation, and the key would not say pre or post. |
+| Condition key prefixes | `PRE` and `POST` (back from `PRC` and `PSC`, 2026-11-24): a key is a prefix and a slug that starts with a letter, so `PRE-student-logged-in` cannot be mistaken for the display number PRE-1, and the prefix says what it is | `PRC` and `PSC`: chosen when keys were numbered, because `PRE-7` read exactly like the display number PRE-7; with slugs that reason is gone, and the letters say less. `CND` for both: the key would not say pre or post. |
 | Condition rows already stored | No delete and no key backfill; existing join rows are numbered once by V9 | A cleanup migration: it can't tell an orphan from a condition kept for reuse, which is legitimate from this slice on |
 | Key prefix for external systems | `SYS` | `EXT`: reads as "extension" inside a use case |
 | How the order of steps is stored | Keep `@OrderColumn` on the inverse lists; Hibernate writes and renumbers the position column | `@OrderBy` on a position field: the lists become bags, and the nested fetch joins (`findByIdWithStepGraph`) then fail with `MultipleBagFetchException`. Hibernate's boot warning HHH160246 about this mapping is accepted; the 7.4 User Guide (Mapping Lists) says the order column must be applied explicitly on the inverse side. |
@@ -552,7 +582,7 @@ The step tables and their `*_index` order columns are unchanged. The dev seed ad
 - Authorization: the route rule (`TeamMembershipAuthorizationManager`) and the team-scoped query, as the architecture-of-record's [Authorization](architectural-design.md#authorization) requires; `RequirementArtifactService.findRequirementArtifactById` is the scoped finder for actors and conditions.
 - Use case locking (BR-edit-lock-required, BR-lock-expiry): the save is refused unless the caller holds the lock.
 - Optimistic locking (OI-51): `UseCase` is the aggregate root, so its `@Version` covers all three child levels.
-- Artifact keys: `RequirementArtifactService.createRequirementArtifact` mints the keys of the use case and of every new condition, as it does for every artifact.
+- Artifact keys: `RequirementArtifactService.createRequirementArtifact` and `renameKey` check the keys of the use case and of every new condition, as they do for every artifact ([art.md](art.md#artifact-keys)).
 - Error mapping: `ExceptionHandlerAdvice` already maps `MethodArgumentNotValidException` and `IllegalArgumentException` to 400, `ObjectNotFoundException` to 404, the two lock exceptions to 409 and 423, and `OptimisticLockException` to 409.
 - A document section's requirement artifacts no longer pair by id at all: the section save stores prose only, and each artifact is created and edited through its own endpoint (see [art.md](art.md)).
 
@@ -579,7 +609,7 @@ The step tables and their `*_index` order columns are unchanged. The dev seed ad
 | UC-DOC-edit-use-case, editing scenarios | integration, `UseCaseStepOrderingIntegrationTest` | Two saves in a row; remove an extension; edit an extension's kind and exit; insert an extension step; edit actors; remove every step |
 | UC-DOC-edit-use-case, version | integration, `UseCaseStepOrderingIntegrationTest` | A text-only edit increments the stored version; a second save with the returned version succeeds |
 | UC-DOC-create-use-case, ids in the body | integration, `UseCaseStepOrderingIntegrationTest` | Steps submitted with existing ids are stored as new rows |
-| UC-DOC-create-use-case, new conditions | integration, `UseCaseConditionIntegrationTest` | Stored with the list's type (a body `type` of `STAKEHOLDER` is ignored), the route's team, keys `PRC-n` and `PSC-n`, in the submitted order |
+| UC-DOC-create-use-case, new conditions | integration, `UseCaseConditionIntegrationTest` | Stored with the list's type (a body `type` of `STAKEHOLDER` is ignored), the route's team, the keys sent, in the submitted order |
 | UC-DOC-create-use-case, an existing condition picked | integration, `UseCaseConditionIntegrationTest` | Linked by id; no new row |
 | UC-DOC-create-use-case, an existing condition picked with changed wording | integration, `UseCaseConditionIntegrationTest` | Saved; the condition is linked by id with its stored wording, which the response shows, and no new condition row is created |
 | Two new entries with the same wording | integration, `UseCaseConditionIntegrationTest` | Both stored as separate conditions, in order |
@@ -590,8 +620,10 @@ The step tables and their `*_index` order columns are unchanged. The dev seed ad
 | UC-DOC-edit-use-case, extension 6b, the editor | manual, `npm run type-check` and `lint:check` | Every row with an id is read-only and offers "Make a separate copy"; "Also used by" shows only for a shared condition; a new row stays editable until the save |
 | `otherUseCases` in the response | integration, `UseCaseConditionIntegrationTest` | Lists every other use case referencing a condition; empty when unshared |
 | Condition refusals | integration, `UseCaseConditionIntegrationTest` | Another team's or an unknown condition id gives 404 with the same message. A repeated id, a precondition id in the postcondition list, and empty wording each give 400, with the messages under "Details of the rule". |
-| Condition key prefixes | unit, `ArtifactKeyPrefixTest` | `ArtifactKeyPrefix.of` gives `PRC` and `PSC` |
-| Seed | integration, `UseCaseConditionIntegrationTest` | The seeded use case keeps id 3. Its three preconditions and two postconditions have `PRC-n` and `PSC-n` keys, in the order `DataInitializer` lists them. |
+| Condition key prefixes | unit, `ArtifactKeyPrefixTest` | `ArtifactKeyPrefix.of` gives `PRE` and `POST` |
+| Use case keys, create (4a, 4b) | integration, `UseCaseConditionIntegrationTest` | A use case and two new conditions are stored with the keys sent; a new condition with no key, two new conditions with one key, and a key another artifact holds are each refused with 400 naming the row or the holder, and nothing is stored |
+| Use case keys, edit (7a, 7b) | integration, `UseCaseConditionIntegrationTest` | The use case's key is renamed under the lock; a held key on a new condition is refused and nothing changes; a picked condition keeps its key whatever key is sent with it |
+| Seed | integration, `UseCaseConditionIntegrationTest` | The seeded use case keeps id 3. Its three preconditions and two postconditions have `PRE-` and `POST-` slug keys, in the order `DataInitializer` lists them. |
 | Migration V9 | manual, scratch MySQL (done) | V1 to V9 apply in order; existing join rows are numbered 0..n-1 per use case; the primary key is `(*_index, use_case_id)`, as Hibernate generates it |
 | Request-body step ids (OI-46) | integration, `RequestBodyIdIntegrationTest` | A step id from another team's use case is stored as a new step; the other team's step is unchanged |
 | UC-DOC-edit-use-case, extension 6c | integration, `UseCaseControllerTest` | While the student holds UC-1's lock, creating an `EXTERNAL_SYSTEM` returns its `SYS-n` key, at the end of Vision and Scope's External Systems list; UC-1's version and lock are unchanged; a save naming it as a secondary actor stores the `SECONDARY_ACTOR` link |
@@ -621,6 +653,7 @@ All integration tests flush, clear, and read the database with native SQL, becau
 ## Open questions / risks
 
 - **"Edit for all" (extension 6b2) is not built.** It waits for the stale-save guard of UC-ART-edit-artifact extension 10a, which needs OI-51's decision on `RequirementArtifact`. Tracked as OI-72.
+- **Renaming a saved condition's key has no screen yet.** It goes through UC-ART-edit-artifact on the condition, which waits for "Edit for all" (6b2, OI-72) with rewording; the server rule is ready.
 - **`UseCaseService.findUseCaseByIdBasic` has no callers.** It predates this slice and its Javadoc is wrong (it loads the lock too, not only the artifact). Proposed for deletion as a follow-up.
 - **Deleting a condition that is still referenced** through UC-ART-delete-artifact hits a foreign key and gives a 500, since BR-deletion-integrity is not built (OI-26). This slice doesn't change that.
 - **A typo fix leaves the old condition behind.** Since a use case can't reword a condition, fixing one means a separate copy, and the original stays unlinked in the team's requirements graph, where the picker still offers it. Accepted on 2026-11-15 until "Edit for all" (OI-72) lands.
