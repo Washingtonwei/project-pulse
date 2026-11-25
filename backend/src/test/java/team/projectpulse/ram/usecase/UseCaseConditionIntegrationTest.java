@@ -1,5 +1,7 @@
 package team.projectpulse.ram.usecase;
 
+import team.projectpulse.ram.TestKeys;
+
 import jakarta.persistence.EntityManager;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -30,7 +32,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
  * {@code docs/design/doc.md}.
  * <p>
  * Seed facts these tests rely on: team 1's use case 3 has preconditions 4, 5 and 6 and postconditions 7 and 8, in the
- * order {@code DataInitializer} lists them, with keys PRC-1 to PRC-3 and PSC-1 to PSC-2, and no other use case
+ * order {@code DataInitializer} lists them, with keys PRE-student-logged-in to PRE-document-not-locked and POST-use-case-stored to POST-collaboration-metadata-recorded, and no other use case
  * references them.
  */
 class UseCaseConditionIntegrationTest extends AbstractIntegrationTest {
@@ -66,9 +68,9 @@ class UseCaseConditionIntegrationTest extends AbstractIntegrationTest {
         JSONObject useCase = fetchUseCase(3);
 
         assertThat(useCase.getLong("id")).isEqualTo(3L);
-        assertThat(keysOf(useCase.getJSONArray("preconditions"))).containsExactly("PRC-1", "PRC-2", "PRC-3");
+        assertThat(keysOf(useCase.getJSONArray("preconditions"))).containsExactly("PRE-student-logged-in", "PRE-student-on-owning-team", "PRE-document-not-locked");
         assertThat(wordingsOf(useCase.getJSONArray("preconditions"))).containsExactly(LOGGED_IN, MEMBER, NOT_LOCKED);
-        assertThat(keysOf(useCase.getJSONArray("postconditions"))).containsExactly("PSC-1", "PSC-2");
+        assertThat(keysOf(useCase.getJSONArray("postconditions"))).containsExactly("POST-use-case-stored", "POST-collaboration-metadata-recorded");
     }
 
     @Test
@@ -87,12 +89,12 @@ class UseCaseConditionIntegrationTest extends AbstractIntegrationTest {
         for (int i = 0; i < preconditions.length(); i++) {
             JSONObject condition = preconditions.getJSONObject(i);
             assertThat(condition.getString("type")).isEqualTo("PRECONDITION");
-            assertThat(condition.getString("artifactKey")).startsWith("PRC-");
+            assertThat(condition.getString("artifactKey")).startsWith("PRE-");
             assertThat(teamOf(condition.getLong("id"))).isEqualTo(1);
         }
         JSONObject postcondition = data.getJSONArray("postconditions").getJSONObject(0);
         assertThat(postcondition.getString("type")).isEqualTo("POSTCONDITION");
-        assertThat(postcondition.getString("artifactKey")).startsWith("PSC-");
+        assertThat(postcondition.getString("artifactKey")).startsWith("POST-");
     }
 
     @Test
@@ -132,13 +134,61 @@ class UseCaseConditionIntegrationTest extends AbstractIntegrationTest {
     void createKeepsTwoEntriesWithTheSameWording() throws Exception {
         JSONObject payload = minimalUseCase()
                 .put("preconditions", new JSONArray()
-                        .put(new JSONObject().put("condition", "TBD"))
-                        .put(new JSONObject().put("condition", "TBD")));
+                        // Same wording, so each needs a key of its own: one key on two new entries is refused (4a).
+                        .put(new JSONObject().put("condition", "TBD").put("artifactKey", "PRE-tbd-first"))
+                        .put(new JSONObject().put("condition", "TBD").put("artifactKey", "PRE-tbd-second")));
 
         JSONArray preconditions = requireSuccess(postUseCase(payload)).getJSONArray("preconditions");
 
         assertThat(preconditions.length()).isEqualTo(2);
         assertThat(preconditions.getJSONObject(0).getLong("id")).isNotEqualTo(preconditions.getJSONObject(1).getLong("id"));
+    }
+
+    // ---- Artifact keys (docs/design/doc.md, "Artifact keys of a use case and its conditions") ----
+
+    @Test
+    void createStoresTheKeysSent_AndRefusesMissingRepeatedOrHeldKeys() throws Exception {
+        JSONObject created = requireSuccess(postUseCase(minimalUseCase().put("artifactKey", "UC-key-probe")
+                .put("preconditions", new JSONArray()
+                        .put(new JSONObject().put("condition", "The probe is ready.").put("artifactKey", "PRE-probe-ready"))
+                        .put(new JSONObject().put("condition", "The probe is set.").put("artifactKey", "PRE-probe-set")))));
+        assertThat(created.getString("artifactKey")).isEqualTo("UC-key-probe");
+        assertThat(keysOf(created.getJSONArray("preconditions"))).containsExactly("PRE-probe-ready", "PRE-probe-set");
+
+        long conditionsBefore = countConditions();
+        // 4a: a new condition with no key, and one key on two new conditions.
+        JSONObject noKey = postUseCase(minimalUseCase().put("artifactKey", "UC-key-probe-two")
+                .put("preconditions", new JSONArray().put(new JSONObject().put("condition", "Keyless.").put("artifactKey", JSONObject.NULL))));
+        assertThat(noKey.getString("message")).isEqualTo("Precondition 1 needs an artifact key.");
+        JSONObject repeated = postUseCase(minimalUseCase().put("artifactKey", "UC-key-probe-two")
+                .put("preconditions", new JSONArray()
+                        .put(new JSONObject().put("condition", "One.").put("artifactKey", "PRE-twice"))
+                        .put(new JSONObject().put("condition", "Two.").put("artifactKey", "PRE-twice"))));
+        assertThat(repeated.getString("message")).isEqualTo("Precondition 2 has the same artifact key as precondition 1.");
+        // 4b: a key another artifact of the team holds refuses the whole save, naming it.
+        JSONObject held = postUseCase(minimalUseCase().put("artifactKey", "UC-key-probe-two")
+                .put("preconditions", new JSONArray().put(new JSONObject().put("condition", "Logged in again.").put("artifactKey", "PRE-student-logged-in"))));
+        assertThat(held.getString("message")).startsWith("PRE-student-logged-in is already used by");
+        assertThat(held.getJSONObject("data").getString("type")).isEqualTo("PRECONDITION");
+        assertThat(countConditions()).isEqualTo(conditionsBefore);
+    }
+
+    @Test
+    void editRenamesTheUseCaseKeyUnderTheLock_AndAPickedConditionKeepsItsKey() throws Exception {
+        lock(3);
+        JSONObject payload = fetchUseCase(3).put("artifactKey", "UC-author-a-use-case");
+        // Sending another key with an existing condition changes nothing: it keeps its stored key, as its wording.
+        payload.getJSONArray("preconditions").getJSONObject(0).put("artifactKey", "PRE-something-else");
+        JSONObject saved = requireSuccess(putUseCase(3, payload));
+        assertThat(saved.getString("artifactKey")).isEqualTo("UC-author-a-use-case");
+        assertThat(saved.getJSONArray("preconditions").getJSONObject(0).getString("artifactKey")).isEqualTo("PRE-student-logged-in");
+
+        // 7b: a held key on a new condition is refused, and nothing changes.
+        JSONObject refusedPayload = fetchUseCase(3);
+        refusedPayload.getJSONArray("postconditions").put(new JSONObject().put("condition", "Stored again.").put("artifactKey", "POST-use-case-stored"));
+        JSONObject refused = putUseCase(3, refusedPayload);
+        assertThat(refused.getString("message")).startsWith("POST-use-case-stored is already used by");
+        assertThat(fetchUseCase(3).getJSONArray("postconditions").length()).isEqualTo(2);
     }
 
     // ---- Edit ----
@@ -318,11 +368,13 @@ class UseCaseConditionIntegrationTest extends AbstractIntegrationTest {
     }
 
     private JSONObject postUseCase(JSONObject payload) throws Exception {
-        return send(post(this.baseUrl + "/teams/1/use-cases"), payload);
+        return send(post(this.baseUrl + "/teams/1/use-cases"), TestKeys.fillUseCaseKeys(payload, null));
     }
 
     private JSONObject putUseCase(long useCaseId, JSONObject payload) throws Exception {
-        return send(put(this.baseUrl + "/teams/1/use-cases/" + useCaseId), payload);
+        // A payload with no key sends the use case's current one, so the save renames nothing.
+        String currentKey = payload.has("artifactKey") ? null : fetchUseCase(useCaseId).getString("artifactKey");
+        return send(put(this.baseUrl + "/teams/1/use-cases/" + useCaseId), TestKeys.fillUseCaseKeys(payload, currentKey));
     }
 
     private JSONObject send(org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder request, JSONObject payload) throws Exception {

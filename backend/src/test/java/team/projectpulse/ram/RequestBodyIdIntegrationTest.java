@@ -172,7 +172,7 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
                 }
                 """.formatted(victim.getId(), team1PrimaryActorId());
 
-        MvcResult mvcResult = this.mockMvc.perform(post(this.baseUrl + "/teams/1/use-cases").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+        MvcResult mvcResult = this.mockMvc.perform(post(this.baseUrl + "/teams/1/use-cases").contentType(MediaType.APPLICATION_JSON).content(TestKeys.fillUseCaseKeys(json, null)).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andDo(print()).andReturn();
         JSONObject response = new JSONObject(mvcResult.getResponse().getContentAsString());
 
@@ -204,7 +204,7 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
                 }
                 """.formatted(team1PrimaryActorId());
 
-        MvcResult mvcResult = this.mockMvc.perform(post(this.baseUrl + "/teams/1/use-cases").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+        MvcResult mvcResult = this.mockMvc.perform(post(this.baseUrl + "/teams/1/use-cases").contentType(MediaType.APPLICATION_JSON).content(TestKeys.fillUseCaseKeys(json, null)).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andDo(print()).andReturn();
         JSONObject response = new JSONObject(mvcResult.getResponse().getContentAsString());
 
@@ -346,7 +346,7 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
                 }
                 """.formatted(primaryActorId, victim.getId(), version);
 
-        MvcResult mvcResult = this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+        MvcResult mvcResult = this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3").contentType(MediaType.APPLICATION_JSON).content(TestKeys.fillUseCaseKeys(json, "UC-create-use-case")).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andDo(print()).andReturn();
         JSONObject response = new JSONObject(mvcResult.getResponse().getContentAsString());
 
@@ -389,7 +389,7 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
                 .put("actionText", "Stolen step")
                 .put("extensions", new JSONArray()));
 
-        MvcResult mvcResult = this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3").contentType(MediaType.APPLICATION_JSON).content(payload.toString()).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+        MvcResult mvcResult = this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3").contentType(MediaType.APPLICATION_JSON).content(TestKeys.fillUseCaseKeys(payload, "UC-create-use-case").toString()).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andDo(print()).andReturn();
         JSONObject response = new JSONObject(mvcResult.getResponse().getContentAsString());
 
@@ -416,7 +416,9 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
     private Long createTeam2UseCaseWithOneStep() {
         RequirementArtifact team2Anything = team2Artifact("Client");
         UseCase useCase = new UseCase();
-        useCase.setArtifact(new RequirementArtifact(team2Anything.getTeam(), RequirementArtifactType.USE_CASE, "Team 2's use case", "Owned by team 2.", ""));
+        RequirementArtifact team2UseCase = new RequirementArtifact(team2Anything.getTeam(), RequirementArtifactType.USE_CASE, "Team 2's use case", "Owned by team 2.", "");
+        team2UseCase.setArtifactKey("UC-team-2-use-case");
+        useCase.setArtifact(team2UseCase);
         useCase.setUseCaseTrigger("Team 2 starts its use case.");
         useCase.addMainStep(new UseCaseMainStep("System", "Team 2's only step"));
         Long id = this.useCaseService.saveUseCase(2, useCase, new UseCaseReferences(team2Anything.getId(), Set.of(), Set.of(), java.util.List.of(), java.util.List.of())).getId();
@@ -478,9 +480,9 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
         // The three seeded items, unchanged, and nothing new anywhere.
         JSONArray items = response.getJSONObject("data").getJSONArray("requirementArtifacts");
         assertThat(items.length()).isEqualTo(3);
-        assertThat(items.getJSONObject(0).getString("artifactKey")).isEqualTo("FR-1");
-        assertThat(items.getJSONObject(1).getString("artifactKey")).isEqualTo("FR-2");
-        assertThat(items.getJSONObject(2).getString("artifactKey")).isEqualTo("FR-3");
+        assertThat(items.getJSONObject(0).getString("artifactKey")).isEqualTo("FR-user-authentication");
+        assertThat(items.getJSONObject(1).getString("artifactKey")).isEqualTo("FR-input-validation");
+        assertThat(items.getJSONObject(2).getString("artifactKey")).isEqualTo("FR-change-notification");
         assertStillOwnedByTeam2(victim.getId(), "Data export");
         assertThat(this.requirementArtifactRepository.count()).isEqualTo(artifactCountBefore);
     }

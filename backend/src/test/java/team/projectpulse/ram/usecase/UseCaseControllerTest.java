@@ -1,5 +1,7 @@
 package team.projectpulse.ram.usecase;
 
+import team.projectpulse.ram.TestKeys;
+
 import org.hamcrest.Matchers;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -235,7 +237,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                 """;
 
         // When and then
-        this.mockMvc.perform(post(this.baseUrl + "/teams/1/use-cases").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+        this.mockMvc.perform(post(this.baseUrl + "/teams/1/use-cases").contentType(MediaType.APPLICATION_JSON).content(TestKeys.fillUseCaseKeys(json, null)).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(true))
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.message").value("Add use case successfully"))
@@ -373,7 +375,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                 """;
 
         // When and then
-        this.mockMvc.perform(post(this.baseUrl + "/teams/1/use-cases").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentWoodyToken))
+        this.mockMvc.perform(post(this.baseUrl + "/teams/1/use-cases").contentType(MediaType.APPLICATION_JSON).content(TestKeys.fillUseCaseKeys(json, null)).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentWoodyToken))
                 .andExpect(jsonPath("$.flag").value(false))
                 .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
                 .andExpect(jsonPath("$.message").value("No permission."));
@@ -390,7 +392,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
         String json = """
                 {
                      "id": 3,
-                     "artifactKey": "UC-01",
+                     "artifactKey": "UC-create-use-case",
                      "title": "Create a use case (UPDATED)",
                      "description": "The Student wants to create a new use case in the use case document so that a new user requirement is added in the document.",
                      "teamId": 1,
@@ -546,7 +548,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
         json = addVersionToUseCasePayload(json, version);
 
         // When and then
-        this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentEricToken))
+        this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3").contentType(MediaType.APPLICATION_JSON).content(TestKeys.fillUseCaseKeys(json, "UC-create-use-case")).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentEricToken))
                 .andExpect(jsonPath("$.flag").value(true))
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.message").value("Update use case successfully"))
@@ -745,7 +747,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
         json = addVersionToUseCasePayload(json, version);
 
         // When and then
-        this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+        this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3").contentType(MediaType.APPLICATION_JSON).content(TestKeys.fillUseCaseKeys(json, "UC-create-use-case")).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(true))
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.message").value("Update use case successfully"))
@@ -766,7 +768,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
         String json = """
                 {
                      "id": 3,
-                     "artifactKey": "UC-01",
+                     "artifactKey": "UC-create-use-case",
                      "title": "Create a use case",
                      "description": "The Student wants to create a new use case in the use case document so that a new user requirement is added in the document.",
                      "teamId": 1,
@@ -911,7 +913,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
         json = addVersionToUseCasePayload(json, version);
 
         // When and then
-        this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+        this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3").contentType(MediaType.APPLICATION_JSON).content(TestKeys.fillUseCaseKeys(json, "UC-create-use-case")).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
                 .andExpect(jsonPath("$.flag").value(true))
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.message").value("Update use case successfully"))
@@ -929,7 +931,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
         String json = """
                 {
                      "id": 3,
-                     "artifactKey": "UC-01",
+                     "artifactKey": "UC-create-use-case",
                      "title": "Create a use case",
                      "description": "The Student wants to create a new use case in the use case document so that a new user requirement is added in the document.",
                      "teamId": 1,
@@ -1073,7 +1075,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
                 """;
 
         // When and then
-        this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentWoodyToken))
+        this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3").contentType(MediaType.APPLICATION_JSON).content(TestKeys.fillUseCaseKeys(json, "UC-create-use-case")).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentWoodyToken))
                 .andExpect(jsonPath("$.flag").value(false))
                 .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN))
                 .andExpect(jsonPath("$.message").value("No permission."));
@@ -1237,7 +1239,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
 
         this.mockMvc.perform(post(this.baseUrl + "/teams/1/use-cases")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json)
+                        .content(TestKeys.fillUseCaseKeys(json, null))
                         .accept(MediaType.APPLICATION_JSON)
                         .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(false))
@@ -1266,7 +1268,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
 
         this.mockMvc.perform(post(this.baseUrl + "/teams/1/use-cases")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json)
+                        .content(TestKeys.fillUseCaseKeys(json, null))
                         .accept(MediaType.APPLICATION_JSON)
                         .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(true))
@@ -1280,7 +1282,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
         // Main flow of UC-DOC-create-use-case with both kinds of actor: a stakeholder as primary actor and an
         // external system as a secondary actor.
         JSONObject externalSystem = fetchFirstArtifact(1, "EXTERNAL_SYSTEM", this.studentJohnToken);
-        assertThat(externalSystem.getString("artifactKey")).isEqualTo("SYS-1");
+        assertThat(externalSystem.getString("artifactKey")).isEqualTo("SYS-email-service");
         long externalSystemId = externalSystem.getLong("id");
 
         JSONObject response = postUseCase(minimalUseCase(1L, new JSONArray().put(externalSystemId)), this.studentJohnToken);
@@ -1325,8 +1327,8 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
     @Test
     void updateUseCase_ActorsChanged_NoArtifactVersionMoves() throws Exception {
         // A link is not part of either artifact's content, so naming or dropping an actor must not make a teammate's
-        // open edit of that actor stale (DI-concurrency-control, UC-ART-edit-artifact 10a). UC-1 (use case 3, its
-        // artifact 3) drops STK-2 (artifact 2) and adds the external system SYS-1.
+        // open edit of that actor stale (DI-concurrency-control, UC-ART-edit-artifact 10a). UC-create-use-case (use case 3, its
+        // artifact 3) drops STK-instructor (artifact 2) and adds the external system SYS-email-service.
         long externalSystemId = fetchFirstArtifact(1, "EXTERNAL_SYSTEM", this.studentJohnToken).getLong("id");
         Integer droppedBefore = artifactVersion(2L);
         Integer addedBefore = artifactVersion(externalSystemId);
@@ -1337,15 +1339,15 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
         payload.put("secondaryActorIds", new JSONArray().put(externalSystemId));
         MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload.toString())
+                        .content(TestKeys.fillUseCaseKeys(payload, "UC-create-use-case").toString())
                         .accept(MediaType.APPLICATION_JSON)
                         .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andReturn();
         JSONObject response = new JSONObject(result.getResponse().getContentAsString());
         assertThat(response.getBoolean("flag")).as(response.toString()).isTrue();
 
-        assertThat(artifactVersion(2L)).as("dropped actor STK-2").isEqualTo(droppedBefore);
-        assertThat(artifactVersion(externalSystemId)).as("added actor SYS-1").isEqualTo(addedBefore);
+        assertThat(artifactVersion(2L)).as("dropped actor STK-instructor").isEqualTo(droppedBefore);
+        assertThat(artifactVersion(externalSystemId)).as("added actor SYS-email-service").isEqualTo(addedBefore);
         assertThat(artifactVersion(3L)).as("the use case's own artifact").isEqualTo(useCaseArtifactBefore);
     }
 
@@ -1358,8 +1360,8 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
 
     @Test
     void updateUseCase_ActorsChanged_OnlyTheChangedLinksAreWritten() throws Exception {
-        // UC-1 (use case 3) names STK-1 as primary actor and STK-2 as secondary actor. The edit keeps STK-1, drops
-        // STK-2 and adds the external system SYS-1 as a secondary actor.
+        // UC-create-use-case (use case 3) names STK-student as primary actor and STK-instructor as secondary actor. The edit keeps STK-student, drops
+        // STK-instructor and adds the external system SYS-email-service as a secondary actor.
         long externalSystemId = fetchFirstArtifact(1, "EXTERNAL_SYSTEM", this.studentJohnToken).getLong("id");
         List<ArtifactLink> before = this.artifactLinkRepository.findBySourceArtifactId(3L, 1);
         ArtifactLink primaryBefore = before.stream().filter(link -> link.getType() == ArtifactLinkType.PRIMARY_ACTOR).findFirst().orElseThrow();
@@ -1371,7 +1373,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
         payload.put("secondaryActorIds", new JSONArray().put(externalSystemId));
         MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload.toString())
+                        .content(TestKeys.fillUseCaseKeys(payload, "UC-create-use-case").toString())
                         .accept(MediaType.APPLICATION_JSON)
                         .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andReturn();
@@ -1385,7 +1387,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
         List<ArtifactLink> after = this.artifactLinkRepository.findBySourceArtifactId(3L, 1);
         assertThat(after).extracting(link -> link.getType(), link -> link.getTargetArtifact().getId()).containsExactlyInAnyOrder(
                 tuple(ArtifactLinkType.PRIMARY_ACTOR, 1L), tuple(ArtifactLinkType.SECONDARY_ACTOR, externalSystemId), tuple(ArtifactLinkType.DERIVES_FROM, derivesBefore.getTargetArtifact().getId()));
-        // The kept links are the same rows: the primary actor's link and UC-1's trace link were not rewritten.
+        // The kept links are the same rows: the primary actor's link and UC-create-use-case's trace link were not rewritten.
         assertThat(after).extracting(ArtifactLink::getId).contains(primaryBefore.getId(), derivesBefore.getId());
         // Removing an actor removes only the link; the stakeholder stays.
         assertThat(this.entityManager.find(team.projectpulse.ram.requirement.RequirementArtifact.class, 2L)).isNotNull();
@@ -1393,18 +1395,18 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
 
     @Test
     void editUseCase_Extension6c_ActorCreatedWhileHoldingTheLock_ThenNamed() throws Exception {
-        // UC-DOC-edit-use-case 6c: while John holds UC-1's lock (use case 3), he creates a missing external system
+        // UC-DOC-edit-use-case 6c: while John holds UC-create-use-case's lock (use case 3), he creates a missing external system
         // through UC-ART-create-artifact. It lands at the end of team 1's Vision and Scope External Systems list
-        // (document 2) with the next key. The use case is untouched until he saves it naming the new actor.
+        // (document 2) with the key it was sent. The use case is untouched until he saves it naming the new actor.
         lockUseCase(1, 3, this.studentJohnToken);
         JSONObject before = fetchUseCase(1, 3, this.studentJohnToken);
         long lockHolderBefore = fetchLock(1, 3).getJSONObject("lockedBy").getLong("id");
 
-        JSONObject created = createActor("EXTERNAL_SYSTEM", "Email Service", "Sends the team's notification emails.");
+        JSONObject created = createActor("EXTERNAL_SYSTEM", "SMS Gateway", "Sends the team's text messages.");
         assertThat(created.getBoolean("flag")).as(created.toString()).isTrue();
-        assertThat(created.getJSONObject("data").getString("artifactKey")).isEqualTo("SYS-2"); // SYS-1 is seeded
+        assertThat(created.getJSONObject("data").getString("artifactKey")).isEqualTo("SYS-sms-gateway");
         long emailServiceId = created.getJSONObject("data").getLong("id");
-        assertThat(sectionItemKeys(2L, "EXTERNAL_SYSTEMS")).last().isEqualTo("SYS-2");
+        assertThat(sectionItemKeys(2L, "EXTERNAL_SYSTEMS")).last().isEqualTo("SYS-sms-gateway");
 
         // The create is not part of the use case's save: its version and John's lock are as they were.
         JSONObject payload = fetchUseCase(1, 3, this.studentJohnToken);
@@ -1419,7 +1421,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
         payload.put("secondaryActorIds", secondaryActorIds);
         MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload.toString())
+                        .content(TestKeys.fillUseCaseKeys(payload, "UC-create-use-case").toString())
                         .accept(MediaType.APPLICATION_JSON)
                         .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andReturn();
@@ -1581,7 +1583,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
 
         MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload.toString())
+                        .content(TestKeys.fillUseCaseKeys(payload, "UC-create-use-case").toString())
                         .accept(MediaType.APPLICATION_JSON)
                         .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andReturn();
@@ -1625,7 +1627,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
 
         MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload.toString())
+                        .content(TestKeys.fillUseCaseKeys(payload, "UC-create-use-case").toString())
                         .accept(MediaType.APPLICATION_JSON)
                         .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andReturn();
@@ -1674,7 +1676,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
 
         MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/use-cases/3")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload.toString())
+                        .content(TestKeys.fillUseCaseKeys(payload, "UC-create-use-case").toString())
                         .accept(MediaType.APPLICATION_JSON)
                         .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andReturn();
@@ -1714,7 +1716,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
     private JSONObject postUseCase(JSONObject payload, String token) throws Exception {
         MvcResult result = this.mockMvc.perform(post(this.baseUrl + "/teams/1/use-cases")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload.toString())
+                        .content(TestKeys.fillUseCaseKeys(payload, null).toString())
                         .accept(MediaType.APPLICATION_JSON)
                         .header(HttpHeaders.AUTHORIZATION, token))
                 .andReturn();
@@ -1770,7 +1772,7 @@ class UseCaseControllerTest extends AbstractIntegrationTest {
     private JSONObject createActor(String type, String title, String content) throws Exception {
         MvcResult result = this.mockMvc.perform(post(this.baseUrl + "/teams/1/requirement-artifacts")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(new JSONObject().put("type", type).put("title", title).put("content", content).toString())
+                        .content(new JSONObject().put("type", type).put("artifactKey", TestKeys.keyFor(type, title)).put("title", title).put("content", content).toString())
                         .accept(MediaType.APPLICATION_JSON)
                         .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andReturn();

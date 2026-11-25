@@ -49,14 +49,14 @@ public class RequirementArtifactController {
      * from the URL, never the body):
      * <pre>
      * A stakeholder, POST /teams/1/requirement-artifacts with
-     *   {"type": "STAKEHOLDER", "title": "Course instructor", "content": "Grades the teams' work."}
+     *   {"type": "STAKEHOLDER", "artifactKey": "STK-course-instructor", "title": "Course instructor", "content": "Grades the teams' work."}
      * calls createRequirementArtifact(1, artifact of type STAKEHOLDER with that title and content) and lands at the end
-     * of the Vision and Scope's STAKEHOLDER_PROFILES list with the next key, such as STK-3.
+     * of the Vision and Scope's STAKEHOLDER_PROFILES list with the key it was sent, STK-course-instructor.
      *
      * An assumption, with
-     *   {"type": "ASSUMPTION", "title": "Campus sign-in", "content": "Every user has a university account."}
-     * lands in the SRS's ASSUMPTIONS_DEPENDENCIES list with a key such as ASM-2. A business-level one is a
-     * BUSINESS_ASSUMPTION instead, which lands in the Vision and Scope's list of the same name (BAS-n).
+     *   {"type": "ASSUMPTION", "artifactKey": "ASM-campus-sign-in", "title": "Campus sign-in", "content": "Every user has a university account."}
+     * lands in the SRS's ASSUMPTIONS_DEPENDENCIES list with its key, ASM-campus-sign-in. A business-level one is a
+     * BUSINESS_ASSUMPTION instead, which lands in the Vision and Scope's list of the same name, with a key such as BAS-campus-sign-in.
      * </pre>
      * A type with no list home (a glossary term, use case, precondition, postcondition or user story) is refused here,
      * because each has its own editor. The service would create it, since its own editor calls the same method.
@@ -82,7 +82,7 @@ public class RequirementArtifactController {
 
     /**
      * What refers to a requirement artifact, asked by the editor before it offers the delete (UC-ART-delete-artifact
-     * step 4). For example, {@code GET /teams/1/requirement-artifacts/9/references} for FR-1 returns its link to UC-1;
+     * step 4). For example, {@code GET /teams/1/requirement-artifacts/9/references} for FR-user-authentication returns its link to UC-create-use-case;
      * an empty list means the delete may go ahead. The DELETE checks again, so this answer is advisory.
      */
     @GetMapping("/teams/{teamId}/requirement-artifacts/{requirementArtifactId}/references")
@@ -93,7 +93,7 @@ public class RequirementArtifactController {
 
     /**
      * Deletes a requirement artifact for good (UC-ART-delete-artifact), for example
-     * {@code DELETE /teams/1/requirement-artifacts/11?version=0} for FR-3. The version is a query parameter, since a
+     * {@code DELETE /teams/1/requirement-artifacts/11?version=0} for FR-change-notification. The version is a query parameter, since a
      * body on DELETE is unreliable; it is optional here so that its absence gets the service's message rather than the
      * generic "malformed" one.
      */

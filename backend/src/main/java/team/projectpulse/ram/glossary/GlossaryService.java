@@ -28,15 +28,14 @@ public class GlossaryService {
     /**
      * Creates a glossary term for the team the URL names.
      *
-     * <p>Two values the request body carries are not the caller's to set, and each is taken back here rather
-     * than trusted. <strong>The type</strong> is fixed by the route: this endpoint creates glossary terms, so a
-     * body naming any other type is submitting a value the server owns. Left to the body it would create, say, a
-     * {@code USE_CASE} row that {@link #findGlossaryTermById} cannot see (it is type-scoped) but the use-case
-     * listings can. <strong>The artifact key</strong> is minted from the team's {@code GLO} sequence by
+     * <p><strong>The type</strong> is not the caller's to set: it is fixed by the route, since this endpoint creates
+     * glossary terms, so a body naming any other type is submitting a value the server owns. Left to the body it would
+     * create, say, a {@code USE_CASE} row that {@link #findGlossaryTermById} cannot see (it is type-scoped) but the
+     * use-case listings can. <strong>The artifact key</strong> is the student's choice (UC-GLO-create-term), checked by
      * {@link RequirementArtifactService#createRequirementArtifact}, which this method delegates to so that one place
-     * mints keys for every artifact; a body-chosen key such as {@code UC-1} would otherwise collide with a real
-     * key that sequence has already handed out or will hand out later, and an omitted one left the term keyless.
-     * A glossary term has no document section home (BR-artifact-home), and the converter maps none from the body.
+     * checks keys for every artifact: a term sent with {@code GLO-peer-evaluation} is stored with it, while
+     * {@code GLO-Peer}, {@code FR-peer} or a key another artifact of the team holds is refused (4a, 4b, 8a). A
+     * glossary term has no document section home (BR-artifact-home), and the converter maps none from the body.
      */
     public RequirementArtifact saveGlossaryTerm(Integer teamId, RequirementArtifact glossaryTerm) {
         glossaryTerm.setType(RequirementArtifactType.GLOSSARY_TERM);
@@ -51,11 +50,20 @@ public class GlossaryService {
         }).orElseThrow(() -> new ObjectNotFoundException("glossary term", glossaryTermId));
     }
 
+    /**
+     * Renames glossary term {@code glossaryTermId} of team {@code teamId} (UC-GLO-rename-term). Renaming the term never
+     * renames its artifact key on its own: the request always carries the key, and only a different one is a deliberate
+     * key rename, checked as a create checks a key ({@link RequirementArtifactService#renameKey}; extensions 4b, 4c,
+     * 8a). For example, renaming "Artifact" to "Requirement artifact" with {@code GLO-artifact} keeps the key; sending
+     * {@code GLO-requirement-artifact} as well renames it; sending a key another artifact holds refuses the whole
+     * rename, so the term's name stays as it was too.
+     */
     public RequirementArtifact renameGlossaryTerm(Integer teamId, Long glossaryTermId, RequirementArtifact update) {
-        return this.requirementArtifactRepository.findByIdAndTeamTeamIdAndType(glossaryTermId, teamId, RequirementArtifactType.GLOSSARY_TERM).map(oldGlossaryTerm -> {
-            oldGlossaryTerm.setTitle(update.getTitle());
-            return this.requirementArtifactRepository.save(oldGlossaryTerm);
-        }).orElseThrow(() -> new ObjectNotFoundException("glossary term", glossaryTermId));
+        RequirementArtifact oldGlossaryTerm = this.requirementArtifactRepository.findByIdAndTeamTeamIdAndType(glossaryTermId, teamId, RequirementArtifactType.GLOSSARY_TERM)
+                .orElseThrow(() -> new ObjectNotFoundException("glossary term", glossaryTermId));
+        oldGlossaryTerm.setTitle(update.getTitle());
+        // A refused key throws, and the transaction rolls back the new title with it.
+        return this.requirementArtifactService.renameKey(teamId, oldGlossaryTerm, update.getArtifactKey());
     }
 
 }

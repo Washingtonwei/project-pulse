@@ -37,8 +37,8 @@ public class ArtifactLinkControllerTest extends AbstractIntegrationTest {
     @Value("${api.endpoint.base-url}")
     String baseUrl;
 
-    // The seed saves its use case (UC-1, artifact 3) first, with its PRIMARY_ACTOR and SECONDARY_ACTOR links as links 1
-    // and 2, so its own first link, FR-1 DERIVES_FROM UC-1, is link 3.
+    // The seed saves its use case (UC-create-use-case, artifact 3) first, with its PRIMARY_ACTOR and SECONDARY_ACTOR links as links 1
+    // and 2, so its own first link, FR-user-authentication DERIVES_FROM UC-create-use-case, is link 3.
     static final int FR1_DERIVES_FROM_UC1 = 3;
 
     @BeforeEach
@@ -175,7 +175,7 @@ public class ArtifactLinkControllerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.message").value("Get artifact links successfully"))
                 .andExpect(jsonPath("$.data.artifactId").value(3))
                 .andExpect(jsonPath("$.data.incoming", hasSize(2)))
-                .andExpect(jsonPath("$.data.outgoing", hasSize(3))); // UC-1 DERIVES_FROM BO-1, and its two actor links
+                .andExpect(jsonPath("$.data.outgoing", hasSize(3))); // UC-create-use-case DERIVES_FROM BO-requirements-quality, and its two actor links
     }
 
     @Test

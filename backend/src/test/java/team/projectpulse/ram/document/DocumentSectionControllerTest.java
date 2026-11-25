@@ -121,7 +121,7 @@ public class DocumentSectionControllerTest extends AbstractIntegrationTest {
                         {
                             "id": 9,
                             "type": "FUNCTIONAL_REQUIREMENT",
-                            "artifactKey": "FR-1",
+                            "artifactKey": "FR-user-authentication",
                             "title": "User authentication",
                             "content": "The system shall allow users to log in using their email and password.",
                             "priority": "CRITICAL",
@@ -130,7 +130,7 @@ public class DocumentSectionControllerTest extends AbstractIntegrationTest {
                         {
                             "id": 10,
                             "type": "FUNCTIONAL_REQUIREMENT",
-                            "artifactKey": "FR-2",
+                            "artifactKey": "FR-input-validation",
                             "title": "Validation",
                             "content": "The system shall validate user inputs to ensure data integrity and prevent errors.",
                             "priority": "CRITICAL",
@@ -158,7 +158,7 @@ public class DocumentSectionControllerTest extends AbstractIntegrationTest {
                 // The save stores the content only: the list keeps its three seeded items, and the new entry sent
                 // with them is not created (UC-DOC-edit-document; items go through the artifact endpoints).
                 .andExpect(jsonPath("$.data.requirementArtifacts", Matchers.hasSize(3)))
-                .andExpect(jsonPath("$.data.requirementArtifacts[0].artifactKey").value("FR-1"));
+                .andExpect(jsonPath("$.data.requirementArtifacts[0].artifactKey").value("FR-user-authentication"));
     }
 
     @Test
@@ -439,7 +439,7 @@ public class DocumentSectionControllerTest extends AbstractIntegrationTest {
 
 
     // ---- The document section save after requirement artifacts became first-class (docs/design/art.md, Tests) ----
-    // Team 1's SRS is document 1. Section 16 is NON_USE_CASE_FUNCTIONAL_REQUIREMENTS, which holds FR-1, FR-2 and FR-3;
+    // Team 1's SRS is document 1. Section 16 is NON_USE_CASE_FUNCTIONAL_REQUIREMENTS, which holds FR-user-authentication, FR-input-validation and FR-change-notification;
     // section 13 is ASSUMPTIONS_DEPENDENCIES; section 1 is the RICH_TEXT INTRODUCTION.
 
     @Test
@@ -456,7 +456,7 @@ public class DocumentSectionControllerTest extends AbstractIntegrationTest {
         JSONArray savedItems = saved.getJSONObject("data").getJSONArray("requirementArtifacts");
         assertThat(savedItems.length()).isEqualTo(3);
         assertThat(savedItems.getJSONObject(0).getString("title")).isEqualTo("User authentication");
-        assertThat(savedItems.getJSONObject(1).getString("artifactKey")).isEqualTo("FR-2");
+        assertThat(savedItems.getJSONObject(1).getString("artifactKey")).isEqualTo("FR-input-validation");
     }
 
     @Test

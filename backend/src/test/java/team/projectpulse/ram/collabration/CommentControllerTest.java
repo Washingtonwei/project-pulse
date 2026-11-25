@@ -164,7 +164,7 @@ public class CommentControllerTest extends AbstractIntegrationTest {
                 }
                 """;
 
-        this.mockMvc.perform(post(this.baseUrl + "/teams/1/requirement-artifacts/12/comment-threads") // BO-1: Improve Student Requirements Quality
+        this.mockMvc.perform(post(this.baseUrl + "/teams/1/requirement-artifacts/12/comment-threads") // BO-requirements-quality: Improve Student Requirements Quality
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json)
                         .accept(MediaType.APPLICATION_JSON)

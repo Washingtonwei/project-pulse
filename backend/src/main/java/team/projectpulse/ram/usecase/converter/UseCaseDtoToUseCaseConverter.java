@@ -37,7 +37,9 @@ public class UseCaseDtoToUseCaseConverter implements Converter<UseCaseDto, UseCa
 
         RequirementArtifact useCaseArtifact = new RequirementArtifact();
         useCaseArtifact.setType(RequirementArtifactType.USE_CASE);
-        // No artifact key here: the server mints it (UC-n) when the use case is saved, never from the payload.
+        // The key the student chose (UC-DOC-create-use-case, "Artifact keys"), checked when the use case is saved; on an
+        // update a different key is a deliberate rename (RequirementArtifactService.renameKey).
+        useCaseArtifact.setArtifactKey(source.artifactKey());
         useCaseArtifact.setTitle(source.title());
         useCaseArtifact.setContent(source.description());
         useCaseArtifact.setPriority(source.priority());

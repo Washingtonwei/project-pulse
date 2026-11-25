@@ -7,10 +7,11 @@ import team.projectpulse.ram.requirement.ArtifactLinkType;
  * BR-deletion-integrity). Every reference is an artifact link, and {@code id}, {@code artifactKey} and {@code title} are
  * those of the artifact at the link's other end. A use case naming an actor is a link from the use case's own artifact,
  * which shares the use case's id.
- * For example, with FR-1 linked to UC-1 and UC-1 naming the stakeholder STK-1 as its primary actor:
+ * For example, with FR-user-authentication linked to UC-create-use-case, and that use case naming the stakeholder
+ * STK-student as its primary actor:
  * <pre>
- * references of FR-1:  (3, "UC-1", "Create a use case", LINK_FROM, DERIVES_FROM)   FR-1 is the link's source
- * references of STK-1: (3, "UC-1", "Create a use case", LINK_TO, PRIMARY_ACTOR)
+ * references of FR-user-authentication: (3, "UC-create-use-case", "Create a use case", LINK_FROM, DERIVES_FROM)
+ * references of STK-student:            (3, "UC-create-use-case", "Create a use case", LINK_TO, PRIMARY_ACTOR)
  * </pre>
  *
  * @param linkType the link's type

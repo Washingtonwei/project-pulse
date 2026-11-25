@@ -111,7 +111,7 @@ public class UseCaseController {
      * {@code type}, {@code priority} and {@code notes} of a request entry are ignored; the type comes from the list.
      */
     private static List<SubmittedCondition> submittedConditions(List<ConditionDto> conditions) {
-        return conditions.stream().map(condition -> new SubmittedCondition(condition.id(), condition.condition())).toList();
+        return conditions.stream().map(condition -> new SubmittedCondition(condition.id(), condition.condition(), condition.artifactKey())).toList();
     }
 
     @GetMapping("/teams/{teamId}/use-cases/{useCaseId}/lock")

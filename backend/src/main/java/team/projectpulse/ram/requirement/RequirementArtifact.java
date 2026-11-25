@@ -29,7 +29,8 @@ public class RequirementArtifact {
     @Enumerated(EnumType.STRING)
     private RequirementArtifactType type;
 
-    // e.g., "GLO-3", "UC-1", "FR-12"
+    // The type's prefix and a slug the student chose, e.g. "GLO-artifact", "UC-create-use-case", "FR-export-csv"
+    // (BR-artifact-key-unique; the format lives in ArtifactKeys).
     private String artifactKey;
 
     // For GLOSSARY_TERM: term

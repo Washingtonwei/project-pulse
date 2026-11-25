@@ -16,10 +16,10 @@ class ArtifactKeyPrefixTest {
     }
 
     @Test
-    @DisplayName("Condition keys are PRC and PSC, never the PRE and POST of a use case's own numbering")
+    @DisplayName("Condition keys are PRE and POST; a slug starts with a letter, so a key never reads as a display number such as PRE-1")
     void conditionPrefixes() {
-        assertThat(ArtifactKeyPrefix.of(RequirementArtifactType.PRECONDITION)).isEqualTo("PRC");
-        assertThat(ArtifactKeyPrefix.of(RequirementArtifactType.POSTCONDITION)).isEqualTo("PSC");
+        assertThat(ArtifactKeyPrefix.of(RequirementArtifactType.PRECONDITION)).isEqualTo("PRE");
+        assertThat(ArtifactKeyPrefix.of(RequirementArtifactType.POSTCONDITION)).isEqualTo("POST");
     }
 
     @Test
