@@ -204,6 +204,34 @@ export interface ArtifactReferrer {
 
 export interface ArtifactReferrersResponse extends ApiResult<ArtifactReferrer[]> {}
 
+// The artifact of the team that holds an artifact key (UC-ART-create-artifact, "Artifact key rules"): the key-holder
+// lookup's answer, and the data of a refusal for a key in use (4b, 8c). For example:
+//   { id: 9, artifactKey: 'FR-user-authentication', title: 'User authentication', type: 'FUNCTIONAL_REQUIREMENT' }
+export interface ArtifactKeyHolder {
+  id: number
+  artifactKey: string
+  title: string
+  type: string
+}
+
+export interface ArtifactKeyHolderResponse extends ApiResult<ArtifactKeyHolder | null> {}
+
+// A press of Suggest: what the student has written so far. Either field may be blank, not both.
+export interface ArtifactKeySuggestionRequest {
+  type: string
+  title?: string | null
+  content?: string | null
+}
+
+// The answer: a key, or none. aiAvailable false means the AI proxy is unavailable, so the field says so; true with no
+// key means the model answered with nothing usable. For example { artifactKey: 'FR-export-csv', aiAvailable: true }.
+export interface ArtifactKeySuggestion {
+  artifactKey: string | null
+  aiAvailable: boolean
+}
+
+export interface ArtifactKeySuggestionResponse extends ApiResult<ArtifactKeySuggestion> {}
+
 export interface DeleteRequirementArtifactResponse extends ApiResult<null> {}
 
 // The following interfaces define the structure of Use Cases and Glossary Terms, which are specific types of Requirement Artifacts.
