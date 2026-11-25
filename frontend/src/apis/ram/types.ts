@@ -252,10 +252,11 @@ export interface Condition {
   priority?: string | null
   notes?: string | null
   otherUseCases?: OtherUseCase[]
-  // Client only, never sent: a new row whose picker is still open, and a stable key for a row with no id yet, so that
-  // reordering moves the row's own editor with it.
+  // Client only, never sent: a new row whose picker is still open, a stable key for a row with no id yet, so that
+  // reordering moves the row's own editor with it, and, for a separate copy (6b3), the id of the condition it replaces.
   choosing?: boolean
   clientKey?: string
+  replaces?: number | null
 }
 
 export interface UseCaseExtensionStep {
