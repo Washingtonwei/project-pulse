@@ -55,5 +55,9 @@ ai:
     provider: openai
     openai:
       api-key: ${openai-api-key:}
-      model: # Left blank on purpose until chosen at deploy; blank means NOT_CONFIGURED.
-      reasoning-effort: # Chosen with the model; blank means the field is not sent.
+      # The same model as staging (chosen 2026-11-24 after the live check): a reasoning model, so reasoning-effort none,
+      # or its hidden reasoning spends the key suggestion's 50-token cap and the call ends as BAD_OUTPUT. Until the
+      # production Key Vault holds openai-api-key, the blank key keeps every call NOT_CONFIGURED (docs/design/ai.md,
+      # Deploy notes).
+      model: gpt-6-luna
+      reasoning-effort: none
