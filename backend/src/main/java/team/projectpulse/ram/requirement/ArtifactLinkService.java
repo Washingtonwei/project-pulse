@@ -301,8 +301,9 @@ public class ArtifactLinkService {
 
         // Step 2: the anchor's links of this one type on this end, here
         // [UC-report -> STK-tutor, UC-report -> SYS-email]. UC-report's PRIMARY_ACTOR and DERIVES_FROM links are
-        // filtered out, so they are never touched, and so are the links on its other end. The result is copied into a list because step 3 removes links from the same set, and
-        // removing from a set while streaming over it would throw ConcurrentModificationException.
+        // filtered out, so they are never touched, and so are the links on its other end. The result is copied into a
+        // list because step 3 removes links from the same set, and removing from a set while streaming over it would
+        // throw ConcurrentModificationException.
         List<ArtifactLink> current = end.links(anchor).stream()
                 .filter(link -> link.getType() == type)
                 .toList();
