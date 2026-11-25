@@ -65,20 +65,13 @@ class ArtifactKeySuggesterTest {
     }
 
     @Test
-    void messyAnswers_Normalized() {
-        RequirementArtifactType fr = RequirementArtifactType.FUNCTIONAL_REQUIREMENT;
-        assertThat(ArtifactKeySuggester.normalize(fr, "Export CSV!!")).isEqualTo("export-csv");
-        assertThat(ArtifactKeySuggester.normalize(fr, "fr-export-csv")).isEqualTo("export-csv");
-        assertThat(ArtifactKeySuggester.normalize(fr, "FR-export-csv")).isEqualTo("export-csv");
-        assertThat(ArtifactKeySuggester.normalize(fr, "- FR export")).isEqualTo("export");
-        // A slug that starts with a digit is no suggestion, never one with its digits cut off.
-        assertThat(ArtifactKeySuggester.normalize(fr, "2fa-login")).isNull();
-        assertThat(ArtifactKeySuggester.normalize(fr, "3d-model-export")).isNull();
-        assertThat(ArtifactKeySuggester.normalize(fr, "send-a-reminder-to-every-student-who-has-not-submitted"))
-                .isEqualTo("send-a-reminder-to-every-student-who-has").hasSizeLessThanOrEqualTo(40);
-        assertThat(ArtifactKeySuggester.normalize(fr, "a".repeat(45))).isEqualTo("a".repeat(40));
-        assertThat(ArtifactKeySuggester.normalize(fr, "!!!")).isNull();
-        assertThat(ArtifactKeySuggester.normalize(fr, "123")).isNull();
+    void answerOutOfFormat_NoSuggestion_NeverRepaired() {
+        // Only an answer that is already a slug is used, exactly as written; anything else gives no key.
+        for (String answer : new String[]{"Export CSV", "export_csv", "FR-export-csv", " export-csv", "export-csv.", "2fa-login", "a".repeat(41)}) {
+            answer("{\"slug\": \"" + answer + "\"}");
+            assertThat(this.suggester.suggest(RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "Data export", ""))
+                    .as(answer).isEqualTo(new ArtifactKeySuggestionDto(null, true));
+        }
     }
 
     @Test

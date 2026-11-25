@@ -10,7 +10,6 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Duration;
-import java.util.Locale;
 
 /**
  * Suggests an artifact key when the student presses Suggest (UC-ART-create-artifact, "Artifact key rules"; design:
@@ -19,9 +18,10 @@ import java.util.Locale;
  * its definition as the content, a use case its name and description, a condition its wording as content.
  * <p>
  * It sends the LLM only the type's label, the title and the content, each cut at 2,000 characters
- * (SEC-llm-data-minimization): no team, no user, and no other artifact or key. It reads back one slug and cleans it up
- * ({@link #normalize}), then adds the type's prefix. A slug still not in the key format, and every {@code Unavailable}
- * answer, give no key (FR-AI-degradation); the student names the artifact herself. For example, for a functional
+ * (SEC-llm-data-minimization): no team, no user, and no other artifact or key. It reads back one slug and uses it only
+ * if it is already in the slug format, exactly as the model wrote it, then adds the type's prefix. It never repairs an
+ * answer: one out of format, and every {@code Unavailable} answer, give no key (FR-AI-degradation), and the student
+ * names the artifact herself. For example, for a functional
  * requirement titled "Data export" whose content says the system lets the client export project data as a CSV file,
  * an answer {@code {"slug": "export-csv"}} gives {@code FR-export-csv}.
  * <p>
@@ -82,9 +82,12 @@ public final class ArtifactKeySuggester {
             case LlmResult.Unavailable unavailable -> new ArtifactKeySuggestionDto(null, false);
             case LlmResult.Answered answered -> {
                 JsonNode slug = answered.json().path("slug");
-                String normalized = slug.isString() ? normalize(type, slug.asString()) : null;
+                // The answer as the model wrote it, used only if it is already a slug: "export-csv" is, while
+                // "Export CSV", "FR-export-csv" and "2fa-login" are not, and give no suggestion.
+                String answer = slug.isString() ? slug.asString() : null;
+                String usable = ArtifactKeys.isSlug(answer) ? answer : null;
                 // yield gives this case's value to the switch expression (return would leave the whole method).
-                yield new ArtifactKeySuggestionDto(normalized == null ? null : ArtifactKeyPrefix.of(type) + "-" + normalized, true);
+                yield new ArtifactKeySuggestionDto(usable == null ? null : ArtifactKeyPrefix.of(type) + "-" + usable, true);
             }
         };
     }
@@ -109,35 +112,6 @@ public final class ArtifactKeySuggester {
             input.append("\nContent: ").append(cut(content.strip()));
         }
         return input.toString();
-    }
-
-    /**
-     * Turns the model's answer into a slug, or null when it cannot. Lowercased; every run of other characters becomes
-     * one hyphen, and hyphens at either end are dropped; then a prefix the model repeated (such as {@code fr-} for a
-     * functional requirement) is dropped; then the slug is trimmed to 40 characters at the last hyphen within them, or
-     * cut at 40 when there is none. A slug that still starts with a digit is no suggestion: cutting its digits off
-     * would change its meaning. For a functional requirement:
-     * <pre>
-     * "export-csv"         -> "export-csv"
-     * "Export CSV!!"       -> "export-csv"
-     * "FR-export-csv"      -> "export-csv"
-     * "- FR export"        -> "export"
-     * "2fa-login"          -> null   (not "fa-login")
-     * "!!!"                -> null
-     * </pre>
-     */
-    static String normalize(RequirementArtifactType type, String answer) {
-        String slug = answer.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-").replaceAll("^-+|-+$", "");
-        String echoedPrefix = ArtifactKeyPrefix.of(type).toLowerCase(Locale.ROOT) + "-";
-        if (slug.startsWith(echoedPrefix)) {
-            slug = slug.substring(echoedPrefix.length());
-        }
-        if (slug.length() > ArtifactKeys.MAX_SLUG_LENGTH) {
-            int lastHyphen = slug.lastIndexOf('-', ArtifactKeys.MAX_SLUG_LENGTH);
-            slug = lastHyphen > 0 ? slug.substring(0, lastHyphen) : slug.substring(0, ArtifactKeys.MAX_SLUG_LENGTH);
-            slug = slug.replaceAll("-+$", "");
-        }
-        return ArtifactKeys.isSlug(slug) ? slug : null;
     }
 
     private static String cut(String text) {
