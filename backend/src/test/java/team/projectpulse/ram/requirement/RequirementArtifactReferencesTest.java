@@ -31,7 +31,7 @@ class RequirementArtifactReferencesTest {
     TeamRepository teamRepository;
 
     @Mock
-    ArtifactKeySequenceRepository artifactKeySequenceRepository;
+    ArtifactKeyHolderLookup artifactKeyHolderLookup;
 
     @Mock
     DocumentRepository documentRepository;

@@ -322,7 +322,7 @@ The home stays `requirement_artifact.source_document_section_id`, nullable at th
 Migration `V14` (artifact keys):
 
 - drops `artifact_key_sequence`;
-- makes `requirement_artifact.artifact_key` `NOT NULL`, and adds the unique index `uk_requirement_artifact_team_key` on `(team_team_id, artifact_key)`, the backstop of the key guard. The column stays `VARCHAR(255)`, room for any prefix and a 40-character slug. The column's `_ai_ci` collation makes it case-insensitive, which changes nothing, since slugs are lowercase.
+- makes `requirement_artifact.artifact_key` `NOT NULL`, and adds the unique index `uk_requirement_artifact_team_key` on `(team_team_id, artifact_key)`, the backstop of the key guard. The column stays `VARCHAR(255)`, room for any prefix and a 40-character slug. `RequirementArtifact` declares the same index (`@Table(uniqueConstraints = …)`) and `@Column(nullable = false)`, because dev and the tests build their schema from the entities (`ddl-auto: create`), so without them the index would exist only in staging and production (changed during the build, 2026-11-24). The column's `_ai_ci` collation makes it case-insensitive, which changes nothing, since slugs are lowercase.
 - **Before the swap,** confirm on staging and production that no key is null and no team holds a key twice; the counter guaranteed both, and neither slot holds requirement artifacts. No key is rewritten.
 
 `ArtifactKeyPrefix` maps the four interface types to `UI`, `SI`, `HI` and `CI`; `ASSUMPTION` and `DEPENDENCY` keep `ASM` and `DEP`, and `BUSINESS_ASSUMPTION` and `BUSINESS_DEPENDENCY` take `BAS` and `BDE`. `frontend/src/apis/ram/types.ts` follows the enum.

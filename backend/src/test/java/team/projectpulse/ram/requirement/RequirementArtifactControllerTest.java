@@ -1,5 +1,6 @@
 package team.projectpulse.ram.requirement;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import team.projectpulse.ram.TestKeys;
 
 import jakarta.persistence.EntityManager;
@@ -756,6 +757,20 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
     }
 
     // ---- Artifact keys (docs/design/art.md, "Artifact keys" and Tests) ----
+
+    @Test
+    void keyIndex_DuplicateKeyPastTheService_RefusedByTheIndexAndRecognized() {
+        // The backstop of BR-artifact-key-unique (migration V14, declared on RequirementArtifact): a second artifact of
+        // team 1 with FR-user-authentication, saved straight through the repository so no check runs, fails on the
+        // index, and ArtifactKeys recognizes the violation as the key clash RequirementArtifactService turns into 8c.
+        RequirementArtifact existing = this.requirementArtifactRepository.findById(idOf(1, "FR-user-authentication")).orElseThrow();
+        RequirementArtifact duplicate = new RequirementArtifact(existing.getTeam(), RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "Copy", "A copy.", "");
+        duplicate.setArtifactKey("FR-user-authentication");
+
+        assertThatThrownBy(() -> this.requirementArtifactRepository.saveAndFlush(duplicate))
+                .isInstanceOfSatisfying(DataIntegrityViolationException.class,
+                        violation -> assertThat(ArtifactKeys.isKeyIndexViolation(violation)).isTrue());
+    }
 
     @Test
     void createArtifact_Extension4a_KeyFormat_Refused() throws Exception {
