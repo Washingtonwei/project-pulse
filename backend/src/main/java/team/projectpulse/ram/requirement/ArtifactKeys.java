@@ -137,6 +137,7 @@ public final class ArtifactKeys {
     public static final Comparator<String> NATURAL_ORDER = Comparator.nullsLast(ArtifactKeys::compareNatural);
 
     private static int compareNatural(String left, String right) {
+        // left and right are whole keys, such as "FR-step-2" and "FR-step-10"; i and j walk them side by side.
         int i = 0;
         int j = 0;
         while (i < left.length() && j < right.length()) {
@@ -144,7 +145,9 @@ public final class ArtifactKeys {
             char b = right.charAt(j);
             if (Character.isDigit(a) && Character.isDigit(b)) {
                 // Compare the two digit runs as numbers: first by length once leading zeros are skipped, then digit by
-                // digit, so "2" < "10" and no run can overflow a long.
+                // digit, so no run can overflow a long. "FR-step-2" against "FR-step-10" reaches the runs "2" and "10":
+                // the shorter one is the smaller number, so FR-step-2 comes first. "12" against "19" is the same length,
+                // so the digits decide.
                 int runStartA = i;
                 int runStartB = j;
                 while (i < left.length() && Character.isDigit(left.charAt(i))) {
@@ -164,6 +167,8 @@ public final class ArtifactKeys {
                     return byDigits;
                 }
             } else {
+                // Any other character is compared as itself: "BO-quality" against "FR-step-2" stops at once, B before F,
+                // which is how keys group by prefix.
                 if (a != b) {
                     return Character.compare(a, b);
                 }
@@ -171,6 +176,8 @@ public final class ArtifactKeys {
                 j++;
             }
         }
+        // One key ran out with everything so far equal: the shorter rest comes first, so "FR-step-2" sorts before
+        // "FR-step-02b" (the runs "2" and "02" are equal, and only "b" is left). Two equal keys give 0.
         return Integer.compare(left.length() - i, right.length() - j);
     }
 
