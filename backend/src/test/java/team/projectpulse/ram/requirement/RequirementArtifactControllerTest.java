@@ -776,6 +776,24 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void suggestKey_AiUnavailable_SuccessWithNoKey_NothingToGoOnRefused_NonMemberForbidden() throws Exception {
+        // QS-llm-outage, the backend half: the tests set no LLM provider, so the proxy answers NOT_CONFIGURED. The
+        // suggestion is then a success with no key, and a create still works (FR-AI-degradation).
+        JSONObject unavailable = suggest(1, new JSONObject().put("type", "RISK").put("title", "Data loss").put("content", ""), this.studentJohnToken);
+        assertThat(unavailable.getBoolean("flag")).as(unavailable.toString()).isTrue();
+        assertThat(unavailable.getJSONObject("data").isNull("artifactKey")).isTrue();
+        assertThat(unavailable.getJSONObject("data").getBoolean("aiAvailable")).isFalse();
+        assertThat(create(1, item("RISK", "Data loss", "A crash loses unsaved edits."), this.studentJohnToken).getBoolean("flag")).isTrue();
+
+        JSONObject nothing = suggest(1, new JSONObject().put("type", "RISK").put("title", " ").put("content", ""), this.studentJohnToken);
+        assertThat(nothing.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
+        assertThat(nothing.getString("message")).isEqualTo("Enter a title or content first, so there is something to suggest a key from.");
+
+        JSONObject forbidden = suggest(1, new JSONObject().put("type", "RISK").put("title", "Data loss"), this.studentWoodyToken);
+        assertThat(forbidden.getInt("code")).isEqualTo(StatusCode.FORBIDDEN);
+    }
+
+    @Test
     void keyIndex_DuplicateKeyPastTheService_RefusedByTheIndexAndRecognized() {
         // The backstop of BR-artifact-key-unique (migration V14, declared on RequirementArtifact): a second artifact of
         // team 1 with FR-user-authentication, saved straight through the repository so no check runs, fails on the
@@ -846,6 +864,12 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
         JSONObject stale = update(fr2, new JSONObject(body.toString()).put("artifactKey", "FR-validate-everything").put("version", 0), this.studentJohnToken);
         assertThat(stale.getInt("code")).isEqualTo(StatusCode.CONFLICT);
         assertThat(this.requirementArtifactRepository.findById(fr2).orElseThrow().getArtifactKey()).isEqualTo("FR-validate-inputs");
+    }
+
+    private JSONObject suggest(int teamId, JSONObject body, String token) throws Exception {
+        MvcResult result = this.mockMvc.perform(post(this.baseUrl + "/teams/" + teamId + "/requirement-artifacts/key-suggestion").contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, token)).andReturn();
+        return new JSONObject(result.getResponse().getContentAsString());
     }
 
     private JSONObject keyHolder(int teamId, String artifactKey, String token) throws Exception {

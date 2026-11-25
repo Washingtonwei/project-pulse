@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.*;
 import team.projectpulse.ram.requirement.converter.RequirementArtifactDtoToRequirementArtifactConverter;
 import team.projectpulse.ram.requirement.converter.RequirementArtifactToRequirementArtifactDtoConverter;
 import team.projectpulse.ram.requirement.dto.ArtifactKeyHolderDto;
+import team.projectpulse.ram.requirement.dto.ArtifactKeySuggestionDto;
+import team.projectpulse.ram.requirement.dto.ArtifactKeySuggestionRequest;
 import team.projectpulse.ram.requirement.dto.ArtifactReferrerDto;
 import team.projectpulse.ram.requirement.dto.RequirementArtifactDto;
 import team.projectpulse.system.Result;
@@ -20,12 +22,14 @@ import java.util.Map;
 public class RequirementArtifactController {
 
     private final RequirementArtifactService requirementArtifactService;
+    private final ArtifactKeySuggester artifactKeySuggester;
     private final RequirementArtifactToRequirementArtifactDtoConverter requirementArtifactToRequirementArtifactDtoConverter;
     private final RequirementArtifactDtoToRequirementArtifactConverter requirementArtifactDtoToRequirementArtifactConverter;
 
 
-    public RequirementArtifactController(RequirementArtifactService requirementArtifactService, RequirementArtifactToRequirementArtifactDtoConverter requirementArtifactToRequirementArtifactDtoConverter, RequirementArtifactDtoToRequirementArtifactConverter requirementArtifactDtoToRequirementArtifactConverter) {
+    public RequirementArtifactController(RequirementArtifactService requirementArtifactService, ArtifactKeySuggester artifactKeySuggester, RequirementArtifactToRequirementArtifactDtoConverter requirementArtifactToRequirementArtifactDtoConverter, RequirementArtifactDtoToRequirementArtifactConverter requirementArtifactDtoToRequirementArtifactConverter) {
         this.requirementArtifactService = requirementArtifactService;
+        this.artifactKeySuggester = artifactKeySuggester;
         this.requirementArtifactToRequirementArtifactDtoConverter = requirementArtifactToRequirementArtifactDtoConverter;
         this.requirementArtifactDtoToRequirementArtifactConverter = requirementArtifactDtoToRequirementArtifactConverter;
     }
@@ -48,6 +52,20 @@ public class RequirementArtifactController {
     public Result findKeyHolder(@PathVariable Integer teamId, @RequestParam(required = false) String artifactKey) {
         ArtifactKeyHolderDto holder = this.requirementArtifactService.findKeyHolder(teamId, artifactKey).orElse(null);
         return new Result(true, StatusCode.SUCCESS, "Find artifact key holder successfully.", holder);
+    }
+
+    /**
+     * Suggests an artifact key when the student presses Suggest (UC-ART-create-artifact, "Artifact key rules"). Always a
+     * success when the request is well formed, because no suggestion is a normal state (FR-AI-degradation): for the
+     * example in {@link ArtifactKeySuggestionRequest} the answer is {@code {"artifactKey": "FR-export-csv",
+     * "aiAvailable": true}} when the LLM answers, and {@code {"artifactKey": null, "aiAvailable": false}} while it is
+     * unavailable, as in dev and the tests, where no provider is set. The team is the route's, for the route rule
+     * only: nothing about the team is sent to the LLM.
+     */
+    @PostMapping("/teams/{teamId}/requirement-artifacts/key-suggestion")
+    public Result suggestKey(@PathVariable Integer teamId, @Valid @RequestBody ArtifactKeySuggestionRequest request) {
+        ArtifactKeySuggestionDto suggestion = this.artifactKeySuggester.suggest(request.type(), request.title(), request.content());
+        return new Result(true, StatusCode.SUCCESS, "Suggest artifact key successfully.", suggestion);
     }
 
     @GetMapping("/teams/{teamId}/requirement-artifacts/{requirementArtifactId}")
