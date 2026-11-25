@@ -257,6 +257,10 @@ public class SecurityConfiguration {
                         // Security rules for the RAM /teams/{teamId}/requirement-artifacts/** endpoint.
                         .requestMatchers(HttpMethod.POST, this.baseUrl + "/teams/{teamId}/requirement-artifacts/search").access(this.teamMembershipAuthorizationManager)
                         .requestMatchers(HttpMethod.POST, this.baseUrl + "/teams/{teamId}/requirement-artifacts").access(this.teamMembershipAuthorizationManager)
+                        // Artifact keys (UC-ART-create-artifact, "Artifact key rules"): which artifact of the team holds a
+                        // key, and a key suggested on request. Above {artifactId}, so "key-holder" is never read as an id.
+                        .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/requirement-artifacts/key-holder").access(this.teamMembershipAuthorizationManager)
+                        .requestMatchers(HttpMethod.POST, this.baseUrl + "/teams/{teamId}/requirement-artifacts/key-suggestion").access(this.teamMembershipAuthorizationManager)
                         .requestMatchers(HttpMethod.GET, this.baseUrl + "/teams/{teamId}/requirement-artifacts/{artifactId}").access(this.teamMembershipAuthorizationManager)
                         .requestMatchers(HttpMethod.PUT, this.baseUrl + "/teams/{teamId}/requirement-artifacts/{artifactId}").access(this.teamMembershipAuthorizationManager)
                         .requestMatchers(HttpMethod.DELETE, this.baseUrl + "/teams/{teamId}/requirement-artifacts/{artifactId}").access(this.teamMembershipAuthorizationManager)
