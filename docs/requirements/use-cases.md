@@ -2729,25 +2729,31 @@ Details:
 **Main Success Scenario:**
 1. The student indicates to create a new glossary term.
 2. The system asks the student to enter the details of this new glossary term according to the "Details" defined in the Associated Information of this use case.
-3. The student enters the details of this new glossary term and confirms that she has finished.
+3. The student enters the details of this new glossary term, including its artifact key, and confirms that she has finished.
 4. The system validates the student's inputs according to the "Details" defined in the Associated Information of this use case.
 5. The system validates that the creation of the new glossary term will not duplicate any existing glossary term according to the "Duplication detection rules" defined in the Associated Information of this use case.
 6. The system displays the details of the new glossary term and asks the student to confirm the creation.
 7. The student either confirms the creation (continues the normal flow) or chooses to modify the details (return to step 3).
-8. The system saves the new glossary term and informs the student that this glossary term has been created.
+8. The system saves the new glossary term with its artifact key and informs the student that this glossary term has been created.
 9. Use case ends.
 
 **Extensions:**
 - **4a. Input validation rule violation:**
   - 4a1. The system alerts the student that an input validation rule is violated and displays the nature and location of the error.
   - 4a2. The student corrects the mistake and returns to step 4 of the normal flow.
+- **4b. Another requirement artifact of the team already holds the artifact key**
+  - 4b1. The system informs the student that the artifact key is in use and shows the artifact that holds it, by its artifact key and title.
+  - 4b2. The student either opens the existing artifact instead of creating a new term, or chooses a different artifact key and returns to step 4 of the normal flow.
 - **5a. The system finds possible duplicates from the existing glossary terms:**
   - 5a1. The system alerts the student that the glossary term she is trying to create already exists in the system.
   - 5a2. The student either chooses to correct the mistake and return to step 4 of the normal flow or chooses to terminate the use case.
+- **8a. A teammate created an artifact with the same artifact key after the student's key was validated**
+  - 8a1. The system refuses to save the glossary term, informs the student that the artifact key is now in use, and shows the artifact that holds it, by its artifact key and title.
+  - 8a2. The student either opens the existing artifact instead of creating a new term, or chooses a different artifact key and returns to step 4 of the normal flow.
 
 **Priority:** High
 **Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
-**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-glossary-term-unique (a glossary term name is unique within the team's Glossary).
+**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-glossary-term-unique (a glossary term name is unique within the team's Glossary); BR-artifact-key-unique (unique, name-based artifact key; extensions 4b and 8a).
 **Associated Information:**
 
 Details:
@@ -2756,8 +2762,11 @@ Details:
 | ---- | ---- | ---- | ---- | ---- | ---- |
 | Term | String | Yes |  | Occurrences of this term across the team's requirement documents are linked to the new glossary term's definition. |  |
 | Definition | String | Yes |  |  |  |
+| Artifact key | String: `GLO-<slug>` | The slug is set at creation and later changed only by a deliberate rename (UC-GLO-rename-term); the prefix never changes | Required. As in UC-ART-create-artifact: the slug format (extension 4a) and uniqueness within the team (BR-artifact-key-unique; extensions 4b and 8a) | None | Artifact Key |
 
 *Column "Effect of change" shows the consequences of modification other than saving.*
+
+Artifact key: chosen according to the "Artifact key rules" of UC-ART-create-artifact: the student writes the slug or asks the system to suggest one, and keeps or changes it. The suggestion is based on the term and its definition (for example, the term "Peer Evaluation" might be suggested `GLO-peer-evaluation`).
 
 Duplication detection rules: glossary term must be unique
 
@@ -2850,9 +2859,9 @@ The student shall be able to cancel the use case at any time prior to submitting
 
 **Main Success Scenario:**
 1. The student indicates to rename a glossary term.
-2. The system asks the student to enter the new term name.
-3. The student enters the new term name.
-4. The system validates the new term name (e.g., not empty and unique within the team's Glossary).
+2. The system asks the student to enter the new term name, and shows the term's artifact key, which she may also rename.
+3. The student enters the new term name and, if she chooses, a new artifact key.
+4. The system validates the new term name (e.g., not empty and unique within the team's Glossary) and any new artifact key.
 5. The system displays a preview list of all references that will be updated across the team's requirement documents.
 6. The student confirms the rename operation.
 7. The system updates the glossary term name and updates all references to the term.
@@ -2863,19 +2872,26 @@ The student shall be able to cancel the use case at any time prior to submitting
 - **4a. Duplicate term name**
   - 4a1. The system alerts the student that the new term name already exists in the glossary document
   - 4a2. The student corrects the mistake and returns to step 4 of the normal flow.
-- **4b. Invalid term name**
+- **4b. Invalid term name or artifact key**
   - 4b1. The system alerts the student that an input validation rule is violated and displays the nature and location of the error.
   - 4b2. The student corrects the mistake and returns to step 4 of the normal flow.
+- **4c. The student renamed the artifact key to one another requirement artifact of the team already holds**
+  - 4c1. The system informs the student that the artifact key is in use and shows the artifact that holds it, by its artifact key and title.
+  - 4c2. The student chooses a different artifact key or keeps the current one, and returns to step 4 of the normal flow.
+- **8a. A teammate gave another requirement artifact the new artifact key after the student's key was validated**
+  - 8a1. The system refuses to save the rename, informs the student that the artifact key is now in use, and shows the artifact that holds it, by its artifact key and title.
+  - 8a2. The student chooses a different artifact key or keeps the current one, and returns to step 4 of the normal flow.
 
 **Priority:** High
 **Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
-**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-glossary-term-unique (a glossary term name is unique within the team's Glossary).
+**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-glossary-term-unique (a glossary term name is unique within the team's Glossary); BR-artifact-key-unique (a renamed artifact key stays unique within the team; extensions 4c and 8a).
 **Associated Information:**
 
 Details:
 - The system must support "preview before apply" for rename operations.
 - Reference updates must be consistent and deterministic (no partial selection by default).
 - If references are stored structurally, updates use the stored reference relationships; if references are text-based, updates must be bounded to valid term references only.
+- Renaming the term does not rename its artifact key. The student renames the slug only by choosing to, as a deliberate rename (Project Glossary, Artifact Key); she may ask the system to suggest one, as in the "Artifact key rules" of UC-ART-create-artifact, based on the new term and its definition. A new slug follows the format and uniqueness rules of UC-ART-create-artifact (extensions 4b, 4c, and 8a), and the prefix never changes. Artifact links are unaffected; a mention of the old key written into free text is not updated, and the system reminds the student of that before she confirms (step 6).
 
 Notification: None — routine authoring changes are not notified (FR-NOT-suppress-routine); saved changes propagate to connected teammates in real time (UC-COL-collaborative-edit).
 
@@ -3185,17 +3201,24 @@ Business Rules: the system shows each business rule that has a CONSTRAINS artifa
 - **4a. Input validation rule violation**
   - 4a1. The system alerts the student that an input validation rule is violated and displays the nature and location of the error.
   - 4a2. The student corrects the mistake and returns to step 4 of the normal flow.
+- **4b. Another requirement artifact of the team already holds an artifact key the student entered (the use case's own, or a new precondition's or postcondition's)**
+  - 4b1. The system informs the student that the artifact key is in use and shows the artifact that holds it, by its artifact key and title. When the key she gave a new condition is held by a condition of the same type, the system offers to use that condition in place of the new one.
+  - 4b2. The student either uses the existing condition (when offered), or opens the existing artifact, or chooses a different artifact key, and returns to step 4 of the normal flow.
 - **5a. The system finds possible duplicates from the existing use cases**
   - 5a1. The system alerts the student that the use case she is trying to create already exists in the system.
   - 5a2. The student either chooses to correct the mistake and return to step 4 of the normal flow or chooses to terminate the use case.
+- **8a. A teammate created an artifact with one of the student's artifact keys after her keys were validated**
+  - 8a1. The system refuses to save the use case, informs the student that the artifact key is now in use, and shows the artifact that holds it, by its artifact key and title; nothing of the use case is saved.
+  - 8a2. The student continues as in 4b2.
 
 **Priority:** High
 **Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
-**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-use-case-name-unique (a use case name is unique within the team's Use Cases document); BR-use-case-actor-types (an actor is a stakeholder or an external system; exactly one primary actor); BR-use-case-business-rules (a business rule of the use case is a business rule of the team); BR-link-constraints (each actor and business rule is recorded as an artifact link); BR-use-case-condition-shared (preconditions and postconditions are shared requirement artifacts); BR-shared-condition-wording (a condition is reworded only on the condition itself).
+**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-use-case-name-unique (a use case name is unique within the team's Use Cases document); BR-artifact-key-unique (unique, name-based artifact keys for the use case and its new conditions; extensions 4b and 8a); BR-use-case-actor-types (an actor is a stakeholder or an external system; exactly one primary actor); BR-use-case-business-rules (a business rule of the use case is a business rule of the team); BR-link-constraints (each actor and business rule is recorded as an artifact link); BR-use-case-condition-shared (preconditions and postconditions are shared requirement artifacts); BR-shared-condition-wording (a condition is reworded only on the condition itself).
 **Associated Information:**
 
 Details:
 - use case Name
+- Artifact key
 - Primary and Secondary Actors
 - Trigger
 - Description
@@ -3220,7 +3243,9 @@ New actors: as the student types an actor's name, the system offers her team's m
 
 Business rules: the student chooses zero or more of her team's business rules that this use case must conform to (BR-use-case-business-rules). As she types a rule's artifact key or wording, the system offers her team's matching business rules before it lets her create a new one, so that a rule is not entered twice. Choosing any other requirement artifact is an input validation rule violation (extension 4a). On save, the system records each chosen business rule as a CONSTRAINS artifact link from the business rule to the new use case (BR-link-constraints). A new business rule is created through UC-ART-create-artifact (extension 3b): the system stores it in its home list in the Business Rules document, with its artifact key, as soon as she confirms it, and it stays even if she cancels this use case. Saving the use case only links a business rule; it never creates one.
 
-Preconditions and postconditions: for each one, the student either chooses an existing precondition or postcondition of her team or enters a new one (BR-use-case-condition-shared). When choosing, the system offers the team's existing conditions of the matching type before the student types a new one, so that a condition such as "The user is authenticated." is not entered twice. On save, the system stores each new one as a requirement artifact of type `PRECONDITION` or `POSTCONDITION`, set by the list it was entered in rather than by the student, and assigns it an artifact key. The use case keeps its preconditions and postconditions in the order the student gives them and displays them numbered by that order (PRE-1, PRE-2, …; POST-1, POST-2, …); the numbering belongs to this use case, while each condition keeps its own artifact key. A precondition's artifact key uses the prefix `PRC` and a postcondition's `PSC`, so that a key is never confused with the use case's own PRE-n and POST-n numbering. A chosen condition is linked with its wording as it is: the student cannot reword it through this use case (BR-shared-condition-wording), and the system ignores any wording a save sends with a chosen condition, so its stored wording stands.
+Preconditions and postconditions: for each one, the student either chooses an existing precondition or postcondition of her team or enters a new one (BR-use-case-condition-shared). When choosing, the system offers the team's existing conditions of the matching type before the student types a new one, so that a condition such as "The user is authenticated." is not entered twice. On save, the system stores each new one as a requirement artifact of type `PRECONDITION` or `POSTCONDITION`, set by the list it was entered in rather than by the student, with the artifact key the student gave it (see "Artifact keys" below). The use case keeps its preconditions and postconditions in the order the student gives them and displays them numbered by that order (PRE-1, PRE-2, …; POST-1, POST-2, …); the numbering belongs to this use case, while each condition keeps its own artifact key. A precondition's artifact key uses the prefix `PRC` and a postcondition's `PSC`, so that a key is never confused with the use case's own PRE-n and POST-n numbering. A chosen condition is linked with its wording as it is: the student cannot reword it through this use case (BR-shared-condition-wording), and the system ignores any wording a save sends with a chosen condition, so its stored wording stands.
+
+Artifact keys: the use case and each new precondition or postcondition get an artifact key, chosen according to the "Artifact key rules" of UC-ART-create-artifact: the student writes the slug or asks the system to suggest one, and keeps or changes it. The use case's suggestion is based on its name and description (for example, a use case named "Submit a weekly activity report" might be suggested `UC-submit-report`). A new condition's key is entered on the row where the student enters the condition, and its suggestion is based on the condition's wording. A condition chosen from the team's existing ones keeps its artifact key, which is shown read-only. A missing key, a key that breaks the slug format, or the same key given to two new conditions is an input validation rule violation (extension 4a).
 
 Duplication detection rules: use case name must be unique
 
@@ -3287,13 +3312,19 @@ The student shall be able to cancel the use case at any time prior to submitting
 - **7a. Input validation rule violation**
   - 7a1. The system alerts the student that an input validation rule is violated and displays the nature and location of the error.
   - 7a2. The student corrects the mistake and returns to step 7 of the normal flow.
+- **7b. Another requirement artifact of the team already holds an artifact key the student entered (the use case's renamed key, or a new precondition's or postcondition's)**
+  - 7b1. The system informs the student that the artifact key is in use and shows the artifact that holds it, by its artifact key and title. When the key she gave a new condition is held by a condition of the same type, the system offers to use that condition in place of the new one.
+  - 7b2. The student either uses the existing condition (when offered), or chooses a different artifact key, or, for the use case's own key, keeps the current one, and returns to step 7 of the normal flow.
 - **11a. The student's lock on the use case expired before the save (BR-lock-expiry)**
   - 11a1. The system refuses to save, tells the student that the lock expired and the changes were not saved, and keeps the unsaved changes on screen so the student can copy them. Nothing is saved when a lock expires.
   - 11a2. The student reopens the use case and returns to step 3, which takes a new lock and loads the use case's current content.
+- **11b. A teammate gave another requirement artifact one of the student's new artifact keys after her keys were validated**
+  - 11b1. The system refuses to save, informs the student that the artifact key is now in use, and shows the artifact that holds it, by its artifact key and title; nothing of the change is saved, and the student keeps her lock.
+  - 11b2. The student continues as in 7b2.
 
 **Priority:** High
 **Frequency of Use:** Varies by team and project phase; most frequent during active authoring and near deadlines.
-**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-edit-lock-required (editing a use case requires an exclusive lock); BR-lock-expiry (an edit lock expires after a configurable interval and is released automatically); BR-use-case-actor-types (an actor is a stakeholder or an external system; exactly one primary actor); BR-use-case-business-rules (a business rule of the use case is a business rule of the team); BR-link-constraints (each actor and business rule is recorded as an artifact link); BR-use-case-condition-shared (preconditions and postconditions are shared requirement artifacts); BR-shared-condition-wording (a condition is reworded only on the condition itself).
+**Business Rules:** BR-team-scoped-access, BR-role-based-access (team-scoped access control); BR-edit-lock-required (editing a use case requires an exclusive lock); BR-lock-expiry (an edit lock expires after a configurable interval and is released automatically); BR-artifact-key-unique (a renamed or new artifact key stays unique within the team; extensions 7b and 11b); BR-use-case-actor-types (an actor is a stakeholder or an external system; exactly one primary actor); BR-use-case-business-rules (a business rule of the use case is a business rule of the team); BR-link-constraints (each actor and business rule is recorded as an artifact link); BR-use-case-condition-shared (preconditions and postconditions are shared requirement artifacts); BR-shared-condition-wording (a condition is reworded only on the condition itself).
 **Associated Information:**
 
 Details:
@@ -3321,6 +3352,8 @@ Frequency of Use, Associated Information, Assumptions, and Open Issues: the same
 Preconditions and postconditions: the student may add, remove, and reorder this use case's preconditions and postconditions. Adding one works as in UC-DOC-create-use-case: she chooses an existing condition of her team or enters a new one, and a new one is stored as a requirement artifact whose type the system sets (BR-use-case-condition-shared). Removing a condition from this use case only removes the reference; the condition stays in the team's requirements graph for other use cases to reuse, and is deleted only through UC-ART-delete-artifact: Delete a requirement artifact. The use case displays its conditions numbered by their order in this use case (PRE-1, PRE-2, …; POST-1, POST-2, …).
 
 Rewording a condition: every precondition and postcondition already in this use case is read-only here, whether or not another use case references it (extension 6b; BR-shared-condition-wording). To change a condition's wording for this use case only, the student replaces it with a separate copy (6b3). A new condition the student has entered but not yet saved may be reworded freely until the save. The system ignores any wording a save sends with an existing condition and keeps the stored wording, so the rule holds even when the change does not come through the use case editor.
+
+Artifact keys: a new condition gets its artifact key as in UC-DOC-create-use-case, and a missing key, a key that breaks the slug format, or the same key given to two new conditions is an input validation rule violation (extension 7a). The student may rename the use case's own artifact key here, as a deliberate rename: the slug follows the format and uniqueness rules of UC-ART-create-artifact (extensions 7a and 7b), she may ask the system to suggest one based on the use case's name and description, the prefix never changes, and before she confirms (step 9) the system reminds her that a mention of the old key written into free text is not updated. Artifact links are unaffected. A saved condition's artifact key is read-only here, like its wording, and is renamed on the condition itself through UC-ART-edit-artifact: Edit a requirement artifact.
 
 Chaining use cases: a precondition and a postcondition are always separate artifacts, even when their wording matches. To record that another use case's postcondition is what makes one of this use case's preconditions true, the student links the postcondition to the precondition with an ENABLES artifact link through UC-LNK-create-link: Create a requirement artifact link (BR-link-constraints).
 
@@ -3481,8 +3514,8 @@ Sort criteria: default ascending by Artifact Key; the student may re-sort by Typ
 
 **Main Success Scenario:**
 1. The student indicates to create a requirement artifact.
-2. The system asks the student to enter the details of the new artifact according to the "Details" defined in the Associated Information of this use case, offering the artifact types according to the "Type and home" defined in the Associated Information of this use case, and suggesting an artifact key according to the "Artifact key rules" defined in the Associated Information of this use case.
-3. The student enters the details of this new requirement artifact, keeps or changes the suggested artifact key, and confirms that she has finished.
+2. The system asks the student to enter the details of the new artifact according to the "Details" defined in the Associated Information of this use case, offering the artifact types according to the "Type and home" defined in the Associated Information of this use case, and offering to suggest an artifact key according to the "Artifact key rules" defined in the Associated Information of this use case.
+3. The student enters the details of this new requirement artifact, including its artifact key, which she writes herself or asks the system to suggest and then keeps or changes, and confirms that she has finished.
 4. The system validates the student's inputs according to the "Details" defined in the Associated Information of this use case.
 5. The system checks whether an artifact of the same type with similar content already exists, according to the "Duplication detection rules" defined in the Associated Information of this use case.
 6. The system displays the details of the new requirement artifact and asks the student to confirm the creation.
@@ -3539,10 +3572,10 @@ Type and home:
 - Artifacts with no document section home (glossary terms, use cases, preconditions, postconditions) are created through their own use cases, not this one.
 
 Artifact key rules:
-- Suggestion: once the student has entered a title or content, the system asks the LLM service for a slug that names the artifact's concept, based on both (for example, a functional requirement whose content says the system lets the client export project data as a CSV file might be suggested `FR-export-csv`). The suggestion is a starting point; the student may keep it or write her own. An artifact key is an identifier, not requirement content, so suggesting one is not the authoring that RAM's Socratic assistants leave to the student. The suggestion is always on: it is not an assistant, so FR-AI-enablement does not apply and an instructor cannot turn it off for a course section. While the LLM service is unavailable (FR-AI-degradation), the system suggests nothing and the student names the artifact herself; a key is required either way (extension 4a).
-- Following the details: while the student has not changed the suggested slug, the system refreshes the suggestion when she changes the title or content. Once she changes the slug herself, the system stops replacing it.
-- Availability: as the suggestion appears and whenever the student changes the slug, the system tells her whether another requirement artifact of her team already holds the key, naming that artifact by its artifact key and title. This early answer is a convenience; the decisive checks are the validation in step 4 (extension 4b) and the storing in step 8 (extension 8c), since a teammate can take the key in between.
+- Suggestion: once the student has entered a title or content, she may ask the system to suggest an artifact key. The system then asks the LLM service for a slug that names the artifact's concept, based on both (for example, a functional requirement whose content says the system lets the client export project data as a CSV file might be suggested `FR-export-csv`). The system suggests a key only when she asks; it does not suggest one on its own as she types, and it does not change the slug when she later edits the title or content. A suggestion replaces the slug she has entered so far. It is a starting point; the student may keep it or write her own. An artifact key is an identifier, not requirement content, so suggesting one is not the authoring that RAM's Socratic assistants leave to the student. The suggestion is always on: it is not an assistant, so FR-AI-enablement does not apply and an instructor cannot turn it off for a course section. While the LLM service is unavailable (FR-AI-degradation), the system suggests nothing and the student names the artifact herself; a key is required either way (extension 4a).
+- Availability: when a suggestion appears and whenever the student changes the slug, the system tells her whether another requirement artifact of her team already holds the key, naming that artifact by its artifact key and title. This early answer is a convenience; the decisive checks are the validation in step 4 (extension 4b) and the storing in step 8 (extension 8c), since a teammate can take the key in between.
 - No silent renaming: the system never makes a key unique by changing it on the student's behalf (for example by appending a number). When a key is taken, the student chooses another name, because the collision may mean the artifact already exists.
+- Every artifact key is chosen this way: these rules also apply to a glossary term (UC-GLO-create-term), a use case, and a new precondition or postcondition (UC-DOC-create-use-case, UC-DOC-edit-use-case), each of which states what its suggestion is based on.
 
 Duplication detection rules: Advisory only — the system warns when an artifact of the same type has similar content (fuzzy match) but does not block creation; the student decides whether to proceed, revise, or open the existing artifact. In the MVP, "similar content" means an artifact of the same type whose title contains the new title, ignoring letter case.
 
