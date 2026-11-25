@@ -79,8 +79,14 @@ public final class ArtifactKeySuggester {
         }
         LlmRequest request = new LlmRequest(CALLER, INSTRUCTIONS, input(type, title, content), this.responseSchema, MAX_OUTPUT_TOKENS, TIMEOUT);
         return switch (this.llmProxy.complete(request)) {
+            // No answer: Unavailable(NOT_CONFIGURED) in dev and the tests, where no provider is set, or Unavailable(DOWN),
+            // TIMEOUT or BAD_OUTPUT when the call fails.
             case LlmResult.Unavailable unavailable -> new ArtifactKeySuggestionDto(null, false);
             case LlmResult.Answered answered -> {
+                // answered.json() is the model's whole reply, parsed by the proxy. The strict RESPONSE_SCHEMA asks the
+                // provider for one object with exactly one string property, so for the "Data export" example it is:
+                //   {"slug": "export-csv"}
+                // The proxy checks only that the reply is an object, so the code below still checks the slug is a string.
                 JsonNode slug = answered.json().path("slug");
                 // The answer as the model wrote it, used only if it is already a slug: "export-csv" is, while
                 // "Export CSV", "FR-export-csv" and "2fa-login" are not, and give no suggestion.
