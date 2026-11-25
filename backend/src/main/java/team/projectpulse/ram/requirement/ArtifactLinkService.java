@@ -101,9 +101,9 @@ public class ArtifactLinkService {
      * of any other type, and links from any other source, are never touched. It revises rather than replaces, in the
      * sense {@code UseCase.reviseMainSteps} uses: nothing still wanted is deleted and recreated, unlike a
      * {@code replace...} method, which clears and refills. A use case names its actors this way
-     * (BR-use-case-actor-types, docs/design/doc.md "Actors as links"). For example, with UC-1's secondary actors
-     * {STK-2, SYS-1} and {@code targets} {STK-2, STK-3}, the STK-2 link stays, the SYS-1 link is deleted, and a link to
-     * STK-3 is added.
+     * (BR-use-case-actor-types, docs/design/doc.md "Actors as links"). For example, with UC-report's secondary actors
+     * {STK-tutor, SYS-email} and {@code targets} {STK-tutor, STK-grader}, the STK-tutor link stays, the SYS-email link
+     * is deleted, and a link to STK-grader is added.
      * <p>
      * It checks nothing about the artifacts: the caller passes artifacts it has already loaded through a scoped finder
      * of {@code teamId} and checked for type, as {@code UseCaseService.resolveActors} does. The in-memory link sets of
@@ -124,10 +124,11 @@ public class ArtifactLinkService {
      * exactly {@code sources}, with the same keep, delete and add rule. Links of any other type, the links that end at
      * any other artifact, and {@code target}'s own outgoing links are never touched. A use case names its business
      * rules this way, as {@code CONSTRAINS} links from each rule to the use case (BR-use-case-business-rules,
-     * docs/design/doc.md "Business rules as links"). For example, with UC-1 constrained by {RULE-1, RULE-2} and
-     * {@code sources} {RULE-2, RULE-3}, the RULE-2 link stays, the RULE-1 link is deleted, and a link from RULE-3 is
-     * added. RULE-2's link to FR-3 is never looked at: it ends at FR-3, not at UC-1, so it is in FR-3's incoming set and
-     * outside this revise. It would stay even if RULE-2 were dropped from UC-1.
+     * docs/design/doc.md "Business rules as links"). For example, with UC-report constrained by {RULE-team, RULE-late}
+     * and {@code sources} {RULE-late, RULE-due}, the RULE-late link stays, the RULE-team link is deleted, and a link
+     * from RULE-due is added. RULE-late's link to FR-notify is never looked at: it ends at FR-notify, not at UC-report,
+     * so it is in FR-notify's incoming set and outside this revise. It would stay even if RULE-late were dropped from
+     * UC-report.
      * <p>
      * As with {@link #reviseOutgoingLinks}, it checks nothing about the artifacts: the caller passes artifacts already
      * loaded through a scoped finder of {@code teamId} and checked for type, as
@@ -148,26 +149,30 @@ public class ArtifactLinkService {
      * delete and add algorithm once and never asks which direction it is working in.
      * <p>
      * Every link is held in two in-memory sets: its source's outgoing set and its target's incoming set. For the link
-     * {@code UC-1 -> STK-2} (type SECONDARY_ACTOR) and the link {@code RULE-1 -> UC-1} (type CONSTRAINS):
+     * {@code UC-report -> STK-tutor} (type SECONDARY_ACTOR) and the link {@code RULE-team -> UC-report} (type
+     * CONSTRAINS):
      * <pre>
-     *   link              source  in source's set    target  in target's set
-     *   UC-1 -> STK-2     UC-1    outgoing           STK-2   incoming
-     *   RULE-1 -> UC-1    RULE-1  outgoing           UC-1    incoming
+     *   link                     source     in source's set   target     in target's set
+     *   UC-report -> STK-tutor   UC-report  outgoing          STK-tutor  incoming
+     *   RULE-team -> UC-report   RULE-team  outgoing          UC-report  incoming
      * </pre>
-     * UC-1 is the anchor in both cases, but at a different end:
+     * UC-report is the anchor in both cases, but at a different end:
      * <ul>
-     *   <li>Revising UC-1's actors, {@code reviseOutgoingLinks} uses {@link #SOURCE}: UC-1 is the source, the links are
-     *       in its outgoing set, and the artifact at the other end is the actor, the target.</li>
-     *   <li>Revising UC-1's business rules, {@code reviseIncomingLinks} uses {@link #TARGET}: UC-1 is the target, the
-     *       links are in its incoming set, and the artifact at the other end is the rule, the source.</li>
+     *   <li>Revising UC-report's actors, {@code reviseOutgoingLinks} uses {@link #SOURCE}: UC-report is the source,
+     *       the links are in its outgoing set, and the artifact at the other end is the actor, the target.</li>
+     *   <li>Revising UC-report's business rules, {@code reviseIncomingLinks} uses {@link #TARGET}: UC-report is the
+     *       target, the links are in its incoming set, and the artifact at the other end is the rule, the source.</li>
      * </ul>
      * The table the four methods give for each end, using the same two links:
      * <pre>
-     *   method        SOURCE (anchor UC-1, link UC-1 -> STK-2)        TARGET (anchor UC-1, link RULE-1 -> UC-1)
-     *   links         UC-1's outgoing set                             UC-1's incoming set
-     *   otherEnd      STK-2, the link's target                        RULE-1, the link's source
-     *   connect       UC-1.addOutgoingLink, STK-2.addIncomingLink     RULE-1.addOutgoingLink, UC-1.addIncomingLink
-     *   disconnect    UC-1.removeOutgoingLink, STK-2.removeIncoming   RULE-1.removeOutgoingLink, UC-1.removeIncoming
+     *   method       SOURCE (anchor UC-report,                 TARGET (anchor UC-report,
+     *                link UC-report -> STK-tutor)              link RULE-team -> UC-report)
+     *   links        UC-report's outgoing set                  UC-report's incoming set
+     *   otherEnd     STK-tutor, the link's target              RULE-team, the link's source
+     *   connect      UC-report.addOutgoingLink,                RULE-team.addOutgoingLink,
+     *                STK-tutor.addIncomingLink                 UC-report.addIncomingLink
+     *   disconnect   UC-report.removeOutgoingLink,             RULE-team.removeOutgoingLink,
+     *                STK-tutor.removeIncomingLink              UC-report.removeIncomingLink
      * </pre>
      * {@code connect} and {@code disconnect} always touch both artifacts: the anchor and {@code other}. Updating only
      * the anchor's set would leave the other artifact listing a deleted link, or missing a new one, for the rest of the
@@ -182,24 +187,24 @@ public class ArtifactLinkService {
         /**
          * The anchor is the link's source: its outgoing links are revised, and the other end is the link's target.
          * Used by {@code reviseOutgoingLinks}, for example for a use case's PRIMARY_ACTOR and SECONDARY_ACTOR links
-         * (UC-1 -> STK-2).
+         * (UC-report -> STK-tutor).
          */
         SOURCE {
-            /** UC-1's outgoing set, which holds UC-1 -> STK-2 along with UC-1's other outgoing links. */
+            /** UC-report's outgoing set, which holds UC-report -> STK-tutor along with UC-report's other outgoing links. */
             @Override
             Set<ArtifactLink> links(RequirementArtifact anchor) {
                 return anchor.getOutgoingArtifactLinks();
             }
 
-            /** For UC-1 -> STK-2, STK-2: the actor. */
+            /** For UC-report -> STK-tutor, STK-tutor: the actor. */
             @Override
             RequirementArtifact otherEnd(ArtifactLink link) {
                 return link.getTargetArtifact();
             }
 
             /**
-             * A new link from UC-1 to STK-3: it joins UC-1's outgoing set, which also sets the link's source to UC-1,
-             * and STK-3's incoming set, which sets its target to STK-3.
+             * A new link from UC-report to STK-grader: it joins UC-report's outgoing set, which also sets the link's
+             * source to UC-report, and STK-grader's incoming set, which sets its target to STK-grader.
              */
             @Override
             void connect(RequirementArtifact anchor, RequirementArtifact other, ArtifactLink link) {
@@ -208,8 +213,8 @@ public class ArtifactLinkService {
             }
 
             /**
-             * The dropped link UC-1 -> SYS-1: it leaves UC-1's outgoing set and SYS-1's incoming set, and the remove
-             * helpers clear the link's source and target. The caller then deletes the row.
+             * The dropped link UC-report -> SYS-email: it leaves UC-report's outgoing set and SYS-email's incoming set,
+             * and the remove helpers clear the link's source and target. The caller then deletes the row.
              */
             @Override
             void disconnect(RequirementArtifact anchor, RequirementArtifact other, ArtifactLink link) {
@@ -220,28 +225,29 @@ public class ArtifactLinkService {
         /**
          * The anchor is the link's target: its incoming links are revised, and the other end is the link's source.
          * Used by {@code reviseIncomingLinks}, for example for a use case's CONSTRAINS links from its business rules
-         * (RULE-1 -> UC-1).
+         * (RULE-team -> UC-report).
          */
         TARGET {
             /**
-             * UC-1's incoming set, which holds RULE-1 -> UC-1 along with UC-1's other incoming links, such as
-             * FR-1 -> UC-1 (DERIVES_FROM). A rule's link to any other artifact, such as RULE-2 -> FR-3, is not in it.
+             * UC-report's incoming set, which holds RULE-team -> UC-report along with UC-report's other incoming links,
+             * such as FR-sign-in -> UC-report (DERIVES_FROM). A rule's link to any other artifact, such as
+             * RULE-late -> FR-notify, is not in it.
              */
             @Override
             Set<ArtifactLink> links(RequirementArtifact anchor) {
                 return anchor.getIncomingArtifactLinks();
             }
 
-            /** For RULE-1 -> UC-1, RULE-1: the business rule. */
+            /** For RULE-team -> UC-report, RULE-team: the business rule. */
             @Override
             RequirementArtifact otherEnd(ArtifactLink link) {
                 return link.getSourceArtifact();
             }
 
             /**
-             * A new link from RULE-3 to UC-1: it joins RULE-3's outgoing set, which sets the link's source to RULE-3,
-             * and UC-1's incoming set, which sets its target to UC-1. The direction of the link never changes; only
-             * which of its two artifacts is the anchor.
+             * A new link from RULE-due to UC-report: it joins RULE-due's outgoing set, which sets the link's source to
+             * RULE-due, and UC-report's incoming set, which sets its target to UC-report. The direction of the link
+             * never changes; only which of its two artifacts is the anchor.
              */
             @Override
             void connect(RequirementArtifact anchor, RequirementArtifact other, ArtifactLink link) {
@@ -250,8 +256,8 @@ public class ArtifactLinkService {
             }
 
             /**
-             * The dropped link RULE-1 -> UC-1: it leaves RULE-1's outgoing set and UC-1's incoming set. RULE-1 itself
-             * stays, with any links it has to other artifacts.
+             * The dropped link RULE-team -> UC-report: it leaves RULE-team's outgoing set and UC-report's incoming set.
+             * RULE-team itself stays, with any links it has to other artifacts.
              */
             @Override
             void disconnect(RequirementArtifact anchor, RequirementArtifact other, ArtifactLink link) {
@@ -285,46 +291,46 @@ public class ArtifactLinkService {
      * artifacts the links must join it to.
      */
     private void reviseLinks(Integer teamId, RequirementArtifact anchor, LinkEnd end, ArtifactLinkType type, Set<RequirementArtifact> others) {
-        // The comments below follow reviseOutgoingLinks's example: anchor UC-1 at the SOURCE end, type
-        // SECONDARY_ACTOR, current links to STK-2 and SYS-1, others {STK-2, STK-3}. For the TARGET end, read "links
-        // to" as "links from".
+        // The comments below follow reviseOutgoingLinks's example: anchor UC-report at the SOURCE end, type
+        // SECONDARY_ACTOR, current links to STK-tutor and SYS-email, others {STK-tutor, STK-grader}. For the TARGET
+        // end, read "links to" as "links from".
 
-        // Step 1: the ids the caller wants linked, here {STK-2, STK-3}. Artifacts are compared by id, not by object:
-        // ids are what a link stores, and they stay correct even if the caller loaded an artifact twice.
+        // Step 1: the ids the caller wants linked, here {STK-tutor, STK-grader}. Artifacts are compared by id, not by
+        // object: ids are what a link stores, and they stay correct even if the caller loaded an artifact twice.
         Set<Long> wantedIds = others.stream().map(RequirementArtifact::getId).collect(Collectors.toSet());
 
-        // Step 2: the anchor's links of this one type on this end, here [UC-1 -> STK-2, UC-1 -> SYS-1]. UC-1's
-        // PRIMARY_ACTOR and DERIVES_FROM links are filtered out, so they are never touched, and so are the links on
-        // its other end. The result is copied into a list because step 3 removes links from the same set, and removing
-        // from a set while streaming over it would throw ConcurrentModificationException.
+        // Step 2: the anchor's links of this one type on this end, here
+        // [UC-report -> STK-tutor, UC-report -> SYS-email]. UC-report's PRIMARY_ACTOR and DERIVES_FROM links are
+        // filtered out, so they are never touched, and so are the links on its other end. The result is copied into a list because step 3 removes links from the same set, and
+        // removing from a set while streaming over it would throw ConcurrentModificationException.
         List<ArtifactLink> current = end.links(anchor).stream()
                 .filter(link -> link.getType() == type)
                 .toList();
 
         // Step 3: keep or delete each current link.
-        // keptIds collects the artifacts that already have a link to keep, here {STK-2}, so step 4 does not add a
+        // keptIds collects the artifacts that already have a link to keep, here {STK-tutor}, so step 4 does not add a
         // second link to them.
         Set<Long> keptIds = new HashSet<>();
         for (ArtifactLink link : current) {
             RequirementArtifact other = end.otherEnd(link);
-            // Keep the link when its other end is still wanted and is not linked yet: UC-1 -> STK-2 stays as it is,
-            // with its id, notes and created-by. keptIds.add returns false when the artifact is already kept, so a
-            // second link to the same artifact, which the link routes could have created (OI-77), is deleted below.
+            // Keep the link when its other end is still wanted and is not linked yet: UC-report -> STK-tutor stays as
+            // it is, with its id, notes and created-by. keptIds.add returns false when the artifact is already kept, so
+            // a second link to the same artifact, which the link routes could have created (OI-77), is deleted below.
             if (wantedIds.contains(other.getId()) && keptIds.add(other.getId())) {
                 continue;
             }
-            // Delete the link: UC-1 -> SYS-1 is no longer wanted. Take it out of both in-memory sets first, so that
-            // in the rest of this transaction neither UC-1 nor SYS-1 still lists it (the response is built from
-            // UC-1's sets). Then delete the row. The artifacts themselves stay; only the link goes.
+            // Delete the link: UC-report -> SYS-email is no longer wanted. Take it out of both in-memory sets first, so
+            // that in the rest of this transaction neither UC-report nor SYS-email still lists it (the response is
+            // built from UC-report's sets). Then delete the row. The artifacts themselves stay; only the link goes.
             end.disconnect(anchor, other, link);
             this.artifactLinkRepository.delete(link);
         }
 
-        // Step 4: add a link to each wanted artifact that has none yet, here STK-3.
+        // Step 4: add a link to each wanted artifact that has none yet, here STK-grader.
         // The team is loaded only when at least one link is added, so a save that changes no link costs no query.
         Team team = null;
         for (RequirementArtifact other : others) {
-            // STK-2 already has its kept link from step 3.
+            // STK-tutor already has its kept link from step 3.
             if (keptIds.contains(other.getId())) {
                 continue;
             }
@@ -332,17 +338,17 @@ public class ArtifactLinkService {
                 team = this.teamRepository.findById(teamId)
                         .orElseThrow(() -> new ObjectNotFoundException("team", teamId));
             }
-            // A new link, UC-1 -> STK-3, with the route's team. Notes stay empty: a student adds them, if at all,
-            // through the link routes. JPA auditing stamps createdAt and createdBy on save.
+            // A new link, UC-report -> STK-grader, with the route's team. Notes stay empty: a student adds them, if at
+            // all, through the link routes. JPA auditing stamps createdAt and createdBy on save.
             ArtifactLink link = new ArtifactLink();
             link.setTeam(team);
             link.setType(type);
-            // Add it to both in-memory sets, as step 3 removes from both, so UC-1 and STK-3 list it at once.
+            // Add it to both in-memory sets, as step 3 removes from both, so UC-report and STK-grader list it at once.
             end.connect(anchor, other, link);
             this.artifactLinkRepository.save(link);
         }
-        // Result for the example: UC-1's SECONDARY_ACTOR links are now to STK-2 (the same row as before) and STK-3
-        // (new); the SYS-1 link is gone; UC-1's other links are unchanged.
+        // Result for the example: UC-report's SECONDARY_ACTOR links are now to STK-tutor (the same row as before) and
+        // STK-grader (new); the SYS-email link is gone; UC-report's other links are unchanged.
     }
 
     public List<ArtifactLink> getOutgoingLinksByRequirementArtifactId(Integer teamId, Long requirementArtifactId) {
