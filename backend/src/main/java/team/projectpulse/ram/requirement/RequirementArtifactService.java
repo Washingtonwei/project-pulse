@@ -99,33 +99,39 @@ public class RequirementArtifactService {
      * BR-artifact-home and BR-artifact-key-unique hold for every caller. The team comes from the route. The artifact
      * key is the one the draft carries, which the student chose (UC-ART-create-artifact, "Artifact key rules"): it is
      * checked here, never minted or changed. The object must be new: every caller builds it with {@code new}, and no
-     * converter maps an id (OI-46), so its null version makes the save an insert. <p> The key is checked twice (design:
-     * {@code docs/design/art.md}, "Artifact keys"). First its format and prefix ({@link ArtifactKeys#requireValid},
-     * 4a), then whether another artifact of the team holds it (4b), naming the holder. A teammate can still commit the
-     * same key between that check and this insert; the unique key index then refuses the insert, and {@link
-     * #saveChecked} turns that into the same refusal (8c). For example, a functional requirement sent with {@code
-     * FR-user-authentication} in team 1, where the seed already holds that key, is refused with "FR-user-authentication
-     * is already used by FR-user-authentication: User authentication.", the holder as data. <p> The type decides what
-     * else happens: <ul> <li>A type with no list home (glossary term, use case, precondition, postcondition, user
-     * story) is only checked and inserted, with any document section reference cleared. Its own service calls this
-     * ({@code GlossaryService}, {@code UseCaseService}), and so does the dev seed. The call joins the caller's
-     * transaction when there is one (the services'), and runs in its own when there is none (the seed's, so each seeded
-     * artifact commits on its own). This branch reads no document and takes no lock. The generic endpoint refuses these
-     * types before calling here ({@link #notCreatedHere}), since each has its own editor.</li> <li>A list type becomes
-     * an item of its home document section, appended at the end (UC-ART-create-artifact). The home comes from the type
-     * alone. The document section's own lock is not checked: the section view offers Add only to its holder, as a UI
-     * gate (BR-edit-lock-required).</li> </ul> <p> Concurrency (list types): the home section's row is locked ({@link
-     * DocumentSectionRepository#findByIdForUpdate}) before its list is read, so two creates in one section append one
-     * after the other instead of taking the same {@code artifact_index}. The method runs at {@code READ COMMITTED}
-     * because under MySQL's default {@code REPEATABLE READ} the snapshot fixed by the first plain read below would hide
-     * a create committed while this one waited for the lock. The document section's version is left alone: the artifact
-     * is its own aggregate, and {@code requirementArtifacts} is the {@code mappedBy} side, so the teammate editing the
-     * section's prose is not made stale.
+     * converter maps an id (OI-46), so its null version makes the save an insert.
+     * <p>
+     * The key is checked twice (design: {@code docs/design/art.md}, "Artifact keys"). First its format and prefix
+     * ({@link ArtifactKeys#requireValid}, 4a), then whether another artifact of the team holds it (4b), naming the
+     * holder. A teammate can still commit the same key between that check and this insert; the unique key index then
+     * refuses the insert, and {@link #saveChecked} turns that into the same refusal (8c). For example, a functional
+     * requirement sent with {@code FR-user-authentication} in team 1, where the seed already holds that key, is refused
+     * with "FR-user-authentication is already used by FR-user-authentication: User authentication.", the holder as data.
+     * <p>
+     * The type decides what else happens:
+     * <ul>
+     *   <li>A type with no list home (glossary term, use case, precondition, postcondition, user story) is only
+     *   checked and inserted, with any document section reference cleared. Its own service calls this
+     *   ({@code GlossaryService}, {@code UseCaseService}), and so does the dev seed. The call joins the caller's
+     *   transaction when there is one (the services'), and runs in its own when there is none (the seed's, so each
+     *   seeded artifact commits on its own). This branch reads no document and takes no lock. The generic endpoint
+     *   refuses these types before calling here ({@link #notCreatedHere}), since each has its own editor.</li>
+     *   <li>A list type becomes an item of its home document section, appended at the end (UC-ART-create-artifact).
+     *   The home comes from the type alone. The document section's own lock is not checked: the section view offers
+     *   Add only to its holder, as a UI gate (BR-edit-lock-required).</li>
+     * </ul>
+     * <p>
+     * Concurrency (list types): the home section's row is locked ({@link DocumentSectionRepository#findByIdForUpdate})
+     * before its list is read, so two creates in one section append one after the other instead of taking the same
+     * {@code artifact_index}. The method runs at {@code READ COMMITTED} because under MySQL's default
+     * {@code REPEATABLE READ} the snapshot fixed by the first plain read below would hide a create committed while this
+     * one waited for the lock. The document section's version is left alone: the artifact is its own aggregate, and
+     * {@code requirementArtifacts} is the {@code mappedBy} side, so the teammate editing the section's prose is not
+     * made stale.
      *
-     * @throws RequirementArtifactRejectedException (400) for a missing or
-     *                                              malformed key (4a), a key another artifact of the team holds (4b,
-     *                                              8c, with the holder as data), or a list type whose home document is
-     *                                              not created (8b) or is locked for review (8a)
+     * @throws RequirementArtifactRejectedException (400) for a missing or malformed key (4a), a key another artifact of
+     *                                              the team holds (4b, 8c, with the holder as data), or a list type
+     *                                              whose home document is not created (8b) or is locked for review (8a)
      */
     // READ COMMITTED, so the list loaded after the row lock sees a teammate's just-committed item. Under MySQL's
     // default REPEATABLE READ it would read the snapshot from before the lock, and two concurrent creates could take
@@ -325,14 +331,15 @@ public class RequirementArtifactService {
     }
 
     /**
-     * Everything in team {@code teamId} that refers to {@code artifact}, and so blocks its delete
-     * (BR-deletion-integrity): the shared body of {@link #findReferences} (the editor's check before the confirm, step
-     * 4) and of {@link #deleteRequirementArtifact} (the check again inside the delete, 4a). The caller has already
-     * loaded the artifact through a team-scoped finder, so this does not check the team again. <p> Two queries, sorted
-     * together by artifact key: the links with the artifact as source ({@code LINK_FROM}, the other artifact is the
-     * target), then those with it as target ({@code LINK_TO}, the other artifact is the source). A link from the
-     * artifact to itself comes back from both queries; the second loop skips it, so it is listed once, as {@code
-     * LINK_FROM}. A use case's actors are links too ({@code PRIMARY_ACTOR}, {@code SECONDARY_ACTOR}, from the use
+     * Everything in team {@code teamId} that refers to {@code artifact}, and so blocks its delete (BR-deletion-integrity):
+     * the shared body of {@link #findReferences} (the editor's check before the confirm, step 4) and of
+     * {@link #deleteRequirementArtifact} (the check again inside the delete, 4a). The caller has already loaded the
+     * artifact through a team-scoped finder, so this does not check the team again.
+     * <p>
+     * Two queries, sorted together by artifact key: the links with the artifact as source ({@code LINK_FROM}, the other
+     * artifact is the target), then those with it as target ({@code LINK_TO}, the other artifact is the source). A link
+     * from the artifact to itself comes back from both queries; the second loop skips it, so it is listed once, as
+     * {@code LINK_FROM}. A use case's actors are links too ({@code PRIMARY_ACTOR}, {@code SECONDARY_ACTOR}, from the use
      * case's own artifact, which carries the key and title the student recognizes), so they need no query of their own.
      * Examples from team 1's seed:
      * <pre>
@@ -340,9 +347,9 @@ public class RequirementArtifactService {
      * BO-requirements-quality  [(UC-create-use-case, LINK_TO, DERIVES_FROM)]      the use case derives from it
      * STK-student              [(UC-create-use-case, LINK_TO, PRIMARY_ACTOR)]     the use case's primary actor
      * STK-instructor           [(UC-create-use-case, LINK_TO, SECONDARY_ACTOR)]   a secondary actor
-     * FR-change-notification   []                                                  nothing refers to it, so it can be
-     * deleted </pre> The order is the one {@code docs/design/art.md} fixes (Refusals), and the 4a message lists the
-     * referrers in it too.
+     * FR-change-notification   []                                                  nothing refers to it: it can go
+     * </pre>
+     * The order is the one {@code docs/design/art.md} fixes (Refusals), and the 4a message lists the referrers in it too.
      */
     private List<ArtifactReferrerDto> referrersOf(Integer teamId, RequirementArtifact artifact) {
         Long id = artifact.getId();
@@ -369,16 +376,17 @@ public class RequirementArtifactService {
     }
 
     /**
-     * Deletes artifact {@code requirementArtifactId} of {@code teamId} for good (UC-ART-delete-artifact; the deletion
-     * is physical, BR-deletion-integrity). Checks, in order: the artifact is the team's, its type has a list home, its
-     * home document is not locked for review (PRE-3), {@code expectedVersion} is current (7a), and nothing refers to it
-     * (4a). Then it takes the artifact out of its home's list under the same row lock a create takes, so the items
-     * after it move up and the list keeps no gap (a gap in {@code artifact_index} would load as a null item), and
-     * deletes the row. Its comment threads go with it by cascade; its links cannot, since a referenced artifact is
-     * refused, and the entity does not cascade them. <p> The references are checked here, inside the delete, even
-     * though the editor asked {@link #findReferences} before the confirm: a teammate may have linked the artifact
-     * since. A reference committed during this transaction is not seen; the delete then fails on its foreign key
-     * (OI-75).
+     * Deletes artifact {@code requirementArtifactId} of {@code teamId} for good (UC-ART-delete-artifact; the deletion is
+     * physical, BR-deletion-integrity). Checks, in order: the artifact is the team's, its type has a list home, its home
+     * document is not locked for review (PRE-3), {@code expectedVersion} is current (7a), and nothing refers to it (4a).
+     * Then it takes the artifact out of its home's list under the same row lock a create takes, so the items after it
+     * move up and the list keeps no gap (a gap in {@code artifact_index} would load as a null item), and deletes the
+     * row. Its comment threads go with it by cascade; its links cannot, since a referenced artifact is refused, and the
+     * entity does not cascade them.
+     * <p>
+     * The references are checked here, inside the delete, even though the editor asked {@link #findReferences} before
+     * the confirm: a teammate may have linked the artifact since. A reference committed during this transaction is not
+     * seen; the delete then fails on its foreign key (OI-75).
      *
      * @throws RequirementArtifactRejectedException (400) for a missing version, a type with no list home, a home
      *                                              document locked for review, or a referenced artifact (with the

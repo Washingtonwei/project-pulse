@@ -137,8 +137,6 @@ export const lockUseCase = (teamId: number, useCaseId: number, requestBody: UseC
 export const unlockUseCase = (teamId: number, useCaseId: number) =>
   request.delete<any, UseCaseLockResponse>(`${API.TEAM_DOCUMENTS}/${teamId}/use-cases/${useCaseId}/lock`)
 
-// UC-ART-create-artifact: the server places the artifact in the home its type gives it (BR-artifact-home) and
-// returns it with its key and version.
 // The artifact of the team that holds an exact key, or no data when it is free (the key field's availability line).
 export const findArtifactKeyHolder = (teamId: number, artifactKey: string) =>
   request.get<any, ArtifactKeyHolderResponse>(`${API.TEAM_DOCUMENTS}/${teamId}/requirement-artifacts/key-holder`, {
@@ -152,6 +150,8 @@ export const suggestArtifactKey = (teamId: number, payload: ArtifactKeySuggestio
     payload
   )
 
+// UC-ART-create-artifact: the server places the artifact in the home its type gives it (BR-artifact-home) and
+// returns it with its key and version.
 export const createRequirementArtifact = (teamId: number, payload: RequirementArtifactSummary) =>
   request.post<any, RequirementArtifactResponse>(`${API.TEAM_DOCUMENTS}/${teamId}/requirement-artifacts`, payload)
 

@@ -70,7 +70,10 @@ class ArtifactKeySuggesterTest {
         assertThat(ArtifactKeySuggester.normalize(fr, "Export CSV!!")).isEqualTo("export-csv");
         assertThat(ArtifactKeySuggester.normalize(fr, "fr-export-csv")).isEqualTo("export-csv");
         assertThat(ArtifactKeySuggester.normalize(fr, "FR-export-csv")).isEqualTo("export-csv");
-        assertThat(ArtifactKeySuggester.normalize(fr, "3d-model-export")).isEqualTo("d-model-export");
+        assertThat(ArtifactKeySuggester.normalize(fr, "- FR export")).isEqualTo("export");
+        // A slug that starts with a digit is no suggestion, never one with its digits cut off.
+        assertThat(ArtifactKeySuggester.normalize(fr, "2fa-login")).isNull();
+        assertThat(ArtifactKeySuggester.normalize(fr, "3d-model-export")).isNull();
         assertThat(ArtifactKeySuggester.normalize(fr, "send-a-reminder-to-every-student-who-has-not-submitted"))
                 .isEqualTo("send-a-reminder-to-every-student-who-has").hasSizeLessThanOrEqualTo(40);
         assertThat(ArtifactKeySuggester.normalize(fr, "a".repeat(45))).isEqualTo("a".repeat(40));

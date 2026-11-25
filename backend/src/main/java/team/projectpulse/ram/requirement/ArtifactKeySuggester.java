@@ -105,24 +105,25 @@ public final class ArtifactKeySuggester {
 
     /**
      * Turns the model's answer into a slug, or null when it cannot. Lowercased; every run of other characters becomes
-     * one hyphen; a prefix the model repeated (such as {@code fr-} for a functional requirement) and anything before
-     * the first letter are dropped; then trimmed to 40 characters at the last hyphen within them, or cut at 40 when
-     * there is none. For a functional requirement:
+     * one hyphen, and hyphens at either end are dropped; then a prefix the model repeated (such as {@code fr-} for a
+     * functional requirement) is dropped; then the slug is trimmed to 40 characters at the last hyphen within them, or
+     * cut at 40 when there is none. A slug that still starts with a digit is no suggestion: cutting its digits off
+     * would change its meaning. For a functional requirement:
      * <pre>
      * "export-csv"         -> "export-csv"
      * "Export CSV!!"       -> "export-csv"
      * "FR-export-csv"      -> "export-csv"
-     * "3d-model-export"    -> "d-model-export"
+     * "- FR export"        -> "export"
+     * "2fa-login"          -> null   (not "fa-login")
      * "!!!"                -> null
      * </pre>
      */
     static String normalize(RequirementArtifactType type, String answer) {
-        String slug = answer.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-");
+        String slug = answer.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-").replaceAll("^-+|-+$", "");
         String echoedPrefix = ArtifactKeyPrefix.of(type).toLowerCase(Locale.ROOT) + "-";
         if (slug.startsWith(echoedPrefix)) {
             slug = slug.substring(echoedPrefix.length());
         }
-        slug = slug.replaceAll("^[^a-z]+", "").replaceAll("-+$", "");
         if (slug.length() > ArtifactKeys.MAX_SLUG_LENGTH) {
             int lastHyphen = slug.lastIndexOf('-', ArtifactKeys.MAX_SLUG_LENGTH);
             slug = lastHyphen > 0 ? slug.substring(0, lastHyphen) : slug.substring(0, ArtifactKeys.MAX_SLUG_LENGTH);

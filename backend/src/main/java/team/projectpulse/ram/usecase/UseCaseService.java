@@ -129,8 +129,8 @@ public class UseCaseService {
      * returned use case.
      * <p>
      * The actors, the business rules and the conditions come from {@code references} alone, resolved in
-     * {@code teamId}; any actor, business rule or condition already set on {@code useCase} is replaced. A new condition is saved as a team artifact with its key
-     * (PRC-n or PSC-n); an existing one is linked as it is. See {@link #resolveActors}, {@link #resolveBusinessRules} and
+     * {@code teamId}; any actor, business rule or condition already set on {@code useCase} is replaced. A new condition is saved as a team artifact with the key
+     * the student gave it, such as PRE-student-logged-in; an existing one is linked as it is. See {@link #resolveActors}, {@link #resolveBusinessRules} and
      * {@link #resolveConditions}.
      *
      * @throws ObjectNotFoundException  if an actor, business rule or condition id names no artifact of this team
