@@ -316,6 +316,21 @@
         <el-form-item label="Content">
           <el-input v-model="artifactDraft.content" type="textarea" :autosize="{ minRows: 4 }" />
         </el-form-item>
+        <!-- UC-ART-create-artifact "Artifact key rules", and UC-ART-edit-artifact's rename: the key field reads the
+             item's own key as free and reminds the student that a rename does not update mentions in text. -->
+        <el-form-item label="Key">
+          <ArtifactKeyField
+            ref="keyField"
+            v-model="artifactKeyModel"
+            :team-id="effectiveTeamId"
+            :type="artifactDraft.type"
+            :title="artifactDraft.title"
+            :content="artifactDraft.content"
+            :self-id="artifactDraft.id ?? null"
+            :original-key="originalArtifactKey"
+            @open-holder="openHolder"
+          />
+        </el-form-item>
         <el-form-item label="Priority">
           <el-select v-model="artifactDraft.priority" placeholder="Select priority">
             <el-option
@@ -400,8 +415,11 @@ import Link from '@tiptap/extension-link'
 import { useUserInfoStore } from '@/stores/userInfo'
 import type { Instructor } from '@/apis/instructor/types'
 import type { Student } from '@/apis/student/types'
+import ArtifactKeyField from '@/components/ArtifactKeyField.vue'
+import { slugOf, slugProblem } from '@/utils/artifactKeys'
 import {
   PRIORITIES,
+  type ArtifactKeyHolder,
   type ArtifactReferrer,
   type RequirementArtifact,
   type RequirementArtifactSummary,
@@ -477,6 +495,16 @@ const removingId = ref<number | null>(null)
 
 const artifactDialogVisible = ref(false)
 const artifactDraft = ref<RequirementArtifactSummary>(emptyArtifactDraft(''))
+// The key an edited item had when its dialog opened, for the rename reminder; null for a new item.
+const originalArtifactKey = ref<string | null>(null)
+const keyField = ref<InstanceType<typeof ArtifactKeyField>>()
+// The key field works on a string; the draft's key may be null on an item that has none yet.
+const artifactKeyModel = computed({
+  get: () => artifactDraft.value.artifactKey ?? '',
+  set: (value: string) => {
+    artifactDraft.value.artifactKey = value
+  }
+})
 const artifactEditingIndex = ref<number | null>(null)
 
 // The duplicate check (UC-ART-create-artifact step 5): matches found for the draft's type and title, and the type and
@@ -708,7 +736,7 @@ async function saveSection() {
 }
 
 function emptyArtifactDraft(type: string): RequirementArtifactSummary {
-  return { type, title: '', content: '', priority: 'MEDIUM', notes: '' }
+  return { type, artifactKey: '', title: '', content: '', priority: 'MEDIUM', notes: '' }
 }
 
 function resetDuplicateCheck() {
@@ -720,6 +748,7 @@ function openAddArtifact() {
   artifactEditingIndex.value = null
   // Preselect the first admitted type; with only one, it is the type and the control stays hidden.
   artifactDraft.value = emptyArtifactDraft(admittedTypes.value[0] ?? '')
+  originalArtifactKey.value = null
   resetDuplicateCheck()
   artifactDialogVisible.value = true
 }
@@ -727,8 +756,25 @@ function openAddArtifact() {
 function openEditArtifact(index: number) {
   artifactEditingIndex.value = index
   artifactDraft.value = { ...draftArtifacts.value[index] }
+  originalArtifactKey.value = artifactDraft.value.artifactKey ?? null
   resetDuplicateCheck()
   artifactDialogVisible.value = true
+}
+
+// 4b2 and 6b1: the artifact holding the key, opened read-only as a possible duplicate is.
+async function openHolder(holder: ArtifactKeyHolder) {
+  if (!effectiveTeamId.value) return
+  try {
+    const result = await findRequirementArtifactById(effectiveTeamId.value, holder.id)
+    openDuplicate(result.data)
+  } catch {
+    // The interceptor has shown the error.
+  }
+}
+
+// After a refused save: if a teammate took the key after the field checked it (8c, 10b), checking again shows who.
+function recheckKey() {
+  void keyField.value?.recheck()
 }
 
 function openDuplicate(match: RequirementArtifact) {
@@ -765,7 +811,15 @@ async function saveArtifact() {
     ElMessage.warning('Type, title and content are required.')
     return
   }
+  // The key's format (4a, 6a), as the server checks it; the field already shows what is wrong.
+  const keyProblem = slugProblem(slugOf(draft.artifactKey, draft.type))
+  if (keyProblem) {
+    ElMessage.warning(`Artifact key: ${keyProblem}`)
+    return
+  }
   if (!effectiveTeamId.value) return
+  // Step 4 and 6, extensions 4b and 6b: whether another artifact of the team holds the key, asked again now.
+  if (await keyField.value?.recheck()) return
 
   if (artifactEditingIndex.value === null) {
     const checkKey = `${draft.type}\n${draft.title.trim()}`
@@ -785,6 +839,7 @@ async function saveArtifact() {
       // artifact lands in this list.
       const result = await createRequirementArtifact(effectiveTeamId.value, {
         type: draft.type,
+        artifactKey: draft.artifactKey,
         title: draft.title,
         content: draft.content,
         priority: draft.priority,
@@ -792,6 +847,10 @@ async function saveArtifact() {
       })
       draftArtifacts.value.push(result.data)
       ElMessage.success(`${result.data.artifactKey} created`)
+    } catch (error) {
+      // The interceptor has shown the message; the dialog stays open with the student's input.
+      recheckKey()
+      return
     } finally {
       savingArtifact.value = false
     }
@@ -803,6 +862,8 @@ async function saveArtifact() {
     try {
       const result = await updateRequirementArtifact(effectiveTeamId.value, id, {
         type: draft.type,
+        // The key it was read with renames nothing; a different one is the deliberate rename (UC-ART-edit-artifact).
+        artifactKey: draft.artifactKey,
         title: draft.title,
         content: draft.content,
         priority: draft.priority,
@@ -816,7 +877,13 @@ async function saveArtifact() {
         const current = await findRequirementArtifactById(effectiveTeamId.value, id)
         draftArtifacts.value[index] = current.data
         artifactDraft.value = { ...current.data }
+        originalArtifactKey.value = current.data.artifactKey ?? null
         ElMessage.warning('The current details are now in the dialog. Reapply your change there.')
+        return
+      }
+      // A refusal (400), such as a key in use (6b, 10b): the toast has the message, and the field shows the holder.
+      if (error?.response?.status === 400) {
+        recheckKey()
         return
       }
       throw error

@@ -21,7 +21,10 @@ import type {
   RequirementArtifactSummary,
   UpdateDocumentSectionRequest,
   ArtifactReferrersResponse,
-  DeleteRequirementArtifactResponse
+  DeleteRequirementArtifactResponse,
+  ArtifactKeyHolderResponse,
+  ArtifactKeySuggestionRequest,
+  ArtifactKeySuggestionResponse
 } from './types'
 
 enum API {
@@ -133,6 +136,19 @@ export const lockUseCase = (teamId: number, useCaseId: number, requestBody: UseC
 
 export const unlockUseCase = (teamId: number, useCaseId: number) =>
   request.delete<any, UseCaseLockResponse>(`${API.TEAM_DOCUMENTS}/${teamId}/use-cases/${useCaseId}/lock`)
+
+// The artifact of the team that holds an exact key, or no data when it is free (the key field's availability line).
+export const findArtifactKeyHolder = (teamId: number, artifactKey: string) =>
+  request.get<any, ArtifactKeyHolderResponse>(`${API.TEAM_DOCUMENTS}/${teamId}/requirement-artifacts/key-holder`, {
+    params: { artifactKey }
+  })
+
+// A key suggested when the student presses Suggest. Always a success when well formed; no key is a normal answer.
+export const suggestArtifactKey = (teamId: number, payload: ArtifactKeySuggestionRequest) =>
+  request.post<any, ArtifactKeySuggestionResponse>(
+    `${API.TEAM_DOCUMENTS}/${teamId}/requirement-artifacts/key-suggestion`,
+    payload
+  )
 
 // UC-ART-create-artifact: the server places the artifact in the home its type gives it (BR-artifact-home) and
 // returns it with its key and version.

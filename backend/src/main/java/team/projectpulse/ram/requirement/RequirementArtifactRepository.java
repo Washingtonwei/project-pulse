@@ -12,4 +12,8 @@ public interface RequirementArtifactRepository extends JpaRepository<Requirement
 
     Optional<RequirementArtifact> findByIdAndTeamTeamIdAndType(Long id, Integer teamId, RequirementArtifactType type);
 
+    // The artifact of the team holding an exact key, for the key checks (BR-artifact-key-unique). The match follows
+    // the column's collation, which ignores case; slugs are lowercase, so that changes nothing.
+    Optional<RequirementArtifact> findByTeamTeamIdAndArtifactKey(Integer teamId, String artifactKey);
+
 }

@@ -88,6 +88,7 @@ class GlossaryControllerTest extends AbstractIntegrationTest {
         String json = """
                 {
                     "type": "GLOSSARY_TERM",
+                    "artifactKey": "GLO-increment",
                     "title": "Increment",
                     "content": "The working software a team delivers at the end of a sprint.",
                     "notes": ""
@@ -100,7 +101,7 @@ class GlossaryControllerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.data.id").isNumber())
                 .andExpect(jsonPath("$.data.title").value("Increment"))
                 .andExpect(jsonPath("$.data.type").value("GLOSSARY_TERM"))
-                .andExpect(jsonPath("$.data.artifactKey").value(Matchers.startsWith("GLO-"))); // Minted from the team GLO sequence, never taken from the body. See GlossaryTermCreationIntegrationTest.
+                .andExpect(jsonPath("$.data.artifactKey").value("GLO-increment")); // The key the student chose (UC-GLO-create-term). See GlossaryTermCreationIntegrationTest.
     }
 
     @Test

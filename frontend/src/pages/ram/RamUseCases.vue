@@ -109,6 +109,22 @@
           <el-form-item label="Title">
             <el-input v-model="currentUseCase.title" placeholder="Use case title" :disabled="!canEdit" />
           </el-form-item>
+          <!-- UC-DOC-create-use-case and UC-DOC-edit-use-case, "Artifact keys": the use case's own key, suggested from
+               its name and description on request; editing it is a deliberate rename, under the use case lock. -->
+          <el-form-item label="Key">
+            <ArtifactKeyField
+              ref="useCaseKeyField"
+              v-model="useCaseKey"
+              type="USE_CASE"
+              :team-id="effectiveTeamId"
+              :title="currentUseCase.title"
+              :content="currentUseCase.description"
+              :self-id="currentUseCase.id ?? null"
+              :original-key="isNew ? null : originalUseCaseKey"
+              :disabled="!canEdit"
+              @open-holder="openKeyHolder"
+            />
+          </el-form-item>
           <el-form-item label="Description">
             <el-input
               v-model="currentUseCase.description"
@@ -225,6 +241,7 @@
             kind="PRECONDITION"
             :options="preconditionOptions"
             :can-edit="canEdit"
+            :team-id="effectiveTeamId"
           />
 
           <el-divider>Postconditions</el-divider>
@@ -233,6 +250,7 @@
             kind="POSTCONDITION"
             :options="postconditionOptions"
             :can-edit="canEdit"
+            :team-id="effectiveTeamId"
           />
 
           <el-divider>Main Steps</el-divider>
@@ -503,8 +521,16 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserInfoStore } from '@/stores/userInfo'
 import type { Student } from '@/apis/student/types'
-import { PRIORITIES, type Condition, type RequirementArtifact, type UseCase } from '@/apis/ram/types'
+import {
+  PRIORITIES,
+  type ArtifactKeyHolder,
+  type Condition,
+  type RequirementArtifact,
+  type UseCase
+} from '@/apis/ram/types'
 import UseCaseConditionList from '@/components/UseCaseConditionList.vue'
+import ArtifactKeyField from '@/components/ArtifactKeyField.vue'
+import { compareArtifactKeys, slugOf, slugProblem } from '@/utils/artifactKeys'
 import RequirementArtifactCreateDialog from '@/components/RequirementArtifactCreateDialog.vue'
 import RichTextField from '@/components/RichTextField.vue'
 import {
@@ -552,6 +578,15 @@ const filteredUseCases = ref<RequirementArtifact[]>([])
 
 // selectedUseCaseId tracks which use case is currently selected and displayed in the main content area. When a use case is selected, we load its full details to show in the form.
 const selectedUseCaseId = ref<number | null>(null)
+// The use case's key as it was loaded, for the rename reminder; the field edits currentUseCase.artifactKey.
+const originalUseCaseKey = ref<string | null>(null)
+const useCaseKeyField = ref<InstanceType<typeof ArtifactKeyField>>()
+const useCaseKey = computed({
+  get: () => currentUseCase.value.artifactKey ?? '',
+  set: (value: string) => {
+    currentUseCase.value.artifactKey = value
+  }
+})
 const isNew = ref(false)
 
 const stakeholderOptions = ref<RequirementArtifact[]>([])
@@ -741,10 +776,9 @@ const ruleDialog = ref<{ visible: boolean; title: string }>({ visible: false, ti
 
 const businessRuleSelect = ref<{ blur: () => void }>()
 
-// The number in an artifact key, so that RULE-2 sorts before RULE-10.
-function keyNumber(artifact: RequirementArtifact | undefined) {
-  const match = artifact?.artifactKey?.match(/(\d+)$/)
-  return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER
+// Rules in artifact key order (compareArtifactKeys): alphabetical, a rule with no key last.
+function byKey(a: RequirementArtifact | undefined, b: RequirementArtifact | undefined) {
+  return compareArtifactKeys(a?.artifactKey, b?.artifactKey)
 }
 
 // The rules whose key or title contains the query, ignoring case ("a rule's artifact key or wording").
@@ -771,7 +805,7 @@ function openRuleDialog() {
 // The chosen rules are shown in artifact key order, however they were picked or sent.
 function sortedByRuleKey(ids: number[]) {
   const byId = new Map(businessRuleOptions.value.map((rule) => [rule.id, rule]))
-  return [...ids].sort((a, b) => keyNumber(byId.get(a)) - keyNumber(byId.get(b)))
+  return [...ids].sort((a, b) => byKey(byId.get(a), byId.get(b)))
 }
 
 function sortBusinessRuleIds() {
@@ -784,7 +818,7 @@ function selectRule(rule: RequirementArtifact) {
   if (rule.id == null) return
   const id = rule.id
   if (!businessRuleOptions.value.some((option) => option.id === id)) {
-    businessRuleOptions.value = [...businessRuleOptions.value, rule].sort((a, b) => keyNumber(a) - keyNumber(b))
+    businessRuleOptions.value = [...businessRuleOptions.value, rule].sort(byKey)
   }
   const ids = currentUseCase.value.businessRuleIds || []
   if (!ids.includes(id)) {
@@ -802,7 +836,7 @@ async function loadBusinessRules() {
   if (!effectiveTeamId.value) return
   try {
     const result = await searchRequirementArtifacts(effectiveTeamId.value, { page: 0, size: 500 }, { type: 'BUSINESS_RULE' })
-    businessRuleOptions.value = [...result.data.content].sort((a, b) => keyNumber(a) - keyNumber(b))
+    businessRuleOptions.value = [...result.data.content].sort(byKey)
   } catch {
     // The picker then offers no rules; the request interceptor has already shown the error.
   }
@@ -824,8 +858,14 @@ async function loadConditionOptions() {
 }
 
 // Only what the server reads about a condition: which existing one it is, if any, and its wording.
+// A new condition carries the key the student gave it; a stored one keeps its own, so the server ignores what is sent.
 function conditionPayload(conditions: Condition[] | undefined) {
-  return (conditions || []).map((condition) => ({ id: condition.id, condition: condition.condition, type: condition.type }))
+  return (conditions || []).map((condition) => ({
+    id: condition.id,
+    condition: condition.condition,
+    type: condition.type,
+    artifactKey: condition.artifactKey
+  }))
 }
 
 function filterList() {
@@ -845,6 +885,7 @@ async function handleSelect(id: string) {
   try {
     const result = await getUseCaseById(effectiveTeamId.value, selectedUseCaseId.value)
     currentUseCase.value = normalizeUseCase(result.data)
+    originalUseCaseKey.value = result.data.artifactKey ?? null
     await refreshUseCaseLock()
     activeStepIndex.value = null
   } catch {
@@ -856,6 +897,7 @@ function createNew() {
   selectedUseCaseId.value = null
   isNew.value = true
   currentUseCase.value = createEmptyUseCase()
+  originalUseCaseKey.value = null
   activeStepIndex.value = null
 }
 
@@ -1035,7 +1077,45 @@ function validateUseCase(): boolean {
     ElMessage.warning('Every precondition and postcondition needs wording')
     return false
   }
+  // "Artifact keys" (4a, 7a): the use case's key, and each new condition's, in the format the server checks, and no key
+  // given to two new conditions. A held key is the server's to refuse, naming the holder.
+  const useCaseKeyProblem = slugProblem(slugOf(currentUseCase.value.artifactKey, 'USE_CASE'))
+  if (useCaseKeyProblem) {
+    ElMessage.warning(`Use case key: ${useCaseKeyProblem}`)
+    return false
+  }
+  for (const [list, label] of [
+    [currentUseCase.value.preconditions, 'Precondition'],
+    [currentUseCase.value.postconditions, 'Postcondition']
+  ] as const) {
+    const seen = new Map<string, number>()
+    for (const [index, condition] of (list || []).entries()) {
+      if (condition.id != null) continue
+      const position = index + 1
+      const problem = slugProblem(slugOf(condition.artifactKey, condition.type))
+      if (problem) {
+        ElMessage.warning(`${label} ${position} key: ${problem}`)
+        return false
+      }
+      const earlier = seen.get(condition.artifactKey ?? '')
+      if (earlier) {
+        ElMessage.warning(`${label} ${position} has the same artifact key as ${label.toLowerCase()} ${earlier}.`)
+        return false
+      }
+      seen.set(condition.artifactKey ?? '', position)
+    }
+  }
   return true
+}
+
+// 4b2: the artifact holding the use case's key. A use case is opened in place of this one; anything else is named,
+// since this page shows only use cases.
+async function openKeyHolder(holder: ArtifactKeyHolder) {
+  if (holder.type === 'USE_CASE') {
+    await handleSelect(String(holder.id))
+  } else {
+    ElMessage.info(`${holder.artifactKey} is ${holder.title ? `"${holder.title}"` : 'another artifact'} of your team.`)
+  }
 }
 
 // The saveUseCase function handles both creating new use cases and updating existing ones. It first validates the form data, then constructs the payload for the API request. For existing use cases, it sends an update request, while for new use cases, it sends a create request. After saving, it reloads the list of use cases to reflect any changes and shows a success message. If there's an error during saving, it displays an error message with details.
@@ -1049,6 +1129,8 @@ async function saveUseCase() {
 
   saving.value = true
   try {
+    // 4b, 7b: whether another artifact of the team holds the use case's key, asked again now.
+    if (await useCaseKeyField.value?.recheck()) return
     // Currently, we leave the step.actor empty.
     // TODO: In the future, we need to identify the actor for each step, which can be either a stakeholder or an external interface requirement. For now, we will set it to 'N/A' to indicate that it's not applicable or not yet defined.
     // Should be a very simple logic, scan the step text for the first mention of any primary and secondary actor, and set that as the actor for the step.
@@ -1081,6 +1163,7 @@ async function saveUseCase() {
         : await updateUseCase(effectiveTeamId.value, currentUseCase.value.id, payload)
 
     currentUseCase.value = normalizeUseCase(result.data)
+    originalUseCaseKey.value = result.data.artifactKey ?? null
     selectedUseCaseId.value = result.data.id || null
     isNew.value = false
     // A save may have created conditions, so the pickers reload to offer them.
@@ -1090,6 +1173,9 @@ async function saveUseCase() {
     if (error?.response?.status === 409 || error?.response?.status === 423) {
       await refreshUseCaseLock()
     }
+    // A held key (4b, 7b, 8a, 11b): the toast has the message, and checking the use case's own key again shows who
+    // holds it when it is that key.
+    void useCaseKeyField.value?.recheck()
   } finally {
     saving.value = false
   }

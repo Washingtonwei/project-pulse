@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
  *         schema,          // {"type":"object","properties":{"slug":{"type":"string"}},
  *                          //  "required":["slug"],"additionalProperties":false}
  *         50,              // reply at most 50 tokens
- *         Duration.ofSeconds(3));   // a convenience: give up after 3 s
+ *         Duration.ofSeconds(5));   // a convenience: give up after 5 s
  * </pre>
  *
  * <p>Example 2, an assistant (UC-AI-critique; illustrative, since its own design will set the real

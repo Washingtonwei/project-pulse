@@ -7,6 +7,7 @@ import jakarta.persistence.OptimisticLockException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import team.projectpulse.ram.requirement.ArtifactKeys;
 import team.projectpulse.ram.requirement.ArtifactLinkService;
 import team.projectpulse.ram.requirement.ArtifactLinkType;
 import team.projectpulse.ram.requirement.RequirementArtifact;
@@ -128,8 +129,8 @@ public class UseCaseService {
      * returned use case.
      * <p>
      * The actors, the business rules and the conditions come from {@code references} alone, resolved in
-     * {@code teamId}; any actor, business rule or condition already set on {@code useCase} is replaced. A new condition is saved as a team artifact with its key
-     * (PRC-n or PSC-n); an existing one is linked as it is. See {@link #resolveActors}, {@link #resolveBusinessRules} and
+     * {@code teamId}; any actor, business rule or condition already set on {@code useCase} is replaced. A new condition is saved as a team artifact with the key
+     * the student gave it, such as PRE-student-logged-in; an existing one is linked as it is. See {@link #resolveActors}, {@link #resolveBusinessRules} and
      * {@link #resolveConditions}.
      *
      * @throws ObjectNotFoundException  if an actor, business rule or condition id names no artifact of this team
@@ -153,7 +154,8 @@ public class UseCaseService {
 
         // Every check has passed; the writes start here.
         // The use case's own artifact (title, description, priority, notes, type USE_CASE from the converter):
-        // createRequirementArtifact sets its team from the route and mints its key (UC-n). The use case shares its id
+        // createRequirementArtifact sets its team from the route and checks the key the student chose, for example
+        // UC-create-use-case (4a, 4b). The use case shares its id
         // (@MapsId). Saved before the new conditions, so the use case takes the lower id, as it did when the
         // conditions were cascaded.
         this.requirementArtifactService.createRequirementArtifact(teamId, useCase.getArtifact());
@@ -329,6 +331,9 @@ public class UseCaseService {
         oldUseCase.getArtifact().setContent(update.getArtifact().getContent());
         oldUseCase.getArtifact().setPriority(update.getArtifact().getPriority());
         oldUseCase.getArtifact().setNotes(update.getArtifact().getNotes());
+        // The use case's own key: unchanged unless the student renamed it, a deliberate rename checked as a create checks
+        // a key (UC-DOC-edit-use-case 7a, 7b, 11b). It runs after the version and lock checks, under the student's lock.
+        this.requirementArtifactService.renameKey(teamId, oldUseCase.getArtifact(), update.getArtifact().getArtifactKey());
         oldUseCase.setUseCaseTrigger(update.getUseCaseTrigger());
         oldUseCase.setFrequencyOfUse(update.getFrequencyOfUse());
         oldUseCase.setAssociatedInformation(update.getAssociatedInformation());
@@ -491,6 +496,12 @@ public class UseCaseService {
      * <p>
      * A use case never rewords a condition, shared or not, so the wording sent with an id is ignored and the stored
      * wording stands. Rewording for one use case is a separate copy (extension 6b3): an entry with no id.
+     * <p>
+     * A new entry also needs the artifact key the student gave it (UC-DOC-create-use-case, "Artifact keys"): a missing
+     * or malformed key, or one another new entry of this list already has, is refused here naming the row (4a, 7a).
+     * Whether another artifact of the team holds the key is checked later, when {@link #saveNewConditions} creates it.
+     * For example, two new preconditions both sent with {@code PRE-student-logged-in} give "Precondition 2 has the same
+     * artifact key as precondition 1." The two lists can never share a key, since their prefixes differ.
      *
      * @return the conditions in list order: the team's stored ones, and new unsaved ones (no id yet)
      */
@@ -501,6 +512,8 @@ public class UseCaseService {
         List<RequirementArtifact> conditions = new ArrayList<>(submitted.size());
         // The ids already met in this list, to refuse a condition listed twice.
         Set<Long> seen = new HashSet<>();
+        // The keys given to new entries so far, each with its 1-based position, to refuse one key on two new entries.
+        Map<String, Integer> newKeys = new HashMap<>();
 
         for (int i = 0; i < submitted.size(); i++) {
             SubmittedCondition entry = submitted.get(i);
@@ -511,8 +524,23 @@ public class UseCaseService {
             // comes from the list it was entered in, never from the request, and the wording is the artifact's
             // content, stored exactly as sent; a condition has no title of its own.
             if (entry.id() == null) {
+                // Its key: required and well formed, else "Precondition 2 needs an artifact key." or "Precondition 2:
+                // The artifact key must be PRE- followed by ...", and not already given to an earlier new entry.
+                String key = entry.artifactKey();
+                if (key == null || key.isBlank()) {
+                    throw new IllegalArgumentException(label + " " + position + " needs an artifact key.");
+                }
+                ArtifactKeys.problemWith(type, key).ifPresent(problem -> {
+                    throw new IllegalArgumentException(label + " " + position + ": " + problem);
+                });
+                Integer earlier = newKeys.putIfAbsent(key, position);
+                if (earlier != null) {
+                    throw new IllegalArgumentException(label + " " + position + " has the same artifact key as "
+                            + label.toLowerCase(Locale.ROOT) + " " + earlier + ".");
+                }
                 RequirementArtifact condition = new RequirementArtifact();
                 condition.setType(type);
+                condition.setArtifactKey(key);
                 condition.setTitle("");
                 condition.setContent(entry.wording());
                 conditions.add(condition);
@@ -543,8 +571,9 @@ public class UseCaseService {
 
     /**
      * Saves the new conditions of a list that {@link #resolveConditions} checked, through
-     * {@link RequirementArtifactService#createRequirementArtifact}, which sets the route's team and mints the key (PRC-n
-     * or PSC-n), as it does for every artifact. Existing conditions pass through unchanged. Returns the list in the
+     * {@link RequirementArtifactService#createRequirementArtifact}, which sets the route's team and checks the key the
+     * student gave (a key another artifact of the team holds refuses the whole save, 4b, 7b, 8a, 11b), as it does for
+     * every artifact. Existing conditions pass through unchanged. Returns the list in the
      * same order, ready to become the use case's list; a condition left out of it loses only its link to this use case.
      */
     private List<RequirementArtifact> saveNewConditions(Integer teamId, List<RequirementArtifact> conditions) {

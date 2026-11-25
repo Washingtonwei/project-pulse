@@ -97,7 +97,9 @@ class UseCaseStepOrderingIntegrationTest extends AbstractIntegrationTest {
         UseCase seeded = loadSeededUseCase();
 
         UseCase useCase = new UseCase();
-        useCase.setArtifact(new RequirementArtifact(seeded.getArtifact().getTeam(), RequirementArtifactType.USE_CASE, "Ordering probe", "A use case created to check step order.", ""));
+        RequirementArtifact probe = new RequirementArtifact(seeded.getArtifact().getTeam(), RequirementArtifactType.USE_CASE, "Ordering probe", "A use case created to check step order.", "");
+        probe.setArtifactKey("UC-ordering-probe");
+        useCase.setArtifact(probe);
         useCase.setUseCaseTrigger("The Student starts the ordering probe.");
         for (int i = 0; i < 4; i++) {
             useCase.addMainStep(new UseCaseMainStep("System", "Step " + i));
@@ -423,6 +425,8 @@ class UseCaseStepOrderingIntegrationTest extends AbstractIntegrationTest {
         // as a new use case.
         JSONObject payload = lockAndFetchUseCase();
         payload.put("title", "Copied use case");
+        // A copy is a new use case, so it needs a key of its own; the seeded one keeps UC-create-use-case.
+        payload.put("artifactKey", "UC-copied-use-case");
         MvcResult result = this.mockMvc.perform(post(this.baseUrl + "/teams/1/use-cases")
                 .contentType(MediaType.APPLICATION_JSON).content(payload.toString()).accept(MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.AUTHORIZATION, this.studentJohnToken)).andReturn();
@@ -569,7 +573,9 @@ class UseCaseStepOrderingIntegrationTest extends AbstractIntegrationTest {
     private Long createUseCaseWithOnlySteps() {
         UseCase seeded = loadSeededUseCase();
         UseCase useCase = new UseCase();
-        useCase.setArtifact(new RequirementArtifact(seeded.getArtifact().getTeam(), RequirementArtifactType.USE_CASE, "Steps only", "A use case with nothing but steps.", ""));
+        RequirementArtifact stepsOnly = new RequirementArtifact(seeded.getArtifact().getTeam(), RequirementArtifactType.USE_CASE, "Steps only", "A use case with nothing but steps.", "");
+        stepsOnly.setArtifactKey("UC-steps-only");
+        useCase.setArtifact(stepsOnly);
         useCase.setUseCaseTrigger("The Student starts.");
         useCase.addMainStep(new UseCaseMainStep("Student", "First step"));
         useCase.addMainStep(new UseCaseMainStep("System", "Second step"));

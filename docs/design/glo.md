@@ -17,7 +17,8 @@ A glossary term is a requirement artifact of type `GLOSSARY_TERM`, with no docum
 
 ## Components & classes
 
-- **Changed:** [`GlossaryService`](../../backend/src/main/java/team/projectpulse/ram/glossary/GlossaryService.java) (create takes the key from the request; rename calls `renameKey` when the key changed), [`GlossaryController`](../../backend/src/main/java/team/projectpulse/ram/glossary/GlossaryController.java) (Javadoc only: the body's `artifactKey` is read), [`RamGlossary.vue`](../../frontend/src/pages/ram/RamGlossary.vue) (the create and rename dialogs each get `ArtifactKeyField`).
+- **Changed:** [`GlossaryService`](../../backend/src/main/java/team/projectpulse/ram/glossary/GlossaryService.java) (create takes the key from the request; rename calls `renameKey` when the key changed), [`RamGlossary.vue`](../../frontend/src/pages/ram/RamGlossary.vue) (the create and rename dialogs each get `ArtifactKeyField`).
+- **Unchanged:** [`GlossaryController`](../../backend/src/main/java/team/projectpulse/ram/glossary/GlossaryController.java): its routes already convert the body through `RequirementArtifactDtoToRequirementArtifactConverter`, which now maps `artifactKey`.
 - **Reused:** everything in [art.md, Artifact keys](art.md#artifact-keys): `ArtifactKeys`, `RequirementArtifactService.createRequirementArtifact`, `renameKey`, `findKeyHolder`, the key-holder and key-suggestion routes, and `ArtifactKeyField.vue`.
 
 ## Sequence

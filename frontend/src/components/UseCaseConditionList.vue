@@ -54,6 +54,24 @@
         </div>
       </div>
 
+      <!-- UC-DOC-create-use-case "Artifact keys": a new condition gets its key on its own row, named by the student or
+           suggested from its wording. A held key that belongs to a condition of this kind offers that condition
+           instead (4b1, 7b1), except the one a separate copy replaces, which would undo the copy. -->
+      <div v-if="isNew(condition)" class="condition-key-row">
+        <ArtifactKeyField
+          :model-value="condition.artifactKey ?? ''"
+          compact
+          offer-condition-reuse
+          :team-id="teamId"
+          :type="kind"
+          :content="condition.condition"
+          :no-reuse-of="condition.replaces ?? null"
+          :disabled="!canEdit"
+          @update:model-value="(key: string) => (condition.artifactKey = key)"
+          @use-condition="(holder: ArtifactKeyHolder) => useExisting(index, holder)"
+        />
+      </div>
+
       <!-- Extension 6b1: a stored condition is read-only here; a shared one also says which other use cases
            reference it. -->
       <div v-if="isStored(condition)" class="condition-note">
@@ -84,13 +102,17 @@
 // reword one for this use case, the student makes a separate copy (extension 6b3), which is a new row and can be typed
 // into until the save.
 import { computed } from 'vue'
-import type { Condition, RequirementArtifact } from '@/apis/ram/types'
+import { findRequirementArtifactById } from '@/apis/ram'
+import type { ArtifactKeyHolder, Condition, RequirementArtifact } from '@/apis/ram/types'
+import ArtifactKeyField from '@/components/ArtifactKeyField.vue'
 
 const props = defineProps<{
   kind: 'PRECONDITION' | 'POSTCONDITION'
   // The team's conditions of this kind, offered by the picker.
   options: RequirementArtifact[]
   canEdit: boolean
+  // The team the keys are checked in.
+  teamId: number | null | undefined
 }>()
 
 // The use case's list. It may be undefined before the use case is loaded, which reads as empty.
@@ -140,6 +162,11 @@ function isStored(condition: Condition) {
   return condition.id != null
 }
 
+// A new condition past its picker: typed, or a separate copy. Only these carry a key the student chooses.
+function isNew(condition: Condition) {
+  return condition.id == null && !condition.choosing
+}
+
 function add() {
   conditions.value = [
     ...conditions.value,
@@ -160,7 +187,29 @@ function choose(index: number, value: number | string) {
       type: props.kind
     }
   } else {
-    rows[index] = { condition: value, type: props.kind, clientKey: newClientKey() }
+    rows[index] = { condition: value, type: props.kind, artifactKey: '', clientKey: newClientKey() }
+  }
+  conditions.value = rows
+}
+
+// 4b1, 7b1: the condition holding the key replaces the new row, exactly as picking it from the list would. It is
+// normally among the options; one created since they loaded is fetched.
+async function useExisting(index: number, holder: ArtifactKeyHolder) {
+  let option = props.options.find((candidate) => candidate.id === holder.id)
+  if (!option && props.teamId) {
+    try {
+      option = (await findRequirementArtifactById(props.teamId, holder.id)).data
+    } catch {
+      return
+    }
+  }
+  if (!option) return
+  const rows = [...conditions.value]
+  rows[index] = {
+    id: option.id,
+    artifactKey: option.artifactKey,
+    condition: option.content ?? '',
+    type: props.kind
   }
   conditions.value = rows
 }
@@ -184,8 +233,15 @@ function makeSeparateCopy(index: number) {
   const original = rows[index]
   if (!original) return
   // No id: the server stores this as a new condition, which only this use case references. It starts with the same
-  // wording, and the student may reword it until the save.
-  rows[index] = { condition: original.condition, type: props.kind, clientKey: newClientKey() }
+  // wording, and the student may reword it until the save. It needs a key of its own, so its key box starts empty, and
+  // it remembers the condition it replaces, which its key field never offers back.
+  rows[index] = {
+    condition: original.condition,
+    type: props.kind,
+    artifactKey: '',
+    replaces: original.id ?? null,
+    clientKey: newClientKey()
+  }
   conditions.value = rows
 }
 </script>
@@ -224,6 +280,10 @@ function makeSeparateCopy(index: number) {
   gap: 4px;
 }
 
+.condition-key-row {
+  margin: 4px 0 0 64px;
+}
+
 .condition-note {
   margin: 4px 0 0 64px;
   color: var(--el-text-color-secondary);
@@ -235,7 +295,8 @@ function makeSeparateCopy(index: number) {
     grid-template-columns: 1fr;
   }
 
-  .condition-note {
+  .condition-note,
+  .condition-key-row {
     margin-left: 0;
   }
 }

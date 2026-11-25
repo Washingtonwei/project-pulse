@@ -77,11 +77,11 @@ public interface UseCaseRepository extends JpaRepository<UseCase, Long> {
      * Example: use case 3 links preconditions 4, 5 and 6; use case 12 links 4; use case 15 links 4 and 6. The response
      * for use case 3 calls this with {@code conditionIds = [4, 5, 6]} and {@code useCaseId = 3}, and gets
      * <pre>
-     *   ConditionUse(4, 12, "UC-5", "The student edits a use case")
-     *   ConditionUse(4, 15, "UC-8", "The student deletes a use case")
-     *   ConditionUse(6, 15, "UC-8", "The student deletes a use case")
+     *   ConditionUse(4, 12, "UC-edit-use-case", "The student edits a use case")
+     *   ConditionUse(4, 15, "UC-delete-use-case", "The student deletes a use case")
+     *   ConditionUse(6, 15, "UC-delete-use-case", "The student deletes a use case")
      * </pre>
-     * So condition 4 is shared with UC-5 and UC-8, condition 6 with UC-8, and condition 5, having no row, is unshared.
+     * So condition 4 is shared with UC-edit-use-case and UC-delete-use-case, condition 6 with UC-delete-use-case, and condition 5, having no row, is unshared.
      * <p>
      * No team filter is needed. The ids passed in are the conditions of a use case already loaded through a
      * team-scoped query, and a use case can only link a condition of its own team, because the team-scoped

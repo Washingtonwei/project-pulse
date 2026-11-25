@@ -11,10 +11,17 @@ import team.projectpulse.user.dto.PeerEvaluationUserDto;
 import java.time.Instant;
 
 /**
- * A requirement artifact on the wire. In a request only {@code type}, {@code title}, {@code content},
- * {@code priority}, {@code notes}, and, on an update, {@code version} are read; an {@code id}, {@code artifactKey} or
- * {@code homeDocumentType} in a body is ignored (OI-46).
+ * A requirement artifact on the wire. In a request only {@code type}, {@code artifactKey}, {@code title},
+ * {@code content}, {@code priority}, {@code notes}, and, on an update, {@code version} are read; an {@code id} or
+ * {@code homeDocumentType} in a body is ignored (OI-46). The key is checked in the service, not here, because the
+ * right prefix depends on the type and this record is shared with the glossary routes (design: art.md, "Artifact keys").
+ * <pre>
+ * POST /teams/1/requirement-artifacts
+ * {"type": "RISK", "artifactKey": "RSK-data-loss", "title": "Data loss", "content": "A crash loses unsaved edits.", "priority": "HIGH"}
+ * </pre>
  *
+ * @param artifactKey      the artifact key, {@code <PREFIX>-<slug>}: required on a create and an update, where a key
+ *                         different from the stored one renames it
  * @param homeDocumentType response only: the type of the document that holds the artifact's home section
  *                         (BR-artifact-home), null for an artifact without one. A request never needs it, since the
  *                         type alone names the home.

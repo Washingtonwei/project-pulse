@@ -17,6 +17,9 @@ import java.util.Set;
 
 @Entity
 @EntityListeners(AuditingEntityListener.class)
+// The backstop of BR-artifact-key-unique, created by migration V14 and declared here as well, so the schema dev and the
+// tests build from the entities (ddl-auto: create) has it too. Its name is how a violation is recognized (ArtifactKeys).
+@Table(uniqueConstraints = @UniqueConstraint(name = ArtifactKeys.KEY_INDEX, columnNames = {"team_team_id", "artifact_key"}))
 public class RequirementArtifact {
 
     @Id
@@ -29,7 +32,9 @@ public class RequirementArtifact {
     @Enumerated(EnumType.STRING)
     private RequirementArtifactType type;
 
-    // e.g., "GLO-3", "UC-1", "FR-12"
+    // The type's prefix and a slug the student chose, e.g. "GLO-artifact", "UC-create-use-case", "FR-export-csv"
+    // (BR-artifact-key-unique; the format lives in ArtifactKeys).
+    @Column(nullable = false)
     private String artifactKey;
 
     // For GLOSSARY_TERM: term

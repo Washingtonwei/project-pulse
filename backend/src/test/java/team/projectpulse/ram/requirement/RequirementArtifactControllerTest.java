@@ -1,5 +1,8 @@
 package team.projectpulse.ram.requirement;
 
+import org.springframework.dao.DataIntegrityViolationException;
+import team.projectpulse.ram.TestKeys;
+
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceException;
 import org.hamcrest.Matchers;
@@ -224,6 +227,7 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
         String json = """
                 {
                     "type": "QUALITY_ATTRIBUTE",
+                    "artifactKey": "QA-data-encryption",
                     "title": "Data encryption",
                     "content": "The system shall encrypt sensitive user data.",
                     "priority": "HIGH",
@@ -236,7 +240,7 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.message").value("Add requirement artifact successfully"))
                 .andExpect(jsonPath("$.data.id").isNumber())
                 .andExpect(jsonPath("$.data.title").value("Data encryption"))
-                .andExpect(jsonPath("$.data.artifactKey").value("QA-1"))
+                .andExpect(jsonPath("$.data.artifactKey").value("QA-data-encryption"))
                 .andExpect(jsonPath("$.data.type").value("QUALITY_ATTRIBUTE"))
                 .andExpect(jsonPath("$.data.homeDocumentType").value("SRS"))
                 .andExpect(jsonPath("$.data.version").value(0));
@@ -247,6 +251,7 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
         String json = """
                 {
                     "type": "QUALITY_ATTRIBUTE",
+                    "artifactKey": "QA-data-encryption",
                     "title": "Data encryption",
                     "content": "The system shall encrypt sensitive user data.",
                     "priority": "HIGH",
@@ -267,6 +272,7 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
                 {
                     "id": 9,
                     "type": "FUNCTIONAL_REQUIREMENT",
+                    "artifactKey": "FR-user-authentication",
                     "title": "New Title: User authentication and authorization",
                     "content": "New Content: The system shall authenticate users and manage their access rights.",
                     "priority": "CRITICAL",
@@ -280,7 +286,7 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.message").value("Update requirement artifact successfully"))
                 .andExpect(jsonPath("$.data.id").value(9))
                 .andExpect(jsonPath("$.data.title").value("New Title: User authentication and authorization"))
-                .andExpect(jsonPath("$.data.artifactKey").value("FR-1"))
+                .andExpect(jsonPath("$.data.artifactKey").value("FR-user-authentication"))
                 .andExpect(jsonPath("$.data.type").value("FUNCTIONAL_REQUIREMENT"))
                 .andExpect(jsonPath("$.data.version").value(version + 1));
     }
@@ -298,25 +304,25 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
 
     // ---- UC-ART-create-artifact (docs/design/art.md, Tests) ----
     // The seed gives team 1 two documents. Its SRS is document 1: section 16 is NON_USE_CASE_FUNCTIONAL_REQUIREMENTS
-    // (FR-1, FR-2, FR-3) and section 13 is ASSUMPTIONS_DEPENDENCIES. Its Vision and Scope is document 2, with no risks,
+    // (FR-user-authentication, FR-input-validation, FR-change-notification) and section 13 is ASSUMPTIONS_DEPENDENCIES. Its Vision and Scope is document 2, with no risks,
     // features or business assumptions seeded. Team 2 has documents 3 and 4; team 3 has none.
 
     private static final long TEAM_1_VISION_SCOPE_ID = 2L;
 
     @Test
-    void createArtifact_MainFlow_FromASection_AppendedWithTheNextKeyAndNoLockNeeded() throws Exception {
+    void createArtifact_MainFlow_FromASection_AppendedWithItsKeyAndNoLockNeeded() throws Exception {
         long visionScopeId = TEAM_1_VISION_SCOPE_ID;
         // John holds no document section lock: the server does not check it for items (BR-edit-lock-required).
         JSONObject first = create(1, item("RISK", "Team turnover", "A team member may leave mid-semester."), this.studentJohnToken);
         assertThat(first.getBoolean("flag")).as(first.toString()).isTrue();
-        assertThat(first.getJSONObject("data").getString("artifactKey")).isEqualTo("RSK-1");
+        assertThat(first.getJSONObject("data").getString("artifactKey")).isEqualTo("RSK-team-turnover");
         assertThat(first.getJSONObject("data").getInt("version")).isZero();
         assertThat(first.getJSONObject("data").getString("homeDocumentType")).isEqualTo("VISION_SCOPE");
 
         JSONObject second = create(1, item("RISK", "Scope creep", "The client may keep adding features."), this.studentJohnToken);
-        assertThat(second.getJSONObject("data").getString("artifactKey")).isEqualTo("RSK-2");
+        assertThat(second.getJSONObject("data").getString("artifactKey")).isEqualTo("RSK-scope-creep");
 
-        assertThat(itemKeys(visionScopeId, "RISKS")).containsExactly("RSK-1", "RSK-2");
+        assertThat(itemKeys(visionScopeId, "RISKS")).containsExactly("RSK-team-turnover", "RSK-scope-creep");
     }
 
     @Test
@@ -337,9 +343,9 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
 
         JSONObject businessDependency = create(1, item("BUSINESS_DEPENDENCY", "Course schedule", "The release depends on the semester calendar."), this.studentJohnToken);
         assertThat(businessDependency.getBoolean("flag")).as(businessDependency.toString()).isTrue();
-        assertThat(businessDependency.getJSONObject("data").getString("artifactKey")).isEqualTo("BDE-1");
+        assertThat(businessDependency.getJSONObject("data").getString("artifactKey")).isEqualTo("BDE-course-schedule");
         assertThat(businessDependency.getJSONObject("data").getString("homeDocumentType")).isEqualTo("VISION_SCOPE");
-        assertThat(itemKeys(visionScopeId, "ASSUMPTIONS_DEPENDENCIES")).containsExactly("BDE-1");
+        assertThat(itemKeys(visionScopeId, "ASSUMPTIONS_DEPENDENCIES")).containsExactly("BDE-course-schedule");
     }
 
     @Test
@@ -396,7 +402,7 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
         JSONObject refused = create(1, item("FUNCTIONAL_REQUIREMENT", "Late addition", "The system shall do one more thing."), this.studentJohnToken);
         assertThat(refused.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
         assertThat(refused.getString("message")).isEqualTo("The Software Requirements Specification is locked for review, so it cannot be changed.");
-        assertThat(itemKeys(1L, "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS")).containsExactly("FR-1", "FR-2", "FR-3");
+        assertThat(itemKeys(1L, "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS")).containsExactly("FR-user-authentication", "FR-input-validation", "FR-change-notification");
     }
 
     @Test
@@ -426,13 +432,13 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
     void createArtifact_BodyIdIgnored_AnotherTeamsRowUntouched() throws Exception {
         RequirementArtifact team2Fr = this.requirementArtifactRepository.findAll().stream()
                 .filter(a -> "Data export".equals(a.getTitle()) && a.getTeam().getTeamId() == 2).findFirst().orElseThrow();
-        JSONObject created = create(1, item("FUNCTIONAL_REQUIREMENT", "Overwritten", "Overwritten content.").put("id", team2Fr.getId()).put("artifactKey", "FR-999").put("version", 7), this.studentJohnToken);
+        JSONObject created = create(1, item("FUNCTIONAL_REQUIREMENT", "Overwritten", "Overwritten content.").put("id", team2Fr.getId()).put("version", 7), this.studentJohnToken);
         assertThat(created.getBoolean("flag")).as(created.toString()).isTrue();
         JSONObject data = created.getJSONObject("data");
         assertThat(data.getLong("id")).isNotEqualTo(team2Fr.getId());
-        assertThat(data.getString("artifactKey")).isEqualTo("FR-4"); // FR-1 to FR-3 are seeded
+        assertThat(data.getString("artifactKey")).isEqualTo("FR-overwritten"); // the key it was sent, appended after the seeded three
         assertThat(data.getInt("version")).isZero();
-        assertThat(itemKeys(1L, "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS")).containsExactly("FR-1", "FR-2", "FR-3", "FR-4");
+        assertThat(itemKeys(1L, "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS")).containsExactly("FR-user-authentication", "FR-input-validation", "FR-change-notification", "FR-overwritten");
 
         this.entityManager.flush();
         this.entityManager.clear();
@@ -522,12 +528,12 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
     }
 
     // ---- UC-ART-delete-artifact (docs/design/art.md, Tests) ----
-    // Team 1's seed: FR-1 and FR-2 each derive from UC-1, BO-1 is the target of UC-1's link, stakeholders 1 and 2 are
-    // UC-1's primary and secondary actors. FR-3 and the external system are referenced by nothing.
+    // Team 1's seed: FR-user-authentication and FR-input-validation each derive from UC-create-use-case, BO-requirements-quality is the target of UC-create-use-case's link, stakeholders 1 and 2 are
+    // UC-create-use-case's primary and secondary actors. FR-change-notification and the external system are referenced by nothing.
 
     @Test
     void deleteArtifact_MainFlow_RowGoneAndListClosesUp() throws Exception {
-        long fr3 = idOf(1, "FR-3");
+        long fr3 = idOf(1, "FR-change-notification");
         JSONObject deleted = deleteArtifact(1, fr3, artifactVersion(fr3), this.studentJohnToken);
         assertThat(deleted.getBoolean("flag")).as(deleted.toString()).isTrue();
         assertThat(deleted.getString("message")).isEqualTo("Delete requirement artifact successfully");
@@ -538,35 +544,35 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
         MvcResult read = this.mockMvc.perform(get(this.baseUrl + "/teams/1/requirement-artifacts/" + fr3)
                 .accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken)).andReturn();
         assertThat(new JSONObject(read.getResponse().getContentAsString()).getInt("code")).isEqualTo(StatusCode.NOT_FOUND);
-        assertThat(itemKeys(1L, "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS")).containsExactly("FR-1", "FR-2");
+        assertThat(itemKeys(1L, "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS")).containsExactly("FR-user-authentication", "FR-input-validation");
     }
 
     @Test
     void deleteArtifact_Extension4a_ReferencedArtifactRefused_ReferrersNamed() throws Exception {
-        long fr1 = idOf(1, "FR-1");
+        long fr1 = idOf(1, "FR-user-authentication");
         JSONObject refused = deleteArtifact(1, fr1, artifactVersion(fr1), this.studentJohnToken);
         assertThat(refused.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
-        assertThat(refused.getString("message")).isEqualTo("FR-1 cannot be deleted while other artifacts refer to it: the link FR-1 DERIVES_FROM UC-1. Remove or repoint these references first.");
+        assertThat(refused.getString("message")).isEqualTo("FR-user-authentication cannot be deleted while other artifacts refer to it: the link FR-user-authentication DERIVES_FROM UC-create-use-case. Remove or repoint these references first.");
         JSONObject referrer = refused.getJSONArray("data").getJSONObject(0);
-        assertThat(referrer.getString("artifactKey")).isEqualTo("UC-1");
+        assertThat(referrer.getString("artifactKey")).isEqualTo("UC-create-use-case");
         assertThat(referrer.getString("relation")).isEqualTo("LINK_FROM");
         assertThat(referrer.getString("linkType")).isEqualTo("DERIVES_FROM");
 
-        long stakeholder = idOf(1, "STK-1");
+        long stakeholder = idOf(1, "STK-student");
         JSONObject actorRefused = deleteArtifact(1, stakeholder, artifactVersion(stakeholder), this.studentJohnToken);
         assertThat(actorRefused.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
-        assertThat(actorRefused.getString("message")).contains("the link UC-1 PRIMARY_ACTOR STK-1");
+        assertThat(actorRefused.getString("message")).contains("the link UC-create-use-case PRIMARY_ACTOR STK-student");
 
         this.entityManager.flush();
         this.entityManager.clear();
         assertThat(this.requirementArtifactRepository.findById(fr1)).isPresent();
         assertThat(this.requirementArtifactRepository.findById(stakeholder)).isPresent();
-        assertThat(itemKeys(1L, "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS")).containsExactly("FR-1", "FR-2", "FR-3");
+        assertThat(itemKeys(1L, "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS")).containsExactly("FR-user-authentication", "FR-input-validation", "FR-change-notification");
     }
 
     @Test
     void deleteArtifact_Extension7a_StaleVersionConflicts_MissingVersionRefused() throws Exception {
-        long fr3 = idOf(1, "FR-3");
+        long fr3 = idOf(1, "FR-change-notification");
         int seen = artifactVersion(fr3);
         JSONObject edited = update(fr3, item("FUNCTIONAL_REQUIREMENT", "Notification", "The system shall notify teammates by email.").put("version", seen), this.studentEricToken);
         assertThat(edited.getBoolean("flag")).as(edited.toString()).isTrue();
@@ -587,7 +593,7 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
         srs.setStatus(DocumentStatus.SUBMITTED);
         this.documentRepository.saveAndFlush(srs);
 
-        long fr3 = idOf(1, "FR-3");
+        long fr3 = idOf(1, "FR-change-notification");
         JSONObject refused = deleteArtifact(1, fr3, artifactVersion(fr3), this.studentJohnToken);
         assertThat(refused.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
         assertThat(refused.getString("message")).isEqualTo("The Software Requirements Specification is locked for review, so it cannot be changed.");
@@ -609,7 +615,7 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
 
     @Test
     void deleteArtifact_CrossTeam_NonMemberForbidden_OtherTeamsIdNotFound() throws Exception {
-        long fr3 = idOf(1, "FR-3");
+        long fr3 = idOf(1, "FR-change-notification");
         // Woody is on team 2: team 1's URL is refused at the route, and team 1's id through team 2's URL is not found.
         assertThat(deleteArtifact(1, fr3, 0, this.studentWoodyToken).getInt("code")).isEqualTo(StatusCode.FORBIDDEN);
         assertThat(deleteArtifact(2, fr3, 0, this.studentWoodyToken).getInt("code")).isEqualTo(StatusCode.NOT_FOUND);
@@ -637,32 +643,34 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
 
     @Test
     void deleteArtifact_Instructor_OfTheTeamsCourseSectionAllowed_OfAnotherRefused() throws Exception {
-        long fr3 = idOf(1, "FR-3");
+        long fr3 = idOf(1, "FR-change-notification");
         assertThat(deleteArtifact(1, fr3, artifactVersion(fr3), this.adminTimToken).getInt("code")).isEqualTo(StatusCode.FORBIDDEN);
         JSONObject deleted = deleteArtifact(1, fr3, artifactVersion(fr3), this.adminBingyangToken);
         assertThat(deleted.getBoolean("flag")).as(deleted.toString()).isTrue();
     }
 
     @Test
-    void deleteArtifact_KeyNotReused() throws Exception {
-        long fr3 = idOf(1, "FR-3");
+    void deleteArtifact_KeyFreeAgain() throws Exception {
+        // Once an artifact is deleted, its key is free for a new one (DI-artifact-key-assignment).
+        long fr3 = idOf(1, "FR-change-notification");
         assertThat(deleteArtifact(1, fr3, artifactVersion(fr3), this.studentJohnToken).getBoolean("flag")).isTrue();
-        JSONObject next = create(1, item("FUNCTIONAL_REQUIREMENT", "Audit log", "The system shall log every change."), this.studentJohnToken);
-        assertThat(next.getJSONObject("data").getString("artifactKey")).isEqualTo("FR-4");
+        JSONObject next = create(1, item("FUNCTIONAL_REQUIREMENT", "Notify on change", "The system shall notify the team of every change.").put("artifactKey", "FR-change-notification"), this.studentJohnToken);
+        assertThat(next.getBoolean("flag")).as(next.toString()).isTrue();
+        assertThat(next.getJSONObject("data").getString("artifactKey")).isEqualTo("FR-change-notification");
     }
 
     @Test
     void deleteArtifact_ItemInAList_LeavesNoGap() throws Exception {
-        // Section 16 holds FR-1 to FR-3; a create appends FR-4, then FR-3 is deleted from between FR-2 and FR-4.
+        // Section 16 holds FR-user-authentication to FR-change-notification; a create appends FR-audit-log, then FR-change-notification is deleted from between FR-input-validation and it.
         JSONObject created = create(1, item("FUNCTIONAL_REQUIREMENT", "Audit log", "The system shall log every change."), this.studentJohnToken);
         assertThat(created.getBoolean("flag")).as(created.toString()).isTrue();
-        long fr3 = idOf(1, "FR-3");
+        long fr3 = idOf(1, "FR-change-notification");
         assertThat(deleteArtifact(1, fr3, artifactVersion(fr3), this.studentJohnToken).getBoolean("flag")).isTrue();
 
         // Reload from the database, past this test's persistence context, so the stored indexes are what is read.
         this.entityManager.flush();
         this.entityManager.clear();
-        assertThat(itemKeys(1L, "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS")).containsExactly("FR-1", "FR-2", "FR-4");
+        assertThat(itemKeys(1L, "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS")).containsExactly("FR-user-authentication", "FR-input-validation", "FR-audit-log");
     }
 
     @Test
@@ -673,7 +681,7 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.flag").value(true));
         int version = sectionVersion(16);
 
-        long fr3 = idOf(1, "FR-3");
+        long fr3 = idOf(1, "FR-change-notification");
         assertThat(deleteArtifact(1, fr3, artifactVersion(fr3), this.studentEricToken).getBoolean("flag")).isTrue();
         this.entityManager.flush();
         assertThat(sectionVersion(16)).as("a delete leaves the document section's version alone").isEqualTo(version);
@@ -686,53 +694,53 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
 
     @Test
     void findReferences_None_EmptyList() throws Exception {
-        JSONObject found = references(1, idOf(1, "SYS-1"), this.studentJohnToken);
+        JSONObject found = references(1, idOf(1, "SYS-email-service"), this.studentJohnToken);
         assertThat(found.getBoolean("flag")).as(found.toString()).isTrue();
         assertThat(found.getJSONArray("data").length()).isZero();
     }
 
     @Test
     void findReferences_LinksInBothDirectionsAndActorLinks() throws Exception {
-        JSONObject fr1 = references(1, idOf(1, "FR-1"), this.studentJohnToken).getJSONArray("data").getJSONObject(0);
-        assertThat(fr1.getString("artifactKey")).isEqualTo("UC-1");
+        JSONObject fr1 = references(1, idOf(1, "FR-user-authentication"), this.studentJohnToken).getJSONArray("data").getJSONObject(0);
+        assertThat(fr1.getString("artifactKey")).isEqualTo("UC-create-use-case");
         assertThat(fr1.getString("relation")).isEqualTo("LINK_FROM");
         assertThat(fr1.getString("linkType")).isEqualTo("DERIVES_FROM");
 
-        JSONObject bo1 = references(1, idOf(1, "BO-1"), this.studentJohnToken).getJSONArray("data").getJSONObject(0);
-        assertThat(bo1.getString("artifactKey")).isEqualTo("UC-1");
+        JSONObject bo1 = references(1, idOf(1, "BO-requirements-quality"), this.studentJohnToken).getJSONArray("data").getJSONObject(0);
+        assertThat(bo1.getString("artifactKey")).isEqualTo("UC-create-use-case");
         assertThat(bo1.getString("relation")).isEqualTo("LINK_TO");
 
-        JSONObject primary = references(1, idOf(1, "STK-1"), this.studentJohnToken).getJSONArray("data").getJSONObject(0);
-        assertThat(primary.getString("artifactKey")).isEqualTo("UC-1");
+        JSONObject primary = references(1, idOf(1, "STK-student"), this.studentJohnToken).getJSONArray("data").getJSONObject(0);
+        assertThat(primary.getString("artifactKey")).isEqualTo("UC-create-use-case");
         assertThat(primary.getString("relation")).isEqualTo("LINK_TO");
         assertThat(primary.getString("linkType")).isEqualTo("PRIMARY_ACTOR");
 
-        JSONObject secondary = references(1, idOf(1, "STK-2"), this.studentJohnToken).getJSONArray("data").getJSONObject(0);
-        assertThat(secondary.getString("artifactKey")).isEqualTo("UC-1");
+        JSONObject secondary = references(1, idOf(1, "STK-instructor"), this.studentJohnToken).getJSONArray("data").getJSONObject(0);
+        assertThat(secondary.getString("artifactKey")).isEqualTo("UC-create-use-case");
         assertThat(secondary.getString("relation")).isEqualTo("LINK_TO");
         assertThat(secondary.getString("linkType")).isEqualTo("SECONDARY_ACTOR");
     }
 
     @Test
     void deleteArtifact_Extension4a_LinkAddedAfterTheCheck_Refused() throws Exception {
-        long fr3 = idOf(1, "FR-3");
+        long fr3 = idOf(1, "FR-change-notification");
         assertThat(references(1, fr3, this.studentJohnToken).getJSONArray("data").length()).isZero();
 
-        // Between John's check and his confirm, Eric links FR-3 to UC-1.
-        String link = new JSONObject().put("sourceArtifactId", fr3).put("targetArtifactId", idOf(1, "UC-1")).put("type", "DERIVES_FROM").toString();
+        // Between John's check and his confirm, Eric links FR-change-notification to UC-create-use-case.
+        String link = new JSONObject().put("sourceArtifactId", fr3).put("targetArtifactId", idOf(1, "UC-create-use-case")).put("type", "DERIVES_FROM").toString();
         this.mockMvc.perform(post(this.baseUrl + "/teams/1/artifact-links").contentType(MediaType.APPLICATION_JSON).content(link)
                         .accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentEricToken))
                 .andExpect(jsonPath("$.flag").value(true));
 
         JSONObject refused = deleteArtifact(1, fr3, artifactVersion(fr3), this.studentJohnToken);
         assertThat(refused.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
-        assertThat(refused.getString("message")).contains("the link FR-3 DERIVES_FROM UC-1");
+        assertThat(refused.getString("message")).contains("the link FR-change-notification DERIVES_FROM UC-create-use-case");
         assertThat(this.requirementArtifactRepository.findById(fr3)).isPresent();
     }
 
     @Test
     void findReferences_CrossTeam_NonMemberForbidden_OtherTeamsIdNotFound() throws Exception {
-        long fr1 = idOf(1, "FR-1");
+        long fr1 = idOf(1, "FR-user-authentication");
         assertThat(references(1, fr1, this.studentWoodyToken).getInt("code")).isEqualTo(StatusCode.FORBIDDEN);
         assertThat(references(2, fr1, this.studentWoodyToken).getInt("code")).isEqualTo(StatusCode.NOT_FOUND);
     }
@@ -741,11 +749,133 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
     void deleteArtifact_NoLinkCascade_ForeignKeyRefusesADeletePastTheCheck() {
         // Straight to the repository, past the service's reference check: without a cascade, the link's foreign key
         // refuses the delete instead of the link being deleted with the artifact.
-        RequirementArtifact fr1 = this.requirementArtifactRepository.findById(idOf(1, "FR-1")).orElseThrow();
+        RequirementArtifact fr1 = this.requirementArtifactRepository.findById(idOf(1, "FR-user-authentication")).orElseThrow();
         assertThatThrownBy(() -> {
             this.requirementArtifactRepository.delete(fr1);
             this.entityManager.flush();
         }).isInstanceOf(PersistenceException.class);
+    }
+
+    // ---- Artifact keys (docs/design/art.md, "Artifact keys" and Tests) ----
+
+    @Test
+    void findKeyHolder_TeamsKeyFound_FreeAndOtherTeamsKeysNot_NonMemberForbidden() throws Exception {
+        JSONObject found = keyHolder(1, "FR-user-authentication", this.studentJohnToken);
+        assertThat(found.getBoolean("flag")).as(found.toString()).isTrue();
+        JSONObject holder = found.getJSONObject("data");
+        assertThat(holder.getLong("id")).isEqualTo(idOf(1, "FR-user-authentication"));
+        assertThat(holder.getString("artifactKey")).isEqualTo("FR-user-authentication");
+        assertThat(holder.getString("title")).isEqualTo("User authentication");
+        assertThat(holder.getString("type")).isEqualTo("FUNCTIONAL_REQUIREMENT");
+
+        // A free key, and team 2's FR-export-csv asked through team 1's URL, both have no holder.
+        assertThat(keyHolder(1, "FR-not-taken", this.studentJohnToken).isNull("data")).isTrue();
+        assertThat(keyHolder(1, "FR-export-csv", this.studentJohnToken).isNull("data")).isTrue();
+        // Woody is on team 2, so team 1's route refuses him before the service runs.
+        assertThat(keyHolder(1, "FR-user-authentication", this.studentWoodyToken).getInt("code")).isEqualTo(StatusCode.FORBIDDEN);
+    }
+
+    @Test
+    void suggestKey_AiUnavailable_SuccessWithNoKey_NothingToGoOnRefused_NonMemberForbidden() throws Exception {
+        // QS-llm-outage, the backend half: the tests set no LLM provider, so the proxy answers NOT_CONFIGURED. The
+        // suggestion is then a success with no key, and a create still works (FR-AI-degradation).
+        JSONObject unavailable = suggest(1, new JSONObject().put("type", "RISK").put("title", "Data loss").put("content", ""), this.studentJohnToken);
+        assertThat(unavailable.getBoolean("flag")).as(unavailable.toString()).isTrue();
+        assertThat(unavailable.getJSONObject("data").isNull("artifactKey")).isTrue();
+        assertThat(unavailable.getJSONObject("data").getBoolean("aiAvailable")).isFalse();
+        assertThat(create(1, item("RISK", "Data loss", "A crash loses unsaved edits."), this.studentJohnToken).getBoolean("flag")).isTrue();
+
+        JSONObject nothing = suggest(1, new JSONObject().put("type", "RISK").put("title", " ").put("content", ""), this.studentJohnToken);
+        assertThat(nothing.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
+        assertThat(nothing.getString("message")).isEqualTo("Enter a title or content first, so there is something to suggest a key from.");
+
+        JSONObject forbidden = suggest(1, new JSONObject().put("type", "RISK").put("title", "Data loss"), this.studentWoodyToken);
+        assertThat(forbidden.getInt("code")).isEqualTo(StatusCode.FORBIDDEN);
+    }
+
+    @Test
+    void keyIndex_DuplicateKeyPastTheService_RefusedByTheIndexAndRecognized() {
+        // The backstop of BR-artifact-key-unique (migration V14, declared on RequirementArtifact): a second artifact of
+        // team 1 with FR-user-authentication, saved straight through the repository so no check runs, fails on the
+        // index, and ArtifactKeys recognizes the violation as the key clash RequirementArtifactService turns into 8c.
+        RequirementArtifact existing = this.requirementArtifactRepository.findById(idOf(1, "FR-user-authentication")).orElseThrow();
+        RequirementArtifact duplicate = new RequirementArtifact(existing.getTeam(), RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "Copy", "A copy.", "");
+        duplicate.setArtifactKey("FR-user-authentication");
+
+        assertThatThrownBy(() -> this.requirementArtifactRepository.saveAndFlush(duplicate))
+                .isInstanceOfSatisfying(DataIntegrityViolationException.class,
+                        violation -> assertThat(ArtifactKeys.isKeyIndexViolation(violation)).isTrue());
+    }
+
+    @Test
+    void createArtifact_Extension4a_KeyFormat_Refused() throws Exception {
+        List<String> before = itemKeys(TEAM_1_VISION_SCOPE_ID, "RISKS");
+        Object[] keys = {JSONObject.NULL, "RSK-Data", "RSK-1abc", "RSK--x", "RSK-x-", "RSK-" + "a".repeat(41), "FR-data-loss"};
+        for (Object key : keys) {
+            JSONObject refused = create(1, item("RISK", "Data loss", "A crash loses unsaved edits.").put("artifactKey", key), this.studentJohnToken);
+            assertThat(refused.getBoolean("flag")).as(String.valueOf(key)).isFalse();
+            assertThat(refused.getInt("code")).as(String.valueOf(key)).isEqualTo(StatusCode.INVALID_ARGUMENT);
+        }
+        assertThat(create(1, item("RISK", "Data loss", "x").put("artifactKey", "FR-data-loss"), this.studentJohnToken).getString("message"))
+                .isEqualTo("The artifact key of a risk starts with RSK-.");
+        assertThat(itemKeys(TEAM_1_VISION_SCOPE_ID, "RISKS")).isEqualTo(before);
+    }
+
+    @Test
+    void createArtifact_Extension4b_KeyHeld_RefusedNamingTheHolder_OtherTeamUnaffected() throws Exception {
+        JSONObject refused = create(1, item("FUNCTIONAL_REQUIREMENT", "Sign in", "The system shall let users sign in.")
+                .put("artifactKey", "FR-user-authentication"), this.studentJohnToken);
+        assertThat(refused.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
+        assertThat(refused.getString("message")).isEqualTo("FR-user-authentication is already used by FR-user-authentication: User authentication.");
+        JSONObject holder = refused.getJSONObject("data");
+        assertThat(holder.getLong("id")).isEqualTo(idOf(1, "FR-user-authentication"));
+        assertThat(holder.getString("type")).isEqualTo("FUNCTIONAL_REQUIREMENT");
+
+        // Keys are unique within a team (BR-artifact-key-unique): team 2 may hold the same key.
+        JSONObject team2 = create(2, item("FUNCTIONAL_REQUIREMENT", "Sign in", "The system shall let users sign in.")
+                .put("artifactKey", "FR-user-authentication"), this.studentWoodyToken);
+        assertThat(team2.getBoolean("flag")).as(team2.toString()).isTrue();
+    }
+
+    @Test
+    void updateArtifact_RenameKey_Extensions6a6b10a() throws Exception {
+        long fr2 = idOf(1, "FR-input-validation");
+        JSONObject body = item("FUNCTIONAL_REQUIREMENT", "Validation", "The system shall validate user inputs.");
+
+        // 6a: a malformed new key.
+        JSONObject malformed = update(fr2, new JSONObject(body.toString()).put("artifactKey", "FR-Validate").put("version", artifactVersion(fr2)), this.studentJohnToken);
+        assertThat(malformed.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
+
+        // 6b: a key another artifact holds, named with the holder as data.
+        JSONObject held = update(fr2, new JSONObject(body.toString()).put("artifactKey", "FR-user-authentication").put("version", artifactVersion(fr2)), this.studentJohnToken);
+        assertThat(held.getString("message")).startsWith("FR-user-authentication is already used by");
+        assertThat(held.getJSONObject("data").getString("artifactKey")).isEqualTo("FR-user-authentication");
+
+        // A free new key is the rename; the artifact's links are untouched (it derives from the seeded use case).
+        int linksBefore = this.requirementArtifactRepository.findById(fr2).orElseThrow().getOutgoingArtifactLinks().size();
+        JSONObject renamed = update(fr2, new JSONObject(body.toString()).put("artifactKey", "FR-validate-inputs").put("version", artifactVersion(fr2)), this.studentJohnToken);
+        assertThat(renamed.getBoolean("flag")).as(renamed.toString()).isTrue();
+        assertThat(renamed.getJSONObject("data").getString("artifactKey")).isEqualTo("FR-validate-inputs");
+        this.entityManager.flush();
+        this.entityManager.clear();
+        assertThat(this.requirementArtifactRepository.findById(fr2).orElseThrow().getOutgoingArtifactLinks()).hasSize(linksBefore);
+
+        // 10a: a stale version with a new key is a 409, and the key stays.
+        JSONObject stale = update(fr2, new JSONObject(body.toString()).put("artifactKey", "FR-validate-everything").put("version", 0), this.studentJohnToken);
+        assertThat(stale.getInt("code")).isEqualTo(StatusCode.CONFLICT);
+        assertThat(this.requirementArtifactRepository.findById(fr2).orElseThrow().getArtifactKey()).isEqualTo("FR-validate-inputs");
+    }
+
+    private JSONObject suggest(int teamId, JSONObject body, String token) throws Exception {
+        MvcResult result = this.mockMvc.perform(post(this.baseUrl + "/teams/" + teamId + "/requirement-artifacts/key-suggestion").contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, token)).andReturn();
+        return new JSONObject(result.getResponse().getContentAsString());
+    }
+
+    private JSONObject keyHolder(int teamId, String artifactKey, String token) throws Exception {
+        MvcResult result = this.mockMvc.perform(get(this.baseUrl + "/teams/" + teamId + "/requirement-artifacts/key-holder").param("artifactKey", artifactKey)
+                .accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, token)).andReturn();
+        return new JSONObject(result.getResponse().getContentAsString());
     }
 
     private JSONObject references(int teamId, long artifactId, String token) throws Exception {
@@ -760,7 +890,7 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
         return new JSONObject(result.getResponse().getContentAsString());
     }
 
-    /** The id of team {@code teamId}'s artifact with key {@code artifactKey}, such as "FR-3". */
+    /** The id of team {@code teamId}'s artifact with key {@code artifactKey}, such as "FR-change-notification". */
     private long idOf(int teamId, String artifactKey) {
         return this.requirementArtifactRepository.findAll().stream()
                 .filter(a -> a.getTeam().getTeamId() == teamId && artifactKey.equals(a.getArtifactKey()))
@@ -771,13 +901,25 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
         return new JSONObject().put("type", type).put("title", title).put("content", content).put("priority", "MEDIUM").put("notes", "");
     }
 
+    // A body with no artifactKey gets one as a student might choose it (TestKeys), so tests about other rules need not
+    // name one. A test about keys puts its own, or JSONObject.NULL to send none.
     private JSONObject create(int teamId, JSONObject body, String token) throws Exception {
+        if (!body.has("artifactKey") && body.has("type") && body.has("title")) {
+            body.put("artifactKey", TestKeys.keyFor(body.getString("type"), body.getString("title")));
+        }
         MvcResult result = this.mockMvc.perform(post(this.baseUrl + "/teams/" + teamId + "/requirement-artifacts").contentType(MediaType.APPLICATION_JSON)
                 .content(body.toString()).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, token)).andReturn();
         return new JSONObject(result.getResponse().getContentAsString());
     }
 
+    // A body with no artifactKey sends the artifact's current one, as the editor does, so an edit renames nothing.
     private JSONObject update(long artifactId, JSONObject body, String token) throws Exception {
+        if (!body.has("artifactKey")) {
+            String currentKey = this.requirementArtifactRepository.findById(artifactId).map(RequirementArtifact::getArtifactKey).orElse(null);
+            if (currentKey != null) {
+                body.put("artifactKey", currentKey);
+            }
+        }
         MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/requirement-artifacts/" + artifactId).contentType(MediaType.APPLICATION_JSON)
                 .content(body.toString()).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, token)).andReturn();
         return new JSONObject(result.getResponse().getContentAsString());

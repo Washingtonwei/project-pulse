@@ -1,5 +1,7 @@
 package team.projectpulse.ram.usecase;
 
+import team.projectpulse.ram.TestKeys;
+
 import jakarta.persistence.EntityManager;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -37,8 +39,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 /**
  * The use case template's text fields and business rules (UC-DOC-create-use-case, UC-DOC-edit-use-case,
  * UC-DOC-view-use-case; docs/design/doc.md "Business rules as links", "Creating a business rule from the picker" and
- * "The template's text fields"). Team 1's seed: UC-1 is use case 3 (its artifact 3), with STK-1 as primary actor and
- * STK-2 as secondary actor; RULE-1 is the team's one business rule, in its Business Rules document, and no use case
+ * "The template's text fields"). Team 1's seed: UC-create-use-case is use case 3 (its artifact 3), with STK-student as primary actor and
+ * STK-instructor as secondary actor; RULE-own-team-documents is the team's one business rule, in its Business Rules document, and no use case
  * names it.
  */
 class UseCaseTemplateFieldsIntegrationTest extends AbstractIntegrationTest {
@@ -86,7 +88,7 @@ class UseCaseTemplateFieldsIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void addUseCase_TextFieldsAndBusinessRules_Stored() throws Exception {
-        // Main flow: the four text fields round-trip, and RULE-1 is linked by one CONSTRAINS link, from the rule to the
+        // Main flow: the four text fields round-trip, and RULE-own-team-documents is linked by one CONSTRAINS link, from the rule to the
         // new use case's artifact, with the route's team.
         JSONObject payload = minimalUseCase()
                 .put("frequencyOfUse", "About 50 times a day during the semester.")
@@ -207,20 +209,20 @@ class UseCaseTemplateFieldsIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void updateUseCase_BusinessRulesChanged_OnlyTheChangedLinksAreWritten() throws Exception {
-        // RULE-1 also constrains FR-1 through the link route; that link is an incoming link of FR-1, not of UC-1, so no
-        // use case save may touch it. UC-1's actor links must stay as they are too.
+        // RULE-own-team-documents also constrains FR-user-authentication through the link route; that link is an incoming link of FR-user-authentication, not of UC-create-use-case, so no
+        // use case save may touch it. UC-create-use-case's actor links must stay as they are too.
         long rule2Id = createBusinessRule("A use case name is unique within its team.").getJSONObject("data").getLong("id");
         long fr1Id = firstArtifact(1, "FUNCTIONAL_REQUIREMENT", this.johnToken).getLong("id");
         createLink(this.rule1Id, fr1Id, "CONSTRAINS");
         lockUseCase();
 
-        // First save: RULE-1 only.
+        // First save: RULE-own-team-documents only.
         JSONObject first = putUseCase(fetchUseCase(UC_1).put("businessRuleIds", new JSONArray().put(this.rule1Id)));
         assertThat(first.getBoolean("flag")).as(first.toString()).isTrue();
         ArtifactLink rule1Link = constrainsLinksTo(UC_1).getFirst();
         Set<Long> actorLinkIdsBefore = actorLinkIds();
 
-        // Second save: RULE-1 kept, RULE-2 added.
+        // Second save: RULE-own-team-documents kept, a second rule added.
         JSONObject second = putUseCase(fetchUseCase(UC_1).put("businessRuleIds", new JSONArray().put(this.rule1Id).put(rule2Id)));
         assertThat(second.getBoolean("flag")).as(second.toString()).isTrue();
         List<ArtifactLink> afterAdd = constrainsLinksTo(UC_1);
@@ -229,7 +231,7 @@ class UseCaseTemplateFieldsIntegrationTest extends AbstractIntegrationTest {
         assertThat(keptRule1Link.getId()).isEqualTo(rule1Link.getId());
         assertThat(keptRule1Link.getCreatedBy().getId()).isEqualTo(rule1Link.getCreatedBy().getId());
 
-        // Third save: RULE-1 dropped. Its link goes, the rule stays, and its link to FR-1 is untouched.
+        // Third save: RULE-own-team-documents dropped. Its link goes, the rule stays, and its link to FR-user-authentication is untouched.
         JSONObject third = putUseCase(fetchUseCase(UC_1).put("businessRuleIds", new JSONArray().put(rule2Id)));
         assertThat(third.getBoolean("flag")).as(third.toString()).isTrue();
         assertThat(constrainsLinksTo(UC_1)).extracting(link -> link.getSourceArtifact().getId()).containsExactly(rule2Id);
@@ -284,19 +286,19 @@ class UseCaseTemplateFieldsIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void updateUseCase_Extension6d_RuleCreatedWhileLocked_ThenLinked() throws Exception {
-        // While John holds UC-1's lock, he creates a business rule: it gets RULE-2, at the end of the Business Rules
-        // list, and UC-1's version and lock are untouched. His save then links it.
+        // While John holds UC-create-use-case's lock, he creates a business rule: it keeps the key it was sent, at the end of the Business Rules
+        // list, and UC-create-use-case's version and lock are untouched. His save then links it.
         lockUseCase();
         JSONObject before = fetchUseCase(UC_1);
 
         JSONObject created = createBusinessRule("A requirement document locked for review cannot be edited.");
         assertThat(created.getBoolean("flag")).as(created.toString()).isTrue();
-        assertThat(created.getJSONObject("data").getString("artifactKey")).isEqualTo("RULE-2");
+        assertThat(created.getJSONObject("data").getString("artifactKey")).isEqualTo("RULE-a-requirement-document-locked-for-review");
         long newRuleId = created.getJSONObject("data").getLong("id");
         long documentId = this.documentRepository.findAll().stream()
                 .filter(document -> document.getTeam().getTeamId().equals(1) && document.getType() == DocumentType.BUSINESS_RULES)
                 .findFirst().orElseThrow().getId();
-        assertThat(sectionItemKeys(documentId, "BUSINESS_RULES")).containsExactly("RULE-1", "RULE-2");
+        assertThat(sectionItemKeys(documentId, "BUSINESS_RULES")).containsExactly("RULE-own-team-documents", "RULE-a-requirement-document-locked-for-review");
         JSONObject unchanged = fetchUseCase(UC_1);
         assertThat(unchanged.getInt("version")).isEqualTo(before.getInt("version"));
         assertThat(unchanged.getJSONObject("lock").getBoolean("locked")).isTrue();
@@ -309,7 +311,7 @@ class UseCaseTemplateFieldsIntegrationTest extends AbstractIntegrationTest {
     @Test
     void ruleKept_WhenTheEditIsAbandoned() throws Exception {
         // 6a and 11a: a rule created during an edit that is then abandoned stays in the Business Rules document, and
-        // nothing links it to UC-1.
+        // nothing links it to UC-create-use-case.
         lockUseCase();
         long newRuleId = createBusinessRule("Peer evaluations close at the end of the week.").getJSONObject("data").getLong("id");
 
@@ -353,7 +355,7 @@ class UseCaseTemplateFieldsIntegrationTest extends AbstractIntegrationTest {
         JSONObject response = new JSONObject(result.getResponse().getContentAsString());
 
         assertThat(response.getBoolean("flag")).isFalse();
-        assertThat(response.getString("message")).contains("the link RULE-1 CONSTRAINS UC-1");
+        assertThat(response.getString("message")).contains("the link RULE-own-team-documents CONSTRAINS UC-create-use-case");
         assertThat(this.requirementArtifactRepository.findById(this.rule1Id)).isPresent();
     }
 
@@ -378,11 +380,13 @@ class UseCaseTemplateFieldsIntegrationTest extends AbstractIntegrationTest {
     }
 
     private JSONObject postUseCase(JSONObject payload) throws Exception {
-        return send(post(this.baseUrl + "/teams/1/use-cases"), payload);
+        return send(post(this.baseUrl + "/teams/1/use-cases"), TestKeys.fillUseCaseKeys(payload, null));
     }
 
     private JSONObject putUseCase(JSONObject payload) throws Exception {
-        return send(put(this.baseUrl + "/teams/1/use-cases/" + UC_1), payload);
+        // A payload with no key sends the use case's current one, so the save renames nothing.
+        String currentKey = payload.has("artifactKey") ? null : fetchUseCase(UC_1).getString("artifactKey");
+        return send(put(this.baseUrl + "/teams/1/use-cases/" + UC_1), TestKeys.fillUseCaseKeys(payload, currentKey));
     }
 
     private JSONObject send(org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder request, JSONObject payload) throws Exception {
@@ -416,7 +420,7 @@ class UseCaseTemplateFieldsIntegrationTest extends AbstractIntegrationTest {
     private JSONObject createBusinessRule(String title) throws Exception {
         MvcResult result = this.mockMvc.perform(post(this.baseUrl + "/teams/1/requirement-artifacts")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(new JSONObject().put("type", "BUSINESS_RULE").put("title", title).put("content", "Course policy.").toString())
+                        .content(new JSONObject().put("type", "BUSINESS_RULE").put("artifactKey", TestKeys.keyFor("BUSINESS_RULE", title)).put("title", title).put("content", "Course policy.").toString())
                         .accept(MediaType.APPLICATION_JSON)
                         .header(HttpHeaders.AUTHORIZATION, this.johnToken))
                 .andReturn();

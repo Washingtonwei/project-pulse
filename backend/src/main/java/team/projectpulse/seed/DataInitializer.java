@@ -957,25 +957,29 @@ public class DataInitializer implements CommandLineRunner {
         this.documentRepository.save(newDocument(team1, DocumentType.VISION_SCOPE));
 
         // Initialize some requirement artifacts and use cases for team1 in section2 of course1. Every artifact is
-        // created through createRequirementArtifact, which mints its key and, for a list type, appends it to its home.
+        // created through createRequirementArtifact, which checks the slug key set here and, for a list type, appends it to
+        // its home. Each key is the type's prefix and a short name, as a student would choose (BR-artifact-key-unique).
         RequirementArtifact createUseCase = new RequirementArtifact(team1, RequirementArtifactType.USE_CASE, "Create a use case", "The Student wants to create a new use case in the use case document so that a new user requirement is added in the document.", "");
         createUseCase.setPriority(Priority.CRITICAL);
+        createUseCase.setArtifactKey("UC-create-use-case");
         RequirementArtifact stakeholder1 = new RequirementArtifact(team1, RequirementArtifactType.STAKEHOLDER, "Student", "A student in the senior design team.", "");
+        stakeholder1.setArtifactKey("STK-student");
         RequirementArtifact stakeholder2 = new RequirementArtifact(team1, RequirementArtifactType.STAKEHOLDER, "Instructor", "An instructor of the senior design project.", "");
+        stakeholder2.setArtifactKey("STK-instructor");
 
         // Both land in the Vision and Scope's STAKEHOLDER_PROFILES list.
         this.requirementArtifactService.createRequirementArtifact(1, stakeholder1);
         this.requirementArtifactService.createRequirementArtifact(1, stakeholder2);
 
         // The conditions are submitted as new entries; saveUseCase stores each as a requirement artifact with its
-        // key (PRC-n, PSC-n), after the use case's own artifact, so the seeded ids stay as they were.
+        // key (PRE-..., POST-...), after the use case's own artifact, so the seeded ids stay as they were.
         List<SubmittedCondition> preconditions = List.of(
-                new SubmittedCondition(null, "The Student is logged into the System."),
-                new SubmittedCondition(null, "The Student is a member of the team that owns the use case document."),
-                new SubmittedCondition(null, "Document is not locked for review."));
+                new SubmittedCondition(null, "The Student is logged into the System.", "PRE-student-logged-in"),
+                new SubmittedCondition(null, "The Student is a member of the team that owns the use case document.", "PRE-student-on-owning-team"),
+                new SubmittedCondition(null, "Document is not locked for review.", "PRE-document-not-locked"));
         List<SubmittedCondition> postconditions = List.of(
-                new SubmittedCondition(null, "The new use case is stored in the System."),
-                new SubmittedCondition(null, "The System records collaboration metadata (e.g., last-modified timestamp and editor identity)."));
+                new SubmittedCondition(null, "The new use case is stored in the System.", "POST-use-case-stored"),
+                new SubmittedCondition(null, "The System records collaboration metadata (e.g., last-modified timestamp and editor identity).", "POST-collaboration-metadata-recorded"));
 
         UseCase useCase = new UseCase();
         useCase.setUseCaseTrigger("The Student indicates to create a new use case in the use case document.");
@@ -1018,12 +1022,16 @@ public class DataInitializer implements CommandLineRunner {
         // Create some requirement artifacts
         RequirementArtifact fr1 = new RequirementArtifact(team1, RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "User authentication", "The system shall allow users to log in using their email and password.", "");
         fr1.setPriority(Priority.CRITICAL);
+        fr1.setArtifactKey("FR-user-authentication");
         RequirementArtifact fr2 = new RequirementArtifact(team1, RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "Validation", "The system shall validate user inputs to ensure data integrity and prevent errors.", "");
         fr2.setPriority(Priority.CRITICAL);
+        fr2.setArtifactKey("FR-input-validation");
         RequirementArtifact fr3 = new RequirementArtifact(team1, RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "Notification", "The system shall notify team members of changes to the requirement document via email.", "");
         fr3.setPriority(Priority.HIGH);
+        fr3.setArtifactKey("FR-change-notification");
         RequirementArtifact bo1 = new RequirementArtifact(team1, RequirementArtifactType.BUSINESS_OBJECTIVE, "Improve Student Requirements Quality", "Improve the quality of student-written requirements through structure, templates, standards, traceability, AI feedback, and consistency checks.", "");
         bo1.setPriority(Priority.CRITICAL);
+        bo1.setArtifactKey("BO-requirements-quality");
 
         // The three functional requirements land in the SRS's NON_USE_CASE_FUNCTIONAL_REQUIREMENTS list, in this order,
         // and the business objective in the Vision and Scope's BUSINESS_OBJECTIVES list.
@@ -1113,7 +1121,7 @@ public class DataInitializer implements CommandLineRunner {
 
         this.commentThreadRepository.save(sectionThread1);
 
-        // ---- Artifact-level thread #1 (OPEN) on FR-01 ----
+        // ---- Artifact-level thread #1 (OPEN) on FR-user-authentication ----
         CommentThread artifactThread1 = new CommentThread();
         artifactThread1.setTeam(team1);
         artifactThread1.setCreatedBy(woody);
@@ -1132,7 +1140,7 @@ public class DataInitializer implements CommandLineRunner {
 
         this.commentThreadRepository.save(artifactThread1);
 
-        // ---- Artifact-level thread #2 (RESOLVED) on FR-02 ----
+        // ---- Artifact-level thread #2 (RESOLVED) on FR-input-validation ----
         CommentThread artifactThread2 = new CommentThread();
         artifactThread2.setTeam(team1);
         artifactThread2.setCreatedBy(instructor1);
@@ -1141,7 +1149,7 @@ public class DataInitializer implements CommandLineRunner {
 
         Comment artifactThread2c1 = new Comment();
         artifactThread2c1.setAuthor(instructor1);
-        artifactThread2c1.setContent("FR-02 is too broad. Add examples or measurable validation rules.");
+        artifactThread2c1.setContent("FR-input-validation is too broad. Add examples or measurable validation rules.");
 
         Comment artifactThread2c2 = new Comment();
         artifactThread2c2.setAuthor(cora);
@@ -1160,7 +1168,9 @@ public class DataInitializer implements CommandLineRunner {
         this.documentRepository.save(newDocument(team2, DocumentType.VISION_SCOPE));
         this.documentRepository.save(newDocument(team2, DocumentType.SRS));
         RequirementArtifact team2Stakeholder = new RequirementArtifact(team2, RequirementArtifactType.STAKEHOLDER, "Client", "The external client sponsoring team 2's project.", "");
+        team2Stakeholder.setArtifactKey("STK-client");
         RequirementArtifact team2Fr = new RequirementArtifact(team2, RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "Data export", "The system shall let the client export project data as a CSV file.", "");
+        team2Fr.setArtifactKey("FR-export-csv");
         this.requirementArtifactService.createRequirementArtifact(2, team2Stakeholder);
         this.requirementArtifactService.createRequirementArtifact(2, team2Fr);
 
@@ -1169,7 +1179,9 @@ public class DataInitializer implements CommandLineRunner {
         // could not name a real term owned by another team. One term per team makes both
         // directions expressible. Seeded last, like the block above, so no existing id shifts.
         RequirementArtifact team1GlossaryTerm = new RequirementArtifact(team1, RequirementArtifactType.GLOSSARY_TERM, "Artifact", "A uniquely identified requirement item that can be traced, such as a use case, a functional requirement, or a glossary term.", "");
+        team1GlossaryTerm.setArtifactKey("GLO-artifact");
         RequirementArtifact team2GlossaryTerm = new RequirementArtifact(team2, RequirementArtifactType.GLOSSARY_TERM, "Deliverable", "A tangible output the team hands to the client at the end of a phase.", "");
+        team2GlossaryTerm.setArtifactKey("GLO-deliverable");
         this.requirementArtifactService.createRequirementArtifact(1, team1GlossaryTerm);
         this.requirementArtifactService.createRequirementArtifact(2, team2GlossaryTerm);
 
@@ -1179,15 +1191,17 @@ public class DataInitializer implements CommandLineRunner {
         // not attached to the seeded use case, whose save comes much earlier. It lands in team 1's Vision and Scope's
         // EXTERNAL_SYSTEMS list.
         RequirementArtifact team1ExternalSystem = new RequirementArtifact(team1, RequirementArtifactType.EXTERNAL_SYSTEM, "Email service", "The SMTP service that delivers the system's notification emails.", "");
+        team1ExternalSystem.setArtifactKey("SYS-email-service");
         this.requirementArtifactService.createRequirementArtifact(1, team1ExternalSystem);
 
         // ---- A Business Rules document and one business rule ----
         // Team 1's Business Rules document, so a business rule can be created from the use case editor in dev
-        // (UC-DOC-create-use-case 3b, UC-DOC-edit-use-case 6d), and one rule, RULE-1, for a use case to name
+        // (UC-DOC-create-use-case 3b, UC-DOC-edit-use-case 6d), and one rule, RULE-own-team-documents, for a use case to name
         // (BR-use-case-business-rules). Seeded last, like the blocks above, so no existing id shifts; for the same reason
         // the seeded use case does not name it.
         this.documentRepository.save(newDocument(team1, DocumentType.BUSINESS_RULES));
         RequirementArtifact team1BusinessRule = new RequirementArtifact(team1, RequirementArtifactType.BUSINESS_RULE, "A student may edit only her own team's requirement documents.", "Course policy; fixed for the semester.", "");
+        team1BusinessRule.setArtifactKey("RULE-own-team-documents");
         this.requirementArtifactService.createRequirementArtifact(1, team1BusinessRule);
     }
 

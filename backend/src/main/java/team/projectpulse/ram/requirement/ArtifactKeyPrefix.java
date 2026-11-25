@@ -27,10 +27,10 @@ public final class ArtifactKeyPrefix {
         MAP.put(RequirementArtifactType.EXTERNAL_SYSTEM, "SYS");
         MAP.put(RequirementArtifactType.BUSINESS_RULE, "RULE");
         MAP.put(RequirementArtifactType.FEATURE, "FEAT");
-        // PRC and PSC rather than PRE and POST, so that a condition's key never reads like the PRE-n and POST-n numbers
-        // a use case gives its own conditions by position.
-        MAP.put(RequirementArtifactType.PRECONDITION, "PRC");
-        MAP.put(RequirementArtifactType.POSTCONDITION, "PSC");
+        // PRE and POST: a key's slug starts with a letter, so PRE-student-logged-in can never be mistaken for the PRE-1
+        // or POST-2 a use case gives its own conditions by position (doc.md, decision "Condition key prefixes").
+        MAP.put(RequirementArtifactType.PRECONDITION, "PRE");
+        MAP.put(RequirementArtifactType.POSTCONDITION, "POST");
         MAP.put(RequirementArtifactType.USER_STORY, "US");
         MAP.put(RequirementArtifactType.QUALITY_ATTRIBUTE, "QA");
         // One prefix per interface kind, matching the UI-/SI-/HI-/CI- keys the SRS uses for its own interfaces.

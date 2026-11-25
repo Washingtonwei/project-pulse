@@ -14,6 +14,19 @@
       <el-form-item label="Content" prop="content">
         <el-input v-model="draft.content" type="textarea" :autosize="{ minRows: 3 }" />
       </el-form-item>
+      <!-- Steps 2 and 3, "Artifact key rules": the student names the key or presses Suggest; extension 4b shows a
+           holder here, and Open it uses that artifact instead of creating a new one (4b2). -->
+      <el-form-item label="Key" prop="artifactKey">
+        <ArtifactKeyField
+          ref="keyField"
+          v-model="draft.artifactKey"
+          :team-id="teamId"
+          :type="draft.type"
+          :title="draft.title"
+          :content="draft.content"
+          @open-holder="useHolder"
+        />
+      </el-form-item>
     </el-form>
 
     <!-- Step 5 and extension 5a: possible duplicates, advisory only. Use this one picks the existing artifact
@@ -45,14 +58,21 @@
 <script setup lang="ts">
 // UC-ART-create-artifact from outside a document section: a create-only dialog that a caller opens with the types it
 // admits, for example a use case's actor picker with stakeholder and external system (UC-DOC-create-use-case 3a,
-// UC-DOC-edit-use-case 6c). The server places the artifact in the home its type gives it (BR-artifact-home) and mints
-// its key, so the dialog sends only the type, title and content. It takes no lock on that home, as from the artifact
+// UC-DOC-edit-use-case 6c). The server places the artifact in the home its type gives it (BR-artifact-home) and checks
+// the key the student chose in ArtifactKeyField, so the dialog sends the type, key, title and content. It takes no lock
+// on that home, as from the artifact
 // catalog. The caller learns the result through `created` (a new artifact) or `chosen` (an existing one picked from the
 // duplicate warning). Design: docs/design/doc.md, "Creating an actor from the picker".
 import { computed, reactive, ref, watch } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-import { createRequirementArtifact, searchRequirementArtifacts } from '@/apis/ram'
-import type { RequirementArtifact } from '@/apis/ram/types'
+import {
+  createRequirementArtifact,
+  findRequirementArtifactById,
+  searchRequirementArtifacts
+} from '@/apis/ram'
+import type { ArtifactKeyHolder, RequirementArtifact } from '@/apis/ram/types'
+import ArtifactKeyField from '@/components/ArtifactKeyField.vue'
+import { slugOf, slugProblem } from '@/utils/artifactKeys'
 
 // The most possible duplicates listed, as in the document editor.
 const DUPLICATE_MATCH_LIMIT = 5
@@ -78,7 +98,8 @@ const emit = defineEmits<{
 const visible = defineModel<boolean>({ required: true })
 
 const formRef = ref<FormInstance>()
-const draft = reactive({ type: '', title: '', content: '' })
+const draft = reactive({ type: '', title: '', content: '', artifactKey: '' })
+const keyField = ref<InstanceType<typeof ArtifactKeyField>>()
 const duplicateMatches = ref<RequirementArtifact[]>([])
 // The type and title the duplicate search last ran for: confirming again with both unchanged creates anyway (5a2).
 const duplicateCheckedFor = ref<string | null>(null)
@@ -89,7 +110,17 @@ const busy = ref(false)
 const rules: FormRules = {
   type: [{ required: true, message: 'Choose a type', trigger: 'change' }],
   title: [{ required: true, whitespace: true, message: 'Title is required', trigger: 'blur' }],
-  content: [{ required: true, whitespace: true, message: 'Content is required', trigger: 'blur' }]
+  content: [{ required: true, whitespace: true, message: 'Content is required', trigger: 'blur' }],
+  // The key's format, as the server checks it (4a): a slug of lowercase letters, digits and single hyphens.
+  artifactKey: [
+    {
+      validator: (_rule, _value, callback) => {
+        const problem = slugProblem(slugOf(draft.artifactKey, draft.type))
+        callback(problem ? new Error(problem) : undefined)
+      },
+      trigger: 'change'
+    }
+  ]
 }
 
 const dialogTitle = computed(() =>
@@ -109,6 +140,7 @@ function reset() {
   draft.type = props.types.length === 1 ? (props.types[0] ?? '') : ''
   draft.title = props.initialTitle.trim()
   draft.content = ''
+  draft.artifactKey = ''
   duplicateMatches.value = []
   duplicateCheckedFor.value = null
   formRef.value?.clearValidate()
@@ -156,6 +188,9 @@ async function create() {
 
   busy.value = true
   try {
+    // Step 4, extension 4b: whether another artifact of the team holds the key, asked again now. The field shows the
+    // holder, and nothing is created.
+    if (await keyField.value?.recheck()) return
     const checkKey = `${draft.type}\n${draft.title.trim()}`
     if (duplicateCheckedFor.value !== checkKey) {
       duplicateMatches.value = await findDuplicates(teamId)
@@ -164,17 +199,33 @@ async function create() {
     }
     const result = await createRequirementArtifact(teamId, {
       type: draft.type,
+      artifactKey: draft.artifactKey,
       title: draft.title.trim(),
       content: draft.content
     })
     ElMessage.success(`${result.data.artifactKey} created`)
     emit('created', result.data)
     visible.value = false
-  } catch {
+  } catch (error) {
     // The request interceptor has already shown the server's message (8a, 8b, or a 4a the form missed). Nothing was
-    // created, so the dialog stays open with the student's input.
+    // created, so the dialog stays open with the student's input. If a teammate took the key meanwhile (8c), asking
+    // the key field to check again shows who holds it.
+    void keyField.value?.recheck()
   } finally {
     busy.value = false
+  }
+}
+
+// 4b2: the artifact holding the key is used instead of a new one, loaded in full first, as the duplicate warning's
+// matches are.
+async function useHolder(holder: ArtifactKeyHolder) {
+  const teamId = props.teamId
+  if (!teamId) return
+  try {
+    const result = await findRequirementArtifactById(teamId, holder.id)
+    useExisting(result.data)
+  } catch {
+    // The interceptor has shown the error; the dialog stays open.
   }
 }
 
