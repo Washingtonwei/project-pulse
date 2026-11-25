@@ -114,6 +114,18 @@
         <el-form-item label="Definition">
           <el-input v-model="newTerm.content" type="textarea" :autosize="{ minRows: 4 }" />
         </el-form-item>
+        <!-- UC-GLO-create-term: the term's key, named by the student or suggested from the term and definition. -->
+        <el-form-item label="Key">
+          <ArtifactKeyField
+            ref="createKeyField"
+            v-model="newTermKey"
+            :team-id="effectiveTeamId"
+            type="GLOSSARY_TERM"
+            :title="newTerm.title"
+            :content="newTerm.content"
+            @open-holder="openHolder"
+          />
+        </el-form-item>
         <el-form-item label="Notes">
           <el-input v-model="newTerm.notes" type="textarea" :autosize="{ minRows: 2 }" />
         </el-form-item>
@@ -128,6 +140,20 @@
       <el-form label-width="120px">
         <el-form-item label="New term">
           <el-input v-model="renameValue" placeholder="New term name" />
+        </el-form-item>
+        <!-- UC-GLO-rename-term: renaming the term leaves its key alone; changing the slug here is a deliberate rename. -->
+        <el-form-item label="Key">
+          <ArtifactKeyField
+            ref="renameKeyField"
+            v-model="renameKey"
+            :team-id="effectiveTeamId"
+            type="GLOSSARY_TERM"
+            :title="renameValue"
+            :content="currentTerm.content"
+            :self-id="selectedTermId"
+            :original-key="currentTerm.artifactKey ?? null"
+            @open-holder="openHolder"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -144,7 +170,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserInfoStore } from '@/stores/userInfo'
 import type { Student } from '@/apis/student/types'
-import type { RequirementArtifact } from '@/apis/ram/types'
+import type { ArtifactKeyHolder, RequirementArtifact } from '@/apis/ram/types'
+import axios from 'axios'
+import ArtifactKeyField from '@/components/ArtifactKeyField.vue'
+import { slugOf, slugProblem } from '@/utils/artifactKeys'
 import {
   searchRequirementArtifacts,
   createGlossaryTerm,
@@ -197,6 +226,11 @@ const newTerm = ref<RequirementArtifact>({
   content: ''
 })
 const renameValue = ref('')
+// The keys the two dialogs edit (UC-GLO-create-term, UC-GLO-rename-term).
+const newTermKey = ref('')
+const renameKey = ref('')
+const createKeyField = ref<InstanceType<typeof ArtifactKeyField>>()
+const renameKeyField = ref<InstanceType<typeof ArtifactKeyField>>()
 
 function goBack() {
   router.push({ name: 'ram-documents', query: ramQuery.value })
@@ -237,6 +271,7 @@ async function handleSelect(id: string) {
 
 function openCreate() {
   newTerm.value = { type: 'GLOSSARY_TERM', title: '', content: '' }
+  newTermKey.value = ''
   createDialogVisible.value = true
 }
 
@@ -246,17 +281,22 @@ async function createTerm() {
     ElMessage.warning('Term and definition are required')
     return
   }
+  if (!keyIsWellFormed(newTermKey.value)) return
   saving.value = true
   try {
-    const payload = { ...newTerm.value, type: 'GLOSSARY_TERM' }
+    // 4b: another artifact of the team holding the key, asked again now; the field shows it.
+    if (await createKeyField.value?.recheck()) return
+    const payload = { ...newTerm.value, type: 'GLOSSARY_TERM', artifactKey: newTermKey.value }
     const result = await createGlossaryTerm(effectiveTeamId.value, payload)
     glossaryTerms.value.unshift(result.data)
     filterList()
     selectedTermId.value = result.data.id || null
     currentTerm.value = result.data
     createDialogVisible.value = false
-    ElMessage.success('Glossary term created')
-  } catch {
+    ElMessage.success(`${result.data.artifactKey} created`)
+  } catch (error) {
+    // The interceptor has shown the message; a key a teammate took meanwhile (8a) shows its holder in the field.
+    showHolderFrom(error, createKeyField.value)
   } finally {
     saving.value = false
   }
@@ -264,6 +304,7 @@ async function createTerm() {
 
 function openRename() {
   renameValue.value = currentTerm.value.title || ''
+  renameKey.value = currentTerm.value.artifactKey ?? ''
   renameDialogVisible.value = true
 }
 
@@ -273,9 +314,13 @@ async function renameTerm() {
     ElMessage.warning('Term is required')
     return
   }
+  if (!keyIsWellFormed(renameKey.value)) return
   saving.value = true
   try {
-    const payload = { ...currentTerm.value, title: renameValue.value }
+    // 4c: a new key another artifact holds, asked again now; the term's own key reads as free.
+    if (await renameKeyField.value?.recheck()) return
+    // The key it was opened with renames nothing; a different one renames the key too (UC-GLO-rename-term).
+    const payload = { ...currentTerm.value, title: renameValue.value, artifactKey: renameKey.value }
     const result = await renameGlossaryTerm(effectiveTeamId.value, selectedTermId.value, payload)
     currentTerm.value = result.data
     const idx = glossaryTerms.value.findIndex((term) => term.id === selectedTermId.value)
@@ -283,10 +328,36 @@ async function renameTerm() {
     filterList()
     renameDialogVisible.value = false
     ElMessage.success('Glossary term renamed')
-  } catch {
+  } catch (error) {
+    showHolderFrom(error, renameKeyField.value)
   } finally {
     saving.value = false
   }
+}
+
+// 4a, 4b: the key's format, as the server checks it; the field already shows what is wrong.
+function keyIsWellFormed(key: string) {
+  const problem = slugProblem(slugOf(key, 'GLOSSARY_TERM'))
+  if (problem) ElMessage.warning(`Artifact key: ${problem}`)
+  return !problem
+}
+
+// A refusal for a key in use names its holder; the key field shows it.
+function showHolderFrom(error: unknown, field: InstanceType<typeof ArtifactKeyField> | undefined) {
+  const holder = axios.isAxiosError(error) ? error.response?.data?.data : null
+  if (holder?.artifactKey) field?.showHolder(holder as ArtifactKeyHolder)
+}
+
+// 4b2, 4c: a held key's term is opened in the glossary itself; a holder of another type is named, since the glossary
+// shows only terms.
+async function openHolder(holder: ArtifactKeyHolder) {
+  if (holder.type !== 'GLOSSARY_TERM') {
+    ElMessage.info(`${holder.artifactKey} is ${holder.title ? `"${holder.title}"` : 'another artifact'} of your team.`)
+    return
+  }
+  createDialogVisible.value = false
+  renameDialogVisible.value = false
+  await handleSelect(String(holder.id))
 }
 
 async function saveDefinition() {
