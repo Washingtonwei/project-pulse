@@ -190,6 +190,8 @@ async function suggest() {
       title: props.title ?? '',
       content: props.content ?? ''
     })
+    // The student may have changed the type while waiting: an FR- suggestion for what is now a risk is dropped.
+    if (result.data.artifactKey && !slugOf(result.data.artifactKey, props.type)) return
     if (result.data.artifactKey) {
       key.value = result.data.artifactKey
     } else {

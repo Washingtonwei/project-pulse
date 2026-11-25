@@ -134,7 +134,8 @@ public class ExceptionHandlerAdvice {
     @ExceptionHandler(RequirementArtifactRejectedException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     Result handleRequirementArtifactRejectedException(RequirementArtifactRejectedException ex) {
-        // data is null except for a refused delete of a referenced artifact (4a), which carries its referrers.
+        // data is null except for two refusals: a delete of a referenced artifact (UC-ART-delete-artifact 4a) carries
+        // its referrers, and a key another artifact holds (UC-ART-create-artifact 4b, and its siblings) carries the holder.
         return new Result(false, StatusCode.INVALID_ARGUMENT, ex.getMessage(), ex.getData());
     }
 

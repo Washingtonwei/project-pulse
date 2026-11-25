@@ -151,7 +151,7 @@ public class RequirementArtifactService {
         if (!draft.getType().hasListHome()) {
             // Cleared, so a draft that arrives carrying a document section still lands in no list (BR-artifact-home).
             draft.setSourceDocumentSection(null);
-            assignTeamAndCheckKey(teamId, draft);
+            assignTeamAndCheckKeyAvailability(teamId, draft);
             return saveChecked(draft);
         }
 
@@ -178,7 +178,7 @@ public class RequirementArtifactService {
         // must not be in the section's cascading list yet. Then appending sets its home, and the row is inserted once,
         // keyed and already in its list, with its index taken from its position at the end of the list read under the
         // lock.
-        assignTeamAndCheckKey(teamId, draft);
+        assignTeamAndCheckKeyAvailability(teamId, draft);
         section.addRequirementArtifact(draft);
         return saveChecked(draft);
     }
@@ -188,7 +188,7 @@ public class RequirementArtifactService {
      * the team holds it (4b). Its id is never taken from a request body (no converter maps one, OI-46), and its version
      * is null until the insert, so the save inserts.
      */
-    private void assignTeamAndCheckKey(Integer teamId, RequirementArtifact newRequirementArtifact) {
+    private void assignTeamAndCheckKeyAvailability(Integer teamId, RequirementArtifact newRequirementArtifact) {
         Team team = this.teamRepository.findById(teamId)
                 .orElseThrow(() -> new ObjectNotFoundException("team", teamId));
 
@@ -222,8 +222,9 @@ public class RequirementArtifactService {
 
     /**
      * The artifact of team {@code teamId} that holds {@code artifactKey}, or empty when the key is free (the editor's
-     * Availability check, UC-ART-create-artifact "Artifact key rules"). A malformed key simply has no holder, and
-     * another team's artifact is never found: the lookup is scoped to the team.
+     * Availability check, UC-ART-create-artifact "Artifact key rules"). The key is matched as the column's collation
+     * matches, which ignores case; the key field asks only about well-formed keys, and a create or rename checks the
+     * format itself. Another team's artifact is never found: the lookup is scoped to the team.
      */
     public Optional<ArtifactKeyHolderDto> findKeyHolder(Integer teamId, String artifactKey) {
         if (artifactKey == null || artifactKey.isBlank()) {
@@ -480,8 +481,10 @@ public class RequirementArtifactService {
     // STK-student": a link always reads source, type, target.
     private static String describe(RequirementArtifact deleted, List<ArtifactReferrerDto> referrers) {
         return referrers.stream().map(referrer -> switch (referrer.relation()) {
-            case LINK_FROM -> "the link " + deleted.getArtifactKey() + " " + referrer.linkType() + " " + referrer.artifactKey();
-            case LINK_TO -> "the link " + referrer.artifactKey() + " " + referrer.linkType() + " " + deleted.getArtifactKey();
+            case LINK_FROM ->
+                    "the link " + deleted.getArtifactKey() + " " + referrer.linkType() + " " + referrer.artifactKey();
+            case LINK_TO ->
+                    "the link " + referrer.artifactKey() + " " + referrer.linkType() + " " + deleted.getArtifactKey();
         }).collect(Collectors.joining("; "));
     }
 

@@ -415,7 +415,6 @@ import Link from '@tiptap/extension-link'
 import { useUserInfoStore } from '@/stores/userInfo'
 import type { Instructor } from '@/apis/instructor/types'
 import type { Student } from '@/apis/student/types'
-import axios from 'axios'
 import ArtifactKeyField from '@/components/ArtifactKeyField.vue'
 import { slugOf, slugProblem } from '@/utils/artifactKeys'
 import {
@@ -883,7 +882,7 @@ async function saveArtifact() {
         return
       }
       // A refusal (400), such as a key in use (6b, 10b): the toast has the message, and the field shows the holder.
-      if (axios.isAxiosError(error) && error.response?.status === 400) {
+      if (error?.response?.status === 400) {
         recheckKey()
         return
       }
