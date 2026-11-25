@@ -39,6 +39,9 @@ class ArtifactKeysTest {
     void wrongPrefix() {
         assertThat(ArtifactKeys.problemWith(RequirementArtifactType.RISK, "FR-data-loss")).hasValue("The artifact key of a risk starts with RSK-.");
         assertThat(ArtifactKeys.problemWith(RequirementArtifactType.ASSUMPTION, "DEP-campus")).hasValue("The artifact key of an assumption starts with ASM-.");
+        // The prefix is checked before the slug, so a wrong prefix is named even when the slug is also out of format.
+        assertThat(ArtifactKeys.problemWith(RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "RSK-Data")).hasValue("The artifact key of a functional requirement starts with FR-.");
+        assertThat(ArtifactKeys.problemWith(RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "UC-export-csv")).hasValue("The artifact key of a functional requirement starts with FR-.");
     }
 
     @Test

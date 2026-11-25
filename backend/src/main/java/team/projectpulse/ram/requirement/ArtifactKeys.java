@@ -57,17 +57,42 @@ public final class ArtifactKeys {
      * requirement starts with FR-."
      */
     public static Optional<String> problemWith(RequirementArtifactType type, String key) {
+        // The examples below are for a functional requirement, whose prefix is FR.
         String prefix = ArtifactKeyPrefix.of(type);
+
+        // 1. No key at all: null (a request that left artifactKey out), "" or "   " (an empty key box). Each gets the
+        //    format message, "The artifact key must be FR- followed by a name of ...".
         if (key == null || key.isBlank()) {
             return Optional.of(formatMessage(prefix));
         }
+
+        // Split the key at its first hyphen into an uppercase prefix and the rest:
+        //   "FR-export-csv"  -> ("FR", "export-csv")
+        //   "RSK-data-loss"  -> ("RSK", "data-loss")
+        //   "FR--x"          -> ("FR", "-x")
+        //   "fr-export", "FRexport", "-export"  -> no match (a lowercase prefix, no hyphen, no prefix)
         Matcher matcher = KEY.matcher(key);
+
+        // 2. Another type's prefix: "RSK-data-loss" or "UC-export-csv" on a functional requirement gives "The artifact
+        //    key of a functional requirement starts with FR-." It is checked before the slug, so "RSK-Data" gets this
+        //    message too: the wrong prefix is the first thing to fix.
         if (matcher.matches() && !matcher.group(1).equals(prefix)) {
             return Optional.of("The artifact key of " + withArticle(label(type)) + " starts with " + prefix + "-.");
         }
+
+        // 3. The right prefix but a slug out of format, or no prefix the pattern recognizes. Each gets the format
+        //    message:
+        //   "FR-Export"     uppercase in the slug
+        //   "FR-1abc"       the slug starts with a digit
+        //   "FR--x"         an empty part between hyphens (the slug is "-x")
+        //   "FR-x-"         a trailing hyphen
+        //   "FR-" + 41 letters  longer than 40 characters
+        //   "fr-export"     no match: the prefix is lowercase
         if (!matcher.matches() || !isSlug(matcher.group(2))) {
             return Optional.of(formatMessage(prefix));
         }
+
+        // "FR-export-csv": the right prefix and a well-formed slug, so nothing is wrong.
         return Optional.empty();
     }
 
