@@ -119,6 +119,9 @@ Each list section declares the types it admits in its template (`artifactTypes`)
 | SRS | `COMMUNICATION_INTERFACES` | `COMMUNICATIONS_INTERFACE` |
 | SRS | `QUALITY_ATTRIBUTES` | `QUALITY_ATTRIBUTE` |
 | Business Rules | `BUSINESS_RULES` | `BUSINESS_RULE` |
+| Architectural Design | `KEY_DECISIONS` | `KEY_DECISION` |
+| Architectural Design | `QUALITY_SCENARIOS` | `QUALITY_SCENARIO` |
+| Architectural Design | `RISKS_AND_TECHNICAL_DEBT` | `TECHNICAL_RISK`, `TECHNICAL_DEBT` |
 
 `GLOSSARY_TERM`, `USE_CASE`, `PRECONDITION` and `POSTCONDITION` have no list home and are created through their own use cases; `USER_STORY` is deferred. The create endpoint refuses all five.
 
