@@ -139,6 +139,12 @@ public class ExceptionHandlerAdvice {
         return new Result(false, StatusCode.INVALID_ARGUMENT, ex.getMessage(), ex.getData());
     }
 
+    @ExceptionHandler(RequirementDocumentRejectedException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    Result handleRequirementDocumentRejectedException(RequirementDocumentRejectedException ex) {
+        return new Result(false, StatusCode.INVALID_ARGUMENT, ex.getMessage());
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     Result handleIllegalArgumentException(IllegalArgumentException ex) {

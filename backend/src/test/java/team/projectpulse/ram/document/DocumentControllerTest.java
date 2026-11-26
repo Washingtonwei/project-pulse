@@ -18,6 +18,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public class DocumentControllerTest extends AbstractIntegrationTest {
 
@@ -182,14 +183,18 @@ public class DocumentControllerTest extends AbstractIntegrationTest {
 
     @Test
     void createArchitecturalDesignDocument_Extension3a_AlreadyExists_Refused() throws Exception {
-        // Team 1 already has the Architectural Design the seed gives it: a second one is refused and nothing is stored.
+        // Team 1 already has the Architectural Design the seed gives it: a second one is refused with a 400 the course
+        // admin can read (BR-document-creation), and nothing is stored.
         String json = """
                 {
                     "type": "ARCHITECTURAL_DESIGN"
                 }
                 """;
         this.mockMvc.perform(post(this.baseUrl + "/teams/1/documents").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
-                .andExpect(jsonPath("$.flag").value(false));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_ARGUMENT))
+                .andExpect(jsonPath("$.message").value("This team already has the Architectural Design. A team's document is created once and never regenerated or overwritten."));
         this.mockMvc.perform(post(this.baseUrl + "/teams/1/documents/search").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
                 .andExpect(jsonPath("$.data.content", Matchers.hasSize(1)));
     }
