@@ -12,9 +12,9 @@ import static org.assertj.core.api.Assertions.tuple;
 
 /**
  * {@link ArtifactLinkService#reviseIncomingLinks}, the way a use case writes its business rule links (docs/design/doc.md,
- * "Business rules as links"). Team 1's seed: UC-1 (artifact 3) is the target of DERIVES_FROM links from FR-1 and FR-2,
- * and the source of its two actor links and a DERIVES_FROM link to BO-1; BR-1 is the team's one business rule and
- * has no links.
+ * "Business rules as links"). Team 1's seed: UC-create-use-case (artifact 3) is the target of DERIVES_FROM links from
+ * FR-user-authentication and FR-input-validation, and the source of its two actor links and a DERIVES_FROM link to
+ * BO-requirements-quality; BR-own-team-documents is the team's one business rule and has no links.
  */
 class ArtifactLinkServiceReviseIncomingLinksTest extends AbstractIntegrationTest {
 
@@ -38,14 +38,14 @@ class ArtifactLinkServiceReviseIncomingLinksTest extends AbstractIntegrationTest
 
         this.artifactLinkService.reviseIncomingLinks(1, useCase, ArtifactLinkType.CONSTRAINS, Set.of(rule));
 
-        // In memory, in the same transaction: both ends already show the new link, and UC-1's DERIVES_FROM links
-        // from FR-1 and FR-2 are still there.
+        // In memory, in the same transaction: both ends already show the new link, and UC-create-use-case's
+        // DERIVES_FROM links from FR-user-authentication and FR-input-validation are still there.
         assertThat(useCase.getIncomingArtifactLinks()).extracting(ArtifactLink::getType)
                 .containsExactlyInAnyOrder(ArtifactLinkType.DERIVES_FROM, ArtifactLinkType.DERIVES_FROM, ArtifactLinkType.CONSTRAINS);
         assertThat(rule.getOutgoingArtifactLinks()).extracting(link -> link.getType(), link -> link.getTargetArtifact().getId())
                 .containsExactly(tuple(ArtifactLinkType.CONSTRAINS, 3L));
 
-        // In the database: the same, with the route's team, and UC-1's own outgoing links untouched.
+        // In the database: the same, with the route's team, and UC-create-use-case's own outgoing links untouched.
         this.entityManager.flush();
         this.entityManager.clear();
         assertThat(this.artifactLinkRepository.findByTargetArtifactId(3L, 1))

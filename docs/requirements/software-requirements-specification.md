@@ -632,7 +632,7 @@ direction TB
 | `QUALITY_ATTRIBUTE` | `QA` | SRS → Quality Attributes |
 | `CONSTRAINT` | `CO` | SRS → Design and Implementation Constraints (CO-\*) |
 | `OPERATING_ENVIRONMENT` | `OE` | SRS → Operating Environment (OE-\*) |
-| `USER_STORY` | `US` | _(deferred — a future, optional User Stories document)_ |
+| `USER_STORY` | `US` | _(deferred: a future, optional User Stories document)_ |
 
 A list-type document section admits exactly the artifact types this table homes there, and no others (BR-artifact-home). Every type has exactly one home, so the type alone names it, wherever the artifact is created. Where a document section is the home of more than one type, the student chooses among those types when she adds an item there. `GLOSSARY_TERM`, `USE_CASE`, `PRECONDITION`, and `POSTCONDITION` are authored in the glossary and the use case editor, not in a list-type document section, and `USER_STORY` is deferred. A vision statement is narrative text in Vision and Scope → Vision Statement, not an artifact type.
 

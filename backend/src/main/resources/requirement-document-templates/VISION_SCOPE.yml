@@ -124,8 +124,8 @@ sections:
       - The current value, if it is known
 
       **Example:**
-      - SM-weekly-ordering: At least 75% of employees who use the cafeteria order through the system at least once a week within 6 months of release (measures BO-processing-time).
-      - SM-delivery-time: Average time from order to delivery is under 20 minutes during lunch hours (measures BO-submission-rate).
+      - SM-weekly-ordering: At least 75% of employees who use the cafeteria order through the system at least once a week within 6 months of release (measures BO-submission-rate).
+      - SM-delivery-time: Average time from order to delivery is under 20 minutes during lunch hours (measures BO-processing-time).
 
   - sectionKey: "VISION_STATEMENT"
     title: "Vision Statement"

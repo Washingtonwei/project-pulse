@@ -345,7 +345,7 @@ sequenceDiagram
     D->>A: POST .../requirement-artifacts/search with type and title (step 5)
     A-->>D: possible duplicates, if any, warn (5a): Use this one, or Create anyway
     D->>A: POST .../requirement-artifacts with type, title, content
-    A-->>D: SYS-n, appended to Vision and Scope's External Systems (400 for 8a, 8b)
+    A-->>D: the SYS- key it was sent, appended to Vision and Scope's External Systems (400 for 8a, 8b)
     D-->>P: created(artifact)
     P->>P: add to the options, set as primary, or append to the secondaries (6c2)
     Note over P,U: the use case's form, lock and version are untouched
@@ -369,18 +369,18 @@ A use case's business rules are artifact links whose **target** is the use case'
 
 ```mermaid
 flowchart LR
-    R1["BR-1<br/>business rule"] -- CONSTRAINS --> UC["UC-1<br/>use case's artifact"]
-    R2["BR-2"] -- CONSTRAINS --> UC
-    R2 -- CONSTRAINS --> FR["FR-3<br/>(link routes only)"]
-    UC -- PRIMARY_ACTOR --> STK["STK-1"]
+    R1["BR-own-team-documents<br/>business rule"] -- CONSTRAINS --> UC["UC-create-use-case<br/>use case's artifact"]
+    R2["BR-a-requirement-document-locked-for-review"] -- CONSTRAINS --> UC
+    R2 -- CONSTRAINS --> FR["FR-input-validation<br/>(link routes only)"]
+    UC -- PRIMARY_ACTOR --> STK["STK-student"]
 ```
 
-- **Writing.** After every check passes, `UseCaseService` calls `ArtifactLinkService.reviseIncomingLinks(teamId, target, CONSTRAINS, Set<RequirementArtifact> sources)` with the team-checked rules `resolveBusinessRules` returned. It is `reviseOutgoingLinks` seen from the other end: it compares the use case's current incoming `CONSTRAINS` links with the wanted sources, keeps a link whose source stays (its id, notes and created-by survive), deletes a link whose source was dropped, and adds a link from each new source, keeping both ends' in-memory link sets in step. It changes nothing else: BR-2's link to FR-3 above is an incoming link of FR-3, not of the use case, and the use case's own outgoing links are a different set. Both public methods call one private helper, so the algorithm and its worked-example comments exist once.
+- **Writing.** After every check passes, `UseCaseService` calls `ArtifactLinkService.reviseIncomingLinks(teamId, target, CONSTRAINS, Set<RequirementArtifact> sources)` with the team-checked rules `resolveBusinessRules` returned. It is `reviseOutgoingLinks` seen from the other end: it compares the use case's current incoming `CONSTRAINS` links with the wanted sources, keeps a link whose source stays (its id, notes and created-by survive), deletes a link whose source was dropped, and adds a link from each new source, keeping both ends' in-memory link sets in step. It changes nothing else: BR-a-requirement-document-locked-for-review's link to FR-input-validation above is an incoming link of FR-input-validation, not of the use case, and the use case's own outgoing links are a different set. Both public methods call one private helper, so the algorithm and its worked-example comments exist once.
 - **Reading.** `UseCase.businessRules()` filters `artifact.getIncomingArtifactLinks()` by `CONSTRAINS` **and** by a source of type `BUSINESS_RULE`, and returns the sources. The type filter matters because the link routes do not check the link-type matrix (OI-27): a `CONSTRAINS` link from, say, a feature would otherwise show as a business rule. The editor's next save deletes such a link, since the revise covers every incoming `CONSTRAINS` link. The full-graph load fetches the incoming links and their sources beside the outgoing ones.
 - **A business rule's wording is its `title`**: the rule stated so it can be checked, one sentence, which is what UC-DOC-view-use-case and the picker mean by "wording". Its `content` holds the detail the Business Rules template asks for (where the rule comes from, whether it may change). This differs from a condition, whose wording is its `content` and whose title is empty.
 - **The API** names the rules by id only, `businessRuleIds`, a set, as `secondaryActorIds` does. The page labels each from the team's business rules it loads, as its artifact key and title, and lists the chosen ones in artifact key order (alphabetical, as `ArtifactKeys.KEY_ORDER` sorts them).
 - **Teammates and the link routes.** A rule linked or unlinked through UC-LNK-create-link or UC-LNK-delete-link shows in the use case at once (UC-DOC-view-use-case). If that happens while a student holds the use case lock, her next save revises to her form's set and undoes it, since a link change does not raise the use case's version. Actors behave the same way; accepted.
-- **Deleting a rule.** A business rule that constrains a use case is the source of one of its links, so the artifact delete's link queries already list it ("the link BR-1 CONSTRAINS UC-1") and refuse the delete (BR-deletion-integrity; see [art.md](art.md)).
+- **Deleting a rule.** A business rule that constrains a use case is the source of one of its links, so the artifact delete's link queries already list it ("the link BR-own-team-documents CONSTRAINS UC-create-use-case") and refuse the delete (BR-deletion-integrity; see [art.md](art.md)).
 
 ### Creating a business rule from the picker (3b, 6d)
 
@@ -575,7 +575,7 @@ erDiagram
 
 The ER delta only; the tables themselves are the SRS's Business Domain Model.
 
-The step tables and their `*_index` order columns are unchanged. The dev seed adds one team-1 external system, "Email service", as the last artifact it saves, so no seeded id shifts. For the same reason it is not attached to the seeded use case, whose save comes much earlier; tests that need it as an actor attach it themselves. The seeded use case's conditions are passed as `SubmittedCondition`s and saved after its artifact, so they get keys and no seeded id shifts. For V13 the seed adds team 1's Business Rules document and one business rule, BR-1, as the last things it saves, so no seeded id shifts and the seeded use case does not name it; without the document, creating a rule from the editor (3b, 6d) would be refused with 8b in dev and in tests. Added during implementation; the design did not name it. The seed needs no change for V12: it saves its use case through `saveUseCase`, before it saves its three links, so the use case's two actors become the first two artifact links, so the seed's own three links move from ids 1 to 3 to ids 3 to 5; tests that name a seeded link look its id up instead.
+The step tables and their `*_index` order columns are unchanged. The dev seed adds one team-1 external system, "Email service", as the last artifact it saves, so no seeded id shifts. For the same reason it is not attached to the seeded use case, whose save comes much earlier; tests that need it as an actor attach it themselves. The seeded use case's conditions are passed as `SubmittedCondition`s and saved after its artifact, so they get keys and no seeded id shifts. For V13 the seed adds team 1's Business Rules document and one business rule, BR-own-team-documents, as the last things it saves, so no seeded id shifts and the seeded use case does not name it; without the document, creating a rule from the editor (3b, 6d) would be refused with 8b in dev and in tests. Added during implementation; the design did not name it. The seed needs no change for V12: it saves its use case through `saveUseCase`, before it saves its three links, so the use case's two actors become the first two artifact links, so the seed's own three links move from ids 1 to 3 to ids 3 to 5; tests that name a seeded link look its id up instead.
 
 ## Reuse & cross-cutting
 
@@ -626,9 +626,9 @@ The step tables and their `*_index` order columns are unchanged. The dev seed ad
 | Seed | integration, `UseCaseConditionIntegrationTest` | The seeded use case keeps id 3. Its three preconditions and two postconditions have `PRE-` and `POST-` slug keys, in the order `DataInitializer` lists them. |
 | Migration V9 | manual, scratch MySQL (done) | V1 to V9 apply in order; existing join rows are numbered 0..n-1 per use case; the primary key is `(*_index, use_case_id)`, as Hibernate generates it |
 | Request-body step ids (OI-46) | integration, `RequestBodyIdIntegrationTest` | A step id from another team's use case is stored as a new step; the other team's step is unchanged |
-| UC-DOC-edit-use-case, extension 6c | integration, `UseCaseControllerTest` | While the student holds UC-1's lock, creating an `EXTERNAL_SYSTEM` returns its `SYS-n` key, at the end of Vision and Scope's External Systems list; UC-1's version and lock are unchanged; a save naming it as a secondary actor stores the `SECONDARY_ACTOR` link |
+| UC-DOC-edit-use-case, extension 6c | integration, `UseCaseControllerTest` | While the student holds UC-create-use-case's lock, creating an `EXTERNAL_SYSTEM` returns the `SYS-` key it was sent, at the end of Vision and Scope's External Systems list; UC-create-use-case's version and lock are unchanged; a save naming it as a secondary actor stores the `SECONDARY_ACTOR` link |
 | UC-DOC-create-use-case, extension 3a | integration, `UseCaseControllerTest` | A `STAKEHOLDER` created first is accepted as the primary actor of a new use case, with its `PRIMARY_ACTOR` link |
-| Actor kept when the use case is abandoned | integration, `UseCaseControllerTest` | An actor created, then UC-1's lock released without a save: the artifact remains, no link targets it, UC-1 is unchanged |
+| Actor kept when the use case is abandoned | integration, `UseCaseControllerTest` | An actor created, then UC-create-use-case's lock released without a save: the artifact remains, no link targets it, UC-create-use-case is unchanged |
 | Actor create, extension 8a | integration, `RequirementArtifactControllerTest` | With Vision and Scope `SUBMITTED`, a `STAKEHOLDER` is refused with 400 and the Vision and Scope message; nothing is stored |
 | Actor picker and dialog | manual, running app (no frontend unit harness) | The matches, then Create, show as the student types; Create prefills the title; the duplicate warning offers Use this one and Create anyway; Cancel changes nothing; it works on a new use case and while editing; an actor created or chosen as primary is removed from the secondaries; a blank title or content is marked at its field |
 | UC-DOC-create-use-case, the text fields and business rules | integration, `UseCaseTemplateFieldsIntegrationTest` | The four text fields round-trip; one `CONSTRAINS` link from each chosen rule to the new use case's artifact, with the route's team; the response's `businessRuleIds` match |
@@ -640,9 +640,9 @@ The step tables and their `*_index` order columns are unchanged. The dev seed ad
 | UC-DOC-edit-use-case, text fields changed and cleared | integration, `UseCaseTemplateFieldsIntegrationTest` | Changed and emptied values are stored; the version increments |
 | `reviseIncomingLinks` | integration, `ArtifactLinkService` | Changes only incoming links of the given type to the given target; both ends' in-memory link sets match the database in the same transaction |
 | UC-DOC-view-use-case, business rules | integration, `UseCaseTemplateFieldsIntegrationTest` | A `CONSTRAINS` link created through the link route shows in `businessRuleIds`; one from a feature does not |
-| UC-DOC-edit-use-case, extension 6d | integration, `UseCaseTemplateFieldsIntegrationTest` | While the student holds UC-1's lock, creating a `BUSINESS_RULE` returns the `BR-` key it was sent, at the end of the Business Rules list; UC-1's version and lock are unchanged; a save naming it stores the `CONSTRAINS` link |
+| UC-DOC-edit-use-case, extension 6d | integration, `UseCaseTemplateFieldsIntegrationTest` | While the student holds UC-create-use-case's lock, creating a `BUSINESS_RULE` returns the `BR-` key it was sent, at the end of the Business Rules list; UC-create-use-case's version and lock are unchanged; a save naming it stores the `CONSTRAINS` link |
 | UC-DOC-create-use-case, extension 3b | integration, `UseCaseTemplateFieldsIntegrationTest` | A business rule created first is accepted in a new use case's `businessRuleIds`, with its link |
-| Business rule kept when the use case is abandoned (6a, 11a) | integration, `UseCaseTemplateFieldsIntegrationTest` | A rule created, then UC-1's lock released without a save: the rule remains, and no `CONSTRAINS` link targets UC-1 |
+| Business rule kept when the use case is abandoned (6a, 11a) | integration, `UseCaseTemplateFieldsIntegrationTest` | A rule created, then UC-create-use-case's lock released without a save: the rule remains, and no `CONSTRAINS` link targets UC-create-use-case |
 | Deleting a rule that constrains a use case | integration, `UseCaseTemplateFieldsIntegrationTest` | Refused, and the message lists "the link BR-own-team-documents CONSTRAINS UC-create-use-case" |
 | Migration V13 | Flyway on the test container, every integration run | V1 to V13 apply on MySQL 8; the enum holds `CONSTRAINS`, and `use_case` has the four columns |
 | Business rule picker, text fields, authorship line | manual, running app | Matches, then Create; Use this one; Cancel changes nothing; the rich text fields edit, save and show read-only with lists intact; an untouched rich text field saves as empty; the "Created by" line shows |
