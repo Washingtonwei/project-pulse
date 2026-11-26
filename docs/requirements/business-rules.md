@@ -70,8 +70,9 @@ These business rules apply across Project Pulse. The course-administration rules
 - Tier 3 — Behavioral: Use Case, User Story
 - Tier 4 — Detailed/system: Functional Requirement, Quality Attribute, External Interface Requirement, Constraint, Data Requirement, Operating Environment
 - Cross-cutting: Stakeholder, External System, Risk, Assumption, Dependency, Business Rule, glossary term
+- Architecture: Key Decision, Quality Scenario, Technical Risk, Technical Debt
 
-Precondition and Postcondition belong to no tier; they take part only in REFERENCES and ENABLES links.
+Precondition and Postcondition belong to no tier; they take part only in REFERENCES and ENABLES links. The architecture types belong to no tier either: they are architecture items, not requirements, and they take part in REFERENCES links and in the MITIGATES and IMPACTS links named below.
 
 A lower tier number is a higher level of abstraction (Tier 1 is the highest). The permitted source → target combinations per link type are:
 
@@ -80,9 +81,9 @@ A lower tier number is a higher level of abstraction (Tier 1 is the highest). Th
 | DERIVES_FROM | A Tier 1–4 requirement artifact → a Tier 1–4 requirement artifact | Source tier number ≥ target tier number (a link must not point from a higher-level artifact down to a lower-level one); same-tier decomposition is allowed. Use DERIVES_FROM when the source was decomposed/derived from the target. |
 | REALIZES | A Tier 2–4 requirement artifact → a Tier 1–4 requirement artifact | Same tier-direction constraint as DERIVES_FROM. Use REALIZES when the source fulfills or satisfies the target rather than being decomposed from it (e.g., use case → Feature, Feature → Business Objective). A future release adds design/implementation artifacts as sources → Tier 4 targets. |
 | REFERENCES | Any artifact → any artifact | The general-purpose catch-all; no tier constraint. Use it (and only it) when an endpoint is a glossary term, or when no more specific link type applies. |
-| IMPACTS | Quality Attribute, Constraint, Business Rule, Risk, or Dependency → any requirement artifact | Source is a cross-cutting or constraining artifact whose change or presence affects the target. IMPACTS records change impact, not conformance: a business rule that the target must obey CONSTRAINS it instead. |
+| IMPACTS | Quality Attribute, Constraint, Business Rule, Risk, Dependency, Technical Risk, or Technical Debt → any requirement artifact | Source is a cross-cutting or constraining artifact whose change or presence affects the target. IMPACTS records change impact, not conformance: a business rule that the target must obey CONSTRAINS it instead. |
 | CONSTRAINS | Business Rule → Use Case or Functional Requirement | The target must conform to the source business rule. A use case names its business rules this way (BR-use-case-business-rules). |
-| MITIGATES | Functional Requirement, Quality Attribute, Constraint, Business Rule, use case, or Feature → a Risk | Target must be a Risk (any category — business, technical, or security/safety). |
+| MITIGATES | Functional Requirement, Quality Attribute, Constraint, Business Rule, use case, Feature, or Key Decision → a Risk or a Technical Risk | Target must be a Risk (business-level) or a Technical Risk (in the system's technical design). |
 | MOTIVATES | Stakeholder, Business Problem, or Business Opportunity → any requirement artifact | Source expresses a need or driver that motivates the target. |
 | ENABLES | Postcondition → Precondition | Source must be a postcondition and target a precondition. Use ENABLES when the outcome of one use case is what makes another use case's precondition true. The two conditions keep their own wording. For example, "The student is assigned to a team." ends one use case and is required before another can start. |
 | PRIMARY_ACTOR | Use Case → Stakeholder or External System | The source is the use case and the target is its primary actor (BR-use-case-actor-types). |

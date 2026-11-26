@@ -489,6 +489,7 @@ direction TB
         BUSINESS_RULES
         SRS
         GLOSSARY
+        ARCHITECTURAL_DESIGN
     }
 
     class SectionType {
@@ -534,6 +535,10 @@ direction TB
         CONSTRAINT
         DATA_REQUIREMENT
         OPERATING_ENVIRONMENT
+        KEY_DECISION
+        QUALITY_SCENARIO
+        TECHNICAL_RISK
+        TECHNICAL_DEBT
     }
 
     class ArtifactLinkType {
@@ -603,7 +608,8 @@ direction TB
 **Notes.**
 
 - The built-in templates that provision a team's documents and sections (UC-TPL-provision-documents) are the _provisioning_ layer and are not shown in this domain diagram; the MVP ships fixed, built-in templates.
-- `RequirementArtifactType` is the authoritative artifact taxonomy and is reconciled one-to-one with the glossary's requirement artifact list. **It plays one role only: the product's student-facing taxonomy** — the controlled vocabulary the running product offers students to type the artifacts in their *own* project's requirements graph (with name-based keys like `FR-send-late-report-reminder`, `UC-submit-report`). It is **deliberately distinct from the requirement classes by which *this* SRS organizes *Project Pulse's own* requirements** (`FR-<AREA>-<slug>`, `SM-<slug>`, `DI-*`, the quality codes, …). The two **share names** because both speak the same requirements-engineering vocabulary, but they are **different lists with different ID schemes and must not be conflated** — e.g., `SUCCESS_METRIC` / `DATA_REQUIREMENT` are types a student assigns to her own artifacts, whereas Project Pulse's own success metrics are `SM-<slug>` and its data requirements `DI-*`. A single `RISK` type is the umbrella over business/adoption, technical/feasibility, and security/safety risks (the earlier `BUSINESS_RISK`/`RISK` pair was collapsed into `RISK`); `DEPENDENCY` is a tracked artifact.
+- `RequirementArtifactType` is the authoritative artifact taxonomy and is reconciled one-to-one with the glossary's requirement artifact list. **It plays one role only: the product's student-facing taxonomy**: the controlled vocabulary the running product offers students to type the artifacts in their *own* project's requirements graph (with name-based keys like `FR-send-late-report-reminder`, `UC-submit-report`). It is **deliberately distinct from the requirement classes by which *this* SRS organizes *Project Pulse's own* requirements** (`FR-<AREA>-<slug>`, `SM-<slug>`, `DI-*`, the quality codes, …). The two **share names** because both speak the same requirements-engineering vocabulary, but they are **different lists with different ID schemes and must not be conflated**. For example, `SUCCESS_METRIC` / `DATA_REQUIREMENT` are types a student assigns to her own artifacts, whereas Project Pulse's own success metrics are `SM-<slug>` and its data requirements `DI-*`. `RISK` is a business-level risk (value, adoption, compliance, organizational reality), authored in the Vision and Scope; a technical risk the architecture carries (an unproven technology, an integration nobody has tried, a security weakness in the design) is a `TECHNICAL_RISK`, authored in the Architectural Design document. `DEPENDENCY` is a tracked artifact.
+- The Architectural Design document is the team's architecture-of-record. Its document sections are arc42's twelve, in arc42's order, as the senior design course's architectural design template has them, and it cites the SRS's requirements by key rather than restating them. Four of its document sections are list-type document sections, homing the architecture items: `KEY_DECISION`, `QUALITY_SCENARIO`, `TECHNICAL_RISK`, and `TECHNICAL_DEBT`. These are design decisions and their consequences, not requirements, but they are requirement artifacts all the same, so a key decision or a quality scenario has an artifact key and takes part in the requirements graph like any other artifact. Architecture is authored only here: the SRS holds no architecture document sections.
 - User stories are a **deferred** concept: the `USER_STORY` artifact type and the `USER_STORIES` `DocumentType` are retained so a future, optional User Stories document can be enabled without a schema change, but no User Stories document, template, or use case ships in the MVP.
 - Cross-cutting fields required by the `DI-*` / `FR-HIS` requirements — authorship metadata (creator/editor identity and timestamps, FR-HIS-authorship-metadata / DI-authorship-metadata) and an optimistic-lock version field (DI-concurrency-control) — apply to the applicable entities and are added when the system is built; they are deliberately not drawn on each class here, because they are cross-cutting persistence mechanisms rather than domain attributes.
 
@@ -632,6 +638,9 @@ direction TB
 | `QUALITY_ATTRIBUTE` | `QA` | SRS → Quality Attributes |
 | `CONSTRAINT` | `CO` | SRS → Design and Implementation Constraints (CO-\*) |
 | `OPERATING_ENVIRONMENT` | `OE` | SRS → Operating Environment (OE-\*) |
+| `KEY_DECISION` | `KD` | Architectural Design → Architecture Decisions → Key Decisions |
+| `QUALITY_SCENARIO` | `QS` | Architectural Design → Quality Requirements → Quality Scenarios |
+| `TECHNICAL_RISK`, `TECHNICAL_DEBT` | `TRI`, `TD` | Architectural Design → Risks and Technical Debt (technical only; business risks are `RISK`, in the Vision and Scope) |
 | `USER_STORY` | `US` | _(deferred: a future, optional User Stories document)_ |
 
 A list-type document section admits exactly the artifact types this table homes there, and no others (BR-artifact-home). Every type has exactly one home, so the type alone names it, wherever the artifact is created. Where a document section is the home of more than one type, the student chooses among those types when she adds an item there. `GLOSSARY_TERM`, `USE_CASE`, `PRECONDITION`, and `POSTCONDITION` are authored in the glossary and the use case editor, not in a list-type document section, and `USER_STORY` is deferred. A vision statement is narrative text in Vision and Scope → Vision Statement, not an artifact type.

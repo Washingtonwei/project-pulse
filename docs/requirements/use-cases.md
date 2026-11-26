@@ -2546,7 +2546,7 @@ Details of a peer evaluation: The instructor may choose to see more details of o
 **Associated Information:**
 
 Details:
-- The set of documents created is determined by the built-in templates configured for the team (e.g., the Project Glossary, Use Cases, Business Rules, and section-based requirement documents such as Vision and Scope and SRS).
+- The set of documents created is determined by the built-in templates configured for the team (e.g., the Project Glossary, Use Cases, Business Rules, and section-based requirement documents such as Vision and Scope, SRS, and Architectural Design).
 - The document sections of each document are instantiated from its template; documents and document sections are created empty, ready for authoring.
 - MVP: built-in templates are fixed (hardcoded); template customization is out of scope.
 
@@ -3047,7 +3047,7 @@ The student shall be able to cancel the use case at any time prior to submitting
 **Associated Information:**
 
 Details:
-- The set of document sections, their order, and the rules for each section of a section-based document (Vision and Scope, SRS) are defined by that document's built-in Template (see UC-TPL-provision-documents: Create team documents from built-in templates). This use case edits one document section at a time within that template-defined structure.
+- The set of document sections, their order, and the rules for each section of a section-based document (Vision and Scope, SRS, Architectural Design) are defined by that document's built-in Template (see UC-TPL-provision-documents: Create team documents from built-in templates). This use case edits one document section at a time within that template-defined structure.
 
 List-type document sections:
 - A list-type document section is a view of the requirement artifacts whose home it is (BR-artifact-home), in the order the team gives them. The document section does not own them: the same artifacts can also be created, edited, and deleted outside any document (for example from the artifact catalog through UC-ART-find-artifacts: Find requirement artifacts).
