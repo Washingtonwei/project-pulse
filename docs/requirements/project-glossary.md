@@ -153,7 +153,7 @@ A unique, name-based identifier used to unambiguously reference a requirement ar
 
 Notes / Clarifications:
 
-- The prefix is set by the artifact's type (for example `FR` for a functional requirement, `UC` for a use case) and cannot be changed.
+- The prefix is set by the artifact's type (for example `FR` for a functional requirement, `UC` for a use case, `BR` for a business rule) and cannot be changed. The Software Requirements Specification's artifact type → authoring home table lists every type's prefix.
 - The slug is a short kebab-case name for the artifact's concept: lowercase letters, digits, and single hyphens, starting with a letter, at most 40 characters. Because it must start with a letter, a slug is a name, never a bare number.
 - When the student asks, the system suggests a slug from what she has written about the artifact (such as its title and content), and she may keep or change it before the artifact is created. Every artifact key is chosen this way, whatever the artifact's type. Choosing a good name is part of the authoring work: a key like `FR-stuff` is valid but tells the reader nothing.
 - Each artifact key is unique within a team (BR-artifact-key-unique).

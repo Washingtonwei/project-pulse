@@ -607,32 +607,32 @@ direction TB
 - User stories are a **deferred** concept: the `USER_STORY` artifact type and the `USER_STORIES` `DocumentType` are retained so a future, optional User Stories document can be enabled without a schema change, but no User Stories document, template, or use case ships in the MVP.
 - Cross-cutting fields required by the `DI-*` / `FR-HIS` requirements — authorship metadata (creator/editor identity and timestamps, FR-HIS-authorship-metadata / DI-authorship-metadata) and an optimistic-lock version field (DI-concurrency-control) — apply to the applicable entities and are added when the system is built; they are deliberately not drawn on each class here, because they are cross-cutting persistence mechanisms rather than domain attributes.
 
-**Artifact type → authoring home.** Each artifact type with a document section home is an item of a list-type document section, its home, wherever the student creates it: while editing that document section, from the artifact catalog, or (in a future release) from the requirements graph view (UC-ART-create-artifact, BR-artifact-home). The map below is the canonical placement:
+**Artifact type → authoring home.** Each artifact type with a document section home is an item of a list-type document section, its home, wherever the student creates it: while editing that document section, from the artifact catalog, or (in a future release) from the requirements graph view (UC-ART-create-artifact, BR-artifact-home). The map below is the canonical placement, and the canonical artifact key prefix of each type (Project Glossary, Artifact Key):
 
-| Artifact type                               | Document → Section                                                                                                                                                                             |
-| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GLOSSARY_TERM`                             | Glossary → term list                                                                                                                                                                           |
-| `BUSINESS_PROBLEM`, `BUSINESS_OPPORTUNITY`  | Vision and Scope → Business Opportunity/Problem Statement                                                                                                                                      |
-| `BUSINESS_OBJECTIVE`                        | Vision and Scope → Business Objectives                                                                                                                                                         |
-| `SUCCESS_METRIC`                            | Vision and Scope → Success Metrics (a list section following Business Objectives; each metric links to the objective it measures)                                                              |
-| `RISK`                                      | Vision and Scope → Risks                                                                                                                                                                       |
-| `BUSINESS_ASSUMPTION`, `BUSINESS_DEPENDENCY` | Vision and Scope → Business Assumptions and Dependencies (business-level: adoption, environment, organizational reality) |
-| `ASSUMPTION`, `DEPENDENCY`                  | SRS → Assumptions and Dependencies (architecture-level, e.g., `DE-llm-service`/`DE-gmail-smtp`) |
-| `STAKEHOLDER`                               | Vision and Scope → Stakeholder Profiles                                                                                                                                                        |
-| `EXTERNAL_SYSTEM`                           | Vision and Scope → External Systems (a list section following Product Perspective, whose context diagram shows the same systems)                                                               |
-| `FEATURE`                                   | Vision and Scope → Major Features / Scope                                                                                                                                                      |
-| `USE_CASE`, `PRECONDITION`, `POSTCONDITION` | Use Cases → the use case (preconditions and postconditions are authored from within a use case and shared across the team's use cases)                                                         |
-| `BUSINESS_RULE`                             | Business Rules → the rule list (the SRS's Business Rules section refers to the Business Rules document and holds no rules of its own)                                                          |
-| `FUNCTIONAL_REQUIREMENT`                    | SRS → Non-Use Case Functional Requirements (the list section under Functional Requirements; a use case is itself a functional requirement and is authored as a `USE_CASE`)                     |
-| `USER_INTERFACE` | SRS → External Interface Requirements → User Interfaces |
-| `SOFTWARE_INTERFACE` | SRS → External Interface Requirements → Software Interfaces |
-| `HARDWARE_INTERFACE` | SRS → External Interface Requirements → Hardware Interfaces |
-| `COMMUNICATIONS_INTERFACE` | SRS → External Interface Requirements → Communications Interfaces |
-| `DATA_REQUIREMENT`                          | SRS → Data Requirements                                                                                                                                                                        |
-| `QUALITY_ATTRIBUTE`                         | SRS → Quality Attributes                                                                                                                                                                       |
-| `CONSTRAINT`                                | SRS → Design and Implementation Constraints (CO-\*)                                                                                                                                            |
-| `OPERATING_ENVIRONMENT`                     | SRS → Operating Environment (OE-\*)                                                                                                                                                            |
-| `USER_STORY`                                | _(deferred — a future, optional User Stories document)_                                                                                                                                        |
+| Artifact type | Key prefix | Document → Section |
+| --- | --- | --- |
+| `GLOSSARY_TERM` | `GLO` | Glossary → term list |
+| `BUSINESS_PROBLEM`, `BUSINESS_OPPORTUNITY` | `BP`, `BOP` | Vision and Scope → Business Opportunity/Problem Statement |
+| `BUSINESS_OBJECTIVE` | `BO` | Vision and Scope → Business Objectives |
+| `SUCCESS_METRIC` | `SM` | Vision and Scope → Success Metrics (a list section following Business Objectives; each metric links to the objective it measures) |
+| `RISK` | `RI` | Vision and Scope → Risks |
+| `BUSINESS_ASSUMPTION`, `BUSINESS_DEPENDENCY` | `BAS`, `BDE` | Vision and Scope → Business Assumptions and Dependencies (business-level: adoption, environment, organizational reality) |
+| `ASSUMPTION`, `DEPENDENCY` | `AS`, `DE` | SRS → Assumptions and Dependencies (architecture-level, e.g., `DE-llm-service`/`DE-gmail-smtp`) |
+| `STAKEHOLDER` | `STK` | Vision and Scope → Stakeholder Profiles |
+| `EXTERNAL_SYSTEM` | `SYS` | Vision and Scope → External Systems (a list section following Product Perspective, whose context diagram shows the same systems) |
+| `FEATURE` | `FEAT` | Vision and Scope → Major Features / Scope |
+| `USE_CASE`, `PRECONDITION`, `POSTCONDITION` | `UC`, `PRE`, `POST` | Use Cases → the use case (preconditions and postconditions are authored from within a use case and shared across the team's use cases) |
+| `BUSINESS_RULE` | `BR` | Business Rules → the rule list (the SRS's Business Rules section refers to the Business Rules document and holds no rules of its own) |
+| `FUNCTIONAL_REQUIREMENT` | `FR` | SRS → Non-Use Case Functional Requirements (the list section under Functional Requirements; a use case is itself a functional requirement and is authored as a `USE_CASE`) |
+| `USER_INTERFACE` | `UI` | SRS → External Interface Requirements → User Interfaces |
+| `SOFTWARE_INTERFACE` | `SI` | SRS → External Interface Requirements → Software Interfaces |
+| `HARDWARE_INTERFACE` | `HI` | SRS → External Interface Requirements → Hardware Interfaces |
+| `COMMUNICATIONS_INTERFACE` | `CI` | SRS → External Interface Requirements → Communications Interfaces |
+| `DATA_REQUIREMENT` | `DI` | SRS → Data Requirements |
+| `QUALITY_ATTRIBUTE` | `QA` | SRS → Quality Attributes |
+| `CONSTRAINT` | `CO` | SRS → Design and Implementation Constraints (CO-\*) |
+| `OPERATING_ENVIRONMENT` | `OE` | SRS → Operating Environment (OE-\*) |
+| `USER_STORY` | `US` | _(deferred: a future, optional User Stories document)_ |
 
 A list-type document section admits exactly the artifact types this table homes there, and no others (BR-artifact-home). Every type has exactly one home, so the type alone names it, wherever the artifact is created. Where a document section is the home of more than one type, the student chooses among those types when she adds an item there. `GLOSSARY_TERM`, `USE_CASE`, `PRECONDITION`, and `POSTCONDITION` are authored in the glossary and the use case editor, not in a list-type document section, and `USER_STORY` is deferred. A vision statement is narrative text in Vision and Scope → Vision Statement, not an artifact type.
 

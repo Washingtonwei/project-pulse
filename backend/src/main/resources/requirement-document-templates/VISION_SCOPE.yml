@@ -92,8 +92,8 @@ sections:
       - Why solving it matters
 
       **Example:**
-      - BP-1: Employees spend an average of 60 minutes a day going to the cafeteria to buy lunch, about 30 minutes of which is waiting in line.
-      - BOP-1: Most employees already order online at home, so an online cafeteria order needs no new habit.
+      - BP-lunch-line-wait: Employees spend an average of 60 minutes a day going to the cafeteria to buy lunch, about 30 minutes of which is waiting in line.
+      - BOP-online-ordering-habit: Most employees already order online at home, so an online cafeteria order needs no new habit.
 
   - sectionKey: "BUSINESS_OBJECTIVES"
     title: "Business Objectives"
@@ -105,11 +105,11 @@ sections:
       Guidelines:
       - Objectives must be quantitative and measurable
       - Avoid vague statements or platitudes
-      - Use identifiers (e.g., BO-1, BO-2)
+      - Give each objective a name-based key (e.g., BO-processing-time), never a number
 
       **Example:**
-      - BO-1: Reduce processing time by 50%
-      - BO-2: Increase submission rate by 20%
+      - BO-processing-time: Reduce processing time by 50%
+      - BO-submission-rate: Increase submission rate by 20%
 
   - sectionKey: "SUCCESS_METRICS"
     title: "Success Metrics"
@@ -124,8 +124,8 @@ sections:
       - The current value, if it is known
 
       **Example:**
-      - SM-1: At least 75% of employees who use the cafeteria order through the system at least once a week within 6 months of release (measures BO-1).
-      - SM-2: Average time from order to delivery is under 20 minutes during lunch hours (measures BO-2).
+      - SM-weekly-ordering: At least 75% of employees who use the cafeteria order through the system at least once a week within 6 months of release (measures BO-submission-rate).
+      - SM-delivery-time: Average time from order to delivery is under 20 minutes during lunch hours (measures BO-processing-time).
 
   - sectionKey: "VISION_STATEMENT"
     title: "Vision Statement"
@@ -161,17 +161,17 @@ sections:
       Summarize major risks associated with developing or not developing the product.
 
       For each risk include:
-      - Risk identifier (e.g., RSK-1)
+      - Risk key (e.g., RI-union-contract)
       - Description
       - Probability
       - Impact
       - Possible mitigation
       
       **Example:**
-      - RSK-1: The Cafeteria Employees Union might require that their contract be renegotiated to reflect the new employee roles and cafeteria hours of operation. (Probability = 0.6; Impact = 3)
-      - RSK-2: Too few employees might use the system, reducing the return on investment from the system development and the changes in cafeteria operating procedures. (Probability = 0.3; Impact = 9)
-      - RSK-3: Local restaurants might not agree to offer delivery, which would reduce employee satisfaction with the system and possibly their usage of it. (Probability = 0.3; Impact = 3)
-      - RSK-4: Insufficient delivery capacity might not be available, which means that employees would not always receive their meals on time and could not always request delivery for the desired times. (Probability = 0.5; Impact = 6).
+      - RI-union-contract: The Cafeteria Employees Union might require that their contract be renegotiated to reflect the new employee roles and cafeteria hours of operation. (Probability = 0.6; Impact = 3)
+      - RI-low-adoption: Too few employees might use the system, reducing the return on investment from the system development and the changes in cafeteria operating procedures. (Probability = 0.3; Impact = 9)
+      - RI-no-delivery-partners: Local restaurants might not agree to offer delivery, which would reduce employee satisfaction with the system and possibly their usage of it. (Probability = 0.3; Impact = 3)
+      - RI-delivery-capacity: Insufficient delivery capacity might not be available, which means that employees would not always receive their meals on time and could not always request delivery for the desired times. (Probability = 0.5; Impact = 6).
 
   - sectionKey: "ASSUMPTIONS_DEPENDENCIES"
     title: "Business Assumptions and Dependencies"
@@ -189,9 +189,9 @@ sections:
       Explain the impact if an assumption is false or a dependency fails.
       
       **Example:**
-      - ASM-1: Systems with appropriate user interfaces will be available for cafeteria employees to process the expected volume of meals ordered.
-      - ASM-2: Cafeteria staff and vehicles will be available to deliver all meals for specified delivery time slots within 15 minutes of the requested delivery time.
-      - DEP-1: If a restaurant has its own online ordering system, the Cafeteria Ordering System must be able to communicate with it bi-directionally.
+      - BAS-ui-capacity: Systems with appropriate user interfaces will be available for cafeteria employees to process the expected volume of meals ordered.
+      - BAS-delivery-staffing: Cafeteria staff and vehicles will be available to deliver all meals for specified delivery time slots within 15 minutes of the requested delivery time.
+      - BDE-restaurant-integration: If a restaurant has its own online ordering system, the Cafeteria Ordering System must be able to communicate with it bi-directionally.
 
   - sectionKey: "STAKEHOLDER_PROFILES"
     title: "Stakeholder Profiles"
@@ -254,7 +254,7 @@ sections:
       - What happens to your product if it is unavailable
 
       **Example:**
-      - SYS-1: Payroll System. The company's payroll service, run by Human Resources. The Cafeteria Ordering System sends it meal charges to deduct from employees' pay.
+      - SYS-payroll-system: Payroll System. The company's payroll service, run by Human Resources. The Cafeteria Ordering System sends it meal charges to deduct from employees' pay.
 
   - sectionKey: "MAJOR_FEATURES"
     title: "Major Features / Scope"

@@ -3,6 +3,12 @@ package team.projectpulse.ram.requirement;
 import java.util.EnumMap;
 import java.util.Map;
 
+/**
+ * Each artifact type's key prefix, as the SRS's "Artifact type → authoring home" table lists it: a risk is keyed
+ * {@code RI-data-loss}, a business rule {@code BR-late-penalty}. The prefixes match the ones the senior design course's
+ * requirements templates teach, so a key a student learns in class is a key the product accepts. The frontend's
+ * {@code utils/artifactKeys.ts} repeats this map entry for entry.
+ */
 public final class ArtifactKeyPrefix {
 
     private static final Map<RequirementArtifactType, String> MAP = new EnumMap<>(RequirementArtifactType.class);
@@ -17,15 +23,15 @@ public final class ArtifactKeyPrefix {
         MAP.put(RequirementArtifactType.BUSINESS_PROBLEM, "BP");
         MAP.put(RequirementArtifactType.BUSINESS_OPPORTUNITY, "BOP");
         MAP.put(RequirementArtifactType.SUCCESS_METRIC, "SM");
-        MAP.put(RequirementArtifactType.RISK, "RSK");
+        MAP.put(RequirementArtifactType.RISK, "RI");
         MAP.put(RequirementArtifactType.BUSINESS_ASSUMPTION, "BAS");
         MAP.put(RequirementArtifactType.BUSINESS_DEPENDENCY, "BDE");
-        MAP.put(RequirementArtifactType.ASSUMPTION, "ASM");
-        MAP.put(RequirementArtifactType.DEPENDENCY, "DEP");
+        MAP.put(RequirementArtifactType.ASSUMPTION, "AS");
+        MAP.put(RequirementArtifactType.DEPENDENCY, "DE");
         MAP.put(RequirementArtifactType.STAKEHOLDER, "STK");
         // SYS rather than EXT, which would read as "extension" inside a use case.
         MAP.put(RequirementArtifactType.EXTERNAL_SYSTEM, "SYS");
-        MAP.put(RequirementArtifactType.BUSINESS_RULE, "RULE");
+        MAP.put(RequirementArtifactType.BUSINESS_RULE, "BR");
         MAP.put(RequirementArtifactType.FEATURE, "FEAT");
         // PRE and POST: a key's slug starts with a letter, so PRE-student-logged-in can never be mistaken for the PRE-1
         // or POST-2 a use case gives its own conditions by position (doc.md, decision "Condition key prefixes").
@@ -39,8 +45,8 @@ public final class ArtifactKeyPrefix {
         MAP.put(RequirementArtifactType.HARDWARE_INTERFACE, "HI");
         MAP.put(RequirementArtifactType.COMMUNICATIONS_INTERFACE, "CI");
         MAP.put(RequirementArtifactType.OPERATING_ENVIRONMENT, "OE");
-        MAP.put(RequirementArtifactType.CONSTRAINT, "CON");
-        MAP.put(RequirementArtifactType.DATA_REQUIREMENT, "DR");
+        MAP.put(RequirementArtifactType.CONSTRAINT, "CO");
+        MAP.put(RequirementArtifactType.DATA_REQUIREMENT, "DI");
     }
 
 

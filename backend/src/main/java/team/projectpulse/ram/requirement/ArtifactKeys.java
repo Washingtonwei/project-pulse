@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
  * FR-Export            refused: uppercase in the slug
  * FR-2fa-login         refused: the slug starts with a digit, so a key is never a bare number (write FR-two-factor-login)
  * FR--x, FR-x-         refused: an empty part between hyphens, or a trailing hyphen
- * RSK-data-loss        refused for a functional requirement: another type's prefix
+ * RI-data-loss         refused for a functional requirement: another type's prefix
  * </pre>
  * Every create and every key rename goes through {@link #problemWith}, in the service, whichever route it came by.
  */
@@ -53,7 +53,7 @@ public final class ArtifactKeys {
     /**
      * What is wrong with {@code key} as the artifact key of an artifact of {@code type}, written for the student, or
      * empty when nothing is. For a functional requirement, {@code "FR-export-csv"} gives empty, {@code null} and
-     * {@code "FR-Export"} give the format message, and {@code "RSK-data-loss"} gives "The artifact key of a functional
+     * {@code "FR-Export"} give the format message, and {@code "RI-data-loss"} gives "The artifact key of a functional
      * requirement starts with FR-."
      */
     public static Optional<String> problemWith(RequirementArtifactType type, String key) {
@@ -68,13 +68,13 @@ public final class ArtifactKeys {
 
         // Split the key at its first hyphen into an uppercase prefix and the rest:
         //   "FR-export-csv"  -> ("FR", "export-csv")
-        //   "RSK-data-loss"  -> ("RSK", "data-loss")
+        //   "RI-data-loss"   -> ("RI", "data-loss")
         //   "FR--x"          -> ("FR", "-x")
         //   "fr-export", "FRexport", "-export"  -> no match (a lowercase prefix, no hyphen, no prefix)
         Matcher matcher = KEY.matcher(key);
 
-        // 2. Another type's prefix: "RSK-data-loss" or "UC-export-csv" on a functional requirement gives "The artifact
-        //    key of a functional requirement starts with FR-." It is checked before the slug, so "RSK-Data" gets this
+        // 2. Another type's prefix: "RI-data-loss" or "UC-export-csv" on a functional requirement gives "The artifact
+        //    key of a functional requirement starts with FR-." It is checked before the slug, so "RI-Data" gets this
         //    message too: the wrong prefix is the first thing to fix.
         if (matcher.matches() && !matcher.group(1).equals(prefix)) {
             return Optional.of("The artifact key of " + withArticle(label(type)) + " starts with " + prefix + "-.");

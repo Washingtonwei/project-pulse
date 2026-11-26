@@ -40,7 +40,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
  * The use case template's text fields and business rules (UC-DOC-create-use-case, UC-DOC-edit-use-case,
  * UC-DOC-view-use-case; docs/design/doc.md "Business rules as links", "Creating a business rule from the picker" and
  * "The template's text fields"). Team 1's seed: UC-create-use-case is use case 3 (its artifact 3), with STK-student as primary actor and
- * STK-instructor as secondary actor; RULE-own-team-documents is the team's one business rule, in its Business Rules document, and no use case
+ * STK-instructor as secondary actor; BR-own-team-documents is the team's one business rule, in its Business Rules document, and no use case
  * names it.
  */
 class UseCaseTemplateFieldsIntegrationTest extends AbstractIntegrationTest {
@@ -88,7 +88,7 @@ class UseCaseTemplateFieldsIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void addUseCase_TextFieldsAndBusinessRules_Stored() throws Exception {
-        // Main flow: the four text fields round-trip, and RULE-own-team-documents is linked by one CONSTRAINS link, from the rule to the
+        // Main flow: the four text fields round-trip, and BR-own-team-documents is linked by one CONSTRAINS link, from the rule to the
         // new use case's artifact, with the route's team.
         JSONObject payload = minimalUseCase()
                 .put("frequencyOfUse", "About 50 times a day during the semester.")
@@ -209,20 +209,20 @@ class UseCaseTemplateFieldsIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void updateUseCase_BusinessRulesChanged_OnlyTheChangedLinksAreWritten() throws Exception {
-        // RULE-own-team-documents also constrains FR-user-authentication through the link route; that link is an incoming link of FR-user-authentication, not of UC-create-use-case, so no
+        // BR-own-team-documents also constrains FR-user-authentication through the link route; that link is an incoming link of FR-user-authentication, not of UC-create-use-case, so no
         // use case save may touch it. UC-create-use-case's actor links must stay as they are too.
         long rule2Id = createBusinessRule("A use case name is unique within its team.").getJSONObject("data").getLong("id");
         long fr1Id = firstArtifact(1, "FUNCTIONAL_REQUIREMENT", this.johnToken).getLong("id");
         createLink(this.rule1Id, fr1Id, "CONSTRAINS");
         lockUseCase();
 
-        // First save: RULE-own-team-documents only.
+        // First save: BR-own-team-documents only.
         JSONObject first = putUseCase(fetchUseCase(UC_1).put("businessRuleIds", new JSONArray().put(this.rule1Id)));
         assertThat(first.getBoolean("flag")).as(first.toString()).isTrue();
         ArtifactLink rule1Link = constrainsLinksTo(UC_1).getFirst();
         Set<Long> actorLinkIdsBefore = actorLinkIds();
 
-        // Second save: RULE-own-team-documents kept, a second rule added.
+        // Second save: BR-own-team-documents kept, a second rule added.
         JSONObject second = putUseCase(fetchUseCase(UC_1).put("businessRuleIds", new JSONArray().put(this.rule1Id).put(rule2Id)));
         assertThat(second.getBoolean("flag")).as(second.toString()).isTrue();
         List<ArtifactLink> afterAdd = constrainsLinksTo(UC_1);
@@ -231,7 +231,7 @@ class UseCaseTemplateFieldsIntegrationTest extends AbstractIntegrationTest {
         assertThat(keptRule1Link.getId()).isEqualTo(rule1Link.getId());
         assertThat(keptRule1Link.getCreatedBy().getId()).isEqualTo(rule1Link.getCreatedBy().getId());
 
-        // Third save: RULE-own-team-documents dropped. Its link goes, the rule stays, and its link to FR-user-authentication is untouched.
+        // Third save: BR-own-team-documents dropped. Its link goes, the rule stays, and its link to FR-user-authentication is untouched.
         JSONObject third = putUseCase(fetchUseCase(UC_1).put("businessRuleIds", new JSONArray().put(rule2Id)));
         assertThat(third.getBoolean("flag")).as(third.toString()).isTrue();
         assertThat(constrainsLinksTo(UC_1)).extracting(link -> link.getSourceArtifact().getId()).containsExactly(rule2Id);
@@ -293,12 +293,12 @@ class UseCaseTemplateFieldsIntegrationTest extends AbstractIntegrationTest {
 
         JSONObject created = createBusinessRule("A requirement document locked for review cannot be edited.");
         assertThat(created.getBoolean("flag")).as(created.toString()).isTrue();
-        assertThat(created.getJSONObject("data").getString("artifactKey")).isEqualTo("RULE-a-requirement-document-locked-for-review");
+        assertThat(created.getJSONObject("data").getString("artifactKey")).isEqualTo("BR-a-requirement-document-locked-for-review");
         long newRuleId = created.getJSONObject("data").getLong("id");
         long documentId = this.documentRepository.findAll().stream()
                 .filter(document -> document.getTeam().getTeamId().equals(1) && document.getType() == DocumentType.BUSINESS_RULES)
                 .findFirst().orElseThrow().getId();
-        assertThat(sectionItemKeys(documentId, "BUSINESS_RULES")).containsExactly("RULE-own-team-documents", "RULE-a-requirement-document-locked-for-review");
+        assertThat(sectionItemKeys(documentId, "BUSINESS_RULES")).containsExactly("BR-own-team-documents", "BR-a-requirement-document-locked-for-review");
         JSONObject unchanged = fetchUseCase(UC_1);
         assertThat(unchanged.getInt("version")).isEqualTo(before.getInt("version"));
         assertThat(unchanged.getJSONObject("lock").getBoolean("locked")).isTrue();
@@ -355,7 +355,7 @@ class UseCaseTemplateFieldsIntegrationTest extends AbstractIntegrationTest {
         JSONObject response = new JSONObject(result.getResponse().getContentAsString());
 
         assertThat(response.getBoolean("flag")).isFalse();
-        assertThat(response.getString("message")).contains("the link RULE-own-team-documents CONSTRAINS UC-create-use-case");
+        assertThat(response.getString("message")).contains("the link BR-own-team-documents CONSTRAINS UC-create-use-case");
         assertThat(this.requirementArtifactRepository.findById(this.rule1Id)).isPresent();
     }
 
