@@ -34,7 +34,13 @@ public enum RequirementArtifactType {
     COMMUNICATIONS_INTERFACE,
     OPERATING_ENVIRONMENT,
     CONSTRAINT,
-    DATA_REQUIREMENT;
+    DATA_REQUIREMENT,
+    // The architecture items of the Architectural Design document: design decisions and their consequences, not
+    // requirements, but nodes of the requirements graph like any other artifact.
+    KEY_DECISION,
+    QUALITY_SCENARIO,
+    TECHNICAL_RISK,
+    TECHNICAL_DEBT;
 
     /**
      * Whether artifacts of this type are items of a list-type document section. False for glossary terms (authored in

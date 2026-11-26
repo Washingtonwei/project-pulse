@@ -158,7 +158,7 @@ sections:
     type: "LIST"
     artifactTypes: ["RISK"]
     guidance: |
-      Summarize major risks associated with developing or not developing the product.
+      Summarize major business risks associated with developing or not developing the product: threats to its value, adoption, compliance, or organizational footing. A technical risk in the system's design (an unproven technology, an integration nobody has tried) goes in the Architectural Design's Risks and Technical Debt instead.
 
       For each risk include:
       - Risk key (e.g., RI-union-contract)
@@ -240,6 +240,8 @@ sections:
       - Is it standalone or part of a larger system?
       - What external systems does it interact with?
       - One easy way to display the major components of the larger system, interconnections, and external interfaces is with a context diagram.
+
+      Draw the first version of the context diagram here. When your team writes its Architectural Design, the diagram moves to that document's Context and Scope, and this section keeps a reference to it instead of its own drawing.
 
   - sectionKey: "EXTERNAL_SYSTEMS"
     title: "External Systems"

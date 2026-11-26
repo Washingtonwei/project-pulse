@@ -70,6 +70,10 @@ class DocumentTemplateRegistryTest {
                 "QUALITY_ATTRIBUTES", List.of(RequirementArtifactType.QUALITY_ATTRIBUTE)));
         homes.put(DocumentType.BUSINESS_RULES, Map.of(
                 "BUSINESS_RULES", List.of(RequirementArtifactType.BUSINESS_RULE)));
+        homes.put(DocumentType.ARCHITECTURAL_DESIGN, Map.of(
+                "KEY_DECISIONS", List.of(RequirementArtifactType.KEY_DECISION),
+                "QUALITY_SCENARIOS", List.of(RequirementArtifactType.QUALITY_SCENARIO),
+                "RISKS_AND_TECHNICAL_DEBT", List.of(RequirementArtifactType.TECHNICAL_RISK, RequirementArtifactType.TECHNICAL_DEBT)));
 
         homes.forEach((type, expected) -> {
             DocumentTemplate template = this.registry.find(type).orElseThrow(() -> new AssertionError("No template for " + type));
@@ -146,6 +150,11 @@ class DocumentTemplateRegistryTest {
         assertThat(this.registry.homeOf(RequirementArtifactType.SOFTWARE_INTERFACE)).contains(new DocumentTemplateRegistry.Home(DocumentType.SRS, "SOFTWARE_INTERFACES"));
         assertThat(this.registry.homeOf(RequirementArtifactType.HARDWARE_INTERFACE)).contains(new DocumentTemplateRegistry.Home(DocumentType.SRS, "HARDWARE_INTERFACES"));
         assertThat(this.registry.homeOf(RequirementArtifactType.COMMUNICATIONS_INTERFACE)).contains(new DocumentTemplateRegistry.Home(DocumentType.SRS, "COMMUNICATION_INTERFACES"));
+        // The architecture items of the Architectural Design (docs/design/tpl.md): technical risks and debt share one list.
+        assertThat(this.registry.homeOf(RequirementArtifactType.KEY_DECISION)).contains(new DocumentTemplateRegistry.Home(DocumentType.ARCHITECTURAL_DESIGN, "KEY_DECISIONS"));
+        assertThat(this.registry.homeOf(RequirementArtifactType.QUALITY_SCENARIO)).contains(new DocumentTemplateRegistry.Home(DocumentType.ARCHITECTURAL_DESIGN, "QUALITY_SCENARIOS"));
+        assertThat(this.registry.homeOf(RequirementArtifactType.TECHNICAL_RISK)).contains(new DocumentTemplateRegistry.Home(DocumentType.ARCHITECTURAL_DESIGN, "RISKS_AND_TECHNICAL_DEBT"));
+        assertThat(this.registry.homeOf(RequirementArtifactType.TECHNICAL_DEBT)).contains(new DocumentTemplateRegistry.Home(DocumentType.ARCHITECTURAL_DESIGN, "RISKS_AND_TECHNICAL_DEBT"));
     }
 
     @Test

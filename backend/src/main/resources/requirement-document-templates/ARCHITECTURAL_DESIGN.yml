@@ -1,0 +1,278 @@
+title: "Architectural Design"
+
+sections:
+
+  - sectionKey: "INTRODUCTION_AND_GOALS"
+    title: "Introduction and Goals"
+    type: "RICH_TEXT"
+    guidance: |
+      This document is your system's architecture-of-record: the one map of the whole system, with every use case area, every component, every external system, and the few decisions that are expensive to change later. It is breadth-complete and depth-shallow. Every part of the system is named, and nothing is designed further than its responsibility.
+
+      What it is not: a second copy of your requirements. The SRS says what the system must do and how well; this document says how the system is shaped to do it. It cites use cases, constraints, and quality attributes by their keys and never restates them. A threshold that appears here and nowhere in the SRS is a requirement hiding in the wrong document.
+
+      The test for what belongs here: decide now what is hard to reverse, affects the whole system, and is forced by a quality attribute or a constraint, such as how many deployables there are, where the data lives, how users sign in, and which external systems you depend on. Leave what is local and cheap to change (class names, endpoint shapes, table columns) to the design of each use case area.
+
+      The sections follow arc42, in arc42's order. A section whose content another document already owns (the requirements overview, the stakeholders, the quality requirements overview, the glossary) holds a short reference to that document, so nothing is written twice.
+
+  - sectionKey: "REQUIREMENTS_OVERVIEW"
+    title: "Requirements Overview"
+    type: "RICH_TEXT"
+    guidance: |
+      Your Software Requirements Specification and your Use Cases document are the requirements overview. Name them here; do not summarize them.
+
+  - sectionKey: "QUALITY_GOALS"
+    title: "Quality Goals"
+    type: "RICH_TEXT"
+    guidance: |
+      The three quality attributes that most shape your system, in priority order. Pick them from the SRS's Quality Attributes and cite their keys. If you cannot rank them, ask your client which one they would give up first; that answer is the ranking.
+
+      These are usually the top rows of the table in Architecturally Significant Requirements, and the two do different jobs. Here, say why each goal matters to your client. There, say which decision it forces.
+
+      For each goal include:
+      - Priority
+      - The quality goal, in a few words
+      - The quality attributes it cites
+      - Why it shapes the architecture
+
+      **Example (Cafeteria Ordering System):**
+      1. Payroll data stays confidential (QA-payroll-auth, QA-employee-own-orders). Orders are paid by payroll deduction, so an order record carries an employee's pay account. A leak is a legal problem, not a bug.
+      2. Orders placed before 10:00 are not lost (QA-order-persisted, QA-lunch-window). The lunch rush is the only load that matters, and a lost order is a hungry employee with a payroll charge.
+      3. Cafeteria staff can run it without IT (CO-no-dedicated-ops, QA-menu-self-service). Nobody on the cafeteria side can deploy, restart, or patch anything.
+
+  - sectionKey: "STAKEHOLDERS"
+    title: "Stakeholders"
+    type: "RICH_TEXT"
+    guidance: |
+      Your stakeholders are profiled in the Vision and Scope's Stakeholder Profiles. Refer to them here; do not copy them.
+
+  - sectionKey: "ARCHITECTURE_CONSTRAINTS"
+    title: "Architecture Constraints"
+    type: "RICH_TEXT"
+    guidance: |
+      The constraints the architecture has to honor. They are already written as constraints (CO-*) and operating environment requirements (OE-*) in the SRS: list their keys here, do not restate them. Add one sentence only where a constraint narrows an architectural choice in a way that is not obvious from its text.
+
+      Your technology stack is a constraint only if something outside the team fixes it: the client's IT department, an existing system, or the person who maintains the system after you graduate. A stack your team chose is a decision, and it is a key decision, with the alternative you rejected.
+
+  - sectionKey: "CONTEXT_AND_SCOPE"
+    title: "Context and Scope"
+    type: "RICH_TEXT"
+    guidance: |
+      One context diagram: your system as a single box, every kind of user, and every external system it talks to (email, payment, an identity provider, a client database, an LLM, a file store). An external system discovered halfway through the build is a schedule risk you could have seen at the start.
+
+      Your SRS already lists the external systems. Every system named in a software interface (SI-*), a communications interface (CI-*), or a dependency (DE-*) is a box here. A box with none of those behind it is an interface your SRS is missing, so add it there too.
+
+      This is your project's one context diagram. The Vision and Scope's Product Perspective holds the first draft: redraw it here, then replace the drawing there with a reference to this section, so there is one diagram to keep current.
+
+      This diagram is the business context: who and what crosses the system's boundary. The channels and protocols go on the arrows of the container diagram in Containers, and the trust boundary is named in writing in Security.
+
+      **Example (Cafeteria Ordering System):** the Cafeteria Ordering System in the middle; patrons, cafeteria staff, and the menu manager as users; the Payroll System, Corporate Sign-On, and Corporate Email as external systems, each with a labeled arrow ("Submits payment requests", "Verifies identity", "Sends confirmations").
+
+  - sectionKey: "SOLUTION_STRATEGY"
+    title: "Solution Strategy"
+    type: "RICH_TEXT"
+    guidance: |
+      Three to five bullets: the few moves that shape everything else. arc42 suggests four kinds: the technology you build on, how the system is divided at the top level, how the quality goals are met, and any organizational choice that shapes the code (who maintains what, what you buy instead of build).
+
+      Each bullet is one sentence, and it cites what explains it: the key decision where one exists, and otherwise the quality goal and the building block it shapes. A bullet that cites nothing is either not load-bearing, or a decision you have not written down yet.
+
+      **Example (Cafeteria Ordering System):**
+      - One deployable with one managed database (KD-deployment-shape), because nobody on the cafeteria side can operate infrastructure (quality goal 3).
+      - Payment is the only component that talks to the Payroll System, so payroll data crosses the trust boundary in exactly one place (quality goal 1).
+      - Divided by use case area (Ordering, Menu, and Delivery), each owning its own rules, so a menu change never touches ordering code (quality goal 3, QA-menu-self-service).
+
+  - sectionKey: "BUILDING_BLOCK_VIEW"
+    title: "Building Block View"
+    type: "RICH_TEXT"
+    guidance: |
+      The system's static structure, from the outside in: first the containers (the separately running or separately stored pieces), then the components inside them, one per use case area plus the cross-cutting ones. Write those in the two sections that follow; this section needs at most a sentence of orientation.
+
+  - sectionKey: "CONTAINERS"
+    title: "Containers"
+    type: "RICH_TEXT"
+    guidance: |
+      One container diagram: the separately running or separately stored pieces inside your system box. For most projects that is a front end, a back end, and a database, and sometimes a file store. Name each container's technology. Every external system from Context and Scope appears again here, attached to the container that talks to it.
+
+      Label every arrow with what it does and the protocol it uses ("Sends confirmations [SMTP]").
+
+      Under the diagram, one or two sentences on why the system is divided this way, citing the key decision on the deployment shape. A reader who sees three containers should not have to guess why there are not seven. Three containers is a normal answer. If you have more than five, check each one: which key decision, driven by which quality attribute, requires it to run separately?
+
+      **Example (Cafeteria Ordering System):** a Web Front End (Vue.js), an Application (Java / Spring Boot) holding every business rule, and a Database (PostgreSQL). The Application calls the Payroll System, Corporate Sign-On (OpenID Connect), and Corporate Email (SMTP). "The system is one application and one database because nobody on the cafeteria side can operate more (KD-deployment-shape). The front end is a separate container only because it runs in the browser; it ships inside the application's package."
+
+  - sectionKey: "USE_CASE_AREAS_AND_COMPONENTS"
+    title: "Use Case Areas and Components"
+    type: "RICH_TEXT"
+    guidance: |
+      One row per use case area in your Use Cases document, plus one row per cross-cutting component that no single area owns (authentication, notifications, file handling, an integration with an external system). A use case area with no row is a part of your system with no home; a component with no area and no cross-cutting reason is one nobody asked for.
+
+      For each row include:
+      - Use case area (or "cross-cutting")
+      - Component
+      - Responsibility: one sentence on what the component owns, not how it works
+      - Depends on: other components and external systems, never classes
+      - Status: provisional until the component has been built through at least one use case, proven after that
+
+      **Example (Cafeteria Ordering System):**
+      - ORD, Ordering: owns an order from placement to cancellation, and the cut-off rules. Depends on Menu, Payment, Identity. Provisional.
+      - Cross-cutting, Payment: the only component that talks to the Payroll System. Depends on the Payroll System. Provisional.
+
+      Check: every area in your Use Cases document appears in the first column, and every external system in Context and Scope appears in some "Depends on".
+
+  - sectionKey: "RUNTIME_VIEW"
+    title: "Runtime View"
+    type: "RICH_TEXT"
+    guidance: |
+      One sequence diagram for the use case your first working slice builds, from the user's action through every container and external system it touches. Leave this section empty until that slice exists: a sequence diagram of code nobody has written describes a guess.
+
+      Name the participants exactly as Containers names them. If the use case calls an external system, show what happens when that system fails or does not answer. Under the diagram, a sentence or two on anything a reader would not guess from it. Cite the use case by its key; do not restate its steps.
+
+  - sectionKey: "DEPLOYMENT_VIEW"
+    title: "Deployment View"
+    type: "RICH_TEXT"
+    guidance: |
+      Filled in once your deployment pipeline exists. Three things:
+      - Where each container runs: every container in Containers mapped to the host, service, or device it runs on, in each environment you have (at least development and production). A table is enough.
+      - How a change gets there: from a merged pull request to production, what builds it, what tests it, and where it is released first.
+      - What survives a restart: which state is in the database or a file store, and which is lost when the application restarts.
+
+      The Vision and Scope's Deployment Considerations say who can operate the system and where its users are. Cite them; this section says how the deployment meets them.
+
+  - sectionKey: "CROSSCUTTING_CONCEPTS"
+    title: "Crosscutting Concepts"
+    type: "RICH_TEXT"
+    guidance: |
+      The rules every component follows the same way. Security comes first, in its own section; every other concept goes in Other Concepts. This section needs at most a sentence of orientation.
+
+  - sectionKey: "SECURITY_CONCEPT"
+    title: "Security"
+    type: "RICH_TEXT"
+    guidance: |
+      Four short paragraphs. The last three each cite the security quality attribute they answer:
+      - Trust boundary: the line between what you control and what you do not. Name the container that is the boundary and what sits outside it (the browser, every external system). Every request that crosses it is authenticated and authorized, and that covers every path your deployable answers, framework endpoints included.
+      - Authentication: how a user proves who they are, and who issues the credential (your system, the client's sign-on, a third party).
+      - Authorization: the roles, and the rule for what a user may see beyond their role (a patron sees only their own orders). The second part is where most real breaches happen.
+      - Sensitive data: what personal or regulated data the system stores, in which container, and which external systems receive any of it. How long it is kept and how it is disposed of are already in the SRS's data requirements; cite them.
+
+      Secrets (passwords, API keys, connection strings) never appear in this document or in the repository. Say where they will live, not what they are.
+
+  - sectionKey: "OTHER_CONCEPTS"
+    title: "Other Concepts"
+    type: "RICH_TEXT"
+    guidance: |
+      Anything every component must do the same way. An AI assistant starts every session with no memory of the last, so a convention that is not written down gets reinvented each time. Write each concept while it is still cheap to choose.
+
+      One short paragraph each: the rule in one sentence, why, and the file that shows it done right once one exists. Concepts to settle, and when a missing one usually bites:
+      - Error handling: what a failure looks like to the caller, and where it is caught (the second endpoint)
+      - Time and time zones: whose clock decides a deadline, what zone is stored, and whether a test can set the time (the first deadline)
+      - API conventions: what shape every response takes, and how endpoints are named (the second endpoint)
+      - Code conventions: which libraries and idioms every file uses, and which are banned (the first file an assistant writes)
+      - Validation: where input is checked, and which check is the one that counts (the first form)
+      - Configuration and secrets: what differs between development and production, and where it lives (the first deploy)
+      - Logging: what is logged, at what level, and what must never be (the first bug you cannot reproduce)
+      - Persistence and concurrency: where a transaction begins and ends, and what happens when two people edit at once (the first shared record)
+      - Auditing: who changed what, and when (the first "who did this?")
+      - Testing: which kinds of test, at which layer, with what data (the first pull request)
+      - Static analysis: which analyzers run, what command is the gate, and how a finding is settled (the first pull request an assistant opens)
+
+      **Example (Cafeteria Ordering System), error handling:** Every endpoint returns { "ok": false, "error": { "code", "message" } } on failure, produced by one exception handler; no controller builds its own error body, and no response carries an exception's own message. Why: the ordering screen and the menu screen share one error display, and an exception's message can reveal the database behind it. Shown in: ApiExceptionHandler.
+
+  - sectionKey: "ARCHITECTURE_DECISIONS"
+    title: "Architecture Decisions"
+    type: "RICH_TEXT"
+    guidance: |
+      The requirements that shape the architecture, and the decisions they force. Write them in the two sections that follow; this section needs at most a sentence of orientation.
+
+  - sectionKey: "SIGNIFICANT_REQUIREMENTS"
+    title: "Architecturally Significant Requirements"
+    type: "RICH_TEXT"
+    guidance: |
+      Not every requirement shapes the architecture. The architecturally significant requirements are the few that do: quality attributes and constraints where a wrong guess costs a redesign, not a bug fix. Functionality can be delivered by many structures; these are what choose among them.
+
+      Your quality goals are usually the top rows; cite them by key and do not explain them again. This list can also hold what is nobody's goal but still forces structure, such as a constraint (CO-*).
+
+      List three to six, ranked by importance to your client times difficulty to achieve. Reuse the SRS's keys, never new ones. At least one row is a security quality attribute: every system holds some personal data, and if no security requirement appears here, that data's protection was never designed.
+
+      For each row include:
+      - Rank
+      - The requirement, in a few words
+      - The SRS keys it cites
+      - Importance × difficulty
+      - The key decisions it drives
+
+      **Example (Cafeteria Ordering System):** 1. Payroll data confidential (QA-payroll-auth). High × Medium. Drives KD-payment-isolated.
+
+  - sectionKey: "KEY_DECISIONS"
+    title: "Key Decisions"
+    type: "LIST"
+    artifactTypes: ["KEY_DECISION"]
+    guidance: |
+      One key decision per entry (what the wider industry calls an architecture decision record). Every team makes one about the deployment shape: whether the system ships as one deployable or several, and why. It is where over-engineering usually shows up first. Add others when you make them; do not invent them to fill the section.
+
+      For each key decision include:
+      - Key (e.g., KD-deployment-shape) and a title that states the decision
+      - Status: Accepted, or Superseded by another key decision
+      - Driving requirements: the SRS keys that force it
+      - Context: the facts about your client and system that matter
+      - Decision
+      - Rejected: the alternative you did not choose, and why not
+      - Trade-off: what the decision costs
+
+      A decision without a rejected alternative is not a decision, it is a description. A decision that turns out wrong is not deleted or rewritten: mark it Superseded by the new key decision, and write the new decision as its own entry, so the reasoning behind both stays readable.
+
+      **Example:**
+      - KD-deployment-shape: One deployable. Accepted. Driving requirements: CO-no-dedicated-ops, QA-lunch-window. Context: about 400 patrons, one lunch peak a day, and nobody on the client side who can operate infrastructure. Decision: the front end is built into the back end's package and ships as one container to one host, with one managed database. Rejected: separate services for ordering, menu, and delivery; they would add network calls, three deployments, and failure modes between them, to solve a scaling problem 400 users do not have. Trade-off: the system scales only as a whole, and a bad deploy takes all of it down.
+
+  - sectionKey: "QUALITY_REQUIREMENTS"
+    title: "Quality Requirements"
+    type: "RICH_TEXT"
+    guidance: |
+      How you will know the quality goals are met. The overview and the scenarios follow; this section needs at most a sentence of orientation.
+
+  - sectionKey: "QUALITY_REQUIREMENTS_OVERVIEW"
+    title: "Quality Requirements Overview"
+    type: "RICH_TEXT"
+    guidance: |
+      The SRS's Quality Attributes are the overview. Refer to them here; do not copy them.
+
+  - sectionKey: "QUALITY_SCENARIOS"
+    title: "Quality Scenarios"
+    type: "LIST"
+    artifactTypes: ["QUALITY_SCENARIO"]
+    guidance: |
+      A quality attribute says how good; a scenario says how you will know. Write one scenario for each top-ranked architecturally significant requirement.
+
+      For each quality scenario include:
+      - Key (e.g., QS-cross-employee-order-denied)
+      - Source and stimulus: who does what
+      - Environment: the conditions, such as normal operation or the lunch peak
+      - Response: what the system does
+      - Measure: how you tell it worked. It cites the SRS quality attribute that owns its number and never introduces a number of its own.
+      - Verified by: the test, or the repeatable manual check, that shows the measure holds. Leave it empty until that test exists; an empty entry is an honest "not yet verified".
+
+      **Example:**
+      - QS-cross-employee-order-denied: A signed-on patron requests another patron's order by its ID, in normal operation. The request is refused before any order data is read. Measure: every such request is refused and returns no order fields (QA-employee-own-orders). Verified by: an integration test that signs in as one patron and requests another patron's order.
+
+  - sectionKey: "RISKS_AND_TECHNICAL_DEBT"
+    title: "Risks and Technical Debt"
+    type: "LIST"
+    artifactTypes: ["TECHNICAL_RISK", "TECHNICAL_DEBT"]
+    guidance: |
+      Technical risks and debt only. Business risks are risks (RI-*) in the Vision and Scope; do not copy them here. Project risks, such as a teammate dropping the course, belong in neither document. Seed this list from the technical concerns among your business risks and from any open question whose answer could change the architecture.
+
+      A technical risk (TRI-*) might happen: an external system you have never called, a client dataset you have never seen. Technical debt (TD-*) has already happened: a shortcut you took on purpose and intend to pay back.
+
+      For each entry include:
+      - Key and a title
+      - What could go wrong, and what it breaks
+      - Mitigation (for a risk) or fix (for debt): how you would find out, or how you would pay it back
+      - What it cites: the SRS keys or business risks behind it
+
+      A risk written as a category ("security", "performance") is not a risk. Write the mechanism: what fails, and what that breaks.
+
+      **Example:**
+      - TRI-payroll-api-unavailable: Nobody has seen the Payroll System's interface. If it only accepts a nightly batch file, ordering cannot confirm payment at order time. Mitigation: ask for the interface document at the next client meeting; build Payment against a stub until then. Cites DE-payroll-integration.
+
+  - sectionKey: "ARCHITECTURE_GLOSSARY"
+    title: "Glossary"
+    type: "RICH_TEXT"
+    guidance: |
+      Domain terms live in your Project Glossary. Refer to it, and add nothing here unless you need an architecture term your team uses in a special sense.
