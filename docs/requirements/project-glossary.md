@@ -125,6 +125,13 @@ A requirement artifact may represent:
   - a business dependency
   - an assumption
   - a dependency
+- an architecture item, authored in the Architectural Design document:
+  - a key decision
+  - a quality scenario
+  - a technical risk
+  - technical debt
+
+An architecture item is a design decision or a consequence of one, not a requirement. It is still a requirement artifact: "requirement artifact" names the kind of node in the requirements graph, so an architecture item has an artifact key and links like any other artifact.
 
 These map one-to-one to the `RequirementArtifactType` enumeration in the data model (the SRS's Business Domain Model), which is the authoritative taxonomy; an external interface requirement is typed as one of its four kinds (`USER_INTERFACE`, `SOFTWARE_INTERFACE`, `HARDWARE_INTERFACE`, `COMMUNICATIONS_INTERFACE`), and there is no catch-all type. "Background" and the vision statement are document narrative (prose document sections), not tracked artifacts.
 
@@ -238,6 +245,7 @@ Examples include:
 - Business Rules
 - Use Cases
 - Software Requirements Specification (SRS)
+- Architectural Design
 
 ## **Document Section**
 
@@ -283,7 +291,7 @@ A requirement artifact describing a measurable goal or outcome that the system i
 
 ## **Risk**
 
-A requirement artifact describing a potential event or condition that could negatively impact the success of the system or project. A risk may be a business/adoption risk (value, uptake, compliance), a technical/feasibility risk (unproven technology, integration, scalability), or a security/safety risk or threat; the category may be recorded as optional metadata. A control or requirement that reduces a risk links to it via the MITIGATES artifact link type.
+A requirement artifact describing a potential event or condition that could negatively impact the success of the system or project. A risk is business-level: a threat to the project's value, adoption, compliance, or organizational footing. It is authored in the Vision and Scope's Risks document section. A risk that lies in the system's technical design is a technical risk, a separate artifact type. A control or requirement that reduces a risk links to it via the MITIGATES artifact link type.
 
 A risk may be mitigated by other artifacts (it is the target of a MITIGATES link) and may impact requirements (the source of an IMPACTS link).
 
@@ -379,6 +387,22 @@ A dependency is architecture-level, such as a third-party API, and is authored i
 ## **Business Dependency**
 
 A dependency on a business or organizational factor rather than a technical one, such as a decision by another team or the course calendar. It is authored in the Vision and Scope's Business Assumptions and Dependencies document section. It is a separate artifact type from a dependency, with its own home and key sequence.
+
+## **Key Decision**
+
+A requirement artifact recording an architecture decision that is expensive to reverse, such as whether the system ships as one deployable or several. A key decision names the requirements that drive it, the decision, the alternative the team rejected and why, and the trade-off it accepts. It is authored in the Architectural Design document's Key Decisions document section. A key decision that turns out wrong is not rewritten: it is marked superseded, and the new decision becomes its own key decision.
+
+## **Quality Scenario**
+
+A requirement artifact that makes a quality attribute testable: a source performs a stimulus in an environment, the system gives a response, and a measure shows that it worked. The measure cites the quality attribute that owns its threshold and never introduces a number of its own. A quality scenario is authored in the Architectural Design document's Quality Scenarios document section.
+
+## **Technical Risk**
+
+A requirement artifact describing something in the system's technical design that might go wrong, and what it would break, such as an external system's interface that nobody has seen yet. It is authored in the Architectural Design document's Risks and Technical Debt document section. It is distinct from a risk, which is business-level and authored in the Vision and Scope.
+
+## **Technical Debt**
+
+A requirement artifact recording a shortcut the team took on purpose and intends to pay back, and how it would be fixed. Technical debt has already happened; a technical risk might happen. It is authored in the Architectural Design document's Risks and Technical Debt document section.
 
 ## **Validation (ReqLint)**
 
