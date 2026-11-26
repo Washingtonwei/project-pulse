@@ -169,6 +169,11 @@ const catalog = [
     type: 'SRS' as DocumentType,
     title: 'Software Requirements (SRS)',
     description: 'Author functional requirements, constraints, and quality attributes.'
+  },
+  {
+    type: 'ARCHITECTURAL_DESIGN' as DocumentType,
+    title: 'Architectural Design',
+    description: "Record the system's architecture, key decisions, quality scenarios, and technical risks."
   }
 ]
 
@@ -180,7 +185,8 @@ const docsByType = computed<Record<DocumentType, RequirementDocumentSummary | un
     GLOSSARY: undefined,
     SRS: undefined,
     USER_STORIES: undefined,
-    BUSINESS_RULES: undefined
+    BUSINESS_RULES: undefined,
+    ARCHITECTURAL_DESIGN: undefined
   }
   for (const doc of documents.value) {
     map[doc.type] = doc

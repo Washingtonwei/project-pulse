@@ -615,7 +615,8 @@ async function createRequirementDocuments(team: Team) {
   }
 
   docCreating.value[teamId] = true
-  const requiredTypes: DocumentType[] = ['VISION_SCOPE', 'GLOSSARY', 'USE_CASES', 'BUSINESS_RULES', 'SRS']
+  // The Architectural Design comes last, after the requirements it cites (docs/design/tpl.md).
+  const requiredTypes: DocumentType[] = ['VISION_SCOPE', 'GLOSSARY', 'USE_CASES', 'BUSINESS_RULES', 'SRS', 'ARCHITECTURAL_DESIGN']
   try {
     const existing = await searchDocuments(teamId, { page: 0, size: 50 }, {})
     const existingTypes = new Set(existing.data.content.map((doc) => doc.type))
