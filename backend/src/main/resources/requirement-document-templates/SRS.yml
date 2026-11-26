@@ -151,8 +151,8 @@ sections:
       - Coexisting software systems
 
       **Example:**
-      - OE-1: The system shall run in current versions of Chrome, Firefox, Edge and Safari.
-      - OE-2: The system's server and database shall be hosted in the company's data center.
+      - OE-supported-browsers: The system shall run in current versions of Chrome, Firefox, Edge and Safari.
+      - OE-company-data-center: The system's server and database shall be hosted in the company's data center.
 
   - sectionKey: "DESIGN_CONSTRAINTS"
     title: "Design and Implementation Constraints"
@@ -229,7 +229,7 @@ sections:
       - Reports or exports the system produces
 
       **Example:**
-      - DR-1: The system shall store each order's items, price, delivery location and requested delivery time.
+      - DI-order-details: The system shall store each order's items, price, delivery location and requested delivery time.
 
   - sectionKey: "BUSINESS_DOMAIN_MODEL"
     title: "Business Domain Model"

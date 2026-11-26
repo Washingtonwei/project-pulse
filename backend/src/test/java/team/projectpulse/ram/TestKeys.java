@@ -14,7 +14,7 @@ import java.util.Locale;
  * student chose (BR-artifact-key-unique), so these give one the way a student might: the type's prefix and the title
  * in kebab case. For example:
  * <pre>
- * keyFor("RISK", "Data loss")                       -> "RSK-data-loss"
+ * keyFor("RISK", "Data loss")                       -> "RI-data-loss"
  * keyFor("FUNCTIONAL_REQUIREMENT", "3D export!")    -> "FR-x3d-export"   (a slug must start with a letter)
  * </pre>
  * Two creates with the same type and title in one test get the same key, and the second is refused as a key in use,

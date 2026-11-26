@@ -1196,12 +1196,12 @@ public class DataInitializer implements CommandLineRunner {
 
         // ---- A Business Rules document and one business rule ----
         // Team 1's Business Rules document, so a business rule can be created from the use case editor in dev
-        // (UC-DOC-create-use-case 3b, UC-DOC-edit-use-case 6d), and one rule, RULE-own-team-documents, for a use case to name
+        // (UC-DOC-create-use-case 3b, UC-DOC-edit-use-case 6d), and one rule, BR-own-team-documents, for a use case to name
         // (BR-use-case-business-rules). Seeded last, like the blocks above, so no existing id shifts; for the same reason
         // the seeded use case does not name it.
         this.documentRepository.save(newDocument(team1, DocumentType.BUSINESS_RULES));
         RequirementArtifact team1BusinessRule = new RequirementArtifact(team1, RequirementArtifactType.BUSINESS_RULE, "A student may edit only her own team's requirement documents.", "Course policy; fixed for the semester.", "");
-        team1BusinessRule.setArtifactKey("RULE-own-team-documents");
+        team1BusinessRule.setArtifactKey("BR-own-team-documents");
         this.requirementArtifactService.createRequirementArtifact(1, team1BusinessRule);
     }
 

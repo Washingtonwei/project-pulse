@@ -315,14 +315,14 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
         // John holds no document section lock: the server does not check it for items (BR-edit-lock-required).
         JSONObject first = create(1, item("RISK", "Team turnover", "A team member may leave mid-semester."), this.studentJohnToken);
         assertThat(first.getBoolean("flag")).as(first.toString()).isTrue();
-        assertThat(first.getJSONObject("data").getString("artifactKey")).isEqualTo("RSK-team-turnover");
+        assertThat(first.getJSONObject("data").getString("artifactKey")).isEqualTo("RI-team-turnover");
         assertThat(first.getJSONObject("data").getInt("version")).isZero();
         assertThat(first.getJSONObject("data").getString("homeDocumentType")).isEqualTo("VISION_SCOPE");
 
         JSONObject second = create(1, item("RISK", "Scope creep", "The client may keep adding features."), this.studentJohnToken);
-        assertThat(second.getJSONObject("data").getString("artifactKey")).isEqualTo("RSK-scope-creep");
+        assertThat(second.getJSONObject("data").getString("artifactKey")).isEqualTo("RI-scope-creep");
 
-        assertThat(itemKeys(visionScopeId, "RISKS")).containsExactly("RSK-team-turnover", "RSK-scope-creep");
+        assertThat(itemKeys(visionScopeId, "RISKS")).containsExactly("RI-team-turnover", "RI-scope-creep");
     }
 
     @Test
@@ -810,14 +810,14 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
     @Test
     void createArtifact_Extension4a_KeyFormat_Refused() throws Exception {
         List<String> before = itemKeys(TEAM_1_VISION_SCOPE_ID, "RISKS");
-        Object[] keys = {JSONObject.NULL, "RSK-Data", "RSK-1abc", "RSK--x", "RSK-x-", "RSK-" + "a".repeat(41), "FR-data-loss"};
+        Object[] keys = {JSONObject.NULL, "RI-Data", "RI-1abc", "RI--x", "RI-x-", "RI-" + "a".repeat(41), "FR-data-loss"};
         for (Object key : keys) {
             JSONObject refused = create(1, item("RISK", "Data loss", "A crash loses unsaved edits.").put("artifactKey", key), this.studentJohnToken);
             assertThat(refused.getBoolean("flag")).as(String.valueOf(key)).isFalse();
             assertThat(refused.getInt("code")).as(String.valueOf(key)).isEqualTo(StatusCode.INVALID_ARGUMENT);
         }
         assertThat(create(1, item("RISK", "Data loss", "x").put("artifactKey", "FR-data-loss"), this.studentJohnToken).getString("message"))
-                .isEqualTo("The artifact key of a risk starts with RSK-.");
+                .isEqualTo("The artifact key of a risk starts with RI-.");
         assertThat(itemKeys(TEAM_1_VISION_SCOPE_ID, "RISKS")).isEqualTo(before);
     }
 

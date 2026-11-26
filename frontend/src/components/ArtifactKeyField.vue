@@ -139,7 +139,7 @@ watch(key, (value) => {
 })
 
 // A new type (the type choice in a create dialog) keeps the slug and changes the prefix: "data-loss" typed as a risk is
-// RSK-data-loss, and FR-data-loss once the type is functional requirement.
+// RI-data-loss, and FR-data-loss once the type is functional requirement.
 watch(prefix, () => {
   key.value = compose(slug.value)
 })

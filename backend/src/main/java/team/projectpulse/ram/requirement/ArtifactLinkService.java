@@ -124,10 +124,10 @@ public class ArtifactLinkService {
      * exactly {@code sources}, with the same keep, delete and add rule. Links of any other type, the links that end at
      * any other artifact, and {@code target}'s own outgoing links are never touched. A use case names its business
      * rules this way, as {@code CONSTRAINS} links from each rule to the use case (BR-use-case-business-rules,
-     * docs/design/doc.md "Business rules as links"). For example, with UC-report constrained by {RULE-team, RULE-late}
-     * and {@code sources} {RULE-late, RULE-due}, the RULE-late link stays, the RULE-team link is deleted, and a link
-     * from RULE-due is added. RULE-late's link to FR-notify is never looked at: it ends at FR-notify, not at UC-report,
-     * so it is in FR-notify's incoming set and outside this revise. It would stay even if RULE-late were dropped from
+     * docs/design/doc.md "Business rules as links"). For example, with UC-report constrained by {BR-team, BR-late}
+     * and {@code sources} {BR-late, BR-due}, the BR-late link stays, the BR-team link is deleted, and a link
+     * from BR-due is added. BR-late's link to FR-notify is never looked at: it ends at FR-notify, not at UC-report,
+     * so it is in FR-notify's incoming set and outside this revise. It would stay even if BR-late were dropped from
      * UC-report.
      * <p>
      * As with {@link #reviseOutgoingLinks}, it checks nothing about the artifacts: the caller passes artifacts already
@@ -149,12 +149,12 @@ public class ArtifactLinkService {
      * delete and add algorithm once and never asks which direction it is working in.
      * <p>
      * Every link is held in two in-memory sets: its source's outgoing set and its target's incoming set. For the link
-     * {@code UC-report -> STK-tutor} (type SECONDARY_ACTOR) and the link {@code RULE-team -> UC-report} (type
+     * {@code UC-report -> STK-tutor} (type SECONDARY_ACTOR) and the link {@code BR-team -> UC-report} (type
      * CONSTRAINS):
      * <pre>
      *   link                     source     in source's set   target     in target's set
      *   UC-report -> STK-tutor   UC-report  outgoing          STK-tutor  incoming
-     *   RULE-team -> UC-report   RULE-team  outgoing          UC-report  incoming
+     *   BR-team -> UC-report     BR-team    outgoing          UC-report  incoming
      * </pre>
      * UC-report is the anchor in both cases, but at a different end:
      * <ul>
@@ -166,12 +166,12 @@ public class ArtifactLinkService {
      * The table the four methods give for each end, using the same two links:
      * <pre>
      *   method       SOURCE (anchor UC-report,                 TARGET (anchor UC-report,
-     *                link UC-report -> STK-tutor)              link RULE-team -> UC-report)
+     *                link UC-report -> STK-tutor)              link BR-team -> UC-report)
      *   links        UC-report's outgoing set                  UC-report's incoming set
-     *   otherEnd     STK-tutor, the link's target              RULE-team, the link's source
-     *   connect      UC-report.addOutgoingLink,                RULE-team.addOutgoingLink,
+     *   otherEnd     STK-tutor, the link's target              BR-team, the link's source
+     *   connect      UC-report.addOutgoingLink,                BR-team.addOutgoingLink,
      *                STK-tutor.addIncomingLink                 UC-report.addIncomingLink
-     *   disconnect   UC-report.removeOutgoingLink,             RULE-team.removeOutgoingLink,
+     *   disconnect   UC-report.removeOutgoingLink,             BR-team.removeOutgoingLink,
      *                STK-tutor.removeIncomingLink              UC-report.removeIncomingLink
      * </pre>
      * {@code connect} and {@code disconnect} always touch both artifacts: the anchor and {@code other}. Updating only
@@ -225,28 +225,28 @@ public class ArtifactLinkService {
         /**
          * The anchor is the link's target: its incoming links are revised, and the other end is the link's source.
          * Used by {@code reviseIncomingLinks}, for example for a use case's CONSTRAINS links from its business rules
-         * (RULE-team -> UC-report).
+         * (BR-team -> UC-report).
          */
         TARGET {
             /**
-             * UC-report's incoming set, which holds RULE-team -> UC-report along with UC-report's other incoming links,
+             * UC-report's incoming set, which holds BR-team -> UC-report along with UC-report's other incoming links,
              * such as FR-sign-in -> UC-report (DERIVES_FROM). A rule's link to any other artifact, such as
-             * RULE-late -> FR-notify, is not in it.
+             * BR-late -> FR-notify, is not in it.
              */
             @Override
             Set<ArtifactLink> links(RequirementArtifact anchor) {
                 return anchor.getIncomingArtifactLinks();
             }
 
-            /** For RULE-team -> UC-report, RULE-team: the business rule. */
+            /** For BR-team -> UC-report, BR-team: the business rule. */
             @Override
             RequirementArtifact otherEnd(ArtifactLink link) {
                 return link.getSourceArtifact();
             }
 
             /**
-             * A new link from RULE-due to UC-report: it joins RULE-due's outgoing set, which sets the link's source to
-             * RULE-due, and UC-report's incoming set, which sets its target to UC-report. The direction of the link
+             * A new link from BR-due to UC-report: it joins BR-due's outgoing set, which sets the link's source to
+             * BR-due, and UC-report's incoming set, which sets its target to UC-report. The direction of the link
              * never changes; only which of its two artifacts is the anchor.
              */
             @Override
@@ -256,8 +256,8 @@ public class ArtifactLinkService {
             }
 
             /**
-             * The dropped link RULE-team -> UC-report: it leaves RULE-team's outgoing set and UC-report's incoming set.
-             * RULE-team itself stays, with any links it has to other artifacts.
+             * The dropped link BR-team -> UC-report: it leaves BR-team's outgoing set and UC-report's incoming set.
+             * BR-team itself stays, with any links it has to other artifacts.
              */
             @Override
             void disconnect(RequirementArtifact anchor, RequirementArtifact other, ArtifactLink link) {

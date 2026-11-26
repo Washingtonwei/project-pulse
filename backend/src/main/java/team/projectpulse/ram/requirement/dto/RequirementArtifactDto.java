@@ -17,7 +17,7 @@ import java.time.Instant;
  * right prefix depends on the type and this record is shared with the glossary routes (design: art.md, "Artifact keys").
  * <pre>
  * POST /teams/1/requirement-artifacts
- * {"type": "RISK", "artifactKey": "RSK-data-loss", "title": "Data loss", "content": "A crash loses unsaved edits.", "priority": "HIGH"}
+ * {"type": "RISK", "artifactKey": "RI-data-loss", "title": "Data loss", "content": "A crash loses unsaved edits.", "priority": "HIGH"}
  * </pre>
  *
  * @param artifactKey      the artifact key, {@code <PREFIX>-<slug>}: required on a create and an update, where a key

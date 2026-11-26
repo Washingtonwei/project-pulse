@@ -86,8 +86,8 @@ public class RequirementArtifactController {
      * of the Vision and Scope's STAKEHOLDER_PROFILES list with the key it was sent, STK-course-instructor.
      *
      * An assumption, with
-     *   {"type": "ASSUMPTION", "artifactKey": "ASM-campus-sign-in", "title": "Campus sign-in", "content": "Every user has a university account."}
-     * lands in the SRS's ASSUMPTIONS_DEPENDENCIES list with its key, ASM-campus-sign-in. A business-level one is a
+     *   {"type": "ASSUMPTION", "artifactKey": "AS-campus-sign-in", "title": "Campus sign-in", "content": "Every user has a university account."}
+     * lands in the SRS's ASSUMPTIONS_DEPENDENCIES list with its key, AS-campus-sign-in. A business-level one is a
      * BUSINESS_ASSUMPTION instead, which lands in the Vision and Scope's list of the same name, with a key such as BAS-campus-sign-in.
      * </pre>
      * A type with no list home (a glossary term, use case, precondition, postcondition or user story) is refused here,

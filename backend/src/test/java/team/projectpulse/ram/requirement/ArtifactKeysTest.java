@@ -20,13 +20,13 @@ class ArtifactKeysTest {
         assertThat(ArtifactKeys.problemWith(RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "FR-export-csv")).isEmpty();
         assertThat(ArtifactKeys.problemWith(RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "FR-export-v2")).isEmpty();
         assertThat(ArtifactKeys.problemWith(RequirementArtifactType.PRECONDITION, "PRE-student-logged-in")).isEmpty();
-        assertThat(ArtifactKeys.problemWith(RequirementArtifactType.RISK, "RSK-" + "a".repeat(40))).isEmpty();
+        assertThat(ArtifactKeys.problemWith(RequirementArtifactType.RISK, "RI-" + "a".repeat(40))).isEmpty();
     }
 
     @Test
     @DisplayName("A missing or malformed key gives the format message (4a)")
     void malformedKeys() {
-        for (String key : new String[]{null, "", " ", "FR-", "FR-Export", "FR-2fa-login", "FR-1", "FR--x", "FR-x-", "FR-x--y", "FR-x_y", "fr-x", "FRexport", "RSK-" + "a".repeat(41)}) {
+        for (String key : new String[]{null, "", " ", "FR-", "FR-Export", "FR-2fa-login", "FR-1", "FR--x", "FR-x-", "FR-x--y", "FR-x_y", "fr-x", "FRexport", "RI-" + "a".repeat(41)}) {
             assertThat(ArtifactKeys.problemWith(RequirementArtifactType.FUNCTIONAL_REQUIREMENT, key)).as(String.valueOf(key))
                     .hasValueSatisfying(message -> assertThat(message).isNotBlank());
         }
@@ -37,10 +37,10 @@ class ArtifactKeysTest {
     @Test
     @DisplayName("Another type's prefix names the right one")
     void wrongPrefix() {
-        assertThat(ArtifactKeys.problemWith(RequirementArtifactType.RISK, "FR-data-loss")).hasValue("The artifact key of a risk starts with RSK-.");
-        assertThat(ArtifactKeys.problemWith(RequirementArtifactType.ASSUMPTION, "DEP-campus")).hasValue("The artifact key of an assumption starts with ASM-.");
+        assertThat(ArtifactKeys.problemWith(RequirementArtifactType.RISK, "FR-data-loss")).hasValue("The artifact key of a risk starts with RI-.");
+        assertThat(ArtifactKeys.problemWith(RequirementArtifactType.ASSUMPTION, "DE-campus")).hasValue("The artifact key of an assumption starts with AS-.");
         // The prefix is checked before the slug, so a wrong prefix is named even when the slug is also out of format.
-        assertThat(ArtifactKeys.problemWith(RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "RSK-Data")).hasValue("The artifact key of a functional requirement starts with FR-.");
+        assertThat(ArtifactKeys.problemWith(RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "RI-Data")).hasValue("The artifact key of a functional requirement starts with FR-.");
         assertThat(ArtifactKeys.problemWith(RequirementArtifactType.FUNCTIONAL_REQUIREMENT, "UC-export-csv")).hasValue("The artifact key of a functional requirement starts with FR-.");
     }
 

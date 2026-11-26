@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.tuple;
 /**
  * {@link ArtifactLinkService#reviseIncomingLinks}, the way a use case writes its business rule links (docs/design/doc.md,
  * "Business rules as links"). Team 1's seed: UC-1 (artifact 3) is the target of DERIVES_FROM links from FR-1 and FR-2,
- * and the source of its two actor links and a DERIVES_FROM link to BO-1; RULE-1 is the team's one business rule and
+ * and the source of its two actor links and a DERIVES_FROM link to BO-1; BR-1 is the team's one business rule and
  * has no links.
  */
 class ArtifactLinkServiceReviseIncomingLinksTest extends AbstractIntegrationTest {

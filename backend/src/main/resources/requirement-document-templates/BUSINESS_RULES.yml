@@ -15,5 +15,5 @@ sections:
       - Whether it is fixed or may change
 
       **Example:**
-      - RULE-1: Only employees who are registered for payroll deduction may charge a meal to their pay. (Company policy)
-      - RULE-2: Each meal is charged the price in effect when it was ordered, not when it was delivered. (Company policy)
+      - BR-payroll-deduction-only: Only employees who are registered for payroll deduction may charge a meal to their pay. (Company policy)
+      - BR-price-at-order-time: Each meal is charged the price in effect when it was ordered, not when it was delivered. (Company policy)
