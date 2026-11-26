@@ -173,7 +173,9 @@ sections:
       - Testing: which kinds of test, at which layer, with what data (the first pull request)
       - Static analysis: which analyzers run, what command is the gate, and how a finding is settled (the first pull request an assistant opens)
 
-      **Example (Cafeteria Ordering System), error handling:** Every endpoint returns { "ok": false, "error": { "code", "message" } } on failure, produced by one exception handler; no controller builds its own error body, and no response carries an exception's own message. Why: the ordering screen and the menu screen share one error display, and an exception's message can reveal the database behind it. Shown in: ApiExceptionHandler.
+      **Examples (Cafeteria Ordering System):**
+      - Error handling: Every endpoint returns { "ok": false, "error": { "code", "message" } } on failure, produced by one exception handler; no controller builds its own error body, and no response carries an exception's own message. Why: the ordering screen and the menu screen share one error display, and an exception's message can reveal the database behind it. Shown in: ApiExceptionHandler.
+      - Logging: Each class that logs has one logger. "error" means someone must act, "warn" that something degraded, "info" a business event, "debug" detail for development. Every caught exception that is not rethrown is logged with its stack trace, the one exception handler's included. Log identifiers, never content: an order or user ID, never an email address, a password, a token, or a request body. Logs go to standard output, where the platform collects them. Why: the first production bug is found from its log line or not at all, and a log is copied to more places than the database is. Shown in: ApiExceptionHandler, OrderService.
 
   - sectionKey: "ARCHITECTURE_DECISIONS"
     title: "Architecture Decisions"
