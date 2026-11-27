@@ -2517,7 +2517,6 @@ Details of a peer evaluation: The instructor may choose to see more details of o
 **Preconditions:**
 - PRE-1. The course admin is logged into the system.
 - PRE-2. The team exists.
-- PRE-3. Built-in templates are configured for the team.
 
 **Postconditions:**
 - POST-1. The team's requirement documents, each with the document sections defined by its built-in template, exist in the system.
@@ -2536,8 +2535,8 @@ Details of a peer evaluation: The instructor may choose to see more details of o
 - **3a. One or more documents already exist for the team**
   - 3a1. The system informs the course admin that the team already has requirement documents of those types; an existing document cannot be regenerated or overwritten, so only the missing document types can be created.
   - 3a2. The course admin either creates only the missing documents (the types not yet created) or terminates the use case.
-- **4a. No built-in templates are configured for the team**
-  - 4a1. The system alerts the course admin that no templates are available for the team and that no documents can be created.
+- **4a. No built-in template is configured for a document type**
+  - 4a1. The system alerts the course admin that no template is available for that document type, so no document of that type can be created.
   - 4a2. The course admin terminates the use case.
 
 **Priority:** High
@@ -2546,7 +2545,7 @@ Details of a peer evaluation: The instructor may choose to see more details of o
 **Associated Information:**
 
 Details:
-- The set of documents created is determined by the built-in templates configured for the team (e.g., the Project Glossary, Use Cases, Business Rules, and section-based requirement documents such as Vision and Scope, SRS, and Architectural Design).
+- The set of documents created is determined by the built-in template configured for each document type (e.g., the Project Glossary, Use Cases, Business Rules, and section-based requirement documents such as Vision and Scope, SRS, and Architectural Design). The Project Glossary and Use Cases templates define no document sections: their glossary terms and use cases are authored in their own editors.
 - The document sections of each document are instantiated from its template; documents and document sections are created empty, ready for authoring.
 - MVP: built-in templates are fixed (hardcoded); template customization is out of scope.
 
