@@ -96,9 +96,15 @@ The SRS goes from 26 document sections to 31. `PRODUCT_PERSPECTIVE` is also a Vi
 | 3 | `SCOPE` | Scope | rich text | new: which parts of the client's business the rules cover, and which are out |
 | 4 | `BUSINESS_RULES` | Rules | list (`BUSINESS_RULE`) | retitled from "Business Rules" to the course's "Rules"; the rest of the course's guidance |
 
-**Guidance** is ported from the course template by the same rules as the other templates, as plain text since the editor shows guidance in a `<pre>` block: the course's tables become lists. The rules list carries what a student needs while writing a rule: the trigger phrases, the five shapes, what a rule turns into, identifiers, the source rule with its "who would approve a change?" test, the AI warning, and the checklist. The Cafeteria Ordering System examples stay, as in the other product templates, with each rule's title and content shown apart, since the title is the rule's wording that use cases show ([doc.md](doc.md)) and the source belongs in the content.
+**Guidance** is ported from the course template by the same rules as the other templates, as plain text since the editor shows guidance in a `<pre>` block: the course's tables become lists. The rules list carries what a student needs while writing a rule: the trigger phrases, the five shapes, what a rule turns into, identifiers, the source rule with its "who would approve a change?" test, the AI warning, and the checklist. The Cafeteria Ordering System examples stay for now (OI-88), with each rule's title and content shown apart, since the title is the rule's wording that use cases show ([doc.md](doc.md)) and the source belongs in the content.
 
 **What stays different from the course, on purpose:** the course groups rules under topic headings the team chooses; the product keeps one flat list, because a type has one list home (BR-artifact-home) and the course calls the grouping organizational only. The course's preamble ("How to use this template") and Revision History have no section, as in the other templates.
+
+## The Vision and Scope template
+
+`VISION_SCOPE.yml` keeps its sections, keys and types; its guidance now follows the course's Vision and Scope template, ported by the same plain-text rules: no tables (the Vision Statement and the stakeholder fields become labeled lines), no Markdown emphasis, no file links, and no dates tied to a term. List sections say what goes in an item's title and what in its content, as the Business Rules list does. Examples are about Project Pulse itself. Diagrams are asked for as mermaid text in a code block, since the editor does not render them yet (OI-87).
+
+**What stays different from the course, on purpose:** the product has no MVP Scope section; it keeps External Systems, which the course template now also has; and Business Opportunity is a list of problems and opportunities, which the course template now also uses. The course's Risks example about a public grade database is a technical risk, so it moved to the Architectural Design's Risks and Technical Debt, in both.
 
 ## Components & classes
 
