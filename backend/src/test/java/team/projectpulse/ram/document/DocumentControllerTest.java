@@ -154,6 +154,43 @@ public class DocumentControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void createGlossaryAndUseCasesDocuments_FromTheirSectionlessTemplates() throws Exception {
+        // Team 3, which the seed gives no documents. Both come from a template with a title and no sections: their glossary
+        // terms and use cases are authored in their own editors, not in document sections.
+        this.mockMvc.perform(post(this.baseUrl + "/teams/3/documents").contentType(MediaType.APPLICATION_JSON).content("""
+                        { "type": "GLOSSARY" }
+                        """).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.data.title").value("Project Glossary"))
+                .andExpect(jsonPath("$.data.sections", Matchers.hasSize(0)));
+        this.mockMvc.perform(post(this.baseUrl + "/teams/3/documents").contentType(MediaType.APPLICATION_JSON).content("""
+                        { "type": "USE_CASES" }
+                        """).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.data.title").value("Use Cases"))
+                .andExpect(jsonPath("$.data.sections", Matchers.hasSize(0)));
+    }
+
+    @Test
+    void createUserStoriesDocument_Extension4a_NoTemplate_Refused() throws Exception {
+        // USER_STORIES has no built-in template, so team 3 gets a 400 naming the type, and no document is stored.
+        String json = """
+                {
+                    "type": "USER_STORIES"
+                }
+                """;
+        this.mockMvc.perform(post(this.baseUrl + "/teams/3/documents").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_ARGUMENT))
+                .andExpect(jsonPath("$.message").value("No built-in template is configured for USER_STORIES, so no document of that type can be created."));
+        this.mockMvc.perform(post(this.baseUrl + "/teams/3/documents/search").contentType(MediaType.APPLICATION_JSON).content("{}").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(jsonPath("$.data.content", Matchers.hasSize(0)));
+    }
+
+    @Test
     void createArchitecturalDesignDocument_Arc42SectionsAndThreeLists() throws Exception {
         // Team 2, which the seed gives a Vision and Scope and an SRS but no Architectural Design (docs/design/tpl.md).
         String json = """

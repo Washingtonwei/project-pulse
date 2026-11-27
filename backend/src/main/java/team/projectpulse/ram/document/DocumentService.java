@@ -93,15 +93,19 @@ public class DocumentService {
                             + ". A team's document is created once and never regenerated or overwritten.");
                 });
 
+        // Every document is made from its built-in template, the Project Glossary and Use Cases included (their templates
+        // have no sections). USER_STORIES has none, so asking for one is refused with "No built-in template is
+        // configured for USER_STORIES, so no document of that type can be created.", and nothing is created
+        // (UC-TPL-provision-documents 4a).
+        DocumentTemplate tpl = this.documentTemplateRegistry.find(type)
+                .orElseThrow(() -> new RequirementDocumentRejectedException("No built-in template is configured for "
+                        + type.name() + ", so no document of that type can be created."));
+
         RequirementDocument doc = new RequirementDocument();
         doc.setType(type);
         doc.setTeam(team);
         doc.setDocumentKey(type.name());
-
-        this.documentTemplateRegistry.find(type).ifPresentOrElse(
-                tpl -> applyTemplate(doc, tpl),
-                () -> doc.setTitle(type.name()) // fallback title if no template file exists
-        );
+        applyTemplate(doc, tpl);
 
         return this.documentRepository.save(doc);
     }

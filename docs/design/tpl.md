@@ -1,9 +1,9 @@
 # Templates and Provisioning (TPL) Design
 
-> Realizes: UC-TPL-provision-documents, FR-TPL-enforce-structure, FR-TPL-section-keys, for the Architectural Design document and the SRS template's structure
+> Realizes: UC-TPL-provision-documents, FR-TPL-enforce-structure, FR-TPL-section-keys, for the Architectural Design document, the SRS template's structure, and extension 4a
 > Depends on: BR-document-creation, BR-artifact-home, BR-artifact-key-unique, DI-artifact-key-assignment, UC-ART-create-artifact
 > See: [use cases](../requirements/use-cases.md#templates-and-provisioning), [SRS Business Domain Model](../requirements/software-requirements-specification.md#ram-requirements-graph) (the document types, the artifact types, and the authoring-home table), [art.md](art.md#homes) (list homes and artifact keys), [architectural-design.md](architectural-design.md#ram-cross-cutting-subsystems) (document templates)
-> History: first written 2026-11-26, for the Architectural Design document (OI-21, spec PR #169). Provisioning itself was built before this workflow; this doc records how it works only as far as the new document needs. Revised 2026-11-26 for the SRS template's structure (the rest of OI-21).
+> History: first written 2026-11-26, for the Architectural Design document (OI-21, spec PR #169). Provisioning itself was built before this workflow; this doc records how it works only as far as the new document needs. Revised 2026-11-26 for the SRS template's structure (the rest of OI-21), and again for extension 4a (OI-85).
 
 ## Scope
 
@@ -92,7 +92,7 @@ The SRS goes from 26 document sections to 31. `PRODUCT_PERSPECTIVE` is also a Vi
   - Backend: [`DocumentType`](../../backend/src/main/java/team/projectpulse/ram/document/DocumentType.java) (`ARCHITECTURAL_DESIGN`), [`RequirementArtifactType`](../../backend/src/main/java/team/projectpulse/ram/requirement/RequirementArtifactType.java) (the four types, each with a list home by `hasListHome`'s default), [`ArtifactKeyPrefix`](../../backend/src/main/java/team/projectpulse/ram/requirement/ArtifactKeyPrefix.java) (`KD`, `QS`, `TRI`, `TD`), `SRS.yml`, `VISION_SCOPE.yml`, [`DataInitializer`](../../backend/src/main/java/team/projectpulse/seed/DataInitializer.java) (team 1 gets an empty Architectural Design, saved after the business rule that now ends the seed, so it is the last thing seeded and no other id shifts because of it; the `applyTemplate` Javadoc's "30 document sections ... the 16th" becomes 26 and the 13th).
   - Frontend: [`apis/ram/types.ts`](../../frontend/src/apis/ram/types.ts) (`DocumentType` and the artifact type list), [`utils/artifactKeys.ts`](../../frontend/src/utils/artifactKeys.ts) (the four prefixes, mirroring `ArtifactKeyPrefix`), [`RamDocuments.vue`](../../frontend/src/pages/ram/RamDocuments.vue) (a catalog card), [`Teams.vue`](../../frontend/src/pages/teams/Teams.vue) (`requiredTypes`, the new type last).
 - **Checked, no change:** no backend code switches over `DocumentType` or `RequirementArtifactType` except `hasListHome` (whose default covers the new types); the frontend's one exhaustive map over `DocumentType` is `docsByType` in `RamDocuments.vue`, listed above; the editor and dialogs show artifact types by their enum names, as for every other type; export, validation and the AI assistants are not built.
-- **Reused unchanged:** `DocumentTemplateRegistry`, `DocumentService` (apart from the 3a refusal), `DocumentController`, `RequirementArtifactService` (home lookup, key check, home section row lock, and the refusal when the home document is missing), `ArtifactKeySuggester`, `RamDocumentEditor.vue` (it renders any section-based document, and a section with two admitted types already offers the type choice), `ArtifactKeyField.vue`.
+- **Reused unchanged:** `DocumentTemplateRegistry`, `DocumentService` (apart from the 3a and 4a refusals), `DocumentController`, `RequirementArtifactService` (home lookup, key check, home section row lock, and the refusal when the home document is missing), `ArtifactKeySuggester`, `RamDocumentEditor.vue` (it renders any section-based document, and a section with two admitted types already offers the type choice), `ArtifactKeyField.vue`.
 
 ## Sequence
 
@@ -146,7 +146,7 @@ No endpoint is added or changed; two existing ones accept new enum values.
 
 | Endpoint | Who | New input | Success | Errors |
 |---|---|---|---|---|
-| `POST /teams/{teamId}/documents` | course admin (existing rule) | `type` `ARCHITECTURAL_DESIGN` | the document with its 23 sections | a second document of a type the team has is refused with 400 and a message naming the document (3a, BR-document-creation); it was a 500 until this build, for every type |
+| `POST /teams/{teamId}/documents` | course admin (existing rule) | `type` `ARCHITECTURAL_DESIGN` | the document with its 23 sections | a second document of a type the team has is refused with 400 and a message naming the document (3a, BR-document-creation); it was a 500 until this build, for every type; a type with no template (`USER_STORIES`) is refused with 400 naming it (4a) |
 | `POST /teams/{teamId}/requirement-artifacts` | team member (existing rule) | `type` one of the four, with a key of its prefix | the artifact, at the end of its home list | as for every type: 4a key format (`TRI-x` on a `TECHNICAL_DEBT`), 4b key held, 8a document locked for review, 8b home document not created |
 
 ## Key decisions
@@ -156,6 +156,7 @@ No endpoint is added or changed; two existing ones accept new enum values.
 - **The tests' SRS section ids are renumbered (the Architectural Design build).** Removing SRS sections 8 to 10 and 28 shifts every later seeded section id: team 1's functional requirement list goes from 16 to 13 and its Assumptions and Dependencies from 13 to 10, and the Vision and Scope's sections each move down by 4. Every reference in three test classes changes (`DocumentSectionControllerTest`, `RequestBodyIdIntegrationTest`, `RequirementArtifactControllerTest`): the section URLs, the helper arguments (`putSection`, `fetchSectionVersion`, `sectionVersion`), the expected ids, and the comments that name the sections, plus one worked-example comment in `RequirementArtifactService`. No test names a Vision and Scope section by id. *Rejected:* keeping the removed sections in the SRS to hold the ids still, which keeps what the spec removed; looking every section up by key in the tests, which is a much larger change for the same result.
 - **`ARCHITECTURE_GLOSSARY`, not `GLOSSARY`,** keys arc42's twelfth section, so the key never reads as the Glossary document. Its title stays "Glossary".
 - **No pointer section in the SRS** to the Architectural Design. The course's SRS template has none. *Rejected:* a rich-text pointer like the SRS's `PROJECT_GLOSSARY`, one more section for students to leave empty.
+- **Every document type a team gets has a template, even one with no sections (extension 4a, OI-85).** `GLOSSARY.yml` ("Project Glossary") and `USE_CASES.yml` ("Use Cases") hold a title and `sections: []`, since their glossary terms and use cases are authored in their own editors. `DocumentService.createRequirementDocument` then refuses a type with no template with a 400 naming it, and stores nothing; today that is only `USER_STORIES`, which the frontend never asks for. `DataInitializer` fails at startup instead of falling back. *Rejected:* a flag on `DocumentType` saying which types need a template: a second idea beside the template, and the two documents would keep their enum names as titles.
 - **The frontend keeps its own list of the document types** a team gets (`Teams.vue`) and its catalog (`RamDocuments.vue`). *Rejected:* an endpoint listing the configured templates. That fits template customization (FR-TPL-customize), but no requirement needs it now.
 
 ## Data model
@@ -189,9 +190,10 @@ erDiagram
 | The SRS template's structure | integration, `DocumentControllerTest` | `createSrsDocument_NoArchitectureSections` becomes the structure test, `createSrsDocument_TheCourseStructureWithoutArchitecture`: a new SRS has exactly the 31 section keys of the table above, in that order, the five new ones rich text, and none of the four architecture keys; `findDocumentById` expects 31 sections |
 | SRS homes unchanged | unit, `DocumentTemplateRegistryTest` | `templates_MatchTheAuthoringHomesTable` passes unchanged |
 | Migration V15 | Flyway on the test container, every integration run | V1 to V15 apply on MySQL 8 |
+| UC-TPL-provision-documents, the Project Glossary and Use Cases | integration, `DocumentControllerTest` | Each is created for team 3 with its template title and no sections |
+| UC-TPL-provision-documents, extension 4a | integration, `DocumentControllerTest` | `USER_STORIES` for team 3 is refused with 400 naming the type; no document is stored |
 | Provisioning and the editor | manual, running app | Create Requirement Documents makes six documents for a new team, and only the missing ones for team 2 (which the seed gives a Vision and Scope and an SRS); its card opens the editor; Risks and Technical Debt offers both types; `npm run type-check` passes |
 
 ## Open questions / risks
 
 - The section id renumbering touches three test classes. A missed reference fails loudly, on a wrong section key, not silently.
-- Extension 4a (no template configured) is not built: with no template, `DocumentService` stores the document titled with its enum name and no sections. `GLOSSARY` and `USE_CASES` have no template file and rely on that fallback, since their content lives in their own tables; `USER_STORIES` has none either, and the frontend never asks for one. Left as found; [OI-85](../requirements/OPEN-ISSUES.md) holds the follow-up.

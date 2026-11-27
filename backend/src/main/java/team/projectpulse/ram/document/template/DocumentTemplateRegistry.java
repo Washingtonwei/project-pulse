@@ -62,7 +62,9 @@ public class DocumentTemplateRegistry {
             homes.putAll(buildHomes(templates));
 
         } catch (IOException e) {
-            log.error("Failed to scan for template files", e);
+            // Every document is created from its template (UC-TPL-provision-documents 4a), so templates that cannot be
+            // read stop startup here rather than surfacing later as a 400 that blames a missing template
+            throw new IllegalStateException("Failed to scan for template files.", e);
         }
     }
 
@@ -80,7 +82,9 @@ public class DocumentTemplateRegistry {
         } catch (IllegalArgumentException e) {
             log.warn("Skipping unknown template file: {} (not a valid DocumentType)", filename);
         } catch (IOException e) {
-            log.error("Failed to load template from {}", filename, e);
+            // A file that cannot be read stops startup. A malformed one already does: Jackson 3's parse errors are
+            // unchecked, so they never reach this catch.
+            throw new IllegalStateException("Failed to load template from " + filename + ".", e);
         }
     }
 
