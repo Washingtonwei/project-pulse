@@ -990,19 +990,4 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
         return new JSONObject(result.getResponse().getContentAsString()).getJSONObject("data").getInt("version");
     }
 
-
-    /**
-     * The id of team 1's SRS (document 1) section with {@code sectionKey}. Tests find SRS sections by key, so a template
-     * change that adds or moves a section renumbers no test (docs/design/tpl.md). For example,
-     * {@code srsSectionId("NON_USE_CASE_FUNCTIONAL_REQUIREMENTS")} is the list that holds FR-user-authentication.
-     */
-    private int srsSectionId(String sectionKey) {
-        return Math.toIntExact(this.documentSectionRepository.findByDocumentIdAndSectionKey(1L, sectionKey).orElseThrow().getId());
-    }
-
-    /** Team 1's functional requirement list, NON_USE_CASE_FUNCTIONAL_REQUIREMENTS, which the seed fills with three FRs. */
-    private int frListId() {
-        return srsSectionId("NON_USE_CASE_FUNCTIONAL_REQUIREMENTS");
-    }
-
 }

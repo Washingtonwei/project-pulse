@@ -26,9 +26,6 @@ public class DocumentSectionControllerTest extends AbstractIntegrationTest {
     @Autowired
     MockMvc mockMvc;
 
-    @Autowired
-    DocumentSectionRepository documentSectionRepository;
-
     String adminBingyangToken; // Bingyang is the instructor of section 2
 
     String adminTimToken; // Tim is the instructor of section 3
@@ -511,21 +508,6 @@ public class DocumentSectionControllerTest extends AbstractIntegrationTest {
         MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/" + documentSectionId)
                 .contentType(MediaType.APPLICATION_JSON).content(body.toString()).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, token)).andReturn();
         return new JSONObject(result.getResponse().getContentAsString());
-    }
-
-
-    /**
-     * The id of team 1's SRS (document 1) section with {@code sectionKey}. Tests find SRS sections by key, so a template
-     * change that adds or moves a section renumbers no test (docs/design/tpl.md). For example,
-     * {@code srsSectionId("NON_USE_CASE_FUNCTIONAL_REQUIREMENTS")} is the list that holds FR-user-authentication.
-     */
-    private int srsSectionId(String sectionKey) {
-        return Math.toIntExact(this.documentSectionRepository.findByDocumentIdAndSectionKey(1L, sectionKey).orElseThrow().getId());
-    }
-
-    /** Team 1's functional requirement list, NON_USE_CASE_FUNCTIONAL_REQUIREMENTS, which the seed fills with three FRs. */
-    private int frListId() {
-        return srsSectionId("NON_USE_CASE_FUNCTIONAL_REQUIREMENTS");
     }
 
 }

@@ -15,7 +15,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import team.projectpulse.AbstractIntegrationTest;
 import team.projectpulse.ram.requirement.RequirementArtifact;
-import team.projectpulse.ram.document.DocumentSectionRepository;
 import team.projectpulse.ram.requirement.RequirementArtifactRepository;
 import team.projectpulse.ram.requirement.RequirementArtifactType;
 import team.projectpulse.ram.usecase.UseCase;
@@ -53,9 +52,6 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     RequirementArtifactRepository requirementArtifactRepository;
-
-    @Autowired
-    DocumentSectionRepository documentSectionRepository;
 
     @Autowired
     EntityManager entityManager;
@@ -489,21 +485,6 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
         assertThat(items.getJSONObject(2).getString("artifactKey")).isEqualTo("FR-change-notification");
         assertStillOwnedByTeam2(victim.getId(), "Data export");
         assertThat(this.requirementArtifactRepository.count()).isEqualTo(artifactCountBefore);
-    }
-
-
-    /**
-     * The id of team 1's SRS (document 1) section with {@code sectionKey}. Tests find SRS sections by key, so a template
-     * change that adds or moves a section renumbers no test (docs/design/tpl.md). For example,
-     * {@code srsSectionId("NON_USE_CASE_FUNCTIONAL_REQUIREMENTS")} is the list that holds FR-user-authentication.
-     */
-    private int srsSectionId(String sectionKey) {
-        return Math.toIntExact(this.documentSectionRepository.findByDocumentIdAndSectionKey(1L, sectionKey).orElseThrow().getId());
-    }
-
-    /** Team 1's functional requirement list, NON_USE_CASE_FUNCTIONAL_REQUIREMENTS, which the seed fills with three FRs. */
-    private int frListId() {
-        return srsSectionId("NON_USE_CASE_FUNCTIONAL_REQUIREMENTS");
     }
 
 }
