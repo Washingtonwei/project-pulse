@@ -109,7 +109,7 @@ public class DocumentControllerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.message").value("Find requirement document successfully"))
                 .andExpect(jsonPath("$.data.id").value(1))
                 .andExpect(jsonPath("$.data.title").value("Software Requirements Specification"))
-                .andExpect(jsonPath("$.data.sections", Matchers.hasSize(26)));
+                .andExpect(jsonPath("$.data.sections", Matchers.hasSize(31)));
     }
 
     @Test
@@ -200,8 +200,11 @@ public class DocumentControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void createSrsDocument_NoArchitectureSections() throws Exception {
-        // Team 3, which the seed gives no documents. The architecture sections moved to the Architectural Design.
+    void createSrsDocument_TheCourseStructureWithoutArchitecture() throws Exception {
+        // Team 3, which the seed gives no documents. The SRS follows the course's SRS template (docs/design/tpl.md, The
+        // SRS template): the Overall Description block ahead of the two pointers, Data Dictionary and Reports under the
+        // data requirements, Hardware ahead of Software Interfaces, and no architecture sections, which moved to the
+        // Architectural Design.
         String json = """
                 {
                     "type": "SRS"
@@ -209,9 +212,20 @@ public class DocumentControllerTest extends AbstractIntegrationTest {
                 """;
         this.mockMvc.perform(post(this.baseUrl + "/teams/3/documents").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
                 .andExpect(jsonPath("$.flag").value(true))
-                .andExpect(jsonPath("$.data.sections", Matchers.hasSize(26)))
-                .andExpect(jsonPath("$.data.sections[*].sectionKey", Matchers.everyItem(Matchers.not(Matchers.in(
-                        new String[]{"SOFTWARE_ARCHITECTURE", "SYSTEM_CONTEXT", "CONTAINER_DIAGRAM", "DEPLOYMENT"})))));
+                .andExpect(jsonPath("$.data.sections[*].sectionKey", Matchers.contains(
+                        "INTRODUCTION", "SYSTEM_PURPOSE", "DOCUMENT_PURPOSE", "DOCUMENT_CONVENTIONS", "REFERENCES",
+                        "OVERALL_DESCRIPTION", "PRODUCT_PERSPECTIVE", "USER_CLASSES",
+                        "OPERATING_ENVIRONMENT", "DESIGN_CONSTRAINTS", "ASSUMPTIONS_DEPENDENCIES",
+                        "PROJECT_GLOSSARY", "VISION_SCOPE_REFERENCE",
+                        "FUNCTIONAL_REQUIREMENTS", "USE_CASES", "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS", "BUSINESS_RULES",
+                        "DATA_REQUIREMENTS", "BUSINESS_DOMAIN_MODEL", "DATA_DICTIONARY", "REPORTS", "DATA_LIFECYCLE",
+                        "EXTERNAL_INTERFACES", "USER_INTERFACES", "HARDWARE_INTERFACES", "SOFTWARE_INTERFACES",
+                        "API_DOCUMENTATION", "COMMUNICATION_INTERFACES",
+                        "QUALITY_ATTRIBUTES", "I18N_L10N", "OTHER_REQUIREMENTS")))
+                .andExpect(jsonPath("$.data.sections[?(@.sectionKey in ['OVERALL_DESCRIPTION', 'PRODUCT_PERSPECTIVE', 'USER_CLASSES', 'DATA_DICTIONARY', 'REPORTS'])].type",
+                        Matchers.everyItem(Matchers.is("RICH_TEXT"))))
+                .andExpect(jsonPath("$.data.sections[?(@.sectionKey in ['OVERALL_DESCRIPTION', 'PRODUCT_PERSPECTIVE', 'USER_CLASSES', 'DATA_DICTIONARY', 'REPORTS'])]",
+                        Matchers.hasSize(5)));
     }
 
     @Test
