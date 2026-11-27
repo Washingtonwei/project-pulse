@@ -118,15 +118,18 @@ sections:
       Summarize the business benefits the product will provide, quantitatively and measurably. Platitudes ("become recognized as a world-class provider") and vague improvements ("provide a more rewarding experience") are neither helpful nor verifiable.
 
       For each objective:
-      - Title: the objective, with its number.
+      - Title: the objective, with its measurable target.
       - Content: why it matters to the client.
 
       Give each objective a name-based key (BO-grading-time), never a number.
 
       Example:
-      - BO-grading-time: Reduce the instructor's time to grade peer evaluations by 50%.
-      - BO-submission-rate: Increase the weekly activity report and peer evaluation submission rate by 20%.
-      - BO-student-effort: Reduce the time a student spends completing a weekly activity report and peer evaluation by 25%.
+      - BO-grading-time
+        Title: Reduce the instructor's time to grade peer evaluations by 50%.
+        Content: Grading is the instructor's largest weekly task in the course, and the hours spent on it are hours not spent with teams.
+      - BO-submission-rate
+        Title: Increase the weekly activity report and peer evaluation submission rate by 20%.
+        Content: A missed submission costs the student credit and leaves the instructor without evidence of that week's contribution.
 
       How to elicit these. Clients rarely volunteer numbers. Ask: What business problem are you trying to solve? What is the motivation for solving it now? What would a highly successful solution do for you? What is a successful solution worth? If the answer contains no number, ask what the number is today.
 
@@ -153,7 +156,7 @@ sections:
         Content: Source: the instructor's own time log. Baseline: the hours reported under the spreadsheet process. Measures BO-grading-time.
       - SM-submission-rate
         Title: On-time submission of weekly activity reports and peer evaluations rises by 20% within one term.
-        Content: Source: the system's submission records, against the LMS records from before. Measures BO-submission-rate.
+        Content: Source: the system's submission records. Baseline: the on-time rate in the LMS records for the previous term. Measures BO-submission-rate.
 
       How to elicit these. Ask "how will you know this worked?", then ask what that number is today. If your client cannot say, ask who would know and whether the number is recorded anywhere. Clients often propose a metric the software cannot influence (revenue, headcount); trace it back to something your system actually changes.
 
@@ -276,10 +279,10 @@ sections:
       Put the product in context relative to other systems and the user's environment. If it is independent and self-contained, say so. If it is one component of something larger, describe how they interact and identify the interfaces between them. A context diagram shows this most clearly: your system as one box, every external actor and system around it, and a labeled arrow for each thing that crosses the boundary. Write it as mermaid text in a code block:
 
           flowchart LR
-            Student[Student] --> PP[Project Pulse]
-            Instructor[Instructor] --> PP
-            PP --> Gmail[(Gmail)]
-            PP --> LLM[(LLM service)]
+            Student[Student] -- Submits reports and evaluations --> PP[Project Pulse]
+            Instructor[Instructor] -- Reviews and grades --> PP
+            PP -- Sends reminder email --> Gmail[(Gmail)]
+            PP -- Sends section text for coaching --> LLM[(LLM service)]
 
       Draw the first version here. When your team writes its Architectural Design, the diagram moves to that document's Context and Scope, and this section keeps a reference to it instead of its own drawing.
 
@@ -297,7 +300,7 @@ sections:
       Example:
       - SYS-llm-service
         Title: LLM service
-        Content: A large language model run by an outside provider. Project Pulse sends it a section's text and receives coaching for the student. If it is unavailable, the AI assistants are switched off and authoring carries on without them.
+        Content: A large language model run by an outside provider. Project Pulse sends it a section's text and receives coaching for the student. If it is unavailable, the AI assistants say AI is temporarily unavailable and offer a retry; authoring carries on without them.
 
   - sectionKey: "MAJOR_FEATURES"
     title: "Major Features / Scope"
@@ -320,9 +323,12 @@ sections:
       - Understandable by a non-technical stakeholder, including your client.
 
       Example:
-      - FEAT-administration: Manage senior design sections, teams, and student rosters.
-      - FEAT-performance-tracking: Submit and review weekly activity reports and peer evaluations.
-      - FEAT-grade-generation: Generate weekly activity report and peer evaluation grades for an entire section.
+      - FEAT-administration
+        Title: Administration
+        Content: Manage senior design sections, teams, and student rosters, so each student and instructor sees only their own course section.
+      - FEAT-performance-tracking
+        Title: Performance tracking
+        Content: Students submit weekly activity reports and peer evaluations, and instructors review them, in one place instead of spreadsheets and uploads.
 
   - sectionKey: "DEPLOYMENT_CONSIDERATIONS"
     title: "Deployment Considerations"
