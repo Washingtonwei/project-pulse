@@ -1,9 +1,9 @@
 # Templates and Provisioning (TPL) Design
 
-> Realizes: UC-TPL-provision-documents, FR-TPL-enforce-structure, FR-TPL-section-keys, for the Architectural Design document, the SRS template's structure, and extension 4a
+> Realizes: UC-TPL-provision-documents, FR-TPL-enforce-structure, FR-TPL-section-keys, for the Architectural Design document, the SRS and Business Rules templates' structure, and extension 4a
 > Depends on: BR-document-creation, BR-artifact-home, BR-artifact-key-unique, DI-artifact-key-assignment, UC-ART-create-artifact
 > See: [use cases](../requirements/use-cases.md#templates-and-provisioning), [SRS Business Domain Model](../requirements/software-requirements-specification.md#ram-requirements-graph) (the document types, the artifact types, and the authoring-home table), [art.md](art.md#homes) (list homes and artifact keys), [architectural-design.md](architectural-design.md#ram-cross-cutting-subsystems) (document templates)
-> History: first written 2026-11-26, for the Architectural Design document (OI-21, spec PR #169). Provisioning itself was built before this workflow; this doc records how it works only as far as the new document needs. Revised 2026-11-26 for the SRS template's structure (the rest of OI-21), and again for extension 4a (OI-85).
+> History: first written 2026-11-26, for the Architectural Design document (OI-21, spec PR #169). Provisioning itself was built before this workflow; this doc records how it works only as far as the new document needs. Revised 2026-11-26 for the SRS template's structure (the rest of OI-21), again for extension 4a (OI-85), and for the Business Rules template's structure.
 
 ## Scope
 
@@ -84,6 +84,21 @@ The SRS goes from 26 document sections to 31. `PRODUCT_PERSPECTIVE` is also a Vi
 **What stays different from the course, on purpose:** `DATA_REQUIREMENTS` stays a list of data requirements (`DI-*`) above the Business Domain Model, where the course has only a heading, because the product keys those requirements as artifacts; the quality attributes stay one list, since the course's split into usability, performance and the rest waits on the `QA` prefix question.
 
 **Existing documents keep their structure.** A team's SRS created before this change keeps its 26 sections in the old order: a template shapes new documents only (FR-TPL-customize). Production and staging hold no requirement documents, and dev rebuilds, so in practice every SRS gets the new structure.
+
+## The Business Rules template
+
+`BUSINESS_RULES.yml` follows the course's Business Rules template: an Introduction with the document's Purpose and Scope, then the rules. Three rich-text sections are added ahead of the existing list; the list keeps its key, so the rules' home (BR-artifact-home) does not move.
+
+| # | Section key | Title | Type | Change |
+|---|---|---|---|---|
+| 1 | `INTRODUCTION` | Introduction | rich text | new: a parent, as the course numbers it (1); carries the course's "what a business rule is, and is not" |
+| 2 | `DOCUMENT_PURPOSE` | The Purpose of this Document | rich text | new |
+| 3 | `SCOPE` | Scope | rich text | new: which parts of the client's business the rules cover, and which are out |
+| 4 | `BUSINESS_RULES` | Rules | list (`BUSINESS_RULE`) | retitled from "Business Rules" to the course's "Rules"; the rest of the course's guidance |
+
+**Guidance** is ported from the course template by the same rules as the other templates, as plain text since the editor shows guidance in a `<pre>` block: the course's tables become lists. The rules list carries what a student needs while writing a rule: the trigger phrases, the five shapes, what a rule turns into, identifiers, the source rule with its "who would approve a change?" test, the AI warning, and the checklist. The Cafeteria Ordering System examples stay, as in the other product templates, with the source written after each rule.
+
+**What stays different from the course, on purpose:** the course groups rules under topic headings the team chooses; the product keeps one flat list, because a type has one list home (BR-artifact-home) and the course calls the grouping organizational only. The course's preamble ("How to use this template") and Revision History have no section, as in the other templates.
 
 ## Components & classes
 
@@ -190,6 +205,7 @@ erDiagram
 | The SRS template's structure | integration, `DocumentControllerTest` | `createSrsDocument_NoArchitectureSections` becomes the structure test, `createSrsDocument_TheCourseStructureWithoutArchitecture`: a new SRS has exactly the 31 section keys of the table above, in that order, the five new ones rich text, and none of the four architecture keys; `findDocumentById` expects 31 sections |
 | SRS homes unchanged | unit, `DocumentTemplateRegistryTest` | `templates_MatchTheAuthoringHomesTable` passes unchanged |
 | Migration V15 | Flyway on the test container, every integration run | V1 to V15 apply on MySQL 8 |
+| The Business Rules template's structure | integration, `DocumentControllerTest` | `createBusinessRulesDocument_TheCourseStructureWithOneListForRules`: the four keys in order, three rich text, the last a list admitting `BUSINESS_RULE` |
 | UC-TPL-provision-documents, the Project Glossary and Use Cases | integration, `DocumentControllerTest` | Each is created for team 3 with its template title and no sections |
 | UC-TPL-provision-documents, extension 4a | integration, `DocumentControllerTest` | `USER_STORIES` for team 3 is refused with 400 naming the type; no document is stored |
 | Provisioning and the editor | manual, running app | Create Requirement Documents makes six documents for a new team, and only the missing ones for team 2 (which the seed gives a Vision and Scope and an SRS); its card opens the editor; Risks and Technical Debt offers both types; `npm run type-check` passes |
