@@ -194,4 +194,4 @@ erDiagram
 ## Open questions / risks
 
 - The section id renumbering touches three test classes. A missed reference fails loudly, on a wrong section key, not silently.
-- Extension 4a (no template configured) is not built: with no template, `DocumentService` creates an empty, untitled document. Only `USER_STORIES`, which is deferred, has no template, and the frontend never asks for one. Left as found; a follow-up should refuse it.
+- Extension 4a (no template configured) is not built: with no template, `DocumentService` stores the document titled with its enum name and no sections. `GLOSSARY` and `USE_CASES` have no template file and rely on that fallback, since their content lives in their own tables; `USER_STORIES` has none either, and the frontend never asks for one. Left as found; [OI-85](../requirements/OPEN-ISSUES.md) holds the follow-up.
