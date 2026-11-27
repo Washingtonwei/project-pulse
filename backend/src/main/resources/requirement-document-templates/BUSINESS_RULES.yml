@@ -2,18 +2,75 @@ title: "Business Rules"
 
 sections:
 
+  - sectionKey: "INTRODUCTION"
+    title: "Introduction"
+    type: "RICH_TEXT"
+    guidance: |
+      The Introduction says what this document collects and what it leaves out. Keep it short; the rules themselves come after it.
+
+      It includes:
+      - The Purpose of this Document: why the rules are collected in one place
+      - Scope: which parts of the client's business the rules cover
+
+      What a business rule is: a corporate policy, a government regulation, a law, an industry standard, or a computational formula. Rules are a rich source of requirements, because they dictate properties your system must have in order to conform to them.
+
+      What a business rule is not: a software requirement. A rule is a property of the business. It exists whether or not your software does, it was true before you arrived, and it will still be true if the project is cancelled. What belongs to your software is the enforcement of the rule, and that is a functional requirement, written in the SRS and citing the rule. Keeping the two apart answers the question that comes up every semester: "who decided this, and can we change it?" If it is a rule, the client's organization decides and you comply. If it is a requirement, your team decides and you can negotiate.
+
+  - sectionKey: "DOCUMENT_PURPOSE"
+    title: "The Purpose of this Document"
+    type: "RICH_TEXT"
+    guidance: |
+      In one paragraph, say that this document collects the policies, regulations, standards and formulas that govern the business your software operates in, so the SRS and the use cases can cite them rather than restate them.
+
+  - sectionKey: "SCOPE"
+    title: "Scope"
+    type: "RICH_TEXT"
+    guidance: |
+      Say which parts of the client's business these rules cover, and which are out of scope.
+
+      If the client's organization has rules your system does not touch, say so here rather than silently leaving them out.
+
   - sectionKey: "BUSINESS_RULES"
-    title: "Business Rules"
+    title: "Rules"
     type: "LIST"
     artifactTypes: ["BUSINESS_RULE"]
     guidance: |
-      List the policies, regulations, standards and calculations your system must conform to, one rule per item. A rule exists whether or not the software does: it belongs to the business, and use cases and requirements cite it by its key.
+      List the rules, one rule per item. Use cases and requirements cite a rule by its key, never by copying its text.
 
-      For each rule, cover:
-      - The rule itself, stated so it can be checked
-      - Where it comes from (a law, a company policy, an industry standard)
-      - Whether it is fixed or may change
+      For each rule:
+      - Title: the rule itself, in one sentence about the business, stated so it can be checked. This is the rule's wording, which use cases show wherever they cite it, so keep the source out of it.
+      - Content: where the rule comes from, and whether it is fixed or may change (and when).
+
+      How to hear one in a meeting. Rules almost never arrive announced; they surface in the middle of a story about something else, in shapes like:
+      - "Must comply with..."
+      - "Only <someone> may <do something>"
+      - "If <condition>, then <something happens>"
+      - "Must be calculated according to..."
+      - "...unless it has been more than a year."
+      Write it down in the meeting, in the client's words. You will not reconstruct it afterward.
+
+      The five shapes a rule takes (for recognizing rules, not for organizing this list):
+      - Fact: states something always true about the business
+      - Constraint: restricts what may be done, or by whom
+      - Action enabler: triggers an action when a condition holds
+      - Inference: derives a new fact from known facts
+      - Computation: defines how a value is calculated
+      Computations are the ones teams forget are rules. A formula the client uses today is a rule you must reproduce exactly, not a design decision you get to make. Ask for the spreadsheet.
+
+      What a rule turns into. One rule usually becomes several requirements of different kinds: a business objective (a regulation the business must comply with), a user requirement (a policy on who may do what), a functional requirement (a policy becomes system behavior), or a quality attribute (a safety rule becomes a checked property).
+
+      Identifiers. Each rule's key is a stable BR-<slug> named after the rule's gist, such as BR-price-at-order-time. Never rename or repoint one. A rule may cite another rule by its key where one depends on the other.
+
+      Every rule needs a source: a named policy document, a regulation, a page of the client's handbook, or the person who told you and the date. A rule you cannot attribute is usually not a rule. It is your team's design decision wearing a rule's clothes, and it belongs in the SRS where it can be argued with. The test: if you asked your client to change it tomorrow, who would have to approve? If the answer is "you", it was never a rule. Where a rule is expected to change, say so and say when. If you are not sure whether something is a rule or a requirement, keep it and flag it; that is a conversation to have with your client.
+
+      Where an AI assistant helps, and where it is dangerous. Let it turn meeting notes into candidate rules, spot sentences in a transcript that have the shape of a rule, and find use cases that a rule ought to govern but do not cite. Do not let it invent rules. An invented rule reads exactly like a real one ("Passwords must be at least 8 characters", "Records must be retained for 7 years"), and it then spreads into requirements, tests and code that enforce something nobody asked for. When it proposes a rule, the only question is: who told us this?
 
       **Example:**
-      - BR-payroll-deduction-only: Only employees who are registered for payroll deduction may charge a meal to their pay. (Company policy)
-      - BR-price-at-order-time: Each meal is charged the price in effect when it was ordered, not when it was delivered. (Company policy)
+      - BR-payroll-deduction-only
+        Title: Only employees who are registered for payroll deduction may charge a meal to their pay.
+        Content: Company policy. Fixed.
+      - BR-price-at-order-time
+        Title: Each meal is charged the price in effect when it was ordered, not when it was delivered.
+        Content: Company policy. Fixed.
+
+      Checklist: Does every rule have a source? Could your client change it without asking you? Is it one sentence about the business, rather than about your software? Does a use case or requirement cite it, and if none does, is that correct?

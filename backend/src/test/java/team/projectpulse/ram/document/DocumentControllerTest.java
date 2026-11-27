@@ -137,8 +137,9 @@ public class DocumentControllerTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void createBusinessRulesDocument_OneListSectionForRules() throws Exception {
-        // Team 3, since team 1 already has the Business Rules document the seed provisions.
+    void createBusinessRulesDocument_TheCourseStructureWithOneListForRules() throws Exception {
+        // Team 3, since team 1 already has the Business Rules document the seed provisions. The course's Business Rules
+        // template: an Introduction with its Purpose and Scope, then the rules, which stay one list (BR-artifact-home).
         String json = """
                 {
                     "type": "BUSINESS_RULES"
@@ -148,9 +149,12 @@ public class DocumentControllerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.flag").value(true))
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.data.title").value("Business Rules"))
-                .andExpect(jsonPath("$.data.sections", Matchers.hasSize(1)))
-                .andExpect(jsonPath("$.data.sections[0].sectionKey").value("BUSINESS_RULES"))
-                .andExpect(jsonPath("$.data.sections[0].type").value("LIST"));
+                .andExpect(jsonPath("$.data.sections[*].sectionKey", Matchers.contains("INTRODUCTION", "DOCUMENT_PURPOSE", "SCOPE", "BUSINESS_RULES")))
+                .andExpect(jsonPath("$.data.sections[0].type").value("RICH_TEXT"))
+                .andExpect(jsonPath("$.data.sections[1].type").value("RICH_TEXT"))
+                .andExpect(jsonPath("$.data.sections[2].type").value("RICH_TEXT"))
+                .andExpect(jsonPath("$.data.sections[3].type").value("LIST"))
+                .andExpect(jsonPath("$.data.sections[3].artifactTypes", Matchers.contains("BUSINESS_RULE")));
     }
 
     @Test
