@@ -45,15 +45,18 @@ sections:
       Any typographical conventions, and the key formats, so that someone adding a requirement later knows how to name it.
 
       Every requirement in this document carries a name-based key, never a number. Create only the spaces your project needs:
-      - FR-<AREA>-<slug>: functional requirements outside any use case (FR-NOT-weekly-reminder)
+      - FR-<slug>: functional requirements outside any use case (FR-weekly-reminder)
       - UI-<slug>: user interface requirements
       - SI-<slug>: software interfaces
+      - HI-<slug>: hardware interfaces
       - CI-<slug>: communications interfaces
       - DI-<slug>: data requirements
       - OE-<slug>: operating environment
       - CO-<slug>: design and implementation constraints
       - AS-<slug> and DE-<slug>: assumptions and dependencies
       - QA-<slug>: quality attributes
+
+      A slug is lowercase letters, digits and single hyphens. A list item's title holds at most 255 characters, so keep it to one short sentence and put the detail in its content.
 
       Requirements cited from elsewhere keep their own keys: UC-* from Use Cases, BR-* from Business Rules, BO-*, SM-* and FEAT-* from Vision and Scope.
 
@@ -188,7 +191,7 @@ sections:
     guidance: |
       Behavior that is real, testable, and belongs to no single use case: autosave, validation applied everywhere, notification, authorization, audit logging. If you find yourself writing the same step into six use cases, it belongs here instead.
 
-      Group them by concern with the key's area (FR-SAVE-*, FR-NOT-*), and write each one in an EARS shape so that it cannot be read two ways:
+      Group them by concern, starting each key with it (FR-save-*, FR-notify-*), and write each one in an EARS shape so that it cannot be read two ways:
       - Ubiquitous: The <system> shall <response>.
       - Event driven: When <trigger>, the <system> shall <response>.
       - State driven: While <in a state>, the <system> shall <response>.
@@ -196,18 +199,18 @@ sections:
       - Unwanted behavior: If <precondition>, then the <system> shall <response>.
 
       For each requirement:
-      - Title: the requirement, as one EARS sentence.
-      - Content: its oracle (how a tester tells whether it holds), and what it cites.
+      - Title: the requirement, as one short EARS sentence.
+      - Content: any further conditions, its oracle (how a tester tells whether it holds), and what it cites.
 
       Every requirement here needs an oracle. If you cannot say how a tester would tell whether it holds, it is not a requirement yet.
 
       Example:
-      - FR-AI-degradation
+      - FR-ai-degradation
         Title: While the external LLM service is unavailable, the system shall make AI features unavailable and keep the rest of Project Pulse working.
         Content: Oracle: with the LLM service unreachable, an AI request reports that AI is unavailable, and a student can still edit and save a document section. Cites DE-llm-service.
-      - FR-NOT-weekly-reminder
-        Title: On a course section's weekly due day, the system shall email each student who owes a weekly activity report or peer evaluation one reminder listing what they owe.
-        Content: Oracle: on the due day, a student who has submitted gets no email and a student who has not gets exactly one.
+      - FR-weekly-reminder
+        Title: When a course section's weekly due day arrives, the system shall email each student who owes an item due that day one reminder listing what they owe.
+        Content: Only in an active week, for weekly activity reports and peer evaluations. Oracle: on the due day, a student who owes an item due that day gets exactly one email; a student who has submitted, or owes nothing due that day, gets none.
 
   - sectionKey: "BUSINESS_RULES"
     title: "Business Rules"
@@ -333,7 +336,7 @@ sections:
       Example:
       - CI-email-notifications
         Title: Email notifications
-        Content: Weekly submission reminders and review notices, sent through Gmail SMTP over TLS. No routine authoring change sends email.
+        Content: Weekly submission reminders and team-membership notices, sent through Gmail SMTP over TLS. No routine authoring change sends email.
 
   - sectionKey: "QUALITY_ATTRIBUTES"
     title: "Quality Attributes"
@@ -355,11 +358,11 @@ sections:
         Title: All user-facing views shall conform to WCAG 2.1 level AA.
         Content: Usability. Measured with an accessibility checker on every view, plus a keyboard-only walkthrough.
       - QA-report-load
-        Title: A peer evaluation report for a course section of 80 students shall render within 2 seconds at the 95th percentile.
-        Content: Performance. Measured by timing the report against seed data of that size.
+        Title: The instructor's weekly activity report and peer evaluation report views shall load within 500 milliseconds at the 95th percentile.
+        Content: Performance. Under peak load near a deadline: a cohort of about 70 students and up to 100 concurrent users. Measured by a load test against seed data of that size.
       - QA-grades-confidential
-        Title: A student's peer evaluation grades shall be visible only to that student and to the instructors of their course section.
-        Content: Security. Measured by requesting the grades as another student and as another section's instructor; both are refused.
+        Title: A student's peer evaluation grades shall be visible only to that student, the instructors of their course section, and their course's course admin.
+        Content: Security. Cites BR-evaluation-visibility and BR-section-scoped-access. Measured by requesting the grades as another student and as another section's instructor; both are refused.
       - QA-uptime
         Title: The system shall be available 99% of the time during the academic term, excluding announced maintenance windows.
         Content: Availability. Measured by an uptime monitor.
