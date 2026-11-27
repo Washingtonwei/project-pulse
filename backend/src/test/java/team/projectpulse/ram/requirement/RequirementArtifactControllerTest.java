@@ -303,8 +303,8 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
 
 
     // ---- UC-ART-create-artifact (docs/design/art.md, Tests) ----
-    // The seed gives team 1 four documents. Its SRS is document 1: section 13 is NON_USE_CASE_FUNCTIONAL_REQUIREMENTS
-    // (FR-user-authentication, FR-input-validation, FR-change-notification) and section 10 is ASSUMPTIONS_DEPENDENCIES. Its Vision and Scope is document 2, with no risks,
+    // The seed gives team 1 four documents. Its SRS is document 1: its NON_USE_CASE_FUNCTIONAL_REQUIREMENTS list (frListId)
+    // holds FR-user-authentication, FR-input-validation and FR-change-notification, and ASSUMPTIONS_DEPENDENCIES is another list. Its Vision and Scope is document 2, with no risks,
     // features or business assumptions seeded. Team 2 has documents 3 and 4; team 1's Business Rules is document 5 and its
     // Architectural Design document 6, with no items seeded; team 3 has none.
 
@@ -489,19 +489,19 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
 
     @Test
     void createArtifact_LockHolderUndisturbed() throws Exception {
-        // John holds section 13's lock and is editing its prose; Eric adds an item to the same list meanwhile.
-        this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/13/lock").contentType(MediaType.APPLICATION_JSON)
+        // John holds the functional requirement list's lock and is editing its prose; Eric adds an item to the same list meanwhile.
+        this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/" + frListId() + "/lock").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"reason\": \"Editing\"}").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(true));
-        int version = sectionVersion(13);
+        int version = sectionVersion(frListId());
 
         JSONObject created = create(1, item("FUNCTIONAL_REQUIREMENT", "Audit log", "The system shall log every change."), this.studentEricToken);
         assertThat(created.getBoolean("flag")).as(created.toString()).isTrue();
         this.entityManager.flush();
-        assertThat(sectionVersion(13)).as("a create leaves the document section's version alone").isEqualTo(version);
+        assertThat(sectionVersion(frListId())).as("a create leaves the document section's version alone").isEqualTo(version);
 
         JSONObject body = new JSONObject().put("type", "LIST").put("content", "John's prose.").put("version", version);
-        MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/13").contentType(MediaType.APPLICATION_JSON)
+        MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/" + frListId()).contentType(MediaType.APPLICATION_JSON)
                 .content(body.toString()).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken)).andReturn();
         JSONObject saved = new JSONObject(result.getResponse().getContentAsString());
         assertThat(saved.getBoolean("flag")).as(saved.toString()).isTrue();
@@ -701,7 +701,7 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
 
     @Test
     void deleteArtifact_ItemInAList_LeavesNoGap() throws Exception {
-        // Section 13 holds FR-user-authentication to FR-change-notification; a create appends FR-audit-log, then FR-change-notification is deleted from between FR-input-validation and it.
+        // The functional requirement list holds FR-user-authentication to FR-change-notification; a create appends FR-audit-log, then FR-change-notification is deleted from between FR-input-validation and it.
         JSONObject created = create(1, item("FUNCTIONAL_REQUIREMENT", "Audit log", "The system shall log every change."), this.studentJohnToken);
         assertThat(created.getBoolean("flag")).as(created.toString()).isTrue();
         long fr3 = idOf(1, "FR-change-notification");
@@ -715,19 +715,19 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
 
     @Test
     void deleteArtifact_LockHolderUndisturbed() throws Exception {
-        // John holds section 13's lock and is editing its prose; Eric deletes an item of the same list meanwhile.
-        this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/13/lock").contentType(MediaType.APPLICATION_JSON)
+        // John holds the functional requirement list's lock and is editing its prose; Eric deletes an item of the same list meanwhile.
+        this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/" + frListId() + "/lock").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"reason\": \"Editing\"}").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(true));
-        int version = sectionVersion(13);
+        int version = sectionVersion(frListId());
 
         long fr3 = idOf(1, "FR-change-notification");
         assertThat(deleteArtifact(1, fr3, artifactVersion(fr3), this.studentEricToken).getBoolean("flag")).isTrue();
         this.entityManager.flush();
-        assertThat(sectionVersion(13)).as("a delete leaves the document section's version alone").isEqualTo(version);
+        assertThat(sectionVersion(frListId())).as("a delete leaves the document section's version alone").isEqualTo(version);
 
         JSONObject body = new JSONObject().put("type", "LIST").put("content", "John's prose.").put("version", version);
-        MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/13").contentType(MediaType.APPLICATION_JSON)
+        MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/" + frListId()).contentType(MediaType.APPLICATION_JSON)
                 .content(body.toString()).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken)).andReturn();
         assertThat(new JSONObject(result.getResponse().getContentAsString()).getBoolean("flag")).isTrue();
     }

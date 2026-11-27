@@ -248,23 +248,23 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
         // created and edited through the requirement artifact endpoints), and this probe keeps that true.
         RequirementArtifact victim = team2Artifact("Data export");
 
-        // Section 13 belongs to team 1's document 1 and is a LIST section. It has to be locked before its content
+        // The functional requirement list (NON_USE_CASE_FUNCTIONAL_REQUIREMENTS) belongs to team 1's document 1. It has to be locked before its content
         // can be updated, and the caller has to hold the lock.
         String lockJson = """
                 {
                     "reason": "Locking section for editing"
                 }
                 """;
-        this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/13/lock").contentType(MediaType.APPLICATION_JSON).content(lockJson).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+        this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/" + frListId() + "/lock").contentType(MediaType.APPLICATION_JSON).content(lockJson).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andDo(print());
 
-        MvcResult sectionResult = this.mockMvc.perform(get(this.baseUrl + "/teams/1/documents/1/document-sections/13").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken)).andReturn();
+        MvcResult sectionResult = this.mockMvc.perform(get(this.baseUrl + "/teams/1/documents/1/document-sections/" + frListId()).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken)).andReturn();
         int version = new JSONObject(sectionResult.getResponse().getContentAsString()).getJSONObject("data").getInt("version");
 
         // One list entry, carrying team 2's artifact id and its real artifact key.
         String json = """
                 {
-                    "id": 13,
+                    "id": %d,
                     "sectionKey": "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS",
                     "type": "LIST",
                     "title": "Non-Use Case Functional Requirements",
@@ -282,9 +282,9 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
                     ],
                     "version": %d
                 }
-                """.formatted(victim.getId(), victim.getArtifactKey(), version);
+                """.formatted(frListId(), victim.getId(), victim.getArtifactKey(), version);
 
-        MvcResult mvcResult = this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/13").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+        MvcResult mvcResult = this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/" + frListId()).contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andDo(print()).andReturn();
         JSONObject response = new JSONObject(mvcResult.getResponse().getContentAsString());
 
@@ -440,10 +440,10 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
                     "reason": "Locking section for editing"
                 }
                 """;
-        this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/13/lock").contentType(MediaType.APPLICATION_JSON).content(lockJson).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+        this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/" + frListId() + "/lock").contentType(MediaType.APPLICATION_JSON).content(lockJson).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andDo(print());
 
-        MvcResult sectionResult = this.mockMvc.perform(get(this.baseUrl + "/teams/1/documents/1/document-sections/13").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken)).andReturn();
+        MvcResult sectionResult = this.mockMvc.perform(get(this.baseUrl + "/teams/1/documents/1/document-sections/" + frListId()).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken)).andReturn();
         int version = new JSONObject(sectionResult.getResponse().getContentAsString()).getJSONObject("data").getInt("version");
 
         String json = """
@@ -472,7 +472,7 @@ public class RequestBodyIdIntegrationTest extends AbstractIntegrationTest {
                 }
                 """.formatted(victim.getId(), version);
 
-        MvcResult mvcResult = this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/13").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+        MvcResult mvcResult = this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/" + frListId()).contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andDo(print()).andReturn();
         JSONObject response = new JSONObject(mvcResult.getResponse().getContentAsString());
         assertThat(response.getBoolean("flag")).as(response.toString()).isTrue();

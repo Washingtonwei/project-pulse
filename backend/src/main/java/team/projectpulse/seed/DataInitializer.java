@@ -1229,10 +1229,10 @@ public class DataInitializer implements CommandLineRunner {
      * section per template section, in the template's order. Nothing is saved here; the caller saves the document,
      * and its sections cascade with it.
      * <p>
-     * For example, the SRS template gives the document the title "Software Requirements Specification" and 26
+     * For example, the SRS template gives the document the title "Software Requirements Specification" and 31
      * document sections: INTRODUCTION (rich text) first, and NON_USE_CASE_FUNCTIONAL_REQUIREMENTS (a list) as the
-     * 13th. Because the sections are created in template order, their ids follow that order too, which is why the
-     * tests can name team 1's SRS sections by id (section 13 is its functional requirement list).
+     * 16th. The sections are created in template order, so their ids follow that order too; tests still find a
+     * section by its key, so a template change renumbers none of them.
      */
     private void applyTemplate(RequirementDocument doc, DocumentTemplate tpl) {
         // A template with no title of its own falls back to the document type's name, such as "SRS".

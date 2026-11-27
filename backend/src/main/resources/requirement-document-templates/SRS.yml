@@ -76,27 +76,44 @@ sections:
       - UI wireframes
       - Standards or regulations
 
-  - sectionKey: "PROJECT_GLOSSARY"
-    title: "Project Glossary"
+  - sectionKey: "OVERALL_DESCRIPTION"
+    title: "Overall Description"
     type: "RICH_TEXT"
     guidance: |
-      Define terminology specific to the problem domain.
+      The Overall Description sets the context the requirements are written in: where the product sits, who uses it, the environment it runs in, and the constraints and assumptions it is built under. Keep this section to a sentence of orientation; the substance belongs to the sections that follow.
 
-      This section may act as:
-      - An informal data dictionary
-      - A shared vocabulary for stakeholders
+      It includes:
+      - Product Perspective: how the system relates to other systems and its users' environment
+      - User Classes and Characteristics: the kinds of user, and what tells them apart
+      - Operating Environment: the platforms and services the system runs within
+      - Design and Implementation Constraints: the limits on the solution
+      - Assumptions and Dependencies: what the requirements take for granted
 
-      It is often provided by reference to a separate Glossary document.
-
-  - sectionKey: "VISION_SCOPE_REFERENCE"
-    title: "Vision and Scope"
+  - sectionKey: "PRODUCT_PERSPECTIVE"
+    title: "Product Perspective"
     type: "RICH_TEXT"
     guidance: |
-      Link to the Vision and Scope document.
+      Describe how this system relates to other systems and to its users' environment.
 
-      This section should explain:
-      - Where the Vision and Scope document can be found
-      - How it informs the requirements in this SRS
+      Address:
+      - Whether it is self-contained, or one component of something larger
+      - The other systems it interacts with, and the interfaces between them
+
+      Refer to the Vision and Scope's Product Perspective and to the Architectural Design's Context and Scope rather than redrawing their diagrams.
+
+  - sectionKey: "USER_CLASSES"
+    title: "User Classes and Characteristics"
+    type: "RICH_TEXT"
+    guidance: |
+      Describe the kinds of user and what distinguishes them.
+
+      For each user class include:
+      - How often they use the system
+      - Their technical skill
+      - Their privilege level: what they may see and do
+      - Whether they are inside or outside the client's organization
+
+      Refer to the Vision and Scope's Stakeholder Profiles for who they are. What belongs here is what affects the software's behavior, especially permissions.
 
   - sectionKey: "OPERATING_ENVIRONMENT"
     title: "Operating Environment"
@@ -143,6 +160,26 @@ sections:
 
       Explain the impact if assumptions prove false or dependencies fail.
 
+  - sectionKey: "PROJECT_GLOSSARY"
+    title: "Project Glossary"
+    type: "RICH_TEXT"
+    guidance: |
+      Define terminology specific to the problem domain.
+
+      This section is a shared vocabulary for stakeholders. The data's fields belong in Data Dictionary, not here.
+
+      It is often provided by reference to a separate Glossary document.
+
+  - sectionKey: "VISION_SCOPE_REFERENCE"
+    title: "Vision and Scope"
+    type: "RICH_TEXT"
+    guidance: |
+      Link to the Vision and Scope document.
+
+      This section should explain:
+      - Where the Vision and Scope document can be found
+      - How it informs the requirements in this SRS
+
   - sectionKey: "FUNCTIONAL_REQUIREMENTS"
     title: "Functional Requirements"
     type: "RICH_TEXT"
@@ -188,7 +225,8 @@ sections:
       Consider:
       - What data is stored, and its format
       - Where it comes from and who may change it
-      - Reports or exports the system produces
+
+      Each entity's fields go in Data Dictionary, and the reports the system produces in Reports.
 
       **Example:**
       - DI-order-details: The system shall store each order's items, price, delivery location and requested delivery time.
@@ -200,6 +238,34 @@ sections:
       Describe the key concepts and relationships within the business domain.
 
       Domain models are typically expressed as UML class diagrams.
+
+  - sectionKey: "DATA_DICTIONARY"
+    title: "Data Dictionary"
+    type: "RICH_TEXT"
+    guidance: |
+      Define each entity's fields.
+
+      For each field include:
+      - Data type
+      - Allowed values
+      - Default
+      - Validation rules
+
+      Where a use case already specifies a field's validation in its Associated Information, cite the use case instead of repeating it.
+
+  - sectionKey: "REPORTS"
+    title: "Reports"
+    type: "RICH_TEXT"
+    guidance: |
+      Describe every report the system generates.
+
+      For each report include:
+      - Who reads it
+      - What it contains
+      - How often it is produced
+      - Its format
+
+      Reports are where clients discover late that a field they need was never captured, so specify them early.
 
   - sectionKey: "DATA_LIFECYCLE"
     title: "Data Acquisition, Integrity, Retention, and Disposal"
@@ -230,6 +296,17 @@ sections:
       - Accessibility requirements
       - Navigation and interaction constraints
 
+  - sectionKey: "HARDWARE_INTERFACES"
+    title: "Hardware Interfaces"
+    type: "LIST"
+    artifactTypes: ["HARDWARE_INTERFACE"]
+    guidance: |
+      Describe each interface between the software and a hardware component, one per item. Leave the list empty if the system has none.
+
+      Include:
+      - The device and what it is used for
+      - The data exchanged and how
+
   - sectionKey: "SOFTWARE_INTERFACES"
     title: "Software Interfaces"
     type: "LIST"
@@ -247,17 +324,6 @@ sections:
     type: "RICH_TEXT"
     guidance: |
       Link to the API documentation describing endpoints, inputs, outputs, and error handling.
-
-  - sectionKey: "HARDWARE_INTERFACES"
-    title: "Hardware Interfaces"
-    type: "LIST"
-    artifactTypes: ["HARDWARE_INTERFACE"]
-    guidance: |
-      Describe each interface between the software and a hardware component, one per item. Leave the list empty if the system has none.
-
-      Include:
-      - The device and what it is used for
-      - The data exchanged and how
 
   - sectionKey: "COMMUNICATION_INTERFACES"
     title: "Communications Interfaces"

@@ -78,7 +78,7 @@ The SRS goes from 26 document sections to 31. `PRODUCT_PERSPECTIVE` is also a Vi
 
 - **The five new sections:** the course's points in `SRS.yml`'s own style (a lead sentence, an "Include:" list, and an example where the course has one). References to the team's other documents name the document and section, never a file.
 - **`OVERALL_DESCRIPTION`** gets a short framing paragraph and an "It includes:" list of its five sections, as `INTRODUCTION` has for its four. The course has no text under that heading. No title carries a number: a section's number follows from its position (FR-TPL-section-keys).
-- **Two existing texts change, and no others:** `PROJECT_GLOSSARY` drops "An informal data dictionary" from its list, now that `DATA_DICTIONARY` exists; `DATA_REQUIREMENTS` drops "Reports or exports the system produces", now that `REPORTS` exists.
+- **Two existing texts change, and no others:** `PROJECT_GLOSSARY` drops "An informal data dictionary" from its list, now that `DATA_DICTIONARY` exists, and says instead that the data's fields belong in Data Dictionary; `DATA_REQUIREMENTS` drops "Reports or exports the system produces", now that `REPORTS` exists, and points each entity's fields to Data Dictionary and the reports to Reports. The pointers send a student to the new section rather than leaving them to guess where the dropped item went.
 - **Left for the guidance port** (gap item 4, a separate pass): the richer guidance of the existing sections, and the course template's preamble, Identifiers table and agent section, which become no sections of their own.
 
 **What stays different from the course, on purpose:** `DATA_REQUIREMENTS` stays a list of data requirements (`DI-*`) above the Business Domain Model, where the course has only a heading, because the product keys those requirements as artifacts; the quality attributes stay one list, since the course's split into usability, performance and the rest waits on the `QA` prefix question.
@@ -178,15 +178,15 @@ erDiagram
 |---|---|---|
 | UC-TPL-provision-documents, the Architectural Design | integration, `DocumentControllerTest` | Creating `ARCHITECTURAL_DESIGN` for team 2 returns "Architectural Design" with 23 sections in template order; `KEY_DECISIONS`, `QUALITY_SCENARIOS` and `RISKS_AND_TECHNICAL_DEBT` are lists with their admitted types; the rest are rich text |
 | UC-TPL-provision-documents, extension 3a | integration, `DocumentControllerTest` | A second `ARCHITECTURAL_DESIGN` for team 1, which the seed gives one, is refused; nothing is stored |
-| The SRS without architecture | integration, `DocumentControllerTest` | A new SRS has 26 sections and none of the four moved keys |
+| The SRS without architecture | integration, `DocumentControllerTest` | Superseded by the row The SRS template's structure: `createSrsDocument_TheCourseStructureWithoutArchitecture` checks the 31 keys in order, none of them a moved key |
 | Homes of the four types | unit, `DocumentTemplateRegistryTest` | With the real templates, `homeOf` gives `KEY_DECISIONS`, `QUALITY_SCENARIOS`, and `RISKS_AND_TECHNICAL_DEBT` for both `TECHNICAL_RISK` and `TECHNICAL_DEBT` |
 | Prefixes | unit, `ArtifactKeyPrefixTest` | `KD`, `QS`, `TRI`, `TD` |
 | UC-ART-create-artifact, each new type | integration, `RequirementArtifactControllerTest` | `KD-deployment-shape` lands at the end of team 1's `KEY_DECISIONS`; a `QUALITY_SCENARIO` in `QUALITY_SCENARIOS`; a `TECHNICAL_RISK` then a `TECHNICAL_DEBT` both in `RISKS_AND_TECHNICAL_DEBT`, in that order |
 | UC-ART-create-artifact 4a, the prefix belongs to the type | integration, `RequirementArtifactControllerTest` | `TRI-no-rate-limiting` on a `TECHNICAL_DEBT` is refused with 400; nothing is stored |
 | UC-ART-create-artifact 8b | integration, `RequirementArtifactControllerTest` | Team 2, with no Architectural Design, creating a `KEY_DECISION` is refused, and the message names the Architectural Design |
-| Renumbered SRS section ids | integration, the existing tests | Every reference uses 13 and 10 and otherwise passes unchanged |
+| Renumbered SRS section ids | integration, the existing tests | Superseded by the row SRS sections found by key: the tests look each SRS section up by its key, so no test holds a section id |
 | SRS sections found by key (refactor) | integration, the existing tests | The three classes pass unchanged before and after the refactor, with the SRS template still at 26 sections |
-| The SRS template's structure | integration, `DocumentControllerTest` | `createSrsDocument_NoArchitectureSections` becomes the structure test: a new SRS has exactly the 31 section keys of the table above, in that order, the five new ones rich text, and none of the four architecture keys; `findDocumentById` expects 31 sections |
+| The SRS template's structure | integration, `DocumentControllerTest` | `createSrsDocument_NoArchitectureSections` becomes the structure test, `createSrsDocument_TheCourseStructureWithoutArchitecture`: a new SRS has exactly the 31 section keys of the table above, in that order, the five new ones rich text, and none of the four architecture keys; `findDocumentById` expects 31 sections |
 | SRS homes unchanged | unit, `DocumentTemplateRegistryTest` | `templates_MatchTheAuthoringHomesTable` passes unchanged |
 | Migration V15 | Flyway on the test container, every integration run | V1 to V15 apply on MySQL 8 |
 | Provisioning and the editor | manual, running app | Create Requirement Documents makes six documents for a new team, and only the missing ones for team 2 (which the seed gives a Vision and Scope and an SRS); its card opens the editor; Risks and Technical Debt offers both types; `npm run type-check` passes |
@@ -194,4 +194,4 @@ erDiagram
 ## Open questions / risks
 
 - The section id renumbering touches three test classes. A missed reference fails loudly, on a wrong section key, not silently.
-- Extension 4a (no template configured) is not built: with no template, `DocumentService` creates an empty, untitled document. Only `USER_STORIES`, which is deferred, has no template, and the frontend never asks for one. Left as found; a follow-up should refuse it.
+- Extension 4a (no template configured) is not built: with no template, `DocumentService` stores the document titled with its enum name and no sections. `GLOSSARY` and `USE_CASES` have no template file and rely on that fallback, since their content lives in their own tables; `USER_STORIES` has none either, and the frontend never asks for one. Left as found; [OI-85](../requirements/OPEN-ISSUES.md) holds the follow-up.
