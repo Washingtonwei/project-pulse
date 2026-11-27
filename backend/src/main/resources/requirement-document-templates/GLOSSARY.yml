@@ -1,0 +1,6 @@
+title: "Project Glossary"
+
+# No document sections: the glossary editor manages this document's glossary terms.
+# The template exists so every document type is created from one (UC-TPL-provision-documents 4a).
+# Write "sections: []", not a bare "sections:", which parses as null.
+sections: []

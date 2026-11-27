@@ -1217,10 +1217,9 @@ public class DataInitializer implements CommandLineRunner {
         document.setType(type);
         document.setTeam(team);
         document.setDocumentKey(type.name());
-        this.documentTemplateRegistry.find(type).ifPresentOrElse(
-                tpl -> applyTemplate(document, tpl),
-                () -> document.setTitle(type.name()) // fallback title if no template file exists
-        );
+        // The seed only makes types that have a template, so a missing one is a broken build, not data to work around
+        applyTemplate(document, this.documentTemplateRegistry.find(type)
+                .orElseThrow(() -> new IllegalStateException("No built-in template for " + type + ".")));
         return document;
     }
 
