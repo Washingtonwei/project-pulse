@@ -6,75 +6,64 @@ sections:
     title: "Introduction"
     type: "RICH_TEXT"
     guidance: |
-      The Introduction orients the reader and makes the SRS self-contained. It is framing, not the requirements themselves: a reader should learn what the system is, what this document covers, the conventions it uses, and where related material lives — then know where the actual requirements begin. Keep it brief; the substance belongs to the sections that follow.
+      What this document is, and what it is not. The specification describes the external behavior of your system completely enough that a developer can build it and a tester can check it. It is not a container for everything you have written. Your Project Glossary, Vision and Scope, Use Cases, and Business Rules are separate documents with their own keys, and this one refers to them rather than repeating them.
 
-      It includes:
-      - The Purpose of the Project — a brief summary of the system and who it serves
-      - The Purpose of this Document — what this SRS specifies and how it is organized
-      - Document Conventions — identifier schemes and notations used here
-      - References — the related documents this SRS relies on
+      That makes the specification mostly a hub. Read that as a feature. One fact, one home: a business rule copied in here is a business rule that will disagree with the Business Rules document before long, and nobody will notice which copy is right. The sections below that say "refer to" are supposed to be short.
 
-      Unlike the body, the Introduction may briefly restate context from a companion document (notably the Vision and Scope) so a developer or tester can read the SRS on its own — but only as a summary that points to the source, never a copy of it.
+      What this document owns outright: the requirements that have no other home. Functional requirements that are not part of any use case, quality attributes, external interfaces, data requirements, operating environment, and constraints.
+
+      The Introduction itself is framing: what the system is, what this document covers, the conventions it uses, and where related material lives. Keep it brief.
+
+      Working this document with your AI assistant. Delegate: turning prose requirements into EARS shapes; checking that every UC-*, BR-* and FEAT-* key cited here exists in the document that owns it; finding behavior that appears in several use cases and should be lifted into Non-Use Case Functional Requirements; drafting an oracle for a quality attribute you have stated only as an adjective.
+
+      Keep human: the numbers. Every threshold in Quality Attributes is a commitment somebody has to live with, and an assistant will supply a plausible one (99.9% uptime, 200 ms response) that nobody asked for and no one can meet. A number in this document came from your client, from a measurement, or from a decision your team made deliberately and can defend.
+
+      The specific failure to watch for is invented precision. A generated specification reads as authoritative at exactly the points where it is guessing. Check every number, every browser version, every retention period against something real, and raise the ones you cannot verify with your client instead of leaving a confident guess in the document your team will build from.
 
   - sectionKey: "SYSTEM_PURPOSE"
     title: "The Purpose of the Project"
     type: "RICH_TEXT"
     guidance: |
-      Summarize what the system is for: who uses it and why. Keep it to a short orientation — name the product, its major capability areas, and its primary users.
+      What the system is for: who wants it, why, and who will use it. Even though the Vision and Scope answers this, restate it in a paragraph here, because people read this document without having read that one. Summarize; don't reproduce the business case.
 
-      Address briefly:
-      - Who will use the system
-      - The business motivation behind it
-      - Why this system is needed
-
-      This is the one place the SRS deliberately reiterates the Vision and Scope, so a reader who has not seen that document still understands the system. Reiterate concisely and point to the Vision and Scope for the full problem, opportunity, objectives, and scope — summarize it here, don't reproduce the business case.
-
-      **Example:**
-      "The Cafeteria Ordering System (COS) lets employees of Process Impact order meals online for delivery within the company campus, replacing the walk-up cafeteria line and phone-in orders. Its users are employees placing orders, cafeteria staff fulfilling them, and the meal-delivery drivers. The full business motivation — the problem, opportunity, objectives, and scope — is defined in the Vision and Scope document and is referenced here rather than repeated."
+      Example:
+      "Project Pulse supports the senior design course. Students use it to submit weekly activity reports and peer evaluations and to author their projects' requirements; instructors use it to review, grade, and give feedback; a course admin sets up course sections and teams. The business objectives and scope are defined in the Vision and Scope document."
 
   - sectionKey: "DOCUMENT_PURPOSE"
     title: "The Purpose of this Document"
     type: "RICH_TEXT"
     guidance: |
-      Specify the purpose of this Software Requirements Specification.
+      What this specification covers and for which release.
 
-      The SRS should:
-      - Fully describe the external behavior of the system
-      - Describe functional and nonfunctional requirements
-      - Identify constraints and other relevant factors
-
-      The goal is to provide a complete and unambiguous reference for developers, testers, and stakeholders.
+      Example:
+      "This document describes the functional and nonfunctional requirements for release 1.0 of Project Pulse. It is the reference for the project's requirements, defining the scope, functionality, and constraints for stakeholders, developers, and testers."
 
   - sectionKey: "DOCUMENT_CONVENTIONS"
     title: "Document Conventions"
     type: "RICH_TEXT"
     guidance: |
-      Describe any standards or typographical conventions used in this document.
+      Any typographical conventions, and the key formats, so that someone adding a requirement later knows how to name it.
 
-      Examples include:
-      - Requirement identifier formats
-      - Text styles and highlighting conventions
-      - Notations used in diagrams or tables
+      Every requirement in this document carries a name-based key, never a number. Create only the spaces your project needs:
+      - FR-<AREA>-<slug>: functional requirements outside any use case (FR-NOT-weekly-reminder)
+      - UI-<slug>: user interface requirements
+      - SI-<slug>: software interfaces
+      - CI-<slug>: communications interfaces
+      - DI-<slug>: data requirements
+      - OE-<slug>: operating environment
+      - CO-<slug>: design and implementation constraints
+      - AS-<slug> and DE-<slug>: assumptions and dependencies
+      - QA-<slug>: quality attributes
+
+      Requirements cited from elsewhere keep their own keys: UC-* from Use Cases, BR-* from Business Rules, BO-*, SM-* and FEAT-* from Vision and Scope.
 
   - sectionKey: "REFERENCES"
     title: "References"
     type: "RICH_TEXT"
     guidance: |
-      List any documents or resources referenced by this SRS.
+      Every document this specification refers to. At minimum, your team's other requirements documents: the Project Glossary, Vision and Scope, Use Cases, and Business Rules. Include the external standards you must conform to, such as the Easy Approach to Requirements Syntax (EARS) and WCAG 2.1.
 
-      For each reference include:
-      - Title
-      - Author
-      - Version
-      - Date
-      - Source or URL
-
-      Examples:
-      - Vision and Scope document
-      - Use Case specification
-      - Glossary
-      - UI wireframes
-      - Standards or regulations
+      For each reference include its title, version or date, and where it can be obtained.
 
   - sectionKey: "OVERALL_DESCRIPTION"
     title: "Overall Description"
@@ -93,11 +82,7 @@ sections:
     title: "Product Perspective"
     type: "RICH_TEXT"
     guidance: |
-      Describe how this system relates to other systems and to its users' environment.
-
-      Address:
-      - Whether it is self-contained, or one component of something larger
-      - The other systems it interacts with, and the interfaces between them
+      How this system relates to other systems and to the user's environment. Is it self-contained, or one component of something larger? What are the other systems it interacts with, and the interfaces between them?
 
       Refer to the Vision and Scope's Product Perspective and to the Architectural Design's Context and Scope rather than redrawing their diagrams.
 
@@ -105,9 +90,7 @@ sections:
     title: "User Classes and Characteristics"
     type: "RICH_TEXT"
     guidance: |
-      Describe the kinds of user and what distinguishes them.
-
-      For each user class include:
+      The kinds of user, and what distinguishes them:
       - How often they use the system
       - Their technical skill
       - Their privilege level: what they may see and do
@@ -120,253 +103,278 @@ sections:
     type: "LIST"
     artifactTypes: ["OPERATING_ENVIRONMENT"]
     guidance: |
-      Describe the environment in which the software will operate, one fact per item, so each can be checked and traced.
+      The environment the software runs in: hardware, operating systems and versions, browsers, where users and servers are located, and any other software it has to coexist with. One fact per item, so each can be checked and traced.
 
-      Consider:
-      - Hardware platforms
-      - Operating systems and browsers
-      - User locations
-      - Server and database locations
-      - Coexisting software systems
+      For each item:
+      - Title: the fact, as a "shall" sentence.
+      - Content: where it comes from (the client, a campus policy, your team's decision).
 
-      **Example:**
-      - OE-supported-browsers: The system shall run in current versions of Chrome, Firefox, Edge and Safari.
-      - OE-company-data-center: The system's server and database shall be hosted in the company's data center.
+      Example:
+      - OE-supported-browsers
+        Title: Project Pulse shall run in the current released versions of Google Chrome, Mozilla Firefox, Microsoft Edge, and Apple Safari.
+        Content: The browsers students and instructors use on and off campus.
+      - OE-https-access
+        Title: Project Pulse shall be reached over HTTPS from the campus network and from home connections.
+        Content: Students submit reports from wherever they work.
 
   - sectionKey: "DESIGN_CONSTRAINTS"
     title: "Design and Implementation Constraints"
     type: "LIST"
     artifactTypes: ["CONSTRAINT"]
     guidance: |
-      Describe factors that limit implementation choices.
+      Anything that limits the developers' options: corporate or regulatory policy, hardware limits, required languages or databases, coding standards, interfaces to other applications.
 
-      Examples:
-      - Regulatory or corporate policies
-      - Hardware limitations
-      - Required technologies or programming languages
-      - Coding or documentation standards
+      For each constraint:
+      - Title: the constraint, as a "shall" sentence.
+      - Content: who imposes it and why.
+
+      Example:
+      - CO-vue-spring-stack
+        Title: The client shall be implemented in Vue.js and the backend in Java using the Spring Boot framework.
+        Content: The department maintains the system after delivery, and these are the technologies it teaches and runs.
+      - CO-no-ops-team
+        Title: Project Pulse shall be deployable and operable by one person without dedicated operations staff.
+        Content: The department has no operations team.
+
+      The constraint students forget: who maintains this after you hand it over, and what do they already know how to run? If the answer is one person who knows Python, a Spring Boot service is a constraint violation nobody wrote down.
 
   - sectionKey: "ASSUMPTIONS_DEPENDENCIES"
     title: "Assumptions and Dependencies"
     type: "LIST"
     artifactTypes: ["ASSUMPTION", "DEPENDENCY"]
     guidance: |
-      List assumptions believed to be true without definitive proof.
+      An assumption is a factor you believe true without proof, which would change these requirements if it turned out false. A dependency is something outside your control that the project relies on: an external API, a third-party library, a change someone else has to make. These are the system-level ones; business-level assumptions and dependencies (BAS-*, BDE-*) live in the Vision and Scope.
 
-      Also list dependencies on:
-      - External systems
-      - Third-party libraries or services
-      - External teams or organizations
+      For each item:
+      - Title: the assumption or the dependency, in one sentence.
+      - Content: what happens to the requirements if the assumption is false or the dependency fails.
 
-      Explain the impact if assumptions prove false or dependencies fail.
+      Example:
+      - AS-supported-browser
+        Title: Users reach Project Pulse through a supported, current web browser.
+        Content: If students use older browsers, Operating Environment and the user interface requirements change.
+      - DE-llm-service
+        Title: AI-assisted requirement review depends on the external LLM service.
+        Content: If it is unavailable, the AI features are unavailable while the rest of Project Pulse keeps working.
 
   - sectionKey: "PROJECT_GLOSSARY"
     title: "Project Glossary"
     type: "RICH_TEXT"
     guidance: |
-      Define terminology specific to the problem domain.
-
-      This section is a shared vocabulary for stakeholders. The data's fields belong in Data Dictionary, not here.
-
-      It is often provided by reference to a separate Glossary document.
+      Refer to your Project Glossary only. Domain terms are defined there, once; the data's fields belong in Data Dictionary.
 
   - sectionKey: "VISION_SCOPE_REFERENCE"
     title: "Vision and Scope"
     type: "RICH_TEXT"
     guidance: |
-      Link to the Vision and Scope document.
-
-      This section should explain:
-      - Where the Vision and Scope document can be found
-      - How it informs the requirements in this SRS
+      Refer to your Vision and Scope only. Business requirements, objectives, metrics, and scope live there.
 
   - sectionKey: "FUNCTIONAL_REQUIREMENTS"
     title: "Functional Requirements"
     type: "RICH_TEXT"
     guidance: |
-      Describe all functional requirements in sufficient detail for design and testing.
-
-      This section should enable:
-      - Designers to design the system
-      - Testers to verify the system
+      The system's behavior, in enough detail that designers can design it and testers can verify it. It is in two parts: the use cases, where most behavior is specified, and the functional requirements that belong to no single use case. Keep this section to a sentence of orientation.
 
   - sectionKey: "USE_CASES"
     title: "Use Cases"
     type: "RICH_TEXT"
     guidance: |
-      Provide or link to the Use Case Specification document.
-
-      This section should describe how users interact with the system to achieve goals.
+      Refer to your Use Cases document. Most of your system's behavior is specified there, as use cases, and it does not get restated here.
 
   - sectionKey: "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS"
     title: "Non-Use Case Functional Requirements"
     type: "LIST"
     artifactTypes: ["FUNCTIONAL_REQUIREMENT"]
     guidance: |
-      Describe functional requirements that are not easily expressed as use cases.
+      Behavior that is real, testable, and belongs to no single use case: autosave, validation applied everywhere, notification, authorization, audit logging. If you find yourself writing the same step into six use cases, it belongs here instead.
 
-      Use structured formats such as:
-      - "The system shall…" statements
-      - EARS (Easy Approach to Requirements Syntax)
+      Group them by concern with the key's area (FR-SAVE-*, FR-NOT-*), and write each one in an EARS shape so that it cannot be read two ways:
+      - Ubiquitous: The <system> shall <response>.
+      - Event driven: When <trigger>, the <system> shall <response>.
+      - State driven: While <in a state>, the <system> shall <response>.
+      - Optional: Where <feature is included>, the <system> shall <response>.
+      - Unwanted behavior: If <precondition>, then the <system> shall <response>.
+
+      For each requirement:
+      - Title: the requirement, as one EARS sentence.
+      - Content: its oracle (how a tester tells whether it holds), and what it cites.
+
+      Every requirement here needs an oracle. If you cannot say how a tester would tell whether it holds, it is not a requirement yet.
+
+      Example:
+      - FR-AI-degradation
+        Title: While the external LLM service is unavailable, the system shall make AI features unavailable and keep the rest of Project Pulse working.
+        Content: Oracle: with the LLM service unreachable, an AI request reports that AI is unavailable, and a student can still edit and save a document section. Cites DE-llm-service.
+      - FR-NOT-weekly-reminder
+        Title: On a course section's weekly due day, the system shall email each student who owes a weekly activity report or peer evaluation one reminder listing what they owe.
+        Content: Oracle: on the due day, a student who has submitted gets no email and a student who has not gets exactly one.
 
   - sectionKey: "BUSINESS_RULES"
     title: "Business Rules"
     type: "RICH_TEXT"
     guidance: |
-      Business rules are authored in the team's Business Rules document, not here. Use this section to point to that document and say how the rules shape the requirements in this SRS.
+      Refer to your Business Rules document only. Business rules are a rich source of requirements because they dictate properties the system must have in order to conform to them, but the rules themselves are properties of the client's business, not of your software, and they have their own document. Say here how the rules shape the requirements in this SRS.
 
   - sectionKey: "DATA_REQUIREMENTS"
     title: "Data Requirements"
     type: "LIST"
     artifactTypes: ["DATA_REQUIREMENT"]
     guidance: |
-      Describe the data the system consumes, processes, or produces, one requirement per item.
+      The data the system consumes, processes, or produces, one requirement per item: what is stored and in what form, where it comes from, and who may change it. Each entity's fields go in Data Dictionary, and the reports the system produces in Reports.
 
-      Consider:
-      - What data is stored, and its format
-      - Where it comes from and who may change it
+      For each requirement:
+      - Title: the requirement, as a "shall" sentence.
+      - Content: why it is needed, and what it cites.
 
-      Each entity's fields go in Data Dictionary, and the reports the system produces in Reports.
-
-      **Example:**
-      - DI-order-details: The system shall store each order's items, price, delivery location and requested delivery time.
+      Example:
+      - DI-team-scoping
+        Title: The system shall keep each team's requirements content apart from every other team's.
+        Content: A student may see only their own team's work. Cites the access rule in Business Rules.
 
   - sectionKey: "BUSINESS_DOMAIN_MODEL"
     title: "Business Domain Model"
     type: "RICH_TEXT"
     guidance: |
-      Describe the key concepts and relationships within the business domain.
+      The entities in the problem domain and how they relate, as a class diagram. Model the business, not your database schema: this is what the client would recognize, before any decision about tables or persistence.
 
-      Domain models are typically expressed as UML class diagrams.
+      Write the diagram as mermaid text in a code block (type ``` to start one). A skeleton to start from:
+
+          classDiagram
+            class Team {
+              +String name
+            }
+            class Student {
+              +String email
+            }
+            Team "1" --> "*" Student : has
 
   - sectionKey: "DATA_DICTIONARY"
     title: "Data Dictionary"
     type: "RICH_TEXT"
     guidance: |
-      Define each entity's fields.
-
-      For each field include:
-      - Data type
-      - Allowed values
-      - Default
-      - Validation rules
-
-      Where a use case already specifies a field's validation in its Associated Information, cite the use case instead of repeating it.
+      Each entity's fields, with data type, allowed values, default, and validation rules. Where a use case already specifies a field's validation in its Associated Information, cite the use case instead of repeating it.
 
   - sectionKey: "REPORTS"
     title: "Reports"
     type: "RICH_TEXT"
     guidance: |
-      Describe every report the system generates.
-
-      For each report include:
-      - Who reads it
-      - What it contains
-      - How often it is produced
-      - Its format
-
-      Reports are where clients discover late that a field they need was never captured, so specify them early.
+      Any report the system generates: who reads it, what it contains, how often it is produced, and in what format. Reports are where clients discover late that a field they need was never captured, so specify them early.
 
   - sectionKey: "DATA_LIFECYCLE"
     title: "Data Acquisition, Integrity, Retention, and Disposal"
     type: "RICH_TEXT"
     guidance: |
-      Describe how data is acquired, protected, retained, and disposed of.
+      Where the data comes from, how it is kept correct, how long it is kept, and how it is destroyed: retention, backup and recovery, and integrity safeguards.
 
-      Include:
-      - Retention policies
-      - Backup and recovery
-      - Integrity safeguards
+      If your system holds anything about students or other identifiable people, this section is not optional, and its content is usually a business rule you should cite rather than invent.
 
   - sectionKey: "EXTERNAL_INTERFACES"
     title: "External Interface Requirements"
     type: "RICH_TEXT"
     guidance: |
-      Describe how the system communicates with users and external systems.
+      How the system communicates with users and with external systems and hardware. Keep this section to a sentence of orientation; the subsections that follow hold the requirements.
 
   - sectionKey: "USER_INTERFACES"
     title: "User Interfaces"
     type: "LIST"
     artifactTypes: ["USER_INTERFACE"]
     guidance: |
-      Describe logical characteristics of user interfaces.
+      The user-facing surfaces, at requirement level: which views exist, the standards they must conform to, accessibility requirements, navigation and interaction constraints. Refer to wireframes or prototypes rather than describing pixel layouts.
 
-      Include:
-      - UI standards
-      - Accessibility requirements
-      - Navigation and interaction constraints
+      For each requirement:
+      - Title: the requirement, as a "shall" sentence.
+      - Content: why, and what it cites.
+
+      Example:
+      - UI-spa-views
+        Title: Project Pulse shall present every feature as views in one single-page application, sharing one layout, navigation, and styling.
+        Content: Students move between reports, evaluations, and requirements without learning a second tool. Cites CO-vue-spring-stack.
 
   - sectionKey: "HARDWARE_INTERFACES"
     title: "Hardware Interfaces"
     type: "LIST"
     artifactTypes: ["HARDWARE_INTERFACE"]
     guidance: |
-      Describe each interface between the software and a hardware component, one per item. Leave the list empty if the system has none.
-
-      Include:
-      - The device and what it is used for
-      - The data exchanged and how
+      Any hardware the system talks to, one interface per item: the device and what it is used for, and the data exchanged and how. Most systems in this course have none: then add nothing, and say so in the External Interface Requirements section.
 
   - sectionKey: "SOFTWARE_INTERFACES"
     title: "Software Interfaces"
     type: "LIST"
     artifactTypes: ["SOFTWARE_INTERFACE"]
     guidance: |
-      Describe interactions with other software systems.
+      Other software systems yours connects to, one per item.
 
-      Include:
-      - Data exchanged
-      - Communication protocols
-      - Security considerations
+      For each interface:
+      - Title: the other system's name.
+      - Content: what crosses the boundary, in which direction, in what format, any security consideration, and what happens when the other side is unavailable.
+
+      Example:
+      - SI-llm-service
+        Title: LLM service
+        Content: The server sends a document section's text as JSON over HTTPS and receives coaching back; the browser never calls it, and its credentials stay on the server. When it is unavailable, the AI features say so and the rest of the system keeps working.
 
   - sectionKey: "API_DOCUMENTATION"
     title: "API Document"
     type: "RICH_TEXT"
     guidance: |
-      Link to the API documentation describing endpoints, inputs, outputs, and error handling.
+      Refer to your API documentation. It is generated from the code, so refer to it rather than transcribing endpoints that will be stale within a week.
 
   - sectionKey: "COMMUNICATION_INTERFACES"
     title: "Communications Interfaces"
     type: "LIST"
     artifactTypes: ["COMMUNICATIONS_INTERFACE"]
     guidance: |
-      Describe communication requirements such as email, messaging, and network protocols.
+      Email, notifications, messaging, and the protocols involved, one per item.
 
-      Include:
-      - Security
-      - Data transfer rates
-      - Formatting constraints
+      For each interface:
+      - Title: its name.
+      - Content: what it carries, the protocol, security, and any limit on rate or format.
+
+      Example:
+      - CI-email-notifications
+        Title: Email notifications
+        Content: Weekly submission reminders and review notices, sent through Gmail SMTP over TLS. No routine authoring change sends email.
 
   - sectionKey: "QUALITY_ATTRIBUTES"
     title: "Quality Attributes"
     type: "LIST"
     artifactTypes: ["QUALITY_ATTRIBUTE"]
     guidance: |
-      Describe quality attributes such as usability, performance, security, and reliability.
+      How well the system does what it does. This is the section that decides whether your client is happy with software that meets every functional requirement, so do not treat it as a formality.
 
-      Each attribute should be:
-      - Specific
-      - Quantitative
-      - Verifiable
+      The rule for every entry: an adjective is not a requirement. "Fast", "easy", "secure", and "user-friendly" are the start of a conversation, not the end of one. Each entry needs a number and a way to measure it.
+
+      Cover the attributes your project actually has: usability, performance, security, safety, availability, robustness, and where they apply, scalability, interoperability, and maintainability. For one that does not apply, add an item that says "not applicable" with a reason. An explicit "not applicable" is information; silence is not. Maintainability deserves care, because someone inherits your code after you hand it over.
+
+      For each attribute:
+      - Title: the requirement, as a "shall" sentence with its number.
+      - Content: which attribute it is (usability, performance, ...), and how it is measured.
+
+      Example:
+      - QA-wcag-aa
+        Title: All user-facing views shall conform to WCAG 2.1 level AA.
+        Content: Usability. Measured with an accessibility checker on every view, plus a keyboard-only walkthrough.
+      - QA-report-load
+        Title: A peer evaluation report for a course section of 80 students shall render within 2 seconds at the 95th percentile.
+        Content: Performance. Measured by timing the report against seed data of that size.
+      - QA-grades-confidential
+        Title: A student's peer evaluation grades shall be visible only to that student and to the instructors of their course section.
+        Content: Security. Measured by requesting the grades as another student and as another section's instructor; both are refused.
+      - QA-uptime
+        Title: The system shall be available 99% of the time during the academic term, excluding announced maintenance windows.
+        Content: Availability. Measured by an uptime monitor.
+      - QA-safety-not-applicable
+        Title: Safety: not applicable.
+        Content: Project Pulse controls no device and cannot contribute to physical harm.
 
   - sectionKey: "I18N_L10N"
     title: "Internationalization and Localization Requirements"
     type: "RICH_TEXT"
     guidance: |
-      Describe requirements related to internationalization and localization.
-
-      Examples include:
-      - Language support
-      - Date and number formats
-      - Cultural and legal considerations
+      Languages, character sets, time zones, date and currency formats. If the answer is a single locale, say so and say why, because that is a real constraint on who can use the system.
 
   - sectionKey: "OTHER_REQUIREMENTS"
     title: "Other Requirements"
     type: "RICH_TEXT"
     guidance: |
-      Capture any additional requirements not covered elsewhere.
-
-      Examples:
-      - Legal or regulatory requirements
-      - Logging and audit requirements
-      - Financial or compliance constraints
+      Anything real that fits nowhere above: legal, licensing, installation, training, documentation. If there is nothing, write "None" rather than leaving the section empty.
