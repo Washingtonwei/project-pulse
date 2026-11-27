@@ -1,13 +1,13 @@
 # Templates and Provisioning (TPL) Design
 
-> Realizes: UC-TPL-provision-documents, FR-TPL-enforce-structure, FR-TPL-section-keys, for the Architectural Design document
+> Realizes: UC-TPL-provision-documents, FR-TPL-enforce-structure, FR-TPL-section-keys, for the Architectural Design document and the SRS template's structure
 > Depends on: BR-document-creation, BR-artifact-home, BR-artifact-key-unique, DI-artifact-key-assignment, UC-ART-create-artifact
 > See: [use cases](../requirements/use-cases.md#templates-and-provisioning), [SRS Business Domain Model](../requirements/software-requirements-specification.md#ram-requirements-graph) (the document types, the artifact types, and the authoring-home table), [art.md](art.md#homes) (list homes and artifact keys), [architectural-design.md](architectural-design.md#ram-cross-cutting-subsystems) (document templates)
-> History: first written 2026-11-26, for the Architectural Design document (OI-21, spec PR #169). Provisioning itself was built before this workflow; this doc records how it works only as far as the new document needs.
+> History: first written 2026-11-26, for the Architectural Design document (OI-21, spec PR #169). Provisioning itself was built before this workflow; this doc records how it works only as far as the new document needs. Revised 2026-11-26 for the SRS template's structure (the rest of OI-21).
 
 ## Scope
 
-This doc covers adding the Architectural Design as a team's sixth requirement document: its template, the four artifact types its list sections home, and the four architecture sections that leave the SRS. Template customization (FR-TPL-customize) is deferred and not designed here.
+This doc covers adding the Architectural Design as a team's sixth requirement document (its template, the four artifact types its list sections home, and the four architecture sections that leave the SRS), and bringing the SRS template's structure in line with the course's SRS template and this repository's own SRS. Template customization (FR-TPL-customize) is deferred and not designed here.
 
 ## Overview
 
@@ -52,6 +52,38 @@ A document's structure is data. Each `DocumentType` has a YAML template in `back
 | 12 | `ARCHITECTURE_GLOSSARY` | Glossary | rich text; a link to the Project Glossary |
 
 `SRS.yml` loses `SOFTWARE_ARCHITECTURE`, `SYSTEM_CONTEXT`, `CONTAINER_DIAGRAM` and `DEPLOYMENT`, so it goes from 30 document sections to 26; no other SRS guidance mentions them. Two Vision and Scope guidance texts change, as the course template has them: `RISKS` says its risks are business-level and points technical risks to the Architectural Design, and `PRODUCT_PERSPECTIVE` says its context diagram is a first draft that moves to the Architectural Design's Context and Scope once the team writes it, leaving a reference behind.
+
+## The SRS template
+
+`SRS.yml` follows the structure of the course's SRS template, which this repository's own SRS also has: an Overall Description block before the Project Glossary and Vision and Scope pointers, a data dictionary and reports under Data Requirements, and the interface sections in the course's order. Five sections are added, all rich text with guidance ported from the course template by the same rules as the Architectural Design's; three list sections and one interface section move. No section is removed, no list section changes its admitted types, and no artifact type is added, so no home moves and no migration is needed.
+
+| # | Section key | Title | Type | Change |
+|---|---|---|---|---|
+| 1–5 | `INTRODUCTION` … `REFERENCES` | (unchanged) | rich text | |
+| 6 | `OVERALL_DESCRIPTION` | Overall Description | rich text | new: a parent, as the course numbers it (2) |
+| 7 | `PRODUCT_PERSPECTIVE` | Product Perspective | rich text | new: refers to the Vision and Scope's Product Perspective and the Architectural Design's Context and Scope |
+| 8 | `USER_CLASSES` | User Classes and Characteristics | rich text | new: refers to the Vision and Scope's Stakeholder Profiles; what changes the software's behavior, especially permissions |
+| 9–11 | `OPERATING_ENVIRONMENT`, `DESIGN_CONSTRAINTS`, `ASSUMPTIONS_DEPENDENCIES` | (unchanged) | list | moved: ahead of the two pointers |
+| 12–13 | `PROJECT_GLOSSARY`, `VISION_SCOPE_REFERENCE` | (unchanged) | rich text | moved: after the Overall Description |
+| 14–19 | `FUNCTIONAL_REQUIREMENTS` … `BUSINESS_DOMAIN_MODEL` | (unchanged) | | |
+| 20 | `DATA_DICTIONARY` | Data Dictionary | rich text | new: each entity's fields, types, allowed values, defaults and validation, citing a use case where it already says |
+| 21 | `REPORTS` | Reports | rich text | new: who reads each report, what it holds, how often, and its format |
+| 22–24 | `DATA_LIFECYCLE`, `EXTERNAL_INTERFACES`, `USER_INTERFACES` | (unchanged) | | |
+| 25 | `HARDWARE_INTERFACES` | (unchanged) | list | moved: ahead of Software Interfaces, as the course orders them |
+| 26–31 | `SOFTWARE_INTERFACES`, `API_DOCUMENTATION`, `COMMUNICATION_INTERFACES`, `QUALITY_ATTRIBUTES`, `I18N_L10N`, `OTHER_REQUIREMENTS` | (unchanged) | | |
+
+The SRS goes from 26 document sections to 31. `PRODUCT_PERSPECTIVE` is also a Vision and Scope key; a section key is unique within its template, as `ASSUMPTIONS_DEPENDENCIES` already is in both, and no code looks a section up by key without its document.
+
+**Guidance.**
+
+- **The five new sections:** the course's points in `SRS.yml`'s own style (a lead sentence, an "Include:" list, and an example where the course has one). References to the team's other documents name the document and section, never a file.
+- **`OVERALL_DESCRIPTION`** gets a short framing paragraph and an "It includes:" list of its five sections, as `INTRODUCTION` has for its four. The course has no text under that heading. No title carries a number: a section's number follows from its position (FR-TPL-section-keys).
+- **Two existing texts change, and no others:** `PROJECT_GLOSSARY` drops "An informal data dictionary" from its list, now that `DATA_DICTIONARY` exists; `DATA_REQUIREMENTS` drops "Reports or exports the system produces", now that `REPORTS` exists.
+- **Left for the guidance port** (gap item 4, a separate pass): the richer guidance of the existing sections, and the course template's preamble, Identifiers table and agent section, which become no sections of their own.
+
+**What stays different from the course, on purpose:** `DATA_REQUIREMENTS` stays a list of data requirements (`DI-*`) above the Business Domain Model, where the course has only a heading, because the product keys those requirements as artifacts; the quality attributes stay one list, since the course's split into usability, performance and the rest waits on the `QA` prefix question.
+
+**Existing documents keep their structure.** A team's SRS created before this change keeps its 26 sections in the old order: a template shapes new documents only (FR-TPL-customize). Production and staging hold no requirement documents, and dev rebuilds, so in practice every SRS gets the new structure.
 
 ## Components & classes
 
@@ -120,7 +152,8 @@ No endpoint is added or changed; two existing ones accept new enum values.
 ## Key decisions
 
 - **No fields of their own for the architecture items.** A key decision's drivers, decision, rejected alternative and trade-off, and a quality scenario's source, stimulus, response and measure, are written in the artifact's content, prompted by the template's guidance. *Rejected:* typed columns per architecture type, which would add schema and editor forms for a structure no requirement asks the system to check.
-- **The tests' SRS section ids are renumbered.** Removing SRS sections 8 to 10 and 28 shifts every later seeded section id: team 1's functional requirement list goes from 16 to 13 and its Assumptions and Dependencies from 13 to 10, and the Vision and Scope's sections each move down by 4. Every reference in three test classes changes (`DocumentSectionControllerTest`, `RequestBodyIdIntegrationTest`, `RequirementArtifactControllerTest`): the section URLs, the helper arguments (`putSection`, `fetchSectionVersion`, `sectionVersion`), the expected ids, and the comments that name the sections, plus one worked-example comment in `RequirementArtifactService`. No test names a Vision and Scope section by id. *Rejected:* keeping the removed sections in the SRS to hold the ids still, which keeps what the spec removed; looking every section up by key in the tests, which is a much larger change for the same result.
+- **Tests find SRS sections by key, not by id (the SRS template revision).** Inserting the Overall Description block near the top of the SRS shifts every later seeded section id again, as the architecture removal did. Before the template changes, a refactor commit makes the tests that name team 1's SRS sections by id (`DocumentSectionControllerTest`, `RequestBodyIdIntegrationTest`, `RequirementArtifactControllerTest`) look the id up by section key through `DocumentSectionRepository.findByDocumentIdAndSectionKey`, as `RequirementArtifactControllerTest.itemKeys` already does, with no change in behavior. Every SRS section id beyond the first five becomes a lookup: in URLs, helper arguments, expected ids in assertions, and the comments that name sections (which name the key instead), plus the worked-example comment in `RequirementArtifactService`. Document ids, and sections 1 to 5 (`INTRODUCTION` to `REFERENCES`, which keep their positions), may stay literals. The Vision and Scope's section ids also move (by five, since it is seeded after the SRS), but no test names one. *Rejected:* renumbering again, which every later template change would repeat.
+- **The tests' SRS section ids are renumbered (the Architectural Design build).** Removing SRS sections 8 to 10 and 28 shifts every later seeded section id: team 1's functional requirement list goes from 16 to 13 and its Assumptions and Dependencies from 13 to 10, and the Vision and Scope's sections each move down by 4. Every reference in three test classes changes (`DocumentSectionControllerTest`, `RequestBodyIdIntegrationTest`, `RequirementArtifactControllerTest`): the section URLs, the helper arguments (`putSection`, `fetchSectionVersion`, `sectionVersion`), the expected ids, and the comments that name the sections, plus one worked-example comment in `RequirementArtifactService`. No test names a Vision and Scope section by id. *Rejected:* keeping the removed sections in the SRS to hold the ids still, which keeps what the spec removed; looking every section up by key in the tests, which is a much larger change for the same result.
 - **`ARCHITECTURE_GLOSSARY`, not `GLOSSARY`,** keys arc42's twelfth section, so the key never reads as the Glossary document. Its title stays "Glossary".
 - **No pointer section in the SRS** to the Architectural Design. The course's SRS template has none. *Rejected:* a rich-text pointer like the SRS's `PROJECT_GLOSSARY`, one more section for students to leave empty.
 - **The frontend keeps its own list of the document types** a team gets (`Teams.vue`) and its catalog (`RamDocuments.vue`). *Rejected:* an endpoint listing the configured templates. That fits template customization (FR-TPL-customize), but no requirement needs it now.
@@ -151,7 +184,10 @@ erDiagram
 | UC-ART-create-artifact, each new type | integration, `RequirementArtifactControllerTest` | `KD-deployment-shape` lands at the end of team 1's `KEY_DECISIONS`; a `QUALITY_SCENARIO` in `QUALITY_SCENARIOS`; a `TECHNICAL_RISK` then a `TECHNICAL_DEBT` both in `RISKS_AND_TECHNICAL_DEBT`, in that order |
 | UC-ART-create-artifact 4a, the prefix belongs to the type | integration, `RequirementArtifactControllerTest` | `TRI-no-rate-limiting` on a `TECHNICAL_DEBT` is refused with 400; nothing is stored |
 | UC-ART-create-artifact 8b | integration, `RequirementArtifactControllerTest` | Team 2, with no Architectural Design, creating a `KEY_DECISION` is refused, and the message names the Architectural Design |
-| Renumbered SRS section ids | integration, the existing tests | The fifteen references use 13 and 10 and otherwise pass unchanged |
+| Renumbered SRS section ids | integration, the existing tests | Every reference uses 13 and 10 and otherwise passes unchanged |
+| SRS sections found by key (refactor) | integration, the existing tests | The three classes pass unchanged before and after the refactor, with the SRS template still at 26 sections |
+| The SRS template's structure | integration, `DocumentControllerTest` | `createSrsDocument_NoArchitectureSections` becomes the structure test: a new SRS has exactly the 31 section keys of the table above, in that order, the five new ones rich text, and none of the four architecture keys; `findDocumentById` expects 31 sections |
+| SRS homes unchanged | unit, `DocumentTemplateRegistryTest` | `templates_MatchTheAuthoringHomesTable` passes unchanged |
 | Migration V15 | Flyway on the test container, every integration run | V1 to V15 apply on MySQL 8 |
 | Provisioning and the editor | manual, running app | Create Requirement Documents makes six documents for a new team, and only the missing ones for team 2 (which the seed gives a Vision and Scope and an SRS); its card opens the editor; Risks and Technical Debt offers both types; `npm run type-check` passes |
 
