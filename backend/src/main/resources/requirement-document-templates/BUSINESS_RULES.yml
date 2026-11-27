@@ -35,7 +35,11 @@ sections:
     type: "LIST"
     artifactTypes: ["BUSINESS_RULE"]
     guidance: |
-      List the rules, one rule per item: the rule in one sentence about the business, then its source. Use cases and requirements cite a rule by its key, never by copying its text.
+      List the rules, one rule per item. Use cases and requirements cite a rule by its key, never by copying its text.
+
+      For each rule:
+      - Title: the rule itself, in one sentence about the business, stated so it can be checked. This is the rule's wording, which use cases show wherever they cite it, so keep the source out of it.
+      - Content: where the rule comes from, and whether it is fixed or may change (and when).
 
       How to hear one in a meeting. Rules almost never arrive announced; they surface in the middle of a story about something else, in shapes like:
       - "Must comply with..."
@@ -62,7 +66,11 @@ sections:
       Where an AI assistant helps, and where it is dangerous. Let it turn meeting notes into candidate rules, spot sentences in a transcript that have the shape of a rule, and find use cases that a rule ought to govern but do not cite. Do not let it invent rules. An invented rule reads exactly like a real one ("Passwords must be at least 8 characters", "Records must be retained for 7 years"), and it then spreads into requirements, tests and code that enforce something nobody asked for. When it proposes a rule, the only question is: who told us this?
 
       **Example:**
-      - BR-payroll-deduction-only: Only employees who are registered for payroll deduction may charge a meal to their pay. Source: company policy.
-      - BR-price-at-order-time: Each meal is charged the price in effect when it was ordered, not when it was delivered. Source: company policy.
+      - BR-payroll-deduction-only
+        Title: Only employees who are registered for payroll deduction may charge a meal to their pay.
+        Content: Company policy. Fixed.
+      - BR-price-at-order-time
+        Title: Each meal is charged the price in effect when it was ordered, not when it was delivered.
+        Content: Company policy. Fixed.
 
       Checklist: Does every rule have a source? Could your client change it without asking you? Is it one sentence about the business, rather than about your software? Does a use case or requirement cite it, and if none does, is that correct?
