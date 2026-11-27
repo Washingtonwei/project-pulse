@@ -6,242 +6,285 @@ sections:
     title: "Introduction"
     type: "RICH_TEXT"
     guidance: |
-      The Introduction orients the reader; it is framing, not content. In a few short paragraphs a new reader should learn what the product is and what this document is, then know where to go for the depth. Keep it brief — the substance belongs to the sections that follow.
+      This document defines the goals, purpose, and boundaries of the project. It gives every stakeholder a shared understanding of what the software is for and the context it operates in: the business problem being solved, how the software fits into the client's world, and where the line falls between what is in scope and what is not.
+
+      The Introduction orients the reader; it is framing, not content. In a few short paragraphs a new reader should learn what the product is and what this document is, then know where to go for the depth.
 
       Cover:
-      - Identify the product and this document — name the product, say what it is in one high-level sentence, and state the document's purpose and intended audience.
-      - Characterize the product at the highest level — its major capability areas at a glance, enough for the reader to form a mental model (a line each, not a feature list).
-      - Note the document's scope and how it relates to the companion documents (Use Cases, Business Rules, SRS) — what is defined here versus there.
-      - Give a brief roadmap of the sections that follow.
+      - Identify the product and this document: name the product, say what it is in one high-level sentence, and state the document's purpose and intended audience.
+      - Characterize the product at the highest level: its major capability areas at a glance, a line each, not a feature list.
+      - Note how this document relates to the companion documents (Project Glossary, Use Cases, Business Rules, SRS): what is defined here and what is defined there.
 
-      Keep out — these have their own homes, so don't describe or preview them here:
-      - History, domain context, and rationale for the product → Background
-      - The problem, pain points, and why solving it matters → Business Opportunity / Problem Statement
-      - The detailed capabilities → Major Features / Scope
+      Keep out. These have their own homes, so don't describe or preview them here:
+      - History, domain context, and rationale for the product: Background
+      - The problem, pain points, and why solving it matters: Business Opportunity / Problem Statement
+      - The detailed capabilities: Major Features / Scope
 
-      Litmus test: if a sentence would still be true and necessary in Background, Business Opportunity, or Major Features, it belongs there — not in the Introduction. The Introduction should stand on identification, framing, and a roadmap alone.
+      Litmus test: if a sentence would still be true and necessary in Background, Business Opportunity, or Major Features, it belongs there, not in the Introduction.
 
-      **Example:**
-      "This document defines the purpose, scope, and high-level vision for the **Cafeteria Ordering System (COS)**, a web application that lets employees of Process Impact order meals online for delivery within the company campus. It is written for the project's stakeholders — the sponsor, the development team, and cafeteria staff — and establishes the shared vision that the Use Cases, Business Rules, and SRS documents build on. The Background section below describes the situation that motivated the project; the rest of this document then covers the business opportunity, major features, stakeholders, and proposed workflow."
+      This document has two readers. Your client has to recognize their own business in it, so avoid jargon they would not use. Your AI teammate has to build from it, so avoid a claim it cannot check. When the two pull against each other, write for the client and put the precision in the use cases.
+
+      Work it with your AI assistant, not instead of it. Give it this guidance, your project brief, and your meeting notes, and ask it to draft a section and to list every question it cannot answer from what you gave it. Those questions are the point: they become the agenda for your next client meeting. What it cannot do is decide which questions deserve your client's limited time, or tell enthusiasm apart from commitment. That judgment is yours.
+
+      Example:
+      "This document defines the purpose, goals, and boundaries of Project Pulse, the web application that supports the senior design course. Project Pulse has two capability areas: performance tracking, which replaces the spreadsheet workflow for weekly activity reports and peer evaluations, and requirements authoring, where student teams write their projects' requirements. It is written for the course's instructors, its students, and the team that builds the product. The Use Cases, Business Rules, and SRS build on the objectives, features, and scope defined here."
 
   - sectionKey: "BACKGROUND"
     title: "Background"
     type: "RICH_TEXT"
     guidance: |
-      Summarize the rationale and context for the new product or for changes to be made to an existing one. Describe the history or situation that led to the decision to build this product.
+      Summarize the rationale and context for the new product, or for the changes to an existing one. Describe the situation that led to the decision to build it.
 
-      Describe the Business
-      - Introduce the company or organization
-      - What the company does (industry, products/services)
-      - Size of the company (employees, locations)
-      - Mission or goals related to the problem domain
+      Describe the business. Introduce the organization. Cover what it does (industry, products, services), its size (people, locations), and the goals that relate to the problem you are solving.
 
-      **Example:**
-      "The client, XYZ Logistics, is a mid-sized shipping company that specializes in last-mile delivery services for e-commerce businesses. The company operates in five major cities, employs 200 delivery staff, and handles over 10,000 deliveries per day. The goal is to optimize delivery efficiency and customer satisfaction."
+      Example:
+      "The Department of Computer Science teaches a two-course senior design sequence in which each student team builds a real system for an external client. About 80 students in 16 teams take it each year. Two needs run through the course: keeping each student's weekly contribution visible within shared team work, and teaching students to write requirements a team and its client can rely on."
+
+      Checklist: Would a reader who has never heard of this organization understand what it does and why this project exists?
 
   - sectionKey: "CURRENT_PROCESS_FLOW"
     title: "Current Process Flow (As-Is Process Flow)"
     type: "RICH_TEXT"
     guidance: |
-      Most projects require the people involved to have a firm grasp of the business process being created, replicated, or improved. Without this understanding, there is little chance that users will adopt the new solution. Process Flows are among the most common and effective models to facilitate this understanding.
+      Most projects require everyone involved to have a firm grasp of the business process being created, replicated, or improved. Without that understanding there is little chance users adopt the new solution. Process flows are the most effective model for building it.
 
-      Explain the Current Process Flow
-      - Create a UML Activity Diagram with Swimlanes
-      - Identify actors and assign swimlanes
-      - Show sequence of activities and decisions
-      - Write a textual explanation for non-UML readers
-      - Highlight inefficiencies and pain points
+      Step 1: Diagram the current process. Draw the process people execute today, before your software exists, as a flowchart with one swimlane (a mermaid subgraph) per actor: roles, departments, existing systems. Show the sequence of activities, the decision points, and the handoffs between actors. Write the diagram as mermaid text in a code block (type ``` to start one). A diagram written as text can be read and revised by your teammates and your AI assistant; a picture cannot. A skeleton to start from:
 
-      Describe the Current Tools
-      - List tools currently used (e.g., Excel, Google Sheets, LMS)
-      - Mention limitations of each tool
+          flowchart TD
+            subgraph Student
+              A[Open the team's shared spreadsheet] --> B[Type last week's activities]
+            end
+            subgraph Instructor
+              C[Review the updated sheets] --> D{Complete?}
+              D -- No --> E[Email the student]
+              D -- Yes --> F[Enter the grade in the LMS]
+            end
+            B --> C
 
-      Explain the Pain Points
-      - Highlight inefficiencies, delays, or error-prone steps
-      - Use concrete examples
+      Step 2: Write the prose. Not every reader reads diagrams. Explain the flow in a paragraph underneath it.
 
-      Checklist
-      - Is the context clear to non-domain readers?
-      - Are all stakeholders and tools described?
-      - Are inefficiencies illustrated clearly?
-      - Is a UML activity diagram included?
+      Step 3: List the current tools. Enumerate what the process runs on today (spreadsheets, paper forms, email, a legacy system) and give the limitation of each.
+
+      Example: "Weekly activity reports are kept in shared Google Sheets, one per team per week. Peer evaluations are Excel forms that each student uploads to the LMS. Neither tool checks that a submission is complete, so missing columns and wrong formats surface only at grading."
+
+      Step 4: Name the pain points. Highlight the inefficient, slow, or error-prone steps, using one or two specific examples rather than a general complaint.
+
+      Inefficiency example: "Submitting takes two systems and several steps: the team's Google Sheet on Monday, then the peer evaluation Excel form uploaded to the LMS on Tuesday. Under deadline pressure students forget one of the steps and lose credit."
+
+      Time example: "Each week the instructor downloads every peer evaluation form, runs a program to parse and score them, compiles the comments, and uploads the results to the LMS: a manual cycle repeated for the whole cohort."
+
+      Step 5: Write for an outsider. Assume your reader knows nothing about this domain. Define every domain term on first use and add it to your Project Glossary.
+
+      Checklist: Is the business context clear to someone unfamiliar with it? Does the flow give step-by-step detail? Are all actors and tools described? Are the inefficiencies illustrated with specific examples? Is there a diagram with one swimlane per actor?
 
   - sectionKey: "REFERENCES"
     title: "References"
     type: "RICH_TEXT"
     guidance: |
-      Provide a complete list of all documents referenced in this Vision document.
+      List every document referenced elsewhere in this one: the client's project brief, existing forms and reports, regulations, standards, competing products. The spreadsheet or screenshot your client showed you belongs here.
 
       For each reference include:
       - Title
-      - Report number (if applicable)
       - Date
-      - Publishing organization
-      - Where the document can be obtained
+      - Publishing organization or author
+      - Where it can be obtained
 
   - sectionKey: "BUSINESS_OPPORTUNITY"
     title: "Business Opportunity / Problem Statement"
     type: "LIST"
     artifactTypes: ["BUSINESS_PROBLEM", "BUSINESS_OPPORTUNITY"]
     guidance: |
-      State each problem being solved, and each opportunity being exploited, as an item of its own. Choose Business Problem or Business Opportunity when you add it.
+      Projects are launched in the belief that creating or changing a product will provide worthwhile benefits for someone. This section and the ones after it, up to the Assumptions and Dependencies, are the business requirements: the primary benefits the new system will provide to its sponsors, buyers, and users. Input comes from the people who know why the project is being undertaken: your client, their management, a subject matter expert. Business requirements decide which user requirements get implemented and in what order, so take them seriously.
 
-      For each item, cover:
-      - The current inefficiency or pain point, or the opening the product takes advantage of
-      - Who is affected and how
-      - Why solving it matters
+      State each problem being solved, and each opportunity being exploited, in the client's own terms, one per item. Choose Business Problem or Business Opportunity when you add it. Together they answer "why is anyone paying for this?"
 
-      **Example:**
-      - BP-lunch-line-wait: Employees spend an average of 60 minutes a day going to the cafeteria to buy lunch, about 30 minutes of which is waiting in line.
-      - BOP-online-ordering-habit: Most employees already order online at home, so an online cafeteria order needs no new habit.
+      For each item:
+      - Title: the problem or the opportunity, in one sentence.
+      - Content: who is affected and how, and why solving it matters.
+
+      Example:
+      - BP-manual-peer-evaluation-cycle
+        Title: The instructor scores every team's peer evaluations by hand each week.
+        Content: The instructor downloads every form from the LMS, runs a program to parse and score them, compiles the comments, and uploads the results, for the whole cohort, every week.
+      - BOP-requirements-drive-ai-coding
+        Title: As AI tools write more of the code, the quality of the requirements decides the quality of the result.
+        Content: Students who learn to write clear requirements get better AI-assisted implementations, which makes teaching requirements more valuable to the course than it used to be.
 
   - sectionKey: "BUSINESS_OBJECTIVES"
     title: "Business Objectives"
     type: "LIST"
     artifactTypes: ["BUSINESS_OBJECTIVE"]
     guidance: |
-      Summarize the important business benefits the product will provide.
+      Summarize the business benefits the product will provide, quantitatively and measurably. Platitudes ("become recognized as a world-class provider") and vague improvements ("provide a more rewarding experience") are neither helpful nor verifiable.
 
-      Guidelines:
-      - Objectives must be quantitative and measurable
-      - Avoid vague statements or platitudes
-      - Give each objective a name-based key (e.g., BO-processing-time), never a number
+      For each objective:
+      - Title: the objective, with its measurable target.
+      - Content: why it matters to the client.
 
-      **Example:**
-      - BO-processing-time: Reduce processing time by 50%
-      - BO-submission-rate: Increase submission rate by 20%
+      Give each objective a name-based key (BO-grading-time), never a number.
+
+      Example:
+      - BO-grading-time
+        Title: Reduce the instructor's time to grade peer evaluations by 50%.
+        Content: Grading is the instructor's largest weekly task in the course, and the hours spent on it are hours not spent with teams.
+      - BO-submission-rate
+        Title: Increase the weekly activity report and peer evaluation submission rate by 20%.
+        Content: A missed submission costs the student credit and leaves the instructor without evidence of that week's contribution.
+
+      How to elicit these. Clients rarely volunteer numbers. Ask: What business problem are you trying to solve? What is the motivation for solving it now? What would a highly successful solution do for you? What is a successful solution worth? If the answer contains no number, ask what the number is today.
+
+      Checklist: A year from now, could someone tell whether each objective was met? Does each one contain a quantity?
 
   - sectionKey: "SUCCESS_METRICS"
     title: "Success Metrics"
     type: "LIST"
     artifactTypes: ["SUCCESS_METRIC"]
     guidance: |
-      State how you will know each business objective was achieved. Give each metric its own item, and link it to the objective it measures.
+      Business objectives say what should improve. Success metrics tell you whether you are on track to get there, and they can be measured far sooner. A business objective often cannot be measured until well after the project ends, but you still need to know while you build whether you are heading the right way.
 
-      For each metric, cover:
-      - What is measured, and how
-      - The target value and when it should be reached
-      - The current value, if it is known
+      A success metric is sometimes the same statement as a business objective, when the objective happens to be measurable early. Where an objective is measured a year out, write a metric that tracks the same thing on a shorter timeline.
 
-      **Example:**
-      - SM-weekly-ordering: At least 75% of employees who use the cafeteria order through the system at least once a week within 6 months of release (measures BO-submission-rate).
-      - SM-delivery-time: Average time from order to delivery is under 20 minutes during lunch hours (measures BO-processing-time).
+      For each metric:
+      - Title: the indicator and the target, by when.
+      - Content: where the number comes from, what it is today (the baseline), and the objective it measures.
+
+      A metric with no baseline is not measurable, and "we do not track that today" is a finding worth recording rather than a gap to paper over. Link each metric to the objective it measures.
+
+      Example:
+      - SM-grading-time
+        Title: The instructor's time to grade one section's peer evaluations falls by 50% by the end of the first term of use.
+        Content: Source: the instructor's own time log. Baseline: the hours reported under the spreadsheet process. Measures BO-grading-time.
+      - SM-submission-rate
+        Title: On-time submission of weekly activity reports and peer evaluations rises by 20% within one term.
+        Content: Source: the system's submission records. Baseline: the on-time rate in the LMS records for the previous term. Measures BO-submission-rate.
+
+      How to elicit these. Ask "how will you know this worked?", then ask what that number is today. If your client cannot say, ask who would know and whether the number is recorded anywhere. Clients often propose a metric the software cannot influence (revenue, headcount); trace it back to something your system actually changes.
+
+      Choose your metrics wisely. Make sure they measure what is important to the business, not just what is easy to measure. "Reduce grading time by 50 percent" is easy to achieve by grading less carefully, which is not the intended outcome. Prefer a metric that gets worse if you build the wrong thing.
+
+      Checklist: Does each metric name its source, its baseline, and its deadline? Can this software actually move it? Can it be measured during testing or shortly after release? Does every business objective have at least one metric behind it, and does every metric trace back to an objective?
 
   - sectionKey: "VISION_STATEMENT"
     title: "Vision Statement"
     type: "RICH_TEXT"
     guidance: |
-      Provide an overall statement summarizing the product’s unique position.
+      One statement summarizing, at the highest level, the position this product intends to fill. Use this structure:
+      - For: the target customer
+      - Who: the need or opportunity
+      - The (product name): is a ...
+      - That: the major capabilities, key benefit, compelling reason to use it
+      - Unlike: the current process, or the competing alternative
+      - Our product: the primary differentiation and advantage
 
-      Use the following structure:
+      Example:
+      - For: students in the senior design course
+      - Who: need an easier way to submit and update weekly activity reports and peer evaluations
+      - The Project Pulse: is a web application
+      - That: lets students submit reports and evaluations in one place, and lets instructors view and grade them without downloading anything
+      - Unlike: the current process of spreadsheets and manual uploads to the learning management system
+      - Our product: keeps the whole cycle in one system, so nothing is transcribed by hand
 
-      - **For**: Target users
-      - **Who**: Their key needs
-      - **The product**: Product name
-      - **That**: Key benefits
-      - **Unlike**: Existing alternatives
-      - **Our product**: Differentiation
+      Use this in the meeting. Read the statement back to your client out loud and watch what they correct. It is the fastest way to discover you misunderstood the project, and it costs ninety seconds.
 
   - sectionKey: "PROPOSED_PROCESS_FLOW"
     title: "Proposed New Process Flow (To-Be Process Flow)"
     type: "RICH_TEXT"
     guidance: |
-      Design the improved process flow incorporating the new system.
+      Draw the improved process, with your software in it, as a second flowchart in the same shape as the as-is flow, again as mermaid text in a code block. Show how the software interacts with each actor, which steps it automates, and which pain point from the Current Process Flow each change addresses. Label the steps that are new or significantly changed, and say plainly which manual steps remain and why. There may be several major flows.
 
-      - Create a UML Activity Diagram with Swimlanes
-      - Show automated vs manual activities
-      - Explain how the new system addresses pain points
-      - Highlight remaining manual tasks (if any)
+      The point of drawing both is the comparison. If the two diagrams look alike, either you have not understood the current process or the software is not worth building.
 
   - sectionKey: "RISKS"
     title: "Risks"
     type: "LIST"
     artifactTypes: ["RISK"]
     guidance: |
-      Summarize major business risks associated with developing or not developing the product: threats to its value, adoption, compliance, or organizational footing. A technical risk in the system's design (an unproven technology, an integration nobody has tried) goes in the Architectural Design's Risks and Technical Debt instead.
+      Summarize the major business risks of building this product, and of not building it: threats to its value, adoption, timing, compliance, or the client's organization. Business risks are not project risks: "a teammate might drop the course" is a project risk and does not belong here. A technical risk in the system's design (an unproven technology, an integration nobody has tried) goes in the Architectural Design's Risks and Technical Debt instead.
 
-      For each risk include:
-      - Risk key (e.g., RI-union-contract)
-      - Description
-      - Probability
-      - Impact
-      - Possible mitigation
-      
-      **Example:**
-      - RI-union-contract: The Cafeteria Employees Union might require that their contract be renegotiated to reflect the new employee roles and cafeteria hours of operation. (Probability = 0.6; Impact = 3)
-      - RI-low-adoption: Too few employees might use the system, reducing the return on investment from the system development and the changes in cafeteria operating procedures. (Probability = 0.3; Impact = 9)
-      - RI-no-delivery-partners: Local restaurants might not agree to offer delivery, which would reduce employee satisfaction with the system and possibly their usage of it. (Probability = 0.3; Impact = 3)
-      - RI-delivery-capacity: Insufficient delivery capacity might not be available, which means that employees would not always receive their meals on time and could not always request delivery for the desired times. (Probability = 0.5; Impact = 6).
+      For each risk:
+      - Title: the risk, in one sentence.
+      - Content: its probability (0 to 1), its impact (1 to 10), and a mitigation where you have one.
+
+      State risks as mechanisms, not categories. "Adoption risk" names a category and tells nobody anything. "Students used to Google Docs give up on the structured editor if writing a section takes longer than it did in the document" names a mechanism someone can act on.
+
+      Example:
+      - RI-adoption-resistance
+        Title: Students used to Word or Google Docs may resist a structured tool, especially if it is more confusing than the documents it replaces.
+        Content: Probability 0.4, impact 7. Mitigation: pilot with one section and watch where students stall.
+      - RI-cloud-cost
+        Title: The department must budget for the cloud fees every year the system runs.
+        Content: Probability 0.9, impact 3. Accepted: the department owns the budget, and no software change reduces it.
 
   - sectionKey: "ASSUMPTIONS_DEPENDENCIES"
     title: "Business Assumptions and Dependencies"
     type: "LIST"
     artifactTypes: ["BUSINESS_ASSUMPTION", "BUSINESS_DEPENDENCY"]
     guidance: |
-      Record assumptions believed to be true without definitive proof.
+      An assumption is something you believe without proof, which would force this document to change if it turned out false. A dependency is something outside your control that the project relies on: an external system, a third-party service, a regulation, another project. Assumptions are keyed BAS-* and dependencies BDE-*; the B marks them as business-level, apart from the system-level AS-* and DE-* in your SRS.
 
-      Also record dependencies on:
-      - External systems
-      - Third-party services
-      - Regulations
-      - Other projects
+      For each item:
+      - Title: the assumption or the dependency, in one sentence.
+      - Content: what happens to the project if the assumption is false or the dependency fails.
 
-      Explain the impact if an assumption is false or a dependency fails.
-      
-      **Example:**
-      - BAS-ui-capacity: Systems with appropriate user interfaces will be available for cafeteria employees to process the expected volume of meals ordered.
-      - BAS-delivery-staffing: Cafeteria staff and vehicles will be available to deliver all meals for specified delivery time slots within 15 minutes of the requested delivery time.
-      - BDE-restaurant-integration: If a restaurant has its own online ordering system, the Cafeteria Ordering System must be able to communicate with it bi-directionally.
+      Example:
+      - BAS-formal-docs-required
+        Title: The senior design course keeps requiring formal requirements documents.
+        Content: If the course drops them, the requirements authoring half of the product has no users.
+      - BDE-university-lms
+        Title: Final grades are still entered in the university's learning management system.
+        Content: If the LMS changes, the instructor's last manual step changes with it.
+
+      Checklist: For each assumption, what happens to this project if it is false? If the answer is "nothing", it is not worth recording. If the answer is "we start over", raise it with your client this week.
 
   - sectionKey: "STAKEHOLDER_PROFILES"
     title: "Stakeholder Profiles"
     type: "LIST"
     artifactTypes: ["STAKEHOLDER"]
     guidance: |
-      Identify all stakeholders and users involved in the project.
+      To build something that meets real needs you have to identify everyone with a stake in the outcome, and confirm that the users are actually represented among them. This section records who they are and why they care, not their specific requests, which belong in the use cases.
 
-      For each stakeholder describe:
-      - Value or benefit from the product
-      - Attitudes toward the product
-      - Features of interest
-      - Constraints
-      - Whether they are end users
+      A stakeholder is not always a user. The person paying for the software, the person who maintains it after you hand it over, and the person whose job changes because of it all have a stake and may never log in.
+
+      For each stakeholder:
+      - Title: the role.
+      - Content: the major value or benefit they get from the product; their attitude (supportive, skeptical, unaware, opposed); the features they care about; what limits them; and whether they are an end user.
+
+      Attitude is the line students leave blank, and the one that predicts trouble. A stakeholder whose workload increases because of your software is not automatically supportive, and finding that out at delivery is too late.
 
   - sectionKey: "USER_ENVIRONMENT"
     title: "User Environment"
     type: "RICH_TEXT"
     guidance: |
-      Describe the working environment of target users.
-
-      Consider:
-      - Number of users
-      - Task duration and frequency
-      - Platforms used
-      - Environmental constraints
-      - Required integrations
+      Describe the working environment of the target users:
+      - How many people are involved in completing the task? Is that changing?
+      - How long is a task cycle, and how much time goes into each activity? Is that changing?
+      - Any environmental constraints: mobile, outdoors, noisy, gloved hands, poor connectivity?
+      - Which platforms are in use today, and which are planned?
+      - What other applications are in use, and does yours have to integrate with them?
 
   - sectionKey: "ALTERNATIVES_COMPETITION"
     title: "Alternatives and Competition"
     type: "RICH_TEXT"
     guidance: |
-      Identify existing alternatives to the proposed solution.
+      Identify the alternatives your stakeholders see as available: buying a competitor's product, building something in-house, or keeping the status quo. For each one, give its major strengths and its weaknesses for this client, as the stakeholders perceive them, not as you do.
 
-      Include:
-      - Current tools or processes
-      - Strengths and weaknesses
-      - Why the proposed solution is preferable
+      Always include the status quo. It is the alternative that wins most often, and the one your product actually has to beat.
 
   - sectionKey: "PRODUCT_PERSPECTIVE"
     title: "Product Perspective"
     type: "RICH_TEXT"
     guidance: |
-      Describe how the product fits into the larger system environment.
+      Scope is what keeps a friendly client's good ideas from consuming your schedule. When a new request arrives halfway through, this section and Major Features are what you point at.
 
-      - Is it standalone or part of a larger system?
-      - What external systems does it interact with?
-      - One easy way to display the major components of the larger system, interconnections, and external interfaces is with a context diagram.
+      Put the product in context relative to other systems and the user's environment. If it is independent and self-contained, say so. If it is one component of something larger, describe how they interact and identify the interfaces between them. A context diagram shows this most clearly: your system as one box, every external actor and system around it, and a labeled arrow for each thing that crosses the boundary. Write it as mermaid text in a code block:
 
-      Draw the first version of the context diagram here. When your team writes its Architectural Design, the diagram moves to that document's Context and Scope, and this section keeps a reference to it instead of its own drawing.
+          flowchart LR
+            Student[Student] -- Submits reports and evaluations --> PP[Project Pulse]
+            Instructor[Instructor] -- Reviews and grades --> PP
+            PP -- Sends reminder email --> Gmail[(Gmail)]
+            PP -- Sends section text for coaching --> LLM[(LLM service)]
+
+      Draw the first version here. When your team writes its Architectural Design, the diagram moves to that document's Context and Scope, and this section keeps a reference to it instead of its own drawing.
 
   - sectionKey: "EXTERNAL_SYSTEMS"
     title: "External Systems"
@@ -250,36 +293,51 @@ sections:
     guidance: |
       List each system outside your product that it interacts with: the same systems your context diagram in Product Perspective shows. Give each one its own item, so a use case can name it as an actor.
 
-      For each system, cover:
-      - What it is and who runs it
-      - What your product sends to it or receives from it
-      - What happens to your product if it is unavailable
+      For each system:
+      - Title: the system's name.
+      - Content: who runs it, what your product sends to it or receives from it, and what happens to your product if it is unavailable.
 
-      **Example:**
-      - SYS-payroll-system: Payroll System. The company's payroll service, run by Human Resources. The Cafeteria Ordering System sends it meal charges to deduct from employees' pay.
+      Example:
+      - SYS-llm-service
+        Title: LLM service
+        Content: A large language model run by an outside provider. Project Pulse sends it a section's text and receives coaching for the student. If it is unavailable, the AI assistants say AI is temporarily unavailable and offer a retry; authoring carries on without them.
 
   - sectionKey: "MAJOR_FEATURES"
     title: "Major Features / Scope"
     type: "LIST"
     artifactTypes: ["FEATURE"]
     guidance: |
-      List and briefly describe major product features. Features are the high-level capabilities of the system that are necessary to deliver benefits to the users and other stakeholders. To be more specific, each feature is an externally desired service that typically requires a series of inputs to achieve the desired result. For example, a feature of a problem tracking system might be the ability to provide trending reports.
+      List and briefly describe the major product features. A feature is a high-level capability the system provides in order to deliver a benefit: an externally visible service, not an implementation detail.
+
+      Because this document is read by a wide range of people, keep the detail general enough for everyone to follow while giving your team enough to build a use case model from. Use cases are derived from these features, so a feature too vague to decompose is too vague.
+
+      For each feature:
+      - Title: the capability's name.
+      - Content: one to three sentences on what it does and why.
 
       Guidelines:
-      - State features as product capabilities
-      - 1–3 sentences per feature
-      - Avoid implementation details
-      - Focus on what and why, not how
-      - Be understandable to non-technical stakeholders
+      - State features at the level of product capabilities.
+      - No detailed workflows, user interface behavior, or algorithms.
+      - Do not describe how the feature will be implemented.
+      - Focus on what capability is needed and why, not how.
+      - Understandable by a non-technical stakeholder, including your client.
+
+      Example:
+      - FEAT-administration
+        Title: Administration
+        Content: Manage senior design sections, teams, and student rosters, so each student and instructor sees only their own course section.
+      - FEAT-performance-tracking
+        Title: Performance tracking
+        Content: Students submit weekly activity reports and peer evaluations, and instructors review them, in one place instead of spreadsheets and uploads.
 
   - sectionKey: "DEPLOYMENT_CONSIDERATIONS"
     title: "Deployment Considerations"
     type: "RICH_TEXT"
     guidance: |
-      Summarize information needed for effective deployment.
+      Summarize what it takes to get the product into its operating environment:
+      - How will users reach it? Are they spread across locations or time zones?
+      - What infrastructure has to change for capacity, network access, data storage, or data migration?
+      - Who trains the users?
+      - Who maintains it after your team hands it over, and what does that person already know how to run?
 
-      Include:
-      - User access requirements
-      - Deployment environment
-      - Infrastructure changes
-      - Training or process changes
+      That last question shapes your architecture, so ask it in the first client meeting rather than the last.

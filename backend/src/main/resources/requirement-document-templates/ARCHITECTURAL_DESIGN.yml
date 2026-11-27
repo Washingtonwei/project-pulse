@@ -272,6 +272,7 @@ sections:
 
       **Example:**
       - TRI-payroll-api-unavailable: Nobody has seen the Payroll System's interface. If it only accepts a nightly batch file, ordering cannot confirm payment at order time. Mitigation: ask for the interface document at the next client meeting; build Payment against a stub until then. Cites DE-payroll-integration.
+      - TRI-public-grade-database: The peer evaluation database holds student grades, is reachable from the public internet, and has no rate limiting. Anyone who finds its address can try passwords against it without being slowed down. Mitigation: allow connections only from the application's own network. Cites QA-grades-confidential.
 
   - sectionKey: "ARCHITECTURE_GLOSSARY"
     title: "Glossary"
