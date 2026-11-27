@@ -352,7 +352,7 @@ Keys such as FR-1, FR-3, UC-1, BO-1 and STK-1 below name the seeded artifacts as
 | Prose-only section save | integration | A `requirementArtifacts` list sent in the document section PUT changes nothing in the list |
 | Cross-team | integration | A non-member is refused with 403 |
 | PUT on a type with no list home | integration | A glossary term, a use case and a precondition are each refused with 400 |
-| UC-ART-delete-artifact, main flow | integration | Deleting FR-3 (the one seeded functional requirement with no link) at its version returns 200; the row is gone from the database, the search and the GET (404); section 16 reloads as FR-1, FR-2 with no null |
+| UC-ART-delete-artifact, main flow | integration | Deleting FR-3 (the one seeded functional requirement with no link) at its version returns 200; the row is gone from the database, the search and the GET (404); the functional requirement list (`NON_USE_CASE_FUNCTIONAL_REQUIREMENTS`) reloads as FR-1, FR-2 with no null |
 | Delete, references none | integration | The seeded external system (no link, no actor use) has an empty references list |
 | Delete, references listed | integration | FR-1 lists its link to UC-1 as `LINK_FROM`; BO-1 lists UC-1's link to it as `LINK_TO`; stakeholder 1 lists the seeded use case as `LINK_TO` with link type `PRIMARY_ACTOR`, stakeholder 2 with `SECONDARY_ACTOR` |
 | Delete, extension 4a | integration | Deleting FR-1 or stakeholder 1 is refused with 400 naming each referrer and carrying them as data; the artifact and its links are unchanged |
