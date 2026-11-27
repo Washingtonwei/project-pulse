@@ -458,10 +458,11 @@ public class RequirementArtifactService {
 
         // 7. Take it out of its home list. Lock the home section's row first, then load the list, so a create or
         //    delete running at the same time in that section waits its turn, and the list read here holds every
-        //    committed item. Removing FR-change-notification from section 13's list [FR-user-authentication,
-        //    FR-input-validation, FR-change-notification, FR-audit-log] makes Hibernate rewrite the indexes of the
-        //    items after it, so FR-audit-log moves from index 3 to 2 and the list keeps no gap (a gap would load as a
-        //    null item). Since OI-73 every list type has a home; one found without is deleted without this step.
+        //    committed item. Removing FR-change-notification from the functional requirement list
+        //    [FR-user-authentication, FR-input-validation, FR-change-notification, FR-audit-log] makes Hibernate
+        //    rewrite the indexes of the items after it, so FR-audit-log moves from index 3 to 2 and the list keeps no
+        //    gap (a gap would load as a null item). Since OI-73 every list type has a home; one found without is
+        //    deleted without this step.
         if (home != null) {
             Long sectionId = home.getId();
             DocumentSection section = this.documentSectionRepository.findByIdForUpdate(sectionId)
