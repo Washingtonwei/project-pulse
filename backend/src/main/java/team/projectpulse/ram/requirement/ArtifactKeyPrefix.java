@@ -47,6 +47,11 @@ public final class ArtifactKeyPrefix {
         MAP.put(RequirementArtifactType.OPERATING_ENVIRONMENT, "OE");
         MAP.put(RequirementArtifactType.CONSTRAINT, "CO");
         MAP.put(RequirementArtifactType.DATA_REQUIREMENT, "DI");
+        MAP.put(RequirementArtifactType.KEY_DECISION, "KD");
+        MAP.put(RequirementArtifactType.QUALITY_SCENARIO, "QS");
+        // TRI rather than the bare RISK, so a technical risk reads apart from a business risk, RI-.
+        MAP.put(RequirementArtifactType.TECHNICAL_RISK, "TRI");
+        MAP.put(RequirementArtifactType.TECHNICAL_DEBT, "TD");
     }
 
 

@@ -303,11 +303,51 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
 
 
     // ---- UC-ART-create-artifact (docs/design/art.md, Tests) ----
-    // The seed gives team 1 two documents. Its SRS is document 1: section 16 is NON_USE_CASE_FUNCTIONAL_REQUIREMENTS
-    // (FR-user-authentication, FR-input-validation, FR-change-notification) and section 13 is ASSUMPTIONS_DEPENDENCIES. Its Vision and Scope is document 2, with no risks,
-    // features or business assumptions seeded. Team 2 has documents 3 and 4; team 3 has none.
+    // The seed gives team 1 four documents. Its SRS is document 1: section 13 is NON_USE_CASE_FUNCTIONAL_REQUIREMENTS
+    // (FR-user-authentication, FR-input-validation, FR-change-notification) and section 10 is ASSUMPTIONS_DEPENDENCIES. Its Vision and Scope is document 2, with no risks,
+    // features or business assumptions seeded. Team 2 has documents 3 and 4; team 1's Business Rules is document 5 and its
+    // Architectural Design document 6, with no items seeded; team 3 has none.
 
     private static final long TEAM_1_VISION_SCOPE_ID = 2L;
+    private static final long TEAM_1_ARCHITECTURAL_DESIGN_ID = 6L;
+
+    @Test
+    void createArtifact_ArchitectureItems_EachInItsHome() throws Exception {
+        // docs/design/tpl.md: the four architecture types are created like any list type, into the Architectural Design.
+        JSONObject decision = create(1, item("KEY_DECISION", "Deployment shape", "One deployable: the front end ships inside the back end's package.")
+                .put("artifactKey", "KD-deployment-shape"), this.studentJohnToken);
+        assertThat(decision.getBoolean("flag")).as(decision.toString()).isTrue();
+        assertThat(decision.getJSONObject("data").getString("homeDocumentType")).isEqualTo("ARCHITECTURAL_DESIGN");
+        assertThat(itemKeys(TEAM_1_ARCHITECTURAL_DESIGN_ID, "KEY_DECISIONS")).containsExactly("KD-deployment-shape");
+
+        JSONObject scenario = create(1, item("QUALITY_SCENARIO", "Cross employee order denied", "A patron requests another patron's order by its ID; it is refused."), this.studentJohnToken);
+        assertThat(scenario.getBoolean("flag")).as(scenario.toString()).isTrue();
+        assertThat(itemKeys(TEAM_1_ARCHITECTURAL_DESIGN_ID, "QUALITY_SCENARIOS")).containsExactly("QS-cross-employee-order-denied");
+
+        // A technical risk and then technical debt share one list, in the order they were created.
+        JSONObject risk = create(1, item("TECHNICAL_RISK", "Payroll API unavailable", "Nobody has seen the Payroll System's interface."), this.studentJohnToken);
+        JSONObject debt = create(1, item("TECHNICAL_DEBT", "No rate limiting", "Sign-in has no rate limit yet."), this.studentJohnToken);
+        assertThat(risk.getBoolean("flag")).as(risk.toString()).isTrue();
+        assertThat(debt.getBoolean("flag")).as(debt.toString()).isTrue();
+        assertThat(itemKeys(TEAM_1_ARCHITECTURAL_DESIGN_ID, "RISKS_AND_TECHNICAL_DEBT")).containsExactly("TRI-payroll-api-unavailable", "TD-no-rate-limiting");
+    }
+
+    @Test
+    void createArtifact_Extension4a_TechnicalDebtWithARiskPrefix_Refused() throws Exception {
+        // The prefix belongs to the type: TRI- is a technical risk's, so technical debt cannot take it.
+        JSONObject refused = create(1, item("TECHNICAL_DEBT", "No rate limiting", "Sign-in has no rate limit yet.")
+                .put("artifactKey", "TRI-no-rate-limiting"), this.studentJohnToken);
+        assertThat(refused.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
+        assertThat(itemKeys(TEAM_1_ARCHITECTURAL_DESIGN_ID, "RISKS_AND_TECHNICAL_DEBT")).isEmpty();
+    }
+
+    @Test
+    void createArtifact_Extension8b_NoArchitecturalDesign_Refused() throws Exception {
+        // Woody is on team 2, which the seed gives a Vision and Scope and an SRS but no Architectural Design.
+        JSONObject refused = create(2, item("KEY_DECISION", "Deployment shape", "One deployable."), this.studentWoodyToken);
+        assertThat(refused.getInt("code")).isEqualTo(StatusCode.INVALID_ARGUMENT);
+        assertThat(refused.getString("message")).isEqualTo("The team's Architectural Design has not been created yet. The course admin creates the team's documents.");
+    }
 
     @Test
     void createArtifact_MainFlow_FromASection_AppendedWithItsKeyAndNoLockNeeded() throws Exception {
@@ -449,19 +489,19 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
 
     @Test
     void createArtifact_LockHolderUndisturbed() throws Exception {
-        // John holds section 16's lock and is editing its prose; Eric adds an item to the same list meanwhile.
-        this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/16/lock").contentType(MediaType.APPLICATION_JSON)
+        // John holds section 13's lock and is editing its prose; Eric adds an item to the same list meanwhile.
+        this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/13/lock").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"reason\": \"Editing\"}").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(true));
-        int version = sectionVersion(16);
+        int version = sectionVersion(13);
 
         JSONObject created = create(1, item("FUNCTIONAL_REQUIREMENT", "Audit log", "The system shall log every change."), this.studentEricToken);
         assertThat(created.getBoolean("flag")).as(created.toString()).isTrue();
         this.entityManager.flush();
-        assertThat(sectionVersion(16)).as("a create leaves the document section's version alone").isEqualTo(version);
+        assertThat(sectionVersion(13)).as("a create leaves the document section's version alone").isEqualTo(version);
 
         JSONObject body = new JSONObject().put("type", "LIST").put("content", "John's prose.").put("version", version);
-        MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/16").contentType(MediaType.APPLICATION_JSON)
+        MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/13").contentType(MediaType.APPLICATION_JSON)
                 .content(body.toString()).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken)).andReturn();
         JSONObject saved = new JSONObject(result.getResponse().getContentAsString());
         assertThat(saved.getBoolean("flag")).as(saved.toString()).isTrue();
@@ -661,7 +701,7 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
 
     @Test
     void deleteArtifact_ItemInAList_LeavesNoGap() throws Exception {
-        // Section 16 holds FR-user-authentication to FR-change-notification; a create appends FR-audit-log, then FR-change-notification is deleted from between FR-input-validation and it.
+        // Section 13 holds FR-user-authentication to FR-change-notification; a create appends FR-audit-log, then FR-change-notification is deleted from between FR-input-validation and it.
         JSONObject created = create(1, item("FUNCTIONAL_REQUIREMENT", "Audit log", "The system shall log every change."), this.studentJohnToken);
         assertThat(created.getBoolean("flag")).as(created.toString()).isTrue();
         long fr3 = idOf(1, "FR-change-notification");
@@ -675,19 +715,19 @@ public class RequirementArtifactControllerTest extends AbstractIntegrationTest {
 
     @Test
     void deleteArtifact_LockHolderUndisturbed() throws Exception {
-        // John holds section 16's lock and is editing its prose; Eric deletes an item of the same list meanwhile.
-        this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/16/lock").contentType(MediaType.APPLICATION_JSON)
+        // John holds section 13's lock and is editing its prose; Eric deletes an item of the same list meanwhile.
+        this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/13/lock").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"reason\": \"Editing\"}").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(true));
-        int version = sectionVersion(16);
+        int version = sectionVersion(13);
 
         long fr3 = idOf(1, "FR-change-notification");
         assertThat(deleteArtifact(1, fr3, artifactVersion(fr3), this.studentEricToken).getBoolean("flag")).isTrue();
         this.entityManager.flush();
-        assertThat(sectionVersion(16)).as("a delete leaves the document section's version alone").isEqualTo(version);
+        assertThat(sectionVersion(13)).as("a delete leaves the document section's version alone").isEqualTo(version);
 
         JSONObject body = new JSONObject().put("type", "LIST").put("content", "John's prose.").put("version", version);
-        MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/16").contentType(MediaType.APPLICATION_JSON)
+        MvcResult result = this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/13").contentType(MediaType.APPLICATION_JSON)
                 .content(body.toString()).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken)).andReturn();
         assertThat(new JSONObject(result.getResponse().getContentAsString()).getBoolean("flag")).isTrue();
     }

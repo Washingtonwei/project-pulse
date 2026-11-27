@@ -101,18 +101,18 @@ public class DocumentSectionControllerTest extends AbstractIntegrationTest {
                 }
                 """;
 
-        this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/16/lock").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+        this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/13/lock").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
                 .andExpect(jsonPath("$.flag").value(true))
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.message").value("Lock document section successfully"))
                 .andExpect(jsonPath("$.data.locked").value(true))
-                .andExpect(jsonPath("$.data.documentSectionId").value(16))
+                .andExpect(jsonPath("$.data.documentSectionId").value(13))
                 .andExpect(jsonPath("$.data.reason").value("Locking section for editing"));
 
-        int version = fetchSectionVersion(1, 1, 16, this.adminBingyangToken);
+        int version = fetchSectionVersion(1, 1, 13, this.adminBingyangToken);
         json = """
                 {
-                    "id": 16,
+                    "id": 13,
                     "sectionKey": "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS",
                     "type": "LIST",
                     "title": "Non-Use Case Functional Requirements",
@@ -149,11 +149,11 @@ public class DocumentSectionControllerTest extends AbstractIntegrationTest {
                 }
                 """.formatted(version);
 
-        this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/16").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+        this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/13").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
                 .andExpect(jsonPath("$.flag").value(true))
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.message").value("Update document section content successfully"))
-                .andExpect(jsonPath("$.data.id").value(16))
+                .andExpect(jsonPath("$.data.id").value(13))
                 .andExpect(jsonPath("$.data.content").value("Updated section content goes here."))
                 // The save stores the content only: the list keeps its three seeded items, and the new entry sent
                 // with them is not created (UC-DOC-edit-document; items go through the artifact endpoints).
@@ -170,18 +170,18 @@ public class DocumentSectionControllerTest extends AbstractIntegrationTest {
                 }
                 """;
 
-        this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/16/lock").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+        this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/13/lock").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(true))
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.message").value("Lock document section successfully"))
                 .andExpect(jsonPath("$.data.locked").value(true))
-                .andExpect(jsonPath("$.data.documentSectionId").value(16))
+                .andExpect(jsonPath("$.data.documentSectionId").value(13))
                 .andExpect(jsonPath("$.data.reason").value("Locking section for editing"));
 
-        int version = fetchSectionVersion(1, 1, 16, this.studentJohnToken);
+        int version = fetchSectionVersion(1, 1, 13, this.studentJohnToken);
         json = """
                 {
-                    "id": 16,
+                    "id": 13,
                     "sectionKey": "NON_USE_CASE_FUNCTIONAL_REQUIREMENTS",
                     "type": "LIST",
                     "title": "Non-Use Case Functional Requirements",
@@ -200,11 +200,11 @@ public class DocumentSectionControllerTest extends AbstractIntegrationTest {
                 }
                 """.formatted(version);
 
-        this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/16").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+        this.mockMvc.perform(put(this.baseUrl + "/teams/1/documents/1/document-sections/13").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.flag").value(true))
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.message").value("Update document section content successfully"))
-                .andExpect(jsonPath("$.data.id").value(16))
+                .andExpect(jsonPath("$.data.id").value(13))
                 .andExpect(jsonPath("$.data.content").value("Updated section content goes here."))
                 // A list sent with only one entry neither drops the seeded items nor adds the new one.
                 .andExpect(jsonPath("$.data.requirementArtifacts", Matchers.hasSize(3)));
@@ -439,19 +439,19 @@ public class DocumentSectionControllerTest extends AbstractIntegrationTest {
 
 
     // ---- The document section save after requirement artifacts became first-class (docs/design/art.md, Tests) ----
-    // Team 1's SRS is document 1. Section 16 is NON_USE_CASE_FUNCTIONAL_REQUIREMENTS, which holds FR-user-authentication, FR-input-validation and FR-change-notification;
-    // section 13 is ASSUMPTIONS_DEPENDENCIES; section 1 is the RICH_TEXT INTRODUCTION.
+    // Team 1's SRS is document 1. Section 13 is NON_USE_CASE_FUNCTIONAL_REQUIREMENTS, which holds FR-user-authentication, FR-input-validation and FR-change-notification;
+    // section 10 is ASSUMPTIONS_DEPENDENCIES; section 1 is the RICH_TEXT INTRODUCTION.
 
     @Test
     void sectionSave_ProseOnly_ItemsSentWithItChangeNothing() throws Exception {
-        lockSectionAs(16, this.studentJohnToken);
-        JSONArray items = currentItems(16, this.studentJohnToken);
+        lockSectionAs(13, this.studentJohnToken);
+        JSONArray items = currentItems(13, this.studentJohnToken);
         items.getJSONObject(0).put("title", "Retitled through the section save");
         items.remove(1);
         items.put(newItem("FUNCTIONAL_REQUIREMENT", "Exclusive locking", "The system shall lock a document section for one student at a time."));
-        int version = fetchSectionVersion(1, 1, 16, this.studentJohnToken);
+        int version = fetchSectionVersion(1, 1, 13, this.studentJohnToken);
 
-        JSONObject saved = putSection(16, version, items, this.studentJohnToken);
+        JSONObject saved = putSection(13, version, items, this.studentJohnToken);
         assertThat(saved.getBoolean("flag")).as(saved.toString()).isTrue();
         JSONArray savedItems = saved.getJSONObject("data").getJSONArray("requirementArtifacts");
         assertThat(savedItems.length()).isEqualTo(3);
@@ -461,7 +461,7 @@ public class DocumentSectionControllerTest extends AbstractIntegrationTest {
 
     @Test
     void findDocumentSectionById_ItemsCarryTheirVersion() throws Exception {
-        JSONArray items = currentItems(16, this.studentJohnToken);
+        JSONArray items = currentItems(13, this.studentJohnToken);
         assertThat(items.length()).isEqualTo(3);
         assertThat(items.getJSONObject(0).get("version")).isInstanceOf(Integer.class);
         assertThat(items.getJSONObject(0).getString("homeDocumentType")).isEqualTo("SRS");
@@ -469,14 +469,14 @@ public class DocumentSectionControllerTest extends AbstractIntegrationTest {
 
     @Test
     void sectionSave_InstructorOfAnotherCourseSection_Refused() throws Exception {
-        JSONObject refused = putSection(16, 0, new JSONArray(), this.adminTimToken);
+        JSONObject refused = putSection(13, 0, new JSONArray(), this.adminTimToken);
         assertThat(refused.getBoolean("flag")).isFalse();
         assertThat(refused.getInt("code")).isEqualTo(StatusCode.FORBIDDEN);
     }
 
     @Test
     void findDocumentSectionById_ReturnsAdmittedTypes() throws Exception {
-        this.mockMvc.perform(get(this.baseUrl + "/teams/1/documents/1/document-sections/13").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
+        this.mockMvc.perform(get(this.baseUrl + "/teams/1/documents/1/document-sections/10").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(jsonPath("$.data.sectionKey").value("ASSUMPTIONS_DEPENDENCIES"))
                 .andExpect(jsonPath("$.data.artifactTypes", Matchers.contains("ASSUMPTION", "DEPENDENCY")));
         this.mockMvc.perform(get(this.baseUrl + "/teams/1/documents/1/document-sections/1").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))

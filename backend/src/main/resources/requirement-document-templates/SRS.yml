@@ -98,44 +98,6 @@ sections:
       - Where the Vision and Scope document can be found
       - How it informs the requirements in this SRS
 
-  - sectionKey: "SOFTWARE_ARCHITECTURE"
-    title: "Software Architecture"
-    type: "RICH_TEXT"
-    guidance: |
-      Provide a high-level design of the system.
-
-      Include:
-      - System context
-      - Major components
-      - Operating environment
-      - Constraints
-      - Assumptions
-
-      The goal is to ensure architectural alignment with functional and quality requirements.
-
-  - sectionKey: "SYSTEM_CONTEXT"
-    title: "System Context Diagram"
-    type: "RICH_TEXT"
-    guidance: |
-      Draw a system context diagram showing the system at the center and its interactions with users and external systems.
-
-      Guidelines:
-      - Focus on actors and systems, not technologies
-      - Keep the diagram high-level
-      - Follow the diagram with brief component descriptions
-
-  - sectionKey: "CONTAINER_DIAGRAM"
-    title: "Container Diagram"
-    type: "RICH_TEXT"
-    guidance: |
-      Provide a container diagram that zooms into the system boundary.
-
-      Describe:
-      - Major containers (applications, databases, services)
-      - Responsibilities of each container
-      - Communication between containers
-      - Major technology choices
-
   - sectionKey: "OPERATING_ENVIRONMENT"
     title: "Operating Environment"
     type: "LIST"
@@ -320,17 +282,6 @@ sections:
       - Specific
       - Quantitative
       - Verifiable
-
-  - sectionKey: "DEPLOYMENT"
-    title: "Deployment"
-    type: "RICH_TEXT"
-    guidance: |
-      Describe how the system will be deployed, operated, and maintained.
-
-      Include:
-      - Deployment environments
-      - Tools and procedures
-      - Update and rollback strategies
 
   - sectionKey: "I18N_L10N"
     title: "Internationalization and Localization Requirements"

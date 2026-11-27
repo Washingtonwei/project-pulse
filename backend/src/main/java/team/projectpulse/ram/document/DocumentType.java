@@ -7,4 +7,6 @@ public enum DocumentType {
     BUSINESS_RULES,
     SRS,
     GLOSSARY,
+    // The team's architecture-of-record, in arc42's sections (docs/design/tpl.md).
+    ARCHITECTURAL_DESIGN,
 }

@@ -10,6 +10,7 @@ import team.projectpulse.ram.document.template.DocumentTemplate;
 import team.projectpulse.ram.document.template.DocumentTemplateRegistry;
 import team.projectpulse.ram.requirement.SectionType;
 import team.projectpulse.system.exception.ObjectNotFoundException;
+import team.projectpulse.system.exception.RequirementDocumentRejectedException;
 import team.projectpulse.team.Team;
 import team.projectpulse.team.TeamRepository;
 
@@ -83,10 +84,13 @@ public class DocumentService {
         Team team = this.teamRepository.findById(teamId)
                 .orElseThrow(() -> new ObjectNotFoundException("team", teamId));
 
-        // We need to check if a document with the same type already exists for the team
+        // A team gets each document type once (BR-document-creation). A second ARCHITECTURAL_DESIGN for team 1, which
+        // already has one, is refused with "This team already has the Architectural Design. ...", a 400 the course admin
+        // can act on (UC-TPL-provision-documents 3a), and nothing is created.
         this.documentRepository.findByTeamTeamIdAndType(teamId, type)
                 .ifPresent(doc -> {
-                    throw new IllegalStateException("A document of type " + type + " already exists for team with ID " + teamId);
+                    throw new RequirementDocumentRejectedException("This team already has the " + doc.getTitle()
+                            + ". A team's document is created once and never regenerated or overwritten.");
                 });
 
         RequirementDocument doc = new RequirementDocument();

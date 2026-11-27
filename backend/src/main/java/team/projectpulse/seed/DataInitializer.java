@@ -1203,6 +1203,12 @@ public class DataInitializer implements CommandLineRunner {
         RequirementArtifact team1BusinessRule = new RequirementArtifact(team1, RequirementArtifactType.BUSINESS_RULE, "A student may edit only her own team's requirement documents.", "Course policy; fixed for the semester.", "");
         team1BusinessRule.setArtifactKey("BR-own-team-documents");
         this.requirementArtifactService.createRequirementArtifact(1, team1BusinessRule);
+
+        // ---- An Architectural Design document ----
+        // Team 1's Architectural Design (docs/design/tpl.md), empty, so its key decisions, quality scenarios, technical
+        // risks and technical debt can be created in dev and in tests without provisioning it first. Seeded last, so no
+        // existing id shifts.
+        this.documentRepository.save(newDocument(team1, DocumentType.ARCHITECTURAL_DESIGN));
     }
 
     /** A new, unsaved document of {@code type} for {@code team}, with its document sections from the template. */
@@ -1223,10 +1229,10 @@ public class DataInitializer implements CommandLineRunner {
      * section per template section, in the template's order. Nothing is saved here; the caller saves the document,
      * and its sections cascade with it.
      * <p>
-     * For example, the SRS template gives the document the title "Software Requirements Specification" and 30
+     * For example, the SRS template gives the document the title "Software Requirements Specification" and 26
      * document sections: INTRODUCTION (rich text) first, and NON_USE_CASE_FUNCTIONAL_REQUIREMENTS (a list) as the
-     * 16th. Because the sections are created in template order, their ids follow that order too, which is why the
-     * tests can name team 1's SRS sections by id (section 16 is its functional requirement list).
+     * 13th. Because the sections are created in template order, their ids follow that order too, which is why the
+     * tests can name team 1's SRS sections by id (section 13 is its functional requirement list).
      */
     private void applyTemplate(RequirementDocument doc, DocumentTemplate tpl) {
         // A template with no title of its own falls back to the document type's name, such as "SRS".

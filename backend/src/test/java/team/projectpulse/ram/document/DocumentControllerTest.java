@@ -18,6 +18,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public class DocumentControllerTest extends AbstractIntegrationTest {
 
@@ -108,7 +109,7 @@ public class DocumentControllerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.message").value("Find requirement document successfully"))
                 .andExpect(jsonPath("$.data.id").value(1))
                 .andExpect(jsonPath("$.data.title").value("Software Requirements Specification"))
-                .andExpect(jsonPath("$.data.sections", Matchers.hasSize(30)));
+                .andExpect(jsonPath("$.data.sections", Matchers.hasSize(26)));
     }
 
     @Test
@@ -150,6 +151,67 @@ public class DocumentControllerTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.data.sections", Matchers.hasSize(1)))
                 .andExpect(jsonPath("$.data.sections[0].sectionKey").value("BUSINESS_RULES"))
                 .andExpect(jsonPath("$.data.sections[0].type").value("LIST"));
+    }
+
+    @Test
+    void createArchitecturalDesignDocument_Arc42SectionsAndThreeLists() throws Exception {
+        // Team 2, which the seed gives a Vision and Scope and an SRS but no Architectural Design (docs/design/tpl.md).
+        String json = """
+                {
+                    "type": "ARCHITECTURAL_DESIGN"
+                }
+                """;
+        this.mockMvc.perform(post(this.baseUrl + "/teams/2/documents").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.data.title").value("Architectural Design"))
+                .andExpect(jsonPath("$.data.sections[*].sectionKey", Matchers.contains(
+                        "INTRODUCTION_AND_GOALS", "REQUIREMENTS_OVERVIEW", "QUALITY_GOALS", "STAKEHOLDERS",
+                        "ARCHITECTURE_CONSTRAINTS", "CONTEXT_AND_SCOPE", "SOLUTION_STRATEGY",
+                        "BUILDING_BLOCK_VIEW", "CONTAINERS", "USE_CASE_AREAS_AND_COMPONENTS",
+                        "RUNTIME_VIEW", "DEPLOYMENT_VIEW",
+                        "CROSSCUTTING_CONCEPTS", "SECURITY_CONCEPT", "OTHER_CONCEPTS",
+                        "ARCHITECTURE_DECISIONS", "SIGNIFICANT_REQUIREMENTS", "KEY_DECISIONS",
+                        "QUALITY_REQUIREMENTS", "QUALITY_REQUIREMENTS_OVERVIEW", "QUALITY_SCENARIOS",
+                        "RISKS_AND_TECHNICAL_DEBT", "ARCHITECTURE_GLOSSARY")))
+                // The three lists are the 18th, 21st and 22nd sections; every other section is rich text.
+                .andExpect(jsonPath("$.data.sections[?(@.type == 'LIST')].sectionKey", Matchers.contains("KEY_DECISIONS", "QUALITY_SCENARIOS", "RISKS_AND_TECHNICAL_DEBT")))
+                .andExpect(jsonPath("$.data.sections[17].artifactTypes", Matchers.contains("KEY_DECISION")))
+                .andExpect(jsonPath("$.data.sections[20].artifactTypes", Matchers.contains("QUALITY_SCENARIO")))
+                .andExpect(jsonPath("$.data.sections[21].artifactTypes", Matchers.contains("TECHNICAL_RISK", "TECHNICAL_DEBT")));
+    }
+
+    @Test
+    void createArchitecturalDesignDocument_Extension3a_AlreadyExists_Refused() throws Exception {
+        // Team 1 already has the Architectural Design the seed gives it: a second one is refused with a 400 the course
+        // admin can read (BR-document-creation), and nothing is stored.
+        String json = """
+                {
+                    "type": "ARCHITECTURAL_DESIGN"
+                }
+                """;
+        this.mockMvc.perform(post(this.baseUrl + "/teams/1/documents").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.flag").value(false))
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_ARGUMENT))
+                .andExpect(jsonPath("$.message").value("This team already has the Architectural Design. A team's document is created once and never regenerated or overwritten."));
+        this.mockMvc.perform(post(this.baseUrl + "/teams/1/documents/search").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(jsonPath("$.data.content", Matchers.hasSize(1)));
+    }
+
+    @Test
+    void createSrsDocument_NoArchitectureSections() throws Exception {
+        // Team 3, which the seed gives no documents. The architecture sections moved to the Architectural Design.
+        String json = """
+                {
+                    "type": "SRS"
+                }
+                """;
+        this.mockMvc.perform(post(this.baseUrl + "/teams/3/documents").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.data.sections", Matchers.hasSize(26)))
+                .andExpect(jsonPath("$.data.sections[*].sectionKey", Matchers.everyItem(Matchers.not(Matchers.in(
+                        new String[]{"SOFTWARE_ARCHITECTURE", "SYSTEM_CONTEXT", "CONTAINER_DIAGRAM", "DEPLOYMENT"})))));
     }
 
     @Test

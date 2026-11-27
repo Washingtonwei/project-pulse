@@ -28,6 +28,15 @@ class ArtifactKeyPrefixTest {
         assertThat(ArtifactKeyPrefix.of(RequirementArtifactType.OPERATING_ENVIRONMENT)).isEqualTo("OE");
     }
 
+    @Test
+    @DisplayName("The architecture items are keyed KD, QS, TRI and TD; TRI keeps a technical risk apart from a business RI")
+    void architectureItemPrefixes() {
+        assertThat(ArtifactKeyPrefix.of(RequirementArtifactType.KEY_DECISION)).isEqualTo("KD");
+        assertThat(ArtifactKeyPrefix.of(RequirementArtifactType.QUALITY_SCENARIO)).isEqualTo("QS");
+        assertThat(ArtifactKeyPrefix.of(RequirementArtifactType.TECHNICAL_RISK)).isEqualTo("TRI");
+        assertThat(ArtifactKeyPrefix.of(RequirementArtifactType.TECHNICAL_DEBT)).isEqualTo("TD");
+    }
+
     @ParameterizedTest
     @EnumSource(RequirementArtifactType.class)
     @DisplayName("Every artifact type has a prefix of its own, so no type falls back to UNK")
