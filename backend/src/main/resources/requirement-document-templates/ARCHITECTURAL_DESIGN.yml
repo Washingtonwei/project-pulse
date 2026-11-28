@@ -34,10 +34,10 @@ sections:
       - The quality attributes it cites
       - Why it shapes the architecture
 
-      **Example (Cafeteria Ordering System):**
-      1. Payroll data stays confidential (QA-payroll-auth, QA-employee-own-orders). Orders are paid by payroll deduction, so an order record carries an employee's pay account. A leak is a legal problem, not a bug.
-      2. Orders placed before 10:00 are not lost (QA-order-persisted, QA-lunch-window). The lunch rush is the only load that matters, and a lost order is a hungry employee with a payroll charge.
-      3. Cafeteria staff can run it without IT (CO-no-dedicated-ops, QA-menu-self-service). Nobody on the cafeteria side can deploy, restart, or patch anything.
+      Example:
+      1. Student records stay confidential (QA-grades-confidential). The system holds peer evaluation scores and private comments, which FERPA protects. A leak is a legal problem, not a bug.
+      2. One person can run it (CO-no-ops-team, QA-uptime). One instructor deploys and runs Project Pulse, with no operations team, so anything that needs tending will not be tended.
+      3. Students can extend it (QA-feature-locality). Senior design students add features every year, so a change to one feature must stay inside that feature.
 
   - sectionKey: "STAKEHOLDERS"
     title: "Stakeholders"
@@ -65,7 +65,7 @@ sections:
 
       This diagram is the business context: who and what crosses the system's boundary. The channels and protocols go on the arrows of the container diagram in Containers, and the trust boundary is named in writing in Security.
 
-      **Example (Cafeteria Ordering System):** the Cafeteria Ordering System in the middle; patrons, cafeteria staff, and the menu manager as users; the Payroll System, Corporate Sign-On, and Corporate Email as external systems, each with a labeled arrow ("Submits payment requests", "Verifies identity", "Sends confirmations").
+      Example: Project Pulse in the middle; students and instructors as users (a course admin is an instructor with rights over a course, not a separate box); Gmail and the LLM service as external systems, each with a labeled arrow ("Sends emails using", "Requests AI review").
 
   - sectionKey: "SOLUTION_STRATEGY"
     title: "Solution Strategy"
@@ -75,10 +75,10 @@ sections:
 
       Each bullet is one sentence, and it cites what explains it: the key decision where one exists, and otherwise the quality goal and the building block it shapes. A bullet that cites nothing is either not load-bearing, or a decision you have not written down yet.
 
-      **Example (Cafeteria Ordering System):**
-      - One deployable with one managed database (KD-deployment-shape), because nobody on the cafeteria side can operate infrastructure (quality goal 3).
-      - Payment is the only component that talks to the Payroll System, so payroll data crosses the trust boundary in exactly one place (quality goal 1).
-      - Divided by use case area (Ordering, Menu, and Delivery), each owning its own rules, so a menu change never touches ordering code (quality goal 3, QA-menu-self-service).
+      Example:
+      - One deployable with one managed database and one file store (KD-deployment-shape), because one person runs the system (quality goal 2).
+      - The AI proxy is the only component that calls the LLM service, so student work leaves the system in exactly one place, and an outage is handled in one place (quality goal 1, FR-ai-degradation).
+      - Divided by use case area (Peer Evaluation, Weekly Activity Report, Rubric, and the rest), each owning its own rules, so a change to peer evaluations never touches activity reports (quality goal 3).
 
   - sectionKey: "BUILDING_BLOCK_VIEW"
     title: "Building Block View"
@@ -96,7 +96,7 @@ sections:
 
       Under the diagram, one or two sentences on why the system is divided this way, citing the key decision on the deployment shape. A reader who sees three containers should not have to guess why there are not seven. Three containers is a normal answer. If you have more than five, check each one: which key decision, driven by which quality attribute, requires it to run separately?
 
-      **Example (Cafeteria Ordering System):** a Web Front End (Vue.js), an Application (Java / Spring Boot) holding every business rule, and a Database (PostgreSQL). The Application calls the Payroll System, Corporate Sign-On (OpenID Connect), and Corporate Email (SMTP). "The system is one application and one database because nobody on the cafeteria side can operate more (KD-deployment-shape). The front end is a separate container only because it runs in the browser; it ships inside the application's package."
+      Example: a Single Page Application (Vue 3), a REST API Application (Java / Spring Boot) holding every business rule, a Database (MySQL), and Blob Storage (Azure Blob Storage) for uploaded files. The REST API Application calls Gmail (SMTP) and the LLM service (HTTPS). "The system is one application, one database and one file store because one person runs it (KD-deployment-shape). The front end is a separate container only because it runs in the browser; it ships inside the application's package. Uploaded files sit in Blob Storage because large binary files do not belong in the database."
 
   - sectionKey: "USE_CASE_AREAS_AND_COMPONENTS"
     title: "Use Case Areas and Components"
@@ -111,9 +111,9 @@ sections:
       - Depends on: other components and external systems, never classes
       - Status: provisional until the component has been built through at least one use case, proven after that
 
-      **Example (Cafeteria Ordering System):**
-      - ORD, Ordering: owns an order from placement to cancellation, and the cut-off rules. Depends on Menu, Payment, Identity. Provisional.
-      - Cross-cutting, Payment: the only component that talks to the Payroll System. Depends on the Payroll System. Provisional.
+      Example:
+      - EVA, Peer Evaluation: owns a peer evaluation from submission to the close of its window, and who may see which part of it. Depends on Rubric, Team, Identity. Proven.
+      - Cross-cutting, AI proxy: the only component that calls the LLM service. Depends on the LLM service. Proven.
 
       Check: every area in your Use Cases document appears in the first column, and every external system in Context and Scope appears in some "Depends on".
 
@@ -149,7 +149,7 @@ sections:
       Four short paragraphs. The last three each cite the security quality attribute they answer:
       - Trust boundary: the line between what you control and what you do not. Name the container that is the boundary and what sits outside it (the browser, every external system). Every request that crosses it is authenticated and authorized, and that covers every path your deployable answers, framework endpoints included.
       - Authentication: how a user proves who they are, and who issues the credential (your system, the client's sign-on, a third party).
-      - Authorization: the roles, and the rule for what a user may see beyond their role (a patron sees only their own orders). The second part is where most real breaches happen.
+      - Authorization: the roles, and the rule for what a user may see beyond their role (a student sees only their own team's work). The second part is where most real breaches happen.
       - Sensitive data: what personal or regulated data the system stores, in which container, and which external systems receive any of it. How long it is kept and how it is disposed of are already in the SRS's data requirements; cite them.
 
       Secrets (passwords, API keys, connection strings) never appear in this document or in the repository. Say where they will live, not what they are.
@@ -173,9 +173,9 @@ sections:
       - Testing: which kinds of test, at which layer, with what data (the first pull request)
       - Static analysis: which analyzers run, what command is the gate, and how a finding is settled (the first pull request an assistant opens)
 
-      **Examples (Cafeteria Ordering System):**
-      - Error handling: Every endpoint returns { "ok": false, "error": { "code", "message" } } on failure, produced by one exception handler; no controller builds its own error body, and no response carries an exception's own message. Why: the ordering screen and the menu screen share one error display, and an exception's message can reveal the database behind it. Shown in: ApiExceptionHandler.
-      - Logging: Each class that logs has one logger. "error" means someone must act, "warn" that something degraded, "info" a business event, "debug" detail for development. Every caught exception that is not rethrown is logged with its stack trace, the one exception handler's included. Log identifiers, never content: an order or user ID, never an email address, a password, a token, or a request body. Logs go to standard output, where the platform collects them. Why: the first production bug is found from its log line or not at all, and a log is copied to more places than the database is. Shown in: ApiExceptionHandler, OrderService.
+      Examples:
+      - Error handling: Every endpoint returns { "flag", "code", "message", "data" }, and a failure gets that shape from one exception handler; no controller builds its own error body. Why: every screen shows failures through one shared request handler, which relies on that shape. Shown in: ExceptionHandlerAdvice.
+      - Logging: Each class that logs has one logger. "error" means someone must act, "warn" that something degraded, "info" a business event, "debug" detail for development. Every caught exception that is not rethrown is logged with its stack trace, the one exception handler's fallback included. Log identifiers, never content: a student or team ID, never an email address, a password, a token, or a request body. Logs go to standard output, where the platform collects them. Why: the first production bug is found from its log line or not at all, and a log is copied to more places than the database is. Shown in: ExceptionHandlerAdvice, WeeklyReminderScheduler.
 
   - sectionKey: "ARCHITECTURE_DECISIONS"
     title: "Architecture Decisions"
@@ -200,7 +200,7 @@ sections:
       - Importance × difficulty
       - The key decisions it drives
 
-      **Example (Cafeteria Ordering System):** 1. Payroll data confidential (QA-payroll-auth). High × Medium. Drives KD-payment-isolated.
+      Example: 1. Student records confidential (QA-grades-confidential). High × High. Drives KD-self-issued-jwt.
 
   - sectionKey: "KEY_DECISIONS"
     title: "Key Decisions"
@@ -220,8 +220,8 @@ sections:
 
       A decision without a rejected alternative is not a decision, it is a description. A decision that turns out wrong is not deleted or rewritten: mark it Superseded by the new key decision, and write the new decision as its own entry, so the reasoning behind both stays readable.
 
-      **Example:**
-      - KD-deployment-shape: One deployable. Accepted. Driving requirements: CO-no-dedicated-ops, QA-lunch-window. Context: about 400 patrons, one lunch peak a day, and nobody on the client side who can operate infrastructure. Decision: the front end is built into the back end's package and ships as one container to one host, with one managed database. Rejected: separate services for ordering, menu, and delivery; they would add network calls, three deployments, and failure modes between them, to solve a scaling problem 400 users do not have. Trade-off: the system scales only as a whole, and a bad deploy takes all of it down.
+      Example:
+      - KD-deployment-shape: One deployable. Accepted. Driving requirements: CO-no-ops-team, QA-uptime. Context: about 70 students and a few instructors, up to 100 users at once, and one person who deploys and runs the system. Decision: the front end is built into the back end's package and ships as one container to one host, with one managed database. Rejected: separate services for performance tracking and requirements authoring; they would add network calls, two deployments, and failure modes between them, to solve a scaling problem 100 users do not have. Trade-off: the system scales only as a whole, and a bad deploy takes all of it down.
 
   - sectionKey: "QUALITY_REQUIREMENTS"
     title: "Quality Requirements"
@@ -243,15 +243,15 @@ sections:
       A quality attribute says how good; a scenario says how you will know. Write one scenario for each top-ranked architecturally significant requirement.
 
       For each quality scenario include:
-      - Key (e.g., QS-cross-employee-order-denied)
+      - Key (e.g., QS-cross-team-denied)
       - Source and stimulus: who does what
-      - Environment: the conditions, such as normal operation or the lunch peak
+      - Environment: the conditions, such as normal operation or the evening a peer evaluation window closes
       - Response: what the system does
       - Measure: how you tell it worked. It cites the SRS quality attribute that owns its number and never introduces a number of its own.
       - Verified by: the test, or the repeatable manual check, that shows the measure holds. Leave it empty until that test exists; an empty entry is an honest "not yet verified".
 
-      **Example:**
-      - QS-cross-employee-order-denied: A signed-on patron requests another patron's order by its ID, in normal operation. The request is refused before any order data is read. Measure: every such request is refused and returns no order fields (QA-employee-own-orders). Verified by: an integration test that signs in as one patron and requests another patron's order.
+      Example:
+      - QS-cross-team-denied: A signed-in student requests another team's peer evaluation by its ID, in normal operation. The request is refused before any peer evaluation data is read. Measure: every such request is refused and returns no peer evaluation fields (QA-grades-confidential). Verified by: an integration test that signs in as a student on one team and requests a peer evaluation from another team.
 
   - sectionKey: "RISKS_AND_TECHNICAL_DEBT"
     title: "Risks and Technical Debt"
@@ -270,8 +270,8 @@ sections:
 
       A risk written as a category ("security", "performance") is not a risk. Write the mechanism: what fails, and what that breaks.
 
-      **Example:**
-      - TRI-payroll-api-unavailable: Nobody has seen the Payroll System's interface. If it only accepts a nightly batch file, ordering cannot confirm payment at order time. Mitigation: ask for the interface document at the next client meeting; build Payment against a stub until then. Cites DE-payroll-integration.
+      Example:
+      - TRI-llm-unavailable: Every AI assistant depends on one external LLM service. If it is down or slow, a student waiting for AI review sees nothing, and if the provider changes its price or its model, the course pays for it. Mitigation: a timeout with a clear message and a retry, and one AI proxy, so another provider replaces it in one place. Cites DE-llm-service, FR-ai-degradation.
       - TRI-public-grade-database: The peer evaluation database holds student grades, is reachable from the public internet, and has no rate limiting. Anyone who finds its address can try passwords against it without being slowed down. Mitigation: allow connections only from the application's own network. Cites QA-grades-confidential.
 
   - sectionKey: "ARCHITECTURE_GLOSSARY"
