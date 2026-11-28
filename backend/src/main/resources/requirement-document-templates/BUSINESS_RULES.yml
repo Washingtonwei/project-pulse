@@ -59,18 +59,21 @@ sections:
 
       What a rule turns into. One rule usually becomes several requirements of different kinds: a business objective (a regulation the business must comply with), a user requirement (a policy on who may do what), a functional requirement (a policy becomes system behavior), or a quality attribute (a safety rule becomes a checked property).
 
-      Identifiers. Each rule's key is a stable BR-<slug> named after the rule's gist, such as BR-price-at-order-time. Never rename or repoint one. A rule may cite another rule by its key where one depends on the other.
+      Identifiers. Each rule's key is a stable BR-<slug> named after the rule's gist, such as BR-active-weeks. Never rename or repoint one. A rule may cite another rule by its key where one depends on the other.
 
       Every rule needs a source: a named policy document, a regulation, a page of the client's handbook, or the person who told you and the date. A rule you cannot attribute is usually not a rule. It is your team's design decision wearing a rule's clothes, and it belongs in the SRS where it can be argued with. The test: if you asked your client to change it tomorrow, who would have to approve? If the answer is "you", it was never a rule. Where a rule is expected to change, say so and say when. If you are not sure whether something is a rule or a requirement, keep it and flag it; that is a conversation to have with your client.
 
       Where an AI assistant helps, and where it is dangerous. Let it turn meeting notes into candidate rules, spot sentences in a transcript that have the shape of a rule, and find use cases that a rule ought to govern but do not cite. Do not let it invent rules. An invented rule reads exactly like a real one ("Passwords must be at least 8 characters", "Records must be retained for 7 years"), and it then spreads into requirements, tests and code that enforce something nobody asked for. When it proposes a rule, the only question is: who told us this?
 
-      **Example:**
-      - BR-payroll-deduction-only
-        Title: Only employees who are registered for payroll deduction may charge a meal to their pay.
-        Content: Company policy. Fixed.
-      - BR-price-at-order-time
-        Title: Each meal is charged the price in effect when it was ordered, not when it was delivered.
-        Content: Company policy. Fixed.
+      Example:
+      - BR-active-weeks
+        Title: A student may submit a peer evaluation only for a week that is one of the course section's active weeks; a weekly activity report is not limited this way.
+        Content: Source: not recorded in Project Pulse.
+      - BR-section-admin-only
+        Title: Only a course admin may create or edit a course section, configure its active-weeks window (see BR-active-weeks), or assign a rubric to it.
+        Content: Source: not recorded in Project Pulse.
+      - BR-artifact-key-unique
+        Title: Every artifact key is unique within a team and remains stable across edits to the artifact's content.
+        Content: Source: team decision, 2026-09-10. A candidate for the SRS instead of this list, since the team, not the client, would approve a change.
 
       Checklist: Does every rule have a source? Could your client change it without asking you? Is it one sentence about the business, rather than about your software? Does a use case or requirement cite it, and if none does, is that correct?
