@@ -73,7 +73,7 @@ The same rule applies upward to Level 1: **cite the SRS for the shared model; de
 
 ## **What a design doc contains**
 
-A design doc is **structured by concern, not by use case.** An area accumulates several use cases over time (`UC-DOC-edit-document`, then `-5`, then `-6`), each designed by its own `/design` run — but the doc must not become a per-UC changelog (`## UC-DOC-edit-document design`, `## UC-DOC-create-use-case design`, … stacked up). Keep the skeleton below and let the two axes grow differently:
+A design doc is **structured by concern, not by use case.** An area accumulates several use cases over time (`UC-DOC-edit-document`, then `-5`, then `-6`), each designed by its own `/design` run, but the doc must not become a per-UC changelog (`## UC-DOC-edit-document design`, `## UC-DOC-create-use-case design`, … stacked up). Keep the skeleton below and let the two axes grow differently. The one temporary section is `## Pending redesign`, which `/design` writes for a redesign of built code and `/implement` deletes once the delta is built:
 
 - **Area-wide, revised in place** — Overview, Components & classes (one class diagram), Data model (one ER diagram). A new use case edits these (a new service method, a new column) rather than appending a parallel copy. There is **one** class diagram and **one** ER diagram per area, not one per use case.
 - **Per-flow, appended** — Sequence diagrams (one per main success scenario + each non-trivial extension), API-contract rows, and test rows. These accumulate as use cases are added; the sequence heading for a use case is the anchor `traceability.md` may cite.
