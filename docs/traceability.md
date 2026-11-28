@@ -56,7 +56,7 @@ This map is the **single anchor for the `BO → feature` edge** and the head of 
 - **Design** — the area's design-of-record (`design/<area>.md`, optionally anchored to the use case's sequence diagram under *Sequence*, the one per-use-case heading the doc carries) once `/design` has written it and its pull request has merged; `—` until then. A single area doc covers every use case in its area, so rows in the same area cite the same file.
 - **Frontend / Backend / Tests** — concrete artifacts (`file_path` or component/class names) once built; `—` until then.
 - **Extension coverage (convention).** Because tests are tagged to the **whole use case** — there are no per-step or per-extension IDs — the **Tests** cell names *which extensions* a test exercises, e.g. `…AddEvaluation… + matching extensions (E1,E3); E2 untested`. This keeps edge-case coverage visible: a `✅ Verified` row whose negative/exception flows are only partly tested shows `🟡 Partial` in Verify with the gap spelled out in Tests. `/sync-check` flags any `✅ Built` use case whose count of negative-path tests is below its number of extensions (a heuristic that surfaces likely-undertested exception behavior). Back-filling the per-extension annotation across the already-built use cases is a `/sync-check` sweep, not a precondition for the convention.
-- When a use case is added to `requirements/use-cases.md`, add its row here (Build `❌ Not started`, Verify `—`, and a Release value). `/design` advances Build to `🔬 Problem-validated` once the use case is firmed, then `📐 Designed` when the solution design is approved; when `/implement` finishes it, set Build, fill Verify, and fill the code columns.
+- When a use case is added to `requirements/use-cases.md`, add its row here (Build `❌ Not started`, Verify `—`, and a Release value). `/design` advances Build to `🔬 Problem-validated` once the use case is firmed, then `📐 Designed` when the solution design is approved; when `/implement` finishes it, set Build, fill Verify, and fill the code columns. A redesign of a built row marks its Design cell `(redesign pending)` and, when behavior changes, drops Build to `🟡 In progress` and a `✅ Verified` to `🟡 Partial`; `/implement` clears the marker once it builds the delta.
 
 ### Build legend
 
@@ -65,7 +65,7 @@ This map is the **single anchor for the `BO → feature` edge** and the head of 
 | ❌ Not started | No design, no code; the use case is unexamined. |
 | 🔬 Problem-validated | `/design`'s challenge loop has run against the use case — ambiguities, contradictions, and assumptions that break against the code surfaced and looped back into the spec; the problem statement is firm. No solution design yet. (The `❌ → 🔬` transition **is** a recorded challenge event; its evidence is the spec diff that produced it.) |
 | 📐 Designed | Solution approved — the area's `design/<area>.md` is written (`/design`) and approved by merging its pull request, with the questions-test result in the pull request description; not yet coded. |
-| 🟡 In progress | Partially built (e.g., backend complete, frontend pending). |
+| 🟡 In progress | Partially built (e.g., backend complete, frontend pending), or built but redesigned with a behavior change that is not built yet (its Design cell reads `(redesign pending)`). |
 | ✅ Built | Code complete for the use case's flow. **Makes no claim about tests** — see the Verify column. |
 
 ### Verify legend
